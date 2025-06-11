@@ -2,9 +2,9 @@
 name = "qtype"
 version = "0.1.0"
 description = "DSL for Generative AI Prototyping"
-authors = [{ name="Your Name", email="you@example.com" }]
+authors = [{ name="Lou Kratz", email="qtype@lou.dev" }]
 readme = "README.md"
 requires-python = ">=3.9"
-
-[tool.setuptools]
-packages = ["qtype"]
+dependencies = [
+    "pydantic>=2.11.5",
+]
