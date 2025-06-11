@@ -1,0 +1,10 @@
+[project]
+name = "qtype"
+version = "0.1.0"
+description = "DSL for Generative AI Prototyping"
+authors = [{ name="Your Name", email="you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.setuptools]
+packages = ["qtype"]

@@ -1,2 +1,3 @@
-# qtype
-From AI Idea to Prototype, instantly
+# QType
+
+QType is a DSL for rapid prototyping of AI applications.
