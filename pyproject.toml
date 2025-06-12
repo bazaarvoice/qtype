@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["qtype", "scripts"]
+include = ["qtype"]
 
 [project.scripts]
-qtype-validate = "scripts.validate:main"
+qtype = "qtype.cli:main"
