@@ -1,1 +1,36 @@
-# Example QType spec: Hello World
+
+version: "0.1.1"
+models:
+  - id: gpt4
+    provider: openai
+    model: gpt-4o
+    inference_parameters:
+      temperature: 0.7
+      max_tokens: 512
+
+inputs:
+  - id: user_question
+    type: text
+    display_name: "Your Question"
+    display_type: textarea
+    required: true
+
+prompts:
+  - id: answer_prompt
+    template: |
+      You are a helpful assistant.
+      Answer the following question:
+      {{ user_question }}
+    input_vars: ["user_question"]
+    output_vars: ["response"]
+
+flows:
+  - id: simple_qa
+    mode: complete
+    steps:
+      - id: answer_step
+        type: prompt
+        component: answer_prompt
+        model: gpt4
+        input_mapping:
+          user_question: user_question

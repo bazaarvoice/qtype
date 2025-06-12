@@ -3,7 +3,6 @@ from typing import List, Optional, Dict, Union, Any
 from pydantic import BaseModel, Field
 from abc import ABC
 
-# Enums and types with documentation
 
 
 class InputType(str, Enum):
@@ -105,7 +104,10 @@ class Prompt(BaseModel):
     """Points to a prompt template used for generation."""
 
     id: str = Field(..., description="Unique ID for the prompt.")
-    path: str = Field(..., description="File path to the prompt template.")
+    path: Optional[str] = Field(None, description="File path to the prompt template.")
+    template: Optional[str] = Field(
+        None, description="Inline template string for the prompt."
+    )
     input_vars: List[str] = Field(
         ..., description="List of input variable IDs this prompt expects."
     )
@@ -121,7 +123,10 @@ class Model(BaseModel):
     provider: str = Field(
         ..., description="Name of the provider, e.g., openai or anthropic."
     )
-    name: str = Field(..., description="Model name, e.g., gpt-4o.")
+    model_id: Optional[str] = Field(
+        None,
+        description="The specific model name or ID for the provider. If None, id is used",
+    )
     inference_params: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
         description="Optional inference parameters like temperature or max_tokens.",
@@ -292,8 +297,8 @@ class Step(BaseModel):
     output_vars: Optional[List[str]] = Field(
         None, description="Variable IDs where output is stored."
     )
-    component: str = Field(
-        ..., description="ID of the component to invoke (e.g., prompt ID, tool ID)."
+    component: Optional[str] = Field(
+        None, description="ID of the component to invoke (e.g., prompt ID, tool ID)."
     )
 
 
@@ -324,6 +329,7 @@ class Flow(Step):
     memory: Optional[List[str]] = Field(
         None, description="List of memory IDs to include (chat mode only)."
     )
+    type: str = "flow"
 
 
 class QTypeSpec(BaseModel):
@@ -336,41 +342,41 @@ class QTypeSpec(BaseModel):
     Only one `QTypeSpec` should exist per YAML spec file.
     """
 
-    version: str = Field(..., description="Version of the QType specification schema used.")
+    version: str = Field(
+        ..., description="Version of the QType specification schema used."
+    )
     models: Optional[List[Model]] = Field(
         None,
-        description="List of generative models available for use, including their providers and inference parameters."
+        description="List of generative models available for use, including their providers and inference parameters.",
     )
     inputs: Optional[List[Input]] = Field(
-        None,
-        description="User-facing inputs or parameters exposed by the application."
+        None, description="User-facing inputs or parameters exposed by the application."
     )
     prompts: Optional[List[Prompt]] = Field(
         None,
-        description="Prompt templates used in generation steps or tools, referencing input and output variables."
+        description="Prompt templates used in generation steps or tools, referencing input and output variables.",
     )
     retrievers: Optional[List[BaseRetriever]] = Field(
         None,
-        description="Document retrievers used to fetch context from indexes (e.g., vector search, keyword search)."
+        description="Document retrievers used to fetch context from indexes (e.g., vector search, keyword search).",
     )
     tools: Optional[List[ToolProvider]] = Field(
         None,
-        description="Tool providers with optional OpenAPI specs, exposing callable tools for the model."
+        description="Tool providers with optional OpenAPI specs, exposing callable tools for the model.",
     )
     flows: Optional[List[Flow]] = Field(
         None,
-        description="Entry points to application logic. Each flow defines an executable composition of steps."
+        description="Entry points to application logic. Each flow defines an executable composition of steps.",
     )
     feedback: Optional[List[Feedback]] = Field(
         None,
-        description="Feedback configurations for collecting structured or unstructured user reactions to outputs."
+        description="Feedback configurations for collecting structured or unstructured user reactions to outputs.",
     )
     memory: Optional[List[Memory]] = Field(
         None,
-        description="Session-level memory contexts, only used in chat-mode flows to persist state across turns."
+        description="Session-level memory contexts, only used in chat-mode flows to persist state across turns.",
     )
     auth: Optional[List[AuthorizationProvider]] = Field(
         None,
-        description="Authorization providers and credentials used to access external APIs or cloud services."
+        description="Authorization providers and credentials used to access external APIs or cloud services.",
     )
-
