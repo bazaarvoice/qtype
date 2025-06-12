@@ -7,7 +7,7 @@ import logging
 from typing import Any
 from pydantic import ValidationError
 from qtype.dsl import validate_spec
-from qtype.ir import validate_semantics
+from qtype.ir import *
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,13 @@ def validate_main(args: Any) -> None:
     try:
         validate_semantics(spec)
         logger.info("✅ Semantic validation successful.")
-    except ValidationError as exc:
+    except Exception as exc:
         logger.error("❌ Semantic validation failed:\n%s", exc)
+        sys.exit(1)
+
+    try:
+        intermediate_representation = resolve_semantic_ir(spec)
+        logger.info("✅ Semantic resolution successful.")
+    except Exception as exc:
+        logger.error("❌ Semantic resolution failed:\n%s", exc)
         sys.exit(1)
