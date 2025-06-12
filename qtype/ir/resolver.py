@@ -1,1 +1,0 @@
-# Intermediate Representation resolution logic

@@ -5,7 +5,7 @@ from abc import ABC
 
 
 
-class InputType(str, Enum):
+class VariableType(str, Enum):
     """Type of input expected from the user."""
 
     text = "text"
@@ -78,7 +78,7 @@ class Input(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the input. Referenced in prompts or steps."
     )
-    type: InputType = Field(..., description="Type of data expected.")
+    type: VariableType = Field(..., description="Type of data expected.")
     display_name: Optional[str] = Field(None, description="Label shown in the UI.")
     display_type: Optional[DisplayType] = Field(
         None, description="Hint for how to render this input."
@@ -95,7 +95,7 @@ class Output(BaseModel):
         ...,
         description="Unique ID of the output. Referenced by prompt outputs or step responses.",
     )
-    type: str = Field(
+    type: VariableType = Field(
         ..., description="Type of output produced (e.g., text, image, json)."
     )
 
@@ -133,21 +133,17 @@ class Model(BaseModel):
     )
 
 
-class EmbeddingModel(BaseModel):
+class EmbeddingModel(Model):
     """Describes a model used for embedding text for vector search or memory."""
-
-    id: str = Field(..., description="Unique ID of the embedding model.")
-    provider: str = Field(..., description="Provider for the embedding model.")
-    model: str = Field(..., description="Name of the embedding model.")
+    dimensions: int = Field(
+        ..., description="Dimensionality of the embedding vectors produced by this model."
+    )
 
 
 class BaseRetriever(BaseModel, ABC):
     """Abstract base class for retrievers that fetch supporting documents."""
 
     id: str = Field(..., description="Unique ID of the retriever.")
-    type: str = Field(
-        ..., description="Type of retriever (e.g., 'vector' or 'search')."
-    )
     index: str = Field(..., description="ID of the index this retriever uses.")
 
 
@@ -200,11 +196,13 @@ class Tool(BaseModel):
     id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(..., description="Description of what the tool does.")
-    input_schema: Dict[str, str] = Field(
-        ..., description="Dictionary mapping input argument names to types."
+    input_schema: Dict[str, Any] = Field(
+        ..., 
+        description="JSON Schema describing the input parameters for the API endpoint."
     )
-    output_schema: Dict[str, str] = Field(
-        ..., description="Dictionary mapping output keys to types."
+    output_schema: Dict[str, Any] = Field(
+        ..., 
+        description="JSON Schema describing the response structure from the API endpoint."
     )
 
 
@@ -248,18 +246,29 @@ class AuthorizationProvider(BaseModel):
     )
 
 
+class FeedbackType(str, Enum):
+    """Types of feedback mechanisms available."""
+    
+    THUMBS = "thumbs"
+    STAR = "star" 
+    TEXT = "text"
+    RATING = "rating"
+    CHOICE = "choice"
+    BOOLEAN = "boolean"
+
+
 class Feedback(BaseModel):
     """Describes how and where to collect feedback on generated responses."""
 
     id: str = Field(..., description="Unique ID of the feedback config.")
-    type: str = Field(
-        ..., description="Feedback mechanism type (e.g., thumbs, star, text)."
+    type: FeedbackType = Field(
+        ..., description="Feedback mechanism type."
     )
     question: Optional[str] = Field(
         None, description="Question to show user for qualitative feedback."
     )
     prompt: Optional[str] = Field(
-        None, description="Prompt ID used to generate a follow-up based on feedback."
+        None, description="ID of prompt used to generate a follow-up based on feedback."
     )
 
 
@@ -287,10 +296,6 @@ class Step(BaseModel):
     """A single execution step within a flow (e.g., prompt, tool call, or memory update)."""
 
     id: str = Field(..., description="Unique ID of the step.")
-    type: str = Field(
-        ...,
-        description="Step type, such as 'prompt', 'tool', 'flow', or 'retriever'.",
-    )
     input_vars: Optional[List[str]] = Field(
         None, description="Input variable IDs required by this step."
     )
@@ -329,8 +334,6 @@ class Flow(Step):
     memory: Optional[List[str]] = Field(
         None, description="List of memory IDs to include (chat mode only)."
     )
-    type: str = "flow"
-
 
 class QTypeSpec(BaseModel):
     """
