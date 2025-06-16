@@ -2,10 +2,12 @@
 Command-line interface for validating QType YAML spec files.
 """
 
-import sys
 import logging
+import sys
 from typing import Any
+
 from pydantic import ValidationError
+
 from qtype.dsl import validate_spec
 from qtype.ir import *
 

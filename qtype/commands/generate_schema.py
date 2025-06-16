@@ -1,5 +1,7 @@
 import json
+
 from qtype.dsl.models import QTypeSpec
+
 
 def generate_schema_main(args):
     """Generate and output the JSON schema for QTypeSpec."""

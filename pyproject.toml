@@ -18,8 +18,7 @@ dev = [
     "flake8>=7.0.0",
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
-    "pytest>=8.0.0",
-    "pytest-cov>=4.0.0",
+    "coverage>=7.0.0",
 ]
 docs = [
     "mkdocs>=1.5.0",
@@ -29,6 +28,11 @@ docs = [
 [tool.uv]
 # Install dev dependencies by default when running uv sync
 default-groups = ["dev"]
+# Use highest resolution strategy for dependencies  
+resolution = "highest"
+# Compile bytecode for faster subsequent runs
+compile-bytecode = true
+
 
 [tool.setuptools.packages.find]
 include = ["qtype"]
@@ -53,8 +57,31 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+[tool.coverage.run]
+source = ["qtype"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"

@@ -1,5 +1,7 @@
 import yaml
+
 from qtype.dsl.models import QTypeSpec
+
 
 def validate_spec(args) -> QTypeSpec:
     """Validate a QType YAML spec file against the QTypeSpec schema."""

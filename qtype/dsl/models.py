@@ -1,12 +1,13 @@
-from enum import Enum
-from typing import List, Optional, Dict, Union, Any
-from pydantic import BaseModel, Field
 from abc import ABC
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
+from pydantic import BaseModel, Field
 
 
 class VariableType(str, Enum):
     """Type of input expected from the user."""
+
     text = "text"
     number = "number"
     file = "file"
@@ -75,10 +76,13 @@ class Input(BaseModel):
     """Represents an input field provided by the user or external system."""
 
     id: str = Field(
-        ..., description="Unique ID of the input. Referenced in prompts or steps."
+        ...,
+        description="Unique ID of the input. Referenced in prompts or steps.",
     )
     type: VariableType = Field(..., description="Type of data expected.")
-    display_name: Optional[str] = Field(None, description="Label shown in the UI.")
+    display_name: Optional[str] = Field(
+        None, description="Label shown in the UI."
+    )
     display_type: Optional[DisplayType] = Field(
         None, description="Hint for how to render this input."
     )
@@ -103,7 +107,9 @@ class Prompt(BaseModel):
     """Points to a prompt template used for generation."""
 
     id: str = Field(..., description="Unique ID for the prompt.")
-    path: Optional[str] = Field(None, description="File path to the prompt template.")
+    path: Optional[str] = Field(
+        None, description="File path to the prompt template."
+    )
     template: Optional[str] = Field(
         None, description="Inline template string for the prompt."
     )
@@ -111,7 +117,8 @@ class Prompt(BaseModel):
         ..., description="List of input variable IDs this prompt expects."
     )
     output_vars: Optional[List[str]] = Field(
-        None, description="Optional list of output variable IDs this prompt generates."
+        None,
+        description="Optional list of output variable IDs this prompt generates.",
     )
 
 
@@ -134,8 +141,10 @@ class Model(BaseModel):
 
 class EmbeddingModel(Model):
     """Describes a model used for embedding text for vector search or memory."""
+
     dimensions: int = Field(
-        ..., description="Dimensionality of the embedding vectors produced by this model."
+        ...,
+        description="Dimensionality of the embedding vectors produced by this model.",
     )
 
 
@@ -150,7 +159,8 @@ class VectorDBRetriever(BaseRetriever):
     """Retriever that queries a vector database using an embedding-based search."""
 
     embedding_model: str = Field(
-        ..., description="ID of the embedding model used to vectorize the query."
+        ...,
+        description="ID of the embedding model used to vectorize the query.",
     )
     top_k: int = Field(5, description="Number of top documents to retrieve.")
 
@@ -174,7 +184,9 @@ class Memory(BaseModel):
     """Persistent or session-level memory context for a user or flow."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
-    type: MemoryType = Field(..., description="The type of memory to store context.")
+    type: MemoryType = Field(
+        ..., description="The type of memory to store context."
+    )
     embedding_model: str = Field(
         ..., description="Embedding model ID used for storage."
     )
@@ -185,7 +197,8 @@ class Memory(BaseModel):
         None, description="Optional TTL for temporary memory."
     )
     use_for_context: bool = Field(
-        default=True, description="Whether this memory should be injected as context."
+        default=True,
+        description="Whether this memory should be injected as context.",
     )
 
 
@@ -194,14 +207,16 @@ class Tool(BaseModel):
 
     id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
-    description: str = Field(..., description="Description of what the tool does.")
+    description: str = Field(
+        ..., description="Description of what the tool does."
+    )
     input_schema: Dict[str, Any] = Field(
-        ..., 
-        description="JSON Schema describing the input parameters for the API endpoint."
+        ...,
+        description="JSON Schema describing the input parameters for the API endpoint.",
     )
     output_schema: Dict[str, Any] = Field(
-        ..., 
-        description="JSON Schema describing the response structure from the API endpoint."
+        ...,
+        description="JSON Schema describing the response structure from the API endpoint.",
     )
 
 
@@ -224,22 +239,31 @@ class ToolProvider(BaseModel):
         None, description="Exclude specific endpoints by path."
     )
     auth: Optional[str] = Field(
-        None, description="AuthorizationProvider ID used to authenticate tool access."
+        None,
+        description="AuthorizationProvider ID used to authenticate tool access.",
     )
 
 
 class AuthorizationProvider(BaseModel):
     """Represents credentials and auth settings for accessing protected APIs."""
 
-    id: str = Field(..., description="Unique ID of the authorization configuration.")
+    id: str = Field(
+        ..., description="Unique ID of the authorization configuration."
+    )
     type: str = Field(
         ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
     )
-    host: Optional[str] = Field(None, description="Base URL or domain of the provider.")
+    host: Optional[str] = Field(
+        None, description="Base URL or domain of the provider."
+    )
     client_id: Optional[str] = Field(None, description="OAuth2 client ID.")
-    client_secret: Optional[str] = Field(None, description="OAuth2 client secret.")
+    client_secret: Optional[str] = Field(
+        None, description="OAuth2 client secret."
+    )
     token_url: Optional[str] = Field(None, description="Token endpoint URL.")
-    scopes: Optional[List[str]] = Field(None, description="OAuth2 scopes required.")
+    scopes: Optional[List[str]] = Field(
+        None, description="OAuth2 scopes required."
+    )
     api_key: Optional[str] = Field(
         None, description="API key if using token-based auth."
     )
@@ -247,9 +271,9 @@ class AuthorizationProvider(BaseModel):
 
 class FeedbackType(str, Enum):
     """Types of feedback mechanisms available."""
-    
+
     THUMBS = "thumbs"
-    STAR = "star" 
+    STAR = "star"
     TEXT = "text"
     RATING = "rating"
     CHOICE = "choice"
@@ -260,14 +284,13 @@ class Feedback(BaseModel):
     """Describes how and where to collect feedback on generated responses."""
 
     id: str = Field(..., description="Unique ID of the feedback config.")
-    type: FeedbackType = Field(
-        ..., description="Feedback mechanism type."
-    )
+    type: FeedbackType = Field(..., description="Feedback mechanism type.")
     question: Optional[str] = Field(
         None, description="Question to show user for qualitative feedback."
     )
     prompt: Optional[str] = Field(
-        None, description="ID of prompt used to generate a follow-up based on feedback."
+        None,
+        description="ID of prompt used to generate a follow-up based on feedback.",
     )
 
 
@@ -302,7 +325,8 @@ class Step(BaseModel):
         None, description="Variable IDs where output is stored."
     )
     component: Optional[str] = Field(
-        None, description="ID of the component to invoke (e.g., prompt ID, tool ID)."
+        None,
+        description="ID of the component to invoke (e.g., prompt ID, tool ID).",
     )
 
 
@@ -334,6 +358,7 @@ class Flow(Step):
         None, description="List of memory IDs to include (chat mode only)."
     )
 
+
 class QTypeSpec(BaseModel):
     """
     The top-level definition of a QType specification.
@@ -352,7 +377,8 @@ class QTypeSpec(BaseModel):
         description="List of generative models available for use, including their providers and inference parameters.",
     )
     inputs: Optional[List[Input]] = Field(
-        None, description="User-facing inputs or parameters exposed by the application."
+        None,
+        description="User-facing inputs or parameters exposed by the application.",
     )
     prompts: Optional[List[Prompt]] = Field(
         None,

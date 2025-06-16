@@ -38,7 +38,7 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install all dependencies including development tools
-uv sync --all-extras
+uv sync --group dev
 ```
 
 ## Installing QType for Development
@@ -61,29 +61,48 @@ qtype --help
 
 ## Running Tests
 
-The project uses Python's built-in unittest framework. Here's how to run tests:
+The project uses Python's built-in unittest framework with coverage measurement:
 
 ```bash
-# From the project root directory, run all tests
-PYTHONPATH=$(pwd) python -m unittest
+# Run all tests with coverage
+uv run coverage run -m unittest discover tests/
 
-# Run with verbose output
-PYTHONPATH=$(pwd) python -m unittest -v
+# View coverage report in terminal
+uv run coverage report
 
-# Run all tests with discovery (explicit)
-PYTHONPATH=$(pwd) python -m unittest discover tests/
+# View detailed coverage with missing lines
+uv run coverage report --show-missing
 
-# Run specific test file
-PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation
+# Generate HTML coverage report
+uv run coverage html
+# Open htmlcov/index.html in your browser to see detailed coverage
+
+# Run specific test file with coverage
+uv run coverage run -m unittest tests.test_semantic_validation
+uv run coverage report
 
 # Run specific test class
-PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueIDs
+uv run coverage run -m unittest tests.test_semantic_validation.TestUniqueIDs
+uv run coverage report
 
 # Run specific test method
-PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueIDs.test_unique_model_ids
+uv run coverage run -m unittest tests.test_semantic_validation.TestUniqueIDs.test_unique_model_ids
+uv run coverage report
+
+# Run with verbose unittest output
+uv run coverage run -m unittest discover tests/ -v
+uv run coverage report
 ```
 
-The `PYTHONPATH=$(pwd)` ensures that Python can find the `qtype` module from the current directory without needing to install the package in development mode.
+### Coverage Reports
+
+Coverage reports show:
+- Which lines of code are executed during tests
+- Which lines are missing test coverage  
+- Overall coverage percentage for each module
+- HTML report with line-by-line coverage highlighting
+
+The HTML coverage report (`htmlcov/index.html`) provides the most detailed view, showing exactly which lines need more test coverage.
 
 ## Code Quality and Standards
 
@@ -98,15 +117,6 @@ This project follows strict Python coding standards:
 - **Line length** limit of 79 characters (as per PEP 8)
 - **f-strings** for string interpolation
 - **Explicit over implicit** code style
-
-### Recommended Development Tools
-
-Install these tools for better development experience:
-
-```bash
-# Code formatting and linting
-uv pip install black isort flake8 mypy
-```
 
 #### Format code automatically:
 
@@ -150,6 +160,13 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-PyYAML]
+        args: [--strict]
 ```
 
 ## Project Structure
@@ -204,9 +221,7 @@ qtype/
 
 4. **Run tests** to ensure nothing is broken:
    ```bash
-   python -m unittest discover tests/
-   # or
-   pytest
+   coverage run -m unittest discover tests/
    ```
 
 5. **Check code quality:**
@@ -252,78 +267,6 @@ Then update the lock file:
 
 ```bash
 uv lock
-```
-
-## CLI Usage
-
-The QType CLI provides two main commands:
-
-### Generate JSON Schema
-
-```bash
-# Output to stdout
-qtype generate-schema
-
-# Save to file
-qtype generate-schema -o schema/qtype.schema.json
-```
-
-### Validate QType Specifications
-
-```bash
-# Validate a QType YAML file
-qtype validate examples/hello_world.qtype.yaml
-
-# Enable debug logging
-qtype --log-level DEBUG validate examples/hello_world.qtype.yaml
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Import errors after installation:**
-   - Ensure you're using the correct Python environment
-   - Use `PYTHONPATH=$(pwd)` when running tests or commands
-   - Alternatively, reinstall in editable mode: `uv pip install -e .`
-
-2. **Test failures:**
-   - Check that all dependencies are installed with `uv sync`
-   - Ensure you're running tests from the project root with the correct PYTHONPATH
-
-3. **Type checking errors:**
-   - Make sure all function signatures have type hints
-   - Check that imports are properly typed
-
-4. **CLI command not found:**
-   - Verify installation: `uv pip show qtype`
-   - Install in editable mode: `uv pip install -e .`
-
-### Getting Help
-
-- Check existing [issues](https://github.com/yourusername/qtype/issues)
-- Create a new issue with detailed information about your problem
-- Include Python version, operating system, and error messages
-
-## Development Dependencies
-
-Core dependencies (from `pyproject.toml`):
-- `jsonschema>=4.24.0` - JSON schema validation
-- `pydantic>=2.11.5` - Data validation and serialization  
-- `pyyaml>=6.0.2` - YAML parsing
-
-Additional development dependencies you may want to install:
-- `pytest` - Alternative testing framework
-- `pytest-cov` - Coverage reporting
-- `black` - Code formatting
-- `isort` - Import sorting
-- `flake8` - Linting
-- `mypy` - Type checking
-- `pre-commit` - Git hooks
-
-Install development tools:
-```bash
-uv pip install black isort flake8 mypy pytest pytest-cov pre-commit
 ```
 
 ## Next Steps

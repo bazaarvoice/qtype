@@ -4,6 +4,7 @@ QType CLI entry point for generating schemas and validating QType specs.
 
 import argparse
 import logging
+
 from .commands import *
 
 
@@ -49,7 +50,7 @@ def main() -> None:
     # Set logging level based on user input
     logging.basicConfig(
         level=getattr(logging, args.log_level),
-        format="%(levelname)s: %(message)s"
+        format="%(levelname)s: %(message)s",
     )
 
     # Dispatch to the selected subcommand

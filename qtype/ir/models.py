@@ -4,7 +4,9 @@ Semantic Intermediate Representation (IR) models.
 This module contains the semantic IR models that represent a resolved QType specification
 where all ID references have been replaced with actual object references.
 """
-from typing import List, Optional, Dict, Union, Any
+
+from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field
 
 # Import enums and simple classes from DSL that don't need IR-specific modifications
@@ -13,10 +15,10 @@ from qtype.dsl.models import (
     BaseRetriever,
     FeedbackType,
     FlowMode,
-    MemoryType,
     Input,
+    MemoryType,
+    Output,
     Tool,
-    Output
 )
 
 
@@ -24,7 +26,9 @@ class Prompt(BaseModel):
     """Points to a prompt template used for generation."""
 
     id: str = Field(..., description="Unique ID for the prompt.")
-    path: Optional[str] = Field(None, description="File path to the prompt template.")
+    path: Optional[str] = Field(
+        None, description="File path to the prompt template."
+    )
     template: Optional[str] = Field(
         None, description="Inline template string for the prompt."
     )
@@ -32,7 +36,8 @@ class Prompt(BaseModel):
         ..., description="List of input objects this prompt expects."
     )
     output_vars: Optional[List[Output]] = Field(
-        None, description="Optional list of output objects this prompt generates."
+        None,
+        description="Optional list of output objects this prompt generates.",
     )
 
 
@@ -55,9 +60,10 @@ class Model(BaseModel):
 
 class EmbeddingModel(Model):
     """Describes a model used for embedding text for vector search or memory."""
-    
+
     dimensions: int = Field(
-        ..., description="Dimensionality of the embedding vectors produced by this model."
+        ...,
+        description="Dimensionality of the embedding vectors produced by this model.",
     )
 
 
@@ -83,7 +89,9 @@ class Memory(BaseModel):
     """Persistent or session-level memory context for a user or flow."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
-    type: MemoryType = Field(..., description="The type of memory to store context.")
+    type: MemoryType = Field(
+        ..., description="The type of memory to store context."
+    )
     embedding_model: EmbeddingModel = Field(
         ..., description="Embedding model object used for storage."
     )
@@ -94,8 +102,10 @@ class Memory(BaseModel):
         None, description="Optional TTL for temporary memory."
     )
     use_for_context: bool = Field(
-        default=True, description="Whether this memory should be injected as context."
+        default=True,
+        description="Whether this memory should be injected as context.",
     )
+
 
 class ToolProvider(BaseModel):
     """Wraps and authenticates access to a set of tools (often from a single API or OpenAPI spec)."""
@@ -115,10 +125,10 @@ class ToolProvider(BaseModel):
     exclude_paths: Optional[List[str]] = Field(
         None, description="Exclude specific endpoints by path."
     )
-    auth: Optional['AuthorizationProvider'] = Field(
-        None, description="AuthorizationProvider object used to authenticate tool access."
+    auth: Optional["AuthorizationProvider"] = Field(
+        None,
+        description="AuthorizationProvider object used to authenticate tool access.",
     )
-
 
 
 class Feedback(BaseModel):
@@ -132,7 +142,8 @@ class Feedback(BaseModel):
         None, description="Question to show user for qualitative feedback."
     )
     prompt: Optional[Prompt] = Field(
-        None, description="Prompt object used to generate a follow-up based on feedback."
+        None,
+        description="Prompt object used to generate a follow-up based on feedback.",
     )
 
 
@@ -146,10 +157,10 @@ class Condition(BaseModel):
     exists: Optional[bool] = Field(
         None, description="Condition to check existence of a variable."
     )
-    then: List['Step'] = Field(
+    then: List["Step"] = Field(
         ..., description="List of step objects to run if condition matches."
     )
-    else_: Optional[List['Step']] = Field(
+    else_: Optional[List["Step"]] = Field(
         None,
         alias="else",
         description="Optional list of step objects to run if condition fails.",
@@ -166,14 +177,11 @@ class Step(BaseModel):
     output_vars: Optional[List[Output]] = Field(
         None, description="Output objects where results are stored."
     )
-    component: Optional[Union[
-        Prompt, 
-        Tool, 
-        ToolProvider, 
-        BaseRetriever, 
-        'Flow'
-    ]] = Field(
-        None, description="Component object to invoke (e.g., prompt, tool, retriever)."
+    component: Optional[
+        Union[Prompt, Tool, ToolProvider, BaseRetriever, "Flow"]
+    ] = Field(
+        None,
+        description="Component object to invoke (e.g., prompt, tool, retriever).",
     )
 
 
@@ -187,7 +195,7 @@ class Flow(Step):
     outputs: Optional[List[Output]] = Field(
         None, description="Output objects produced by the flow."
     )
-    steps: List[Union[Step, 'Flow']] = Field(
+    steps: List[Union[Step, "Flow"]] = Field(
         ..., description="List of step objects or nested flow objects."
     )
     conditions: Optional[List[Condition]] = Field(
@@ -217,7 +225,8 @@ class QTypeSpec(BaseModel):
         description="List of generative model objects available for use, including their providers and inference parameters.",
     )
     inputs: Optional[List[Input]] = Field(
-        None, description="User-facing input objects exposed by the application."
+        None,
+        description="User-facing input objects exposed by the application.",
     )
     prompts: Optional[List[Prompt]] = Field(
         None,
@@ -247,4 +256,3 @@ class QTypeSpec(BaseModel):
         None,
         description="Authorization provider objects and credentials used to access external APIs or cloud services.",
     )
-
