@@ -4,7 +4,10 @@ Welcome to the QType development guide! This document provides comprehensive ins
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
+- [P3. **Run tests** to ensure nothing is broken:
+   ```bash
+   PYTHONPATH=$(pwd) python -m unittest
+   ```isites](#prerequisites)
 - [Development Environment Setup](#development-environment-setup)
 - [Installing QType for Development](#installing-qtype-for-development)
 - [Running Tests](#running-tests)
@@ -33,8 +36,6 @@ cd qtype
 
 We recommend using `uv` for dependency management as it's faster and more reliable:
 
-#### Using uv (Recommended)
-
 ```bash
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -43,27 +44,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 ```
 
-#### Using pip and venv (Alternative)
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Linux/macOS:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt  # If you create one from pyproject.toml
-```
-
 ## Installing QType for Development
 
 Install QType in editable mode so changes to the source code are immediately reflected:
-
-### Using uv
 
 ```bash
 # Install in development mode
@@ -71,17 +54,6 @@ uv pip install -e .
 
 # Or if you want to install with specific development dependencies
 uv pip install -e ".[dev]"  # If dev extras are defined in pyproject.toml
-```
-
-### Using pip
-
-```bash
-# Activate your virtual environment first
-source venv/bin/activate  # Linux/macOS
-# or venv\Scripts\activate  # Windows
-
-# Install in editable mode
-pip install -e .
 ```
 
 After installation, you should be able to run the `qtype` command from anywhere:
@@ -92,63 +64,44 @@ qtype --help
 
 ## Running Tests
 
-Currently, the project has a basic test structure. Here's how to run tests:
+The project uses Python's built-in unittest framework. Here's how to run tests:
 
-### Using Python's unittest module
-
-```bash
-# Run all tests
-python -m unittest discover tests/
-
-# Run specific test file
-python -m unittest tests.test_loader
-python -m unittest tests.test_ir_resolution
-```
-
-### Using pytest (Recommended for development)
-
-If you prefer pytest, install it first:
+### Running Tests with unittest
 
 ```bash
-# With uv
-uv pip install pytest
-
-# With pip
-pip install pytest
-```
-
-Then run tests:
-
-```bash
-# Run all tests
-pytest
+# From the project root directory, run all tests
+PYTHONPATH=$(pwd) python -m unittest
 
 # Run with verbose output
-pytest -v
+PYTHONPATH=$(pwd) python -m unittest -v
+
+# Run all tests with discovery (explicit)
+PYTHONPATH=$(pwd) python -m unittest discover tests/
 
 # Run specific test file
-pytest tests/test_loader.py
+PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation
 
-# Run with coverage (install pytest-cov first)
-uv pip install pytest-cov
-pytest --cov=qtype tests/
+# Run specific test class
+PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueIDs
+
+# Run specific test method
+PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueIDs.test_unique_model_ids
 ```
 
-### Setting up Test Configuration
+### Alternative: Using uv run
 
-Create a `pytest.ini` file in the project root for consistent test configuration:
+```bash
+# Run all tests using uv
+PYTHONPATH=$(pwd) uv run python -m unittest
 
-```ini
-[tool:pytest]
-testpaths = tests
-python_files = test_*.py
-python_classes = Test*
-python_functions = test_*
-addopts = 
-    -v
-    --tb=short
-    --strict-markers
+# Run with verbose output
+PYTHONPATH=$(pwd) uv run python -m unittest -v
+
+# Run specific test file
+PYTHONPATH=$(pwd) uv run python -m unittest tests.test_semantic_validation
 ```
+
+The `PYTHONPATH=$(pwd)` ensures that Python can find the `qtype` module from the current directory without needing to install the package in development mode.
 
 ## Code Quality and Standards
 
@@ -171,9 +124,6 @@ Install these tools for better development experience:
 ```bash
 # Code formatting and linting
 uv pip install black isort flake8 mypy
-
-# Or with pip
-pip install black isort flake8 mypy
 ```
 
 #### Format code automatically:
@@ -352,19 +302,20 @@ qtype --log-level DEBUG validate examples/hello_world.qtype.yaml
 
 1. **Import errors after installation:**
    - Ensure you're using the correct Python environment
-   - Reinstall in editable mode: `pip install -e .`
+   - Use `PYTHONPATH=$(pwd)` when running tests or commands
+   - Alternatively, reinstall in editable mode: `uv pip install -e .`
 
 2. **Test failures:**
-   - Check that all dependencies are installed
-   - Ensure you're running tests from the project root
+   - Check that all dependencies are installed with `uv sync`
+   - Ensure you're running tests from the project root with the correct PYTHONPATH
 
 3. **Type checking errors:**
    - Make sure all function signatures have type hints
    - Check that imports are properly typed
 
 4. **CLI command not found:**
-   - Verify installation: `pip show qtype`
-   - Check that the virtual environment is activated
+   - Verify installation: `uv pip show qtype`
+   - Install in editable mode: `uv pip install -e .`
 
 ### Getting Help
 
@@ -380,13 +331,18 @@ Core dependencies (from `pyproject.toml`):
 - `pyyaml>=6.0.2` - YAML parsing
 
 Additional development dependencies you may want to install:
-- `pytest` - Testing framework
+- `pytest` - Alternative testing framework
 - `pytest-cov` - Coverage reporting
 - `black` - Code formatting
 - `isort` - Import sorting
 - `flake8` - Linting
 - `mypy` - Type checking
 - `pre-commit` - Git hooks
+
+Install development tools:
+```bash
+uv pip install black isort flake8 mypy pytest pytest-cov pre-commit
+```
 
 ## Next Steps
 

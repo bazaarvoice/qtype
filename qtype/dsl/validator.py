@@ -6,4 +6,3 @@ def validate_spec(args) -> QTypeSpec:
     with open(args.spec, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return QTypeSpec.model_validate(data)
-    

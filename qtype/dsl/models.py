@@ -7,7 +7,6 @@ from abc import ABC
 
 class VariableType(str, Enum):
     """Type of input expected from the user."""
-
     text = "text"
     number = "number"
     file = "file"
