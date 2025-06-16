@@ -4,10 +4,7 @@ Welcome to the QType development guide! This document provides comprehensive ins
 
 ## Table of Contents
 
-- [P3. **Run tests** to ensure nothing is broken:
-   ```bash
-   PYTHONPATH=$(pwd) python -m unittest
-   ```isites](#prerequisites)
+- [Prerequisites](#prerequisites)
 - [Development Environment Setup](#development-environment-setup)
 - [Installing QType for Development](#installing-qtype-for-development)
 - [Running Tests](#running-tests)
@@ -40,8 +37,8 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies and create virtual environment
-uv sync
+# Install all dependencies including development tools
+uv sync --all-extras
 ```
 
 ## Installing QType for Development
@@ -66,8 +63,6 @@ qtype --help
 
 The project uses Python's built-in unittest framework. Here's how to run tests:
 
-### Running Tests with unittest
-
 ```bash
 # From the project root directory, run all tests
 PYTHONPATH=$(pwd) python -m unittest
@@ -86,19 +81,6 @@ PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueID
 
 # Run specific test method
 PYTHONPATH=$(pwd) python -m unittest tests.test_semantic_validation.TestUniqueIDs.test_unique_model_ids
-```
-
-### Alternative: Using uv run
-
-```bash
-# Run all tests using uv
-PYTHONPATH=$(pwd) uv run python -m unittest
-
-# Run with verbose output
-PYTHONPATH=$(pwd) uv run python -m unittest -v
-
-# Run specific test file
-PYTHONPATH=$(pwd) uv run python -m unittest tests.test_semantic_validation
 ```
 
 The `PYTHONPATH=$(pwd)` ensures that Python can find the `qtype` module from the current directory without needing to install the package in development mode.

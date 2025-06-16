@@ -1,19 +1,20 @@
 """
-Intermediate Representation (IR) resolution logic for QType.
+Semantic validation for QType intermediate representation (IR).
+
+This module validates QTypeSpec objects for internal consistency, referential
+integrity, and adherence to semantic rules as defined in the QType specification.
 """
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Any, Dict, List, Set
 
-from qtype.dsl.models import (
-    EmbeddingModel,
-    QTypeSpec,
-    Step,
-)
+from qtype.dsl.models import EmbeddingModel, QTypeSpec, Step
+
 
 class SemanticValidationError(Exception):
-    """
-    Custom exception for semantic validation errors in QType specifications.
-    Contains a list of error messages.
-    """
+    """Raised when semantic validation fails on a QTypeSpec."""
+    
     def __init__(self, errors: List[str]) -> None:
         super().__init__("Semantic validation failed")
         self.errors = errors
@@ -21,291 +22,506 @@ class SemanticValidationError(Exception):
     def __str__(self) -> str:
         return "\n".join(self.errors)
 
-def validate_semantics(spec: QTypeSpec) -> None:
-    """
-    Validate a QTypeSpec object for IR consistency and correctness.
 
-    Args:
-        spec (QTypeSpec): The QType specification to validate.
-
-    Raises:
-        ValidationError: If any validation errors are found.
-    """
-    errors: List[str] = []
-    id_maps: Dict[str, Dict[str, Any]] = _collect_ids(spec, errors)
-    _check_unique_ids(id_maps, errors)
-    _check_referential_integrity(spec, id_maps, errors)
-    _check_flows(spec, id_maps, errors)
-    _check_memory_vs_retriever(spec, id_maps, errors)
-    _check_tooling_rules(spec, id_maps, errors)
-    _check_model_embedding_rules(spec, id_maps, errors)
-    _check_prompt_requirements(spec, id_maps, errors)
-    _check_circular_flows(spec, id_maps, errors)
-    if errors:
-        raise SemanticValidationError(errors)
-
-
-def _collect_ids(spec: QTypeSpec, errors: List[str]) -> Dict[str, Dict[str, Any]]:
-    """
-    Collect all IDs from the QTypeSpec for referential integrity checks.
-    """
-    id_maps: Dict[str, Dict[str, Any]] = {
-        "model": {m.id: m for m in spec.models or []},
-        "input": {i.id: i for i in spec.inputs or []},
-        "prompt": {p.id: p for p in spec.prompts or []},
-        "output": {},
-        "memory": {m.id: m for m in spec.memory or []},
-        "toolprovider": {tp.id: tp for tp in spec.tools or []},
-        "auth": {a.id: a for a in spec.auth or []},
-        "feedback": {f.id: f for f in spec.feedback or []},
-        "retriever": {r.id: r for r in spec.retrievers or []},
-        "flow": {f.id: f for f in spec.flows or []},
-        "step": {},
-        "tool": {},
-    }
-    for tp in spec.tools or []:
-        for t in tp.tools or []:
-            if t.id in id_maps["tool"]:
-                errors.append(f"Duplicate Tool.id: {t.id}")
-            id_maps["tool"][t.id] = t
-    for p in spec.prompts or []:
-        for outvar in p.output_vars or []:
-            id_maps["output"][outvar] = None
-    for f in spec.flows or []:
-        id_maps["flow"][f.id] = f
-        for s in f.steps:
-            if isinstance(s, Step):
-                if s.id in id_maps["step"]:
-                    errors.append(f"Duplicate Step.id: {s.id}")
-                id_maps["step"][s.id] = s
-    # Collect all output variables from steps
-    for s in id_maps["step"].values():
-        for outvar in s.output_vars or []:
-            if outvar in id_maps["output"]:
-                errors.append(f"Duplicate Output.id: {outvar}")
-            id_maps["output"][outvar] = None
-    return id_maps
-
-
-def _check_unique_ids(id_maps: Dict[str, Dict[str, Any]], errors: List[str]) -> None:
-    """
-    Ensure all IDs are unique within their respective categories.
-    """
-    for k, idmap in id_maps.items():
-        seen: Set[str] = set()
-        for id_ in idmap:
-            if id_ in seen:
-                errors.append(f"Duplicate {k.capitalize()}.id: {id_}")
-            seen.add(id_)
-
-
-def _check_referential_integrity(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Check that all references in the spec point to valid IDs.
-    """
-    for p in spec.prompts or []:
-        for var in p.input_vars:
-            if var not in id_maps["input"]:
-                errors.append(f"Prompt {p.id} input_var {var} not found in Input.id")
-        for var in p.output_vars or []:
-            if var not in id_maps["output"]:
-                errors.append(f"Prompt {p.id} output_var {var} not found in Output.id")
+@dataclass(frozen=True)
+class ComponentRegistry:
+    """Registry of component IDs organized by type for efficient lookups."""
     
-    for f in spec.flows or []:
-        for s in f.steps:
-            if isinstance(s, Step):
-                # Check if component exists in any of the valid component types
-                component_found = False
-                component_types = ["prompt", "tool", "flow", "retriever"]
+    models: Dict[str, Any]
+    inputs: Dict[str, Any]
+    prompts: Dict[str, Any]
+    outputs: Dict[str, Any]
+    memory: Dict[str, Any]
+    tool_providers: Dict[str, Any]
+    auth_providers: Dict[str, Any]
+    feedback: Dict[str, Any]
+    retrievers: Dict[str, Any]
+    flows: Dict[str, Any]
+    steps: Dict[str, Any]
+    tools: Dict[str, Any]
+
+
+class SemanticValidator:
+    """Validates semantic rules for QType specifications."""
+    
+    def __init__(self) -> None:
+        self._errors: List[str] = []
+    
+    def validate(self, spec: QTypeSpec) -> None:
+        """
+        Validate a QTypeSpec for semantic correctness.
+        
+        Args:
+            spec: The QType specification to validate
+            
+        Raises:
+            SemanticValidationError: If validation fails with detailed errors
+        """
+        self._errors.clear()
+        registry = self._build_component_registry(spec)
+        
+        # Execute all validation rules
+        self._validate_unique_ids(registry)
+        self._validate_referential_integrity(spec, registry)
+        self._validate_flows(spec, registry)
+        self._validate_memory_usage(spec, registry)
+        self._validate_tooling(spec, registry)
+        self._validate_models(spec, registry)
+        self._validate_prompts(spec, registry)
+        self._validate_circular_dependencies(spec, registry)
+        
+        if self._errors:
+            raise SemanticValidationError(self._errors)
+    
+    def _build_component_registry(self, spec: QTypeSpec) -> ComponentRegistry:
+        """Build a registry of all components indexed by ID."""
+        registry = ComponentRegistry(
+            models={m.id: m for m in spec.models or []},
+            inputs={i.id: i for i in spec.inputs or []},
+            prompts={p.id: p for p in spec.prompts or []},
+            outputs={},
+            memory={m.id: m for m in spec.memory or []},
+            tool_providers={tp.id: tp for tp in spec.tools or []},
+            auth_providers={a.id: a for a in spec.auth or []},
+            feedback={f.id: f for f in spec.feedback or []},
+            retrievers={r.id: r for r in spec.retrievers or []},
+            flows={f.id: f for f in spec.flows or []},
+            steps={},
+            tools={},
+        )
+        
+        self._collect_nested_components(spec, registry)
+        return registry
+    
+    def _collect_nested_components(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Collect tools, outputs, and steps from nested structures."""
+        # Collect tools from tool providers
+        for tool_provider in spec.tools or []:
+            for tool in tool_provider.tools or []:
+                if tool.id in registry.tools:
+                    self._errors.append(f"Duplicate Tool.id: {tool.id}")
+                registry.tools[tool.id] = tool
+        
+        # Collect output variables from prompts
+        for prompt in spec.prompts or []:
+            for output_var in prompt.output_vars or []:
+                registry.outputs[output_var] = None
+        
+        # Collect steps from flows and their output variables
+        for flow in spec.flows or []:
+            for step in flow.steps:
+                if isinstance(step, Step):
+                    if step.id in registry.steps:
+                        self._errors.append(f"Duplicate Step.id: {step.id}")
+                    registry.steps[step.id] = step
+                    
+                    for output_var in step.output_vars or []:
+                        if output_var in registry.outputs:
+                            self._errors.append(f"Duplicate Output.id: {output_var}")
+                        registry.outputs[output_var] = None
+
+    
+    def _validate_unique_ids(self, registry: ComponentRegistry) -> None:
+        """Ensure all IDs are unique within their component categories."""
+        component_types = [
+            ("Model", registry.models),
+            ("Input", registry.inputs),
+            ("Prompt", registry.prompts),
+            ("Memory", registry.memory),
+            ("ToolProvider", registry.tool_providers),
+            ("AuthorizationProvider", registry.auth_providers),
+            ("Feedback", registry.feedback),
+            ("Retriever", registry.retrievers),
+            ("Flow", registry.flows),
+            ("Step", registry.steps),
+            ("Tool", registry.tools),
+        ]
+        
+        for component_type, components in component_types:
+            seen_ids: Set[str] = set()
+            for component_id in components:
+                if component_id in seen_ids:
+                    self._errors.append(
+                        f"Duplicate {component_type}.id: {component_id}"
+                    )
+                seen_ids.add(component_id)
+    
+    def _validate_referential_integrity(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that all component references point to existing components."""
+        self._validate_prompt_references(spec, registry)
+        self._validate_step_references(spec, registry)
+        self._validate_retriever_references(spec, registry)
+        self._validate_memory_references(spec, registry)
+        self._validate_tool_provider_references(spec, registry)
+        self._validate_flow_references(spec, registry)
+    
+    def _validate_prompt_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that prompt input/output variables reference existing components."""
+        for prompt in spec.prompts or []:
+            for input_var in prompt.input_vars:
+                if input_var not in registry.inputs:
+                    self._errors.append(
+                        f"Prompt '{prompt.id}' references non-existent "
+                        f"input variable '{input_var}'"
+                    )
+            
+            for output_var in prompt.output_vars or []:
+                if output_var not in registry.outputs:
+                    self._errors.append(
+                        f"Prompt '{prompt.id}' references non-existent "
+                        f"output variable '{output_var}'"
+                    )
+    
+    def _validate_step_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that step components and variables reference existing components."""
+        for flow in spec.flows or []:
+            for step in flow.steps:
+                if not isinstance(step, Step):
+                    continue
                 
-                for component_type in component_types:
-                    if s.component in id_maps[component_type]:
-                        component_found = True
-                        break
+                # Validate step component exists
+                component_found = any(
+                    step.component in components
+                    for components in [
+                        registry.prompts,
+                        registry.tools,
+                        registry.flows,
+                        registry.retrievers,
+                    ]
+                )
                 
                 if not component_found:
-                    valid_types = ", ".join(component_types)
-                    errors.append(
-                        f"Step {s.id} component {s.component} not found in any valid component type ({valid_types})"
+                    self._errors.append(
+                        f"Step '{step.id}' references non-existent "
+                        f"component '{step.component}'"
                     )
                 
-                for var in s.input_vars or []:
-                    if var not in id_maps["input"]:
-                        errors.append(
-                            f"Step {s.id} input_var {var} not found in Input.id"
+                # Validate step variables
+                for input_var in step.input_vars or []:
+                    if input_var not in registry.inputs:
+                        self._errors.append(
+                            f"Step '{step.id}' references non-existent "
+                            f"input variable '{input_var}'"
                         )
-                for var in s.output_vars or []:
-                    if var not in id_maps["output"]:
-                        errors.append(
-                            f"Step {s.id} output_var {var} not found in Output.id"
+                
+                for output_var in step.output_vars or []:
+                    if output_var not in registry.outputs:
+                        self._errors.append(
+                            f"Step '{step.id}' references non-existent "
+                            f"output variable '{output_var}'"
                         )
     
-    for r in id_maps["retriever"].values():
-        if hasattr(r, "embedding_model") and r.embedding_model.id not in id_maps["model"]:
-            errors.append(
-                f"Retriever {r.id} embedding_model {r.embedding_model} not found in Model.id"
-            )
-        # Confirm the embedding_model is an instance of EmbeddingModel
-        if hasattr(r, "embedding_model") and not isinstance(
-            r.embedding_model, EmbeddingModel
-        ):
-            errors.append(
-                f"Retriever {r.id} embedding_model {r.embedding_model} must be an instance of EmbeddingModel"
-            )
-    
-    for m in spec.memory or []:
-        if m.embedding_model not in id_maps["model"]:
-            errors.append(
-                f"Memory {m.id} embedding_model {m.embedding_model} not found in Model.id"
-            )
-    
-    for tp in spec.tools or []:
-        if tp.auth and tp.auth not in id_maps["auth"]:
-            errors.append(
-                f"ToolProvider {tp.id} auth {tp.auth} not found in AuthorizationProvider.id"
-            )
-    
-    for f in spec.flows or []:
-        for mem in f.memory or []:
-            if mem not in id_maps["memory"]:
-                errors.append(f"Flow {f.id} memory {mem} not found in Memory.id")
-
-
-def _check_flows(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Validate flow structure, step references, and flow-specific rules.
-    """
-    for f in spec.flows or []:
-        step_ids: Set[str] = set()
-        for s in f.steps:
-            if isinstance(s, Step):
-                if s.id in step_ids:
-                    errors.append(f"Duplicate Step.id {s.id} in Flow {f.id}")
-                step_ids.add(s.id)
-            elif isinstance(s, str):
-                if s not in id_maps["flow"]:
-                    errors.append(
-                        f"Flow {f.id} steps[] string {s} not found in Flow.id"
-                    )
-        for var in f.inputs or []:
-            if var not in id_maps["input"]:
-                errors.append(f"Flow {f.id} input {var} not found in Input.id")
-        for var in f.outputs or []:
-            if var not in id_maps["output"]:
-                errors.append(f"Flow {f.id} output {var} not found in Output.id")
-        for cond in f.conditions or []:
-            for then_id in cond.then:
-                if then_id not in step_ids and then_id not in id_maps["flow"]:
-                    errors.append(
-                        f"Flow {f.id} condition then[] {then_id} not found in Step.id or Flow.id"
-                    )
-            for else_id in cond.else_ or []:
-                if else_id not in step_ids and else_id not in id_maps["flow"]:
-                    errors.append(
-                        f"Flow {f.id} condition else_[] {else_id} not found in Step.id or Flow.id"
-                    )
-        if f.mode == "chat":
-            if not f.memory:
-                errors.append(f"Flow {f.id} mode=chat must set memory[]")
-        else:
-            if f.memory:
-                errors.append(f"Flow {f.id} mode!=chat must not set memory[]")
-
-
-def _check_memory_vs_retriever(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Ensure Memory IDs are not used as Step components in flows.
-    """
-    mem_ids: Set[str] = {m.id for m in spec.memory or []}
-    for f in spec.flows or []:
-        for s in f.steps:
-            if isinstance(s, Step) and s.component in mem_ids:
-                errors.append(
-                    f"Memory.id {s.component} used as Step.component in Flow {f.id}"
+    def _validate_retriever_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that retrievers reference valid embedding models."""
+        for retriever in registry.retrievers.values():
+            if not hasattr(retriever, "embedding_model"):
+                continue
+                
+            embedding_model_id = retriever.embedding_model
+            if hasattr(embedding_model_id, "id"):
+                embedding_model_id = embedding_model_id.id
+                
+            if embedding_model_id not in registry.models:
+                self._errors.append(
+                    f"Retriever '{retriever.id}' references non-existent "
+                    f"embedding model '{embedding_model_id}'"
                 )
+            
+            # Validate embedding model type
+            if (hasattr(retriever, "embedding_model") and 
+                not isinstance(retriever.embedding_model, EmbeddingModel)):
+                self._errors.append(
+                    f"Retriever '{retriever.id}' embedding_model must be "
+                    f"an instance of EmbeddingModel"
+                )
+    
+    def _validate_memory_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that memory components reference valid embedding models."""
+        for memory in spec.memory or []:
+            if memory.embedding_model not in registry.models:
+                self._errors.append(
+                    f"Memory '{memory.id}' references non-existent "
+                    f"embedding model '{memory.embedding_model}'"
+                )
+    
+    def _validate_tool_provider_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that tool providers reference valid auth providers."""
+        for tool_provider in spec.tools or []:
+            if tool_provider.auth and tool_provider.auth not in registry.auth_providers:
+                self._errors.append(
+                    f"ToolProvider '{tool_provider.id}' references non-existent "
+                    f"auth provider '{tool_provider.auth}'"
+                )
+    
+    def _validate_flow_references(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate that flows reference valid inputs, outputs, and memory."""
+        for flow in spec.flows or []:
+            for input_var in flow.inputs or []:
+                if input_var not in registry.inputs:
+                    self._errors.append(
+                        f"Flow '{flow.id}' references non-existent "
+                        f"input variable '{input_var}'"
+                    )
+            
+            for output_var in flow.outputs or []:
+                if output_var not in registry.outputs:
+                    self._errors.append(
+                        f"Flow '{flow.id}' references non-existent "
+                        f"output variable '{output_var}'"
+                    )
+            
+            for memory_id in flow.memory or []:
+                if memory_id not in registry.memory:
+                    self._errors.append(
+                        f"Flow '{flow.id}' references non-existent "
+                        f"memory '{memory_id}'"
+                    )
 
-
-def _check_tooling_rules(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Validate ToolProvider and Tool rules for uniqueness and schema requirements.
-    """
-    for tp in spec.tools or []:
+    
+    def _validate_flows(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate flow structure and rules."""
+        for flow in spec.flows or []:
+            self._validate_flow_steps(flow, registry)
+            self._validate_flow_conditions(flow, registry)
+            self._validate_flow_memory_rules(flow)
+    
+    def _validate_flow_steps(
+        self, 
+        flow: Any, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate flow step uniqueness and references."""
+        step_ids: Set[str] = set()
+        
+        for step in flow.steps:
+            if isinstance(step, Step):
+                if step.id in step_ids:
+                    self._errors.append(
+                        f"Duplicate Step.id '{step.id}' in Flow '{flow.id}'"
+                    )
+                step_ids.add(step.id)
+            elif isinstance(step, str):
+                if step not in registry.flows:
+                    self._errors.append(
+                        f"Flow '{flow.id}' references non-existent "
+                        f"nested flow '{step}'"
+                    )
+    
+    def _validate_flow_conditions(
+        self, 
+        flow: Any, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate flow conditional logic references."""
+        for condition in flow.conditions or []:
+            step_ids = {
+                step.id for step in flow.steps if isinstance(step, Step)
+            }
+            
+            for then_id in condition.then:
+                if (then_id not in step_ids and 
+                    then_id not in registry.flows):
+                    self._errors.append(
+                        f"Flow '{flow.id}' condition references non-existent "
+                        f"step or flow '{then_id}' in then clause"
+                    )
+            
+            for else_id in condition.else_ or []:
+                if (else_id not in step_ids and 
+                    else_id not in registry.flows):
+                    self._errors.append(
+                        f"Flow '{flow.id}' condition references non-existent "
+                        f"step or flow '{else_id}' in else clause"
+                    )
+    
+    def _validate_flow_memory_rules(self, flow: Any) -> None:
+        """Validate flow memory rules based on mode."""
+        if flow.mode == "chat":
+            if not flow.memory:
+                self._errors.append(
+                    f"Flow '{flow.id}' with mode 'chat' must define memory"
+                )
+        else:
+            if flow.memory:
+                self._errors.append(
+                    f"Flow '{flow.id}' with mode '{flow.mode}' "
+                    f"must not define memory"
+                )
+    
+    def _validate_memory_usage(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Ensure Memory IDs are not misused as Step components."""
+        memory_ids = {memory.id for memory in spec.memory or []}
+        
+        for flow in spec.flows or []:
+            for step in flow.steps:
+                if isinstance(step, Step) and step.component in memory_ids:
+                    self._errors.append(
+                        f"Memory '{step.component}' cannot be used as a "
+                        f"Step component in Flow '{flow.id}'. "
+                        f"Use retrievers for step-level operations."
+                    )
+    
+    def _validate_tooling(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate tool provider and tool constraints."""
+        for tool_provider in spec.tools or []:
+            self._validate_tool_uniqueness(tool_provider)
+            self._validate_tool_schemas(tool_provider)
+    
+    def _validate_tool_uniqueness(self, tool_provider: Any) -> None:
+        """Validate tool ID and name uniqueness within a provider."""
         tool_names: Set[str] = set()
         tool_ids: Set[str] = set()
-        for t in tp.tools or []:
-            if t.id in tool_ids:
-                errors.append(f"Duplicate Tool.id {t.id} in ToolProvider {tp.id}")
-            tool_ids.add(t.id)
-            if t.name in tool_names:
-                errors.append(f"Duplicate Tool.name {t.name} in ToolProvider {tp.id}")
-            tool_names.add(t.name)
-            if not t.input_schema or not t.output_schema:
-                errors.append(
-                    f"Tool {t.id} in ToolProvider {tp.id} missing input_schema or output_schema"
+        
+        for tool in tool_provider.tools or []:
+            if tool.id in tool_ids:
+                self._errors.append(
+                    f"Duplicate Tool.id '{tool.id}' in "
+                    f"ToolProvider '{tool_provider.id}'"
+                )
+            tool_ids.add(tool.id)
+            
+            if tool.name in tool_names:
+                self._errors.append(
+                    f"Duplicate Tool.name '{tool.name}' in "
+                    f"ToolProvider '{tool_provider.id}'"
+                )
+            tool_names.add(tool.name)
+    
+    def _validate_tool_schemas(self, tool_provider: Any) -> None:
+        """Validate that tools have required schemas."""
+        for tool in tool_provider.tools or []:
+            if not tool.input_schema or not tool.output_schema:
+                self._errors.append(
+                    f"Tool '{tool.id}' in ToolProvider '{tool_provider.id}' "
+                    f"must define both input_schema and output_schema"
+                )
+    
+    def _validate_models(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate model constraints and embedding model rules."""
+        for model in spec.models or []:
+            if isinstance(model, EmbeddingModel):
+                if hasattr(model, "inference_params"):
+                    self._errors.append(
+                        f"EmbeddingModel '{model.id}' must not have "
+                        f"inference_params (reserved for Model instances)"
+                    )
+            
+            if hasattr(model, "model"):
+                self._errors.append(
+                    f"Model '{model.id}' must not have 'model' field "
+                    f"(reserved for EmbeddingModel)"
+                )
+    
+    def _validate_prompts(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Validate prompt template/path requirements."""
+        for prompt in spec.prompts or []:
+            has_template = prompt.template is not None
+            has_path = prompt.path is not None
+            
+            if has_template == has_path:  # Both true or both false
+                self._errors.append(
+                    f"Prompt '{prompt.id}' must define either template "
+                    f"or path, but not both"
+                )
+    
+    def _validate_circular_dependencies(
+        self, 
+        spec: QTypeSpec, 
+        registry: ComponentRegistry
+    ) -> None:
+        """Detect circular references in flow dependencies."""
+        for flow in spec.flows or []:
+            self._detect_circular_flow_reference(flow.id, set(), registry)
+    
+    def _detect_circular_flow_reference(
+        self, 
+        flow_id: str, 
+        visited: Set[str], 
+        registry: ComponentRegistry
+    ) -> None:
+        """Recursively detect circular flow references."""
+        if flow_id in visited:
+            self._errors.append(
+                f"Circular reference detected in Flow '{flow_id}'"
+            )
+            return
+        
+        flow = registry.flows.get(flow_id)
+        if not flow:
+            return
+        
+        visited.add(flow_id)
+        
+        for step in flow.steps:
+            if isinstance(step, str):  # Nested flow reference
+                self._detect_circular_flow_reference(
+                    step, visited.copy(), registry
                 )
 
 
-def _check_model_embedding_rules(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
+def validate_semantics(spec: QTypeSpec) -> None:
     """
-    Validate consistency between Model and EmbeddingModel providers and fields.
+    Validate a QTypeSpec for semantic correctness.
+    
+    This function provides a convenient interface to the SemanticValidator class.
+    
+    Args:
+        spec: The QType specification to validate
+        
+    Raises:
+        SemanticValidationError: If validation fails with detailed errors
     """
-    model_providers = {m.provider for m in spec.models or []}
-    # No need to check for EmbeddingModel separately, just use model ids
-    for m in spec.models or []:
-        if isinstance(m, EmbeddingModel) and hasattr(m, "inference_params"):
-            errors.append(f"EmbeddingModel {m.id} must not have inference_params")
-        if hasattr(m, "model"):
-            errors.append(
-                f"Model {m.id} must not have 'model' field (reserved for EmbeddingModel)"
-            )
-
-
-def _check_prompt_requirements(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Ensure each Prompt defines either a template or a path, but not both.
-    """
-    for p in spec.prompts or []:
-        if (p.template is None and p.path is None) or (p.template and p.path):
-            errors.append(
-                f"Prompt {p.id} must define either template or path, but not both"
-            )
-        for var in p.input_vars:
-            if var not in id_maps["input"]:
-                errors.append(f"Prompt {p.id} input_var {var} not found in Input.id")
-        for var in p.output_vars or []:
-            if var not in id_maps["output"]:
-                errors.append(f"Prompt {p.id} output_var {var} not found in Output.id")
-
-
-def _check_circular_flows(
-    spec: QTypeSpec, id_maps: Dict[str, Dict[str, Any]], errors: List[str]
-) -> None:
-    """
-    Detect circular references in flows.
-    """
-    def visit(flow_id: str, seen: Set[str]) -> None:
-        if flow_id in seen:
-            errors.append(f"Circular reference detected in Flow {flow_id}")
-            return
-        seen.add(flow_id)
-        flow = id_maps["flow"].get(flow_id)
-        if not flow:
-            return
-        for s in flow.steps:
-            if isinstance(s, str):
-                visit(s, seen.copy())
-
-    for f in spec.flows or []:
-        visit(f.id, set())
+    validator = SemanticValidator()
+    validator.validate(spec)

@@ -11,8 +11,50 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
+[tool.uv]
+# Install dev dependencies by default when running uv sync
+default-groups = ["dev"]
+
 [tool.setuptools.packages.find]
 include = ["qtype"]
 
 [project.scripts]
 qtype = "qtype.cli:main"
+
+# Tool configurations
+[tool.black]
+line-length = 79
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 79
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

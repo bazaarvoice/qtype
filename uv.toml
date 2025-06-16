@@ -1,0 +1,7 @@
+# UV-specific configuration for the QType project
+
+# Use highest resolution strategy for dependencies  
+resolution = "highest"
+
+# Compile bytecode for faster subsequent runs
+compile-bytecode = true
