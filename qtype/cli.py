@@ -5,7 +5,7 @@ QType CLI entry point for generating schemas and validating QType specs.
 import argparse
 import logging
 
-from .commands import *
+from .commands import generate_schema_main, validate_main
 
 
 def main() -> None:

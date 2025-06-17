@@ -1,15 +1,17 @@
 """
 Semantic Intermediate Representation (IR) models.
 
-This module contains the semantic IR models that represent a resolved QType specification
-where all ID references have been replaced with actual object references.
+This module contains the semantic IR models that represent a resolved QType
+specification where all ID references have been replaced with actual object
+references.
 """
 
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-# Import enums and simple classes from DSL that don't need IR-specific modifications
+# Import enums and simple classes from DSL that don't need IR-specific
+# modifications
 from qtype.dsl.models import (
     AuthorizationProvider,
     BaseRetriever,
@@ -25,6 +27,7 @@ from qtype.dsl.models import (
 class Prompt(BaseModel):
     """Points to a prompt template used for generation."""
 
+    # type: ignore
     id: str = Field(..., description="Unique ID for the prompt.")
     path: Optional[str] = Field(
         None, description="File path to the prompt template."
@@ -50,10 +53,13 @@ class Model(BaseModel):
     )
     model_id: Optional[str] = Field(
         None,
-        description="The specific model name or ID for the provider. If None, id is used",
+        description=(
+            "The specific model name or ID for the provider. "
+            "If None, id is used"
+        ),
     )
     inference_params: Optional[Dict[str, Any]] = Field(
-        default_factory=dict,
+        default_factory=Dict,
         description="Optional inference parameters like temperature or max_tokens.",
     )
 
@@ -132,7 +138,7 @@ class ToolProvider(BaseModel):
 
 
 class Feedback(BaseModel):
-    """Describes how and where to collect feedback on generated responses."""
+    """Describes how and where to collect >feedback on generated responses."""
 
     id: str = Field(..., description="Unique ID of the feedback config.")
     type: FeedbackType = Field(
@@ -218,7 +224,8 @@ class QTypeSpec(BaseModel):
     """
 
     version: str = Field(
-        ..., description="Version of the QType specification schema used."
+        ...,
+        description="Version of the QType specification schema used.",  # type: ignore
     )
     models: Optional[List[Model]] = Field(
         None,

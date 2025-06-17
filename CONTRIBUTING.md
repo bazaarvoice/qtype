@@ -121,14 +121,14 @@ This project follows strict Python coding standards:
 #### Format code automatically:
 
 ```bash
-# Format with black
-black qtype/ tests/
+# Format with ruff
+ruff format qtype/ tests/
+
+# Lint with ruff
+ruff check qtype/ tests/
 
 # Sort imports
 isort qtype/ tests/
-
-# Check style with flake8
-flake8 qtype/ tests/
 
 # Type checking with mypy
 mypy qtype/
@@ -145,21 +145,17 @@ Create `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.0.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
     hooks:
-      - id: black
-        language_version: python3.9
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.0
     hooks:
       - id: isort
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
@@ -226,9 +222,9 @@ qtype/
 
 5. **Check code quality:**
    ```bash
-   black qtype/ tests/
+   ruff format qtype/ tests/
+   ruff check qtype/ tests/
    isort qtype/ tests/
-   flake8 qtype/ tests/
    mypy qtype/
    ```
 

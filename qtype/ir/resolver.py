@@ -6,7 +6,7 @@ semantic intermediate representation (IR) equivalents, where all ID references
 are resolved to actual object references.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 import qtype.dsl.models as dsl
 import qtype.ir.models as ir
