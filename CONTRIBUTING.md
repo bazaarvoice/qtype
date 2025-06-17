@@ -141,29 +141,8 @@ uv pip install pre-commit
 pre-commit install
 ```
 
-Create `.pre-commit-config.yaml`:
+Settings are in `.pre-commit-config.yaml`:
 
-```yaml
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-PyYAML]
-        args: [--strict]
-```
 
 ## Project Structure
 

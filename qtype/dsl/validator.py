@@ -3,7 +3,10 @@ import yaml
 from qtype.dsl.models import QTypeSpec
 
 
-def validate_spec(args) -> QTypeSpec:
+from argparse import Namespace
+
+
+def validate_spec(args: Namespace) -> QTypeSpec:
     """Validate a QType YAML spec file against the QTypeSpec schema."""
     with open(args.spec, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)

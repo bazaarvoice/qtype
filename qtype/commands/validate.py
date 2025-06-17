@@ -8,8 +8,9 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from qtype.dsl import validate_spec
-from qtype.ir import *
+from qtype.dsl.validator import validate_spec
+from qtype.ir.validator import validate_semantics
+from qtype.ir.resolver import resolve_semantic_ir
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def validate_main(args: Any) -> None:
         sys.exit(1)
 
     try:
-        intermediate_representation = resolve_semantic_ir(spec)
+        resolve_semantic_ir(spec)
         logger.info("✅ Semantic resolution successful.")
     except Exception as exc:
         logger.error("❌ Semantic resolution failed:\n%s", exc)
