@@ -13,6 +13,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "types-PyYAML>=6.0.2",
     "ruff>=0.1.0",
     "isort>=5.13.0",
     "mypy>=1.8.0",

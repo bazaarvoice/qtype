@@ -27,7 +27,6 @@ from qtype.dsl.models import (
 class Prompt(BaseModel):
     """Points to a prompt template used for generation."""
 
-    # type: ignore
     id: str = Field(..., description="Unique ID for the prompt.")
     path: Optional[str] = Field(
         None, description="File path to the prompt template."
@@ -59,7 +58,7 @@ class Model(BaseModel):
         ),
     )
     inference_params: Optional[Dict[str, Any]] = Field(
-        default_factory=Dict,
+        ...,
         description="Optional inference parameters like temperature or max_tokens.",
     )
 
@@ -225,7 +224,7 @@ class QTypeSpec(BaseModel):
 
     version: str = Field(
         ...,
-        description="Version of the QType specification schema used.",  # type: ignore
+        description="Version of the QType specification schema used.",
     )
     models: Optional[List[Model]] = Field(
         None,

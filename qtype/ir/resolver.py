@@ -6,7 +6,7 @@ semantic intermediate representation (IR) equivalents, where all ID references
 are resolved to actual object references.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import qtype.dsl.models as dsl
 import qtype.ir.models as ir
@@ -23,7 +23,8 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
     Transform a DSL QTypeSpec into its semantic intermediate representation.
 
     This function resolves all ID references in the DSL spec to actual object
-    references in the IR spec, creating a fully resolved semantic representation.
+    references in the IR spec, creating a fully resolved semantic
+    representation.
 
     Args:
         dsl_spec: The DSL QTypeSpec to transform
@@ -83,7 +84,7 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
 
 def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
     """Build lookup maps for all objects in the DSL spec."""
-    lookup_maps = {
+    lookup_maps: Dict[str, Dict[str, Any]] = {
         "models": {m.id: m for m in dsl_spec.models or []},
         "inputs": {i.id: i for i in dsl_spec.inputs or []},
         "prompts": {p.id: p for p in dsl_spec.prompts or []},
@@ -127,7 +128,7 @@ def _resolve_models(
     dsl_models: List[dsl.Model], lookup_maps: Dict[str, Dict[str, Any]]
 ) -> List[ir.Model]:
     """Resolve DSL models to IR models."""
-    ir_models = []
+    ir_models: List[ir.Model] = []
     for model in dsl_models:
         if isinstance(model, dsl.EmbeddingModel):
             ir_models.append(
@@ -241,7 +242,7 @@ def _resolve_retrievers(
     """Resolve DSL retrievers to IR retrievers with model object references."""
     model_map = {m.id: m for m in ir_models}
 
-    ir_retrievers = []
+    ir_retrievers: List[ir.BaseRetriever] = []
     for retriever in dsl_retrievers:
         if isinstance(retriever, dsl.VectorDBRetriever):
             # Find the embedding model
@@ -453,6 +454,9 @@ def _resolve_flows(
         ir_flow = ir.Flow(
             id=flow.id,
             mode=flow.mode,
+            input_vars=resolved_inputs if resolved_inputs else None,
+            output_vars=resolved_outputs if resolved_outputs else None,
+            component=None,  # Flows don't have components
             inputs=resolved_inputs if resolved_inputs else None,
             outputs=resolved_outputs if resolved_outputs else None,
             steps=[],  # Will be resolved in second pass
@@ -468,7 +472,7 @@ def _resolve_flows(
         ir_flow = ir_flows[i]
 
         # Resolve steps
-        resolved_steps = []
+        resolved_steps: List[Union[ir.Step, ir.Flow]] = []
         for step in flow.steps:
             if isinstance(step, str):
                 # Flow reference
@@ -494,13 +498,16 @@ def _resolve_flows(
         if flow.conditions:
             resolved_conditions = []
             for condition in flow.conditions:
-                resolved_then = []
+                resolved_then: List[ir.Step] = []
                 for step_id in condition.then:
                     # Find step in current flow or reference to another flow
                     step_found = False
-                    for step in resolved_steps:
-                        if hasattr(step, "id") and step.id == step_id:
-                            resolved_then.append(step)
+                    for resolved_step in resolved_steps:
+                        if (
+                            hasattr(resolved_step, "id")
+                            and resolved_step.id == step_id
+                        ):
+                            resolved_then.append(resolved_step)
                             step_found = True
                             break
                     if not step_found and step_id in flow_map:
@@ -511,12 +518,15 @@ def _resolve_flows(
                             f"Step or flow '{step_id}' not found for condition"
                         )
 
-                resolved_else = []
+                resolved_else: List[ir.Step] = []
                 for step_id in condition.else_ or []:
                     step_found = False
-                    for step in resolved_steps:
-                        if hasattr(step, "id") and step.id == step_id:
-                            resolved_else.append(step)
+                    for resolved_step in resolved_steps:
+                        if (
+                            hasattr(resolved_step, "id")
+                            and resolved_step.id == step_id
+                        ):
+                            resolved_else.append(resolved_step)
                             step_found = True
                             break
                     if not step_found and step_id in flow_map:
@@ -533,7 +543,7 @@ def _resolve_flows(
                         equals=condition.equals,
                         exists=condition.exists,
                         then=resolved_then,
-                        else_=resolved_else if resolved_else else None,
+                        **{"else": resolved_else if resolved_else else None},
                     )
                 )
 
@@ -571,7 +581,9 @@ def _resolve_step(
         resolved_outputs.append(output_map[output_id])
 
     # Resolve component
-    component_obj = None
+    component_obj: Optional[
+        Union[ir.Prompt, ir.Tool, ir.ToolProvider, ir.BaseRetriever, ir.Flow]
+    ] = None
     if dsl_step.component:
         # Check in each component type
         if dsl_step.component in prompt_map:
@@ -584,7 +596,8 @@ def _resolve_step(
             component_obj = flow_map[dsl_step.component]
         else:
             raise IRResolutionError(
-                f"Component '{dsl_step.component}' not found for step '{dsl_step.id}'"
+                f"Component '{dsl_step.component}' not found for step "
+                f"'{dsl_step.id}'"
             )
 
     return ir.Step(
