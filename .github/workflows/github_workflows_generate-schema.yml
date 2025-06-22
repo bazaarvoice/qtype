@@ -1,0 +1,50 @@
+name: Generate JSON Schema
+
+on:
+  push:
+    branches: [ main ]
+    # Exclude pushes made by the bot to prevent infinite loops
+    paths-ignore:
+      - 'schema/qtype.schema.json'
+
+jobs:
+  generate-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use a token that can push back to the repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install qtype and dependencies
+        run: pip install .
+        
+      - name: Create schema directory if it doesn't exist
+        run: mkdir -p schema
+        
+      - name: Generate JSON schema
+        run: qtype generate-schema -o schema/qtype.schema.json
+        
+      - name: Check if schema changed
+        id: check-changes
+        run: |
+          if git diff --quiet schema/qtype.schema.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Commit and push schema if changed
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add schema/qtype.schema.json
+          git commit -m "Update JSON schema [skip ci]"
+          git push
