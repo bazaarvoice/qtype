@@ -7,12 +7,8 @@ semantic_ir.md Section 6.
 
 import unittest
 
-from qtype.dsl.model import (
-    EmbeddingModel,
-    Model,
-    QTypeSpec,
-)
-from qtype.ir.validator import SemanticValidationError, validate_semantics
+from qtype.dsl.model import EmbeddingModel, Model, QTypeSpec
+from qtype.ir.validator import validate_semantics
 
 
 class ModelRulesTest(unittest.TestCase):

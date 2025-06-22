@@ -7,12 +7,7 @@ as defined in semantic_ir.md Section 7.
 
 import unittest
 
-from qtype.dsl.model import (
-    Input,
-    Prompt,
-    QTypeSpec,
-    VariableType,
-)
+from qtype.dsl.model import Input, Prompt, QTypeSpec, VariableType
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
 

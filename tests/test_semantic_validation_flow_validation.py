@@ -244,9 +244,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that chat mode flows without memory fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            flows=[
-                Flow(id="chat_flow", mode=FlowMode.chat, steps=[])
-            ],
+            flows=[Flow(id="chat_flow", mode=FlowMode.chat, steps=[])],
         )
         with self.assertRaises(SemanticValidationError) as context:
             validate_semantics(spec)
@@ -259,9 +257,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that non-chat mode flows without memory pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            flows=[
-                Flow(id="complete_flow", mode=FlowMode.complete, steps=[])
-            ],
+            flows=[Flow(id="complete_flow", mode=FlowMode.complete, steps=[])],
         )
         validate_semantics(spec)
 

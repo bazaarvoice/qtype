@@ -99,7 +99,9 @@ class MemoryUsageTest(unittest.TestCase):
             "Memory 'chat_memory' cannot be used as a Step component",
             str(context.exception),
         )
-        self.assertIn("Use retrievers for step-level operations", str(context.exception))
+        self.assertIn(
+            "Use retrievers for step-level operations", str(context.exception)
+        )
 
     def test_retriever_used_as_step_component_success(self) -> None:
         """Test that retrievers can be used as step components."""
@@ -133,7 +135,9 @@ class MemoryUsageTest(unittest.TestCase):
         )
         validate_semantics(spec)
 
-    def test_memory_and_retriever_can_share_embedding_model_success(self) -> None:
+    def test_memory_and_retriever_can_share_embedding_model_success(
+        self,
+    ) -> None:
         """Test that memory and retrievers can share the same embedding model."""
         spec = QTypeSpec(
             version="1.0",

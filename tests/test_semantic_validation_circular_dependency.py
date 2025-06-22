@@ -33,7 +33,9 @@ class CircularDependencyTest(unittest.TestCase):
                     mode=FlowMode.complete,
                     steps=["flow1"],  # flow2 -> flow1 (no cycle)
                 ),
-                Flow(id="flow3", mode=FlowMode.complete, steps=["flow2"]),  # flow3 -> flow2 -> flow1 (no cycle)
+                Flow(
+                    id="flow3", mode=FlowMode.complete, steps=["flow2"]
+                ),  # flow3 -> flow2 -> flow1 (no cycle)
             ],
         )
         validate_semantics(spec)
@@ -85,7 +87,8 @@ class CircularDependencyTest(unittest.TestCase):
         error_message = str(context.exception)
         self.assertTrue(
             any(
-                f"Circular reference detected in Flow '{flow_id}'" in error_message
+                f"Circular reference detected in Flow '{flow_id}'"
+                in error_message
                 for flow_id in ["flow1", "flow2", "flow3"]
             ),
             f"Expected circular reference error, got: {error_message}",
@@ -122,7 +125,10 @@ class CircularDependencyTest(unittest.TestCase):
                 Flow(
                     id="main_flow",
                     mode=FlowMode.complete,
-                    steps=["processing_flow", "base_flow"],  # Multiple flow references
+                    steps=[
+                        "processing_flow",
+                        "base_flow",
+                    ],  # Multiple flow references
                 ),
             ],
         )
@@ -150,7 +156,8 @@ class CircularDependencyTest(unittest.TestCase):
         error_message = str(context.exception)
         self.assertTrue(
             any(
-                f"Circular reference detected in Flow '{flow_id}'" in error_message
+                f"Circular reference detected in Flow '{flow_id}'"
+                in error_message
                 for flow_id in ["flowA", "flowB"]
             ),
             f"Expected circular reference error, got: {error_message}",
@@ -175,7 +182,11 @@ class CircularDependencyTest(unittest.TestCase):
                 Flow(
                     id="main_flow",
                     mode=FlowMode.complete,
-                    steps=["flow1", "flow2", "shared_flow"],  # Multiple refs to shared_flow
+                    steps=[
+                        "flow1",
+                        "flow2",
+                        "shared_flow",
+                    ],  # Multiple refs to shared_flow
                 ),
             ],
         )
@@ -203,7 +214,9 @@ class CircularDependencyTest(unittest.TestCase):
             version="1.0",
             inputs=[
                 Input(id="used_input", type=VariableType.text),
-                Input(id="orphaned_input", type=VariableType.text),  # Not used anywhere
+                Input(
+                    id="orphaned_input", type=VariableType.text
+                ),  # Not used anywhere
             ],
             prompts=[
                 Prompt(
@@ -260,7 +273,9 @@ class CircularDependencyTest(unittest.TestCase):
                 Flow(
                     id="shared_flow",
                     mode=FlowMode.complete,
-                    steps=["hub_flow"],  # Creates cycle: hub -> spoke1/spoke2 -> shared -> hub
+                    steps=[
+                        "hub_flow"
+                    ],  # Creates cycle: hub -> spoke1/spoke2 -> shared -> hub
                 ),
             ],
         )

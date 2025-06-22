@@ -7,11 +7,7 @@ requirements as defined in semantic_ir.md Section 5.
 
 import unittest
 
-from qtype.dsl.model import (
-    QTypeSpec,
-    Tool,
-    ToolProvider,
-)
+from qtype.dsl.model import QTypeSpec, Tool, ToolProvider
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
 
@@ -123,8 +119,14 @@ class ToolingRulesTest(unittest.TestCase):
                             id="tool1",
                             name="Complete Tool",
                             description="Tool with both schemas",
-                            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
-                            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
+                            input_schema={
+                                "type": "object",
+                                "properties": {"input": {"type": "string"}},
+                            },
+                            output_schema={
+                                "type": "object",
+                                "properties": {"output": {"type": "string"}},
+                            },
                         )
                     ],
                 )
@@ -218,7 +220,9 @@ class ToolingRulesTest(unittest.TestCase):
         )
         validate_semantics(spec)
 
-    def test_tools_across_different_providers_can_have_same_names_success(self) -> None:
+    def test_tools_across_different_providers_can_have_same_names_success(
+        self,
+    ) -> None:
         """Test that tools in different providers can have the same names."""
         spec = QTypeSpec(
             version="1.0",

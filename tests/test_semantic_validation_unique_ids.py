@@ -54,7 +54,7 @@ class UniqueIdsTest(unittest.TestCase):
             models=[
                 Model(id="duplicate", provider="openai"),
                 Model(id="duplicate", provider="anthropic"),
-            ]
+            ],
         )
         # TODO: When validator is fixed, this should raise SemanticValidationError
         # For now, we test that it doesn't crash

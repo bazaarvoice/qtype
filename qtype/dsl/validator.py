@@ -1,9 +1,8 @@
+from argparse import Namespace
+
 import yaml
 
 from qtype.dsl.model import QTypeSpec
-
-
-from argparse import Namespace
 
 
 def validate_spec(args: Namespace) -> QTypeSpec:
