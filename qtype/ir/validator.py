@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set
 
-from qtype.dsl.models import EmbeddingModel, QTypeSpec, Step
+from qtype.dsl.model import EmbeddingModel, QTypeSpec, Step
 
 
 class SemanticValidationError(Exception):

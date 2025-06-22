@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 # Import enums and simple classes from DSL that don't need IR-specific
 # modifications
-from qtype.dsl.models import (
+from qtype.dsl.model import (
     AuthorizationProvider,
     BaseRetriever,
     FeedbackType,

@@ -1,6 +1,6 @@
 import yaml
 
-from qtype.dsl.models import QTypeSpec
+from qtype.dsl.model import QTypeSpec
 
 
 from argparse import Namespace

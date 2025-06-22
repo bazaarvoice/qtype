@@ -335,7 +335,6 @@ class FlowMode(str, Enum):
 
     chat = "chat"
     complete = "complete"
-    api = "api"
 
 
 class Flow(Step):

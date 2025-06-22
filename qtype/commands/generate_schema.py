@@ -2,7 +2,7 @@ import argparse
 import json
 from typing import Optional
 
-from qtype.dsl.models import QTypeSpec
+from qtype.dsl.model import QTypeSpec
 
 
 def generate_schema_main(args: argparse.Namespace) -> None:

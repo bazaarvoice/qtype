@@ -102,7 +102,3 @@ For each `Flow`:
 * No circular references in `Flow.steps[]`
 * Avoid orphaned components (e.g., a `Prompt` defined but never used)
 * Every referenced variable or ID must be **visible** in the context it's used
-
----
-
-Would you like me to help scaffold this validator into your `ir/resolver.py`, or start with a function that implements these checks step-by-step?

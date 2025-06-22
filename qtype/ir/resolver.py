@@ -8,8 +8,8 @@ are resolved to actual object references.
 
 from typing import Any, Dict, List, Optional, Union
 
-import qtype.dsl.models as dsl
-import qtype.ir.models as ir
+import qtype.dsl.model as dsl
+import qtype.ir.model as ir
 
 
 class IRResolutionError(Exception):
