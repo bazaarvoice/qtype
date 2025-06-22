@@ -33,12 +33,12 @@ resolution = "highest"
 # Compile bytecode for faster subsequent runs
 compile-bytecode = true
 
-
-[tool.setuptools.packages.find]
-include = ["qtype"]
-
 [project.scripts]
 qtype = "qtype.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["qtype*"]
+exclude = ["tests*"]
 
 # Tool configurations
 [tool.ruff]
