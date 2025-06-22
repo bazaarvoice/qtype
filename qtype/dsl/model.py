@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
@@ -37,38 +39,38 @@ class DisplayMetadata(BaseModel):
     """UI display hints for rendering an input field."""
 
     placeholder: Optional[str] = Field(
-        None, description="Placeholder text shown inside the input field."
+        default=None, description="Placeholder text shown inside the input field."
     )
-    tooltip: Optional[str] = Field(None, description="Tooltip shown on hover.")
+    tooltip: Optional[str] = Field(default=None, description="Tooltip shown on hover.")
     default_value: Optional[Any] = Field(
-        None, description="Default value if the user doesn't supply one."
+        default=None, description="Default value if the user doesn't supply one."
     )
     min_value: Optional[Union[int, float]] = Field(
-        None, description="Minimum value for numeric inputs."
+        default=None, description="Minimum value for numeric inputs."
     )
     max_value: Optional[Union[int, float]] = Field(
-        None, description="Maximum value for numeric inputs."
+        default=None, description="Maximum value for numeric inputs."
     )
     step: Optional[Union[int, float]] = Field(
-        None, description="Step size for numeric inputs."
+        default=None, description="Step size for numeric inputs."
     )
     allowed_types: Optional[List[str]] = Field(
-        None, description="Allowed file types for file upload."
+        default=None, description="Allowed file types for file upload."
     )
     options: Optional[List[str]] = Field(
-        None, description="Options for dropdowns, radios, or checkboxes."
+        default=None, description="Options for dropdowns, radios, or checkboxes."
     )
     group: Optional[str] = Field(
-        None, description="Grouping section this input belongs to."
+        default=None, description="Grouping section this input belongs to."
     )
     section: Optional[str] = Field(
-        None, description="Section name used to visually separate inputs."
+        default=None, description="Section name used to visually separate inputs."
     )
     icon: Optional[str] = Field(
-        None, description="Icon shown alongside input (optional)."
+        default=None, description="Icon shown alongside input (optional)."
     )
     css_class: Optional[str] = Field(
-        None, description="Optional CSS class for advanced styling."
+        default=None, description="Optional CSS class for advanced styling."
     )
 
 
@@ -81,13 +83,13 @@ class Input(BaseModel):
     )
     type: VariableType = Field(..., description="Type of data expected.")
     display_name: Optional[str] = Field(
-        None, description="Label shown in the UI."
+        default=None, description="Label shown in the UI."
     )
     display_type: Optional[DisplayType] = Field(
-        None, description="Hint for how to render this input."
+        default=None, description="Hint for how to render this input."
     )
     display_metadata: Optional[DisplayMetadata] = Field(
-        None, description="Additional UI hints."
+        default=None, description="Additional UI hints."
     )
 
 
@@ -108,16 +110,16 @@ class Prompt(BaseModel):
 
     id: str = Field(..., description="Unique ID for the prompt.")
     path: Optional[str] = Field(
-        None, description="File path to the prompt template."
+        default=None, description="File path to the prompt template."
     )
     template: Optional[str] = Field(
-        None, description="Inline template string for the prompt."
+        default=None, description="Inline template string for the prompt."
     )
     input_vars: List[str] = Field(
         ..., description="List of input variable IDs this prompt expects."
     )
     output_vars: Optional[List[str]] = Field(
-        None,
+        default=None,
         description="Optional list of output variable IDs this prompt generates.",
     )
 
@@ -130,11 +132,11 @@ class Model(BaseModel):
         ..., description="Name of the provider, e.g., openai or anthropic."
     )
     model_id: Optional[str] = Field(
-        None,
+        default=None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
     inference_params: Optional[Dict[str, Any]] = Field(
-        default_factory=dict,
+        default=None,
         description="Optional inference parameters like temperature or max_tokens.",
     )
 
@@ -170,7 +172,7 @@ class SearchRetriever(BaseRetriever):
 
     top_k: int = Field(5, description="Number of top documents to retrieve.")
     query_prompt: Optional[str] = Field(
-        None, description="Prompt ID used to generate the search query."
+        default=None, description="Prompt ID used to generate the search query."
     )
 
 
@@ -194,7 +196,7 @@ class Memory(BaseModel):
         default=False, description="Whether memory persists across sessions."
     )
     ttl_minutes: Optional[int] = Field(
-        None, description="Optional TTL for temporary memory."
+        default=None, description="Optional TTL for temporary memory."
     )
     use_for_context: bool = Field(
         default=True,
@@ -229,17 +231,17 @@ class ToolProvider(BaseModel):
         ..., description="List of tools exposed by this provider."
     )
     openapi_spec: Optional[str] = Field(
-        None,
+        default=None,
         description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
     )
     include_tags: Optional[List[str]] = Field(
-        None, description="Limit tool generation to specific OpenAPI tags."
+        default=None, description="Limit tool generation to specific OpenAPI tags."
     )
     exclude_paths: Optional[List[str]] = Field(
-        None, description="Exclude specific endpoints by path."
+        default=None, description="Exclude specific endpoints by path."
     )
     auth: Optional[str] = Field(
-        None,
+        default=None,
         description="AuthorizationProvider ID used to authenticate tool access.",
     )
 
@@ -254,18 +256,18 @@ class AuthorizationProvider(BaseModel):
         ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
     )
     host: Optional[str] = Field(
-        None, description="Base URL or domain of the provider."
+        default=None, description="Base URL or domain of the provider."
     )
-    client_id: Optional[str] = Field(None, description="OAuth2 client ID.")
+    client_id: Optional[str] = Field(default=None, description="OAuth2 client ID.")
     client_secret: Optional[str] = Field(
-        None, description="OAuth2 client secret."
+        default=None, description="OAuth2 client secret."
     )
-    token_url: Optional[str] = Field(None, description="Token endpoint URL.")
+    token_url: Optional[str] = Field(default=None, description="Token endpoint URL.")
     scopes: Optional[List[str]] = Field(
-        None, description="OAuth2 scopes required."
+        default=None, description="OAuth2 scopes required."
     )
     api_key: Optional[str] = Field(
-        None, description="API key if using token-based auth."
+        default=None, description="API key if using token-based auth."
     )
 
 
@@ -286,10 +288,10 @@ class Feedback(BaseModel):
     id: str = Field(..., description="Unique ID of the feedback config.")
     type: FeedbackType = Field(..., description="Feedback mechanism type.")
     question: Optional[str] = Field(
-        None, description="Question to show user for qualitative feedback."
+        default=None, description="Question to show user for qualitative feedback."
     )
     prompt: Optional[str] = Field(
-        None,
+        default=None,
         description="ID of prompt used to generate a follow-up based on feedback.",
     )
 
@@ -299,16 +301,16 @@ class Condition(BaseModel):
 
     if_var: str = Field(..., description="ID of the variable to evaluate.")
     equals: Optional[Union[str, int, float, bool]] = Field(
-        None, description="Match condition for equality check."
+        default=None, description="Match condition for equality check."
     )
     exists: Optional[bool] = Field(
-        None, description="Condition to check existence of a variable."
+        default=None, description="Condition to check existence of a variable."
     )
     then: List[str] = Field(
         ..., description="List of step IDs to run if condition matches."
     )
     else_: Optional[List[str]] = Field(
-        None,
+        default=None,
         alias="else",
         description="Optional list of step IDs to run if condition fails.",
     )
@@ -319,13 +321,13 @@ class Step(BaseModel):
 
     id: str = Field(..., description="Unique ID of the step.")
     input_vars: Optional[List[str]] = Field(
-        None, description="Input variable IDs required by this step."
+        default=None, description="Input variable IDs required by this step."
     )
     output_vars: Optional[List[str]] = Field(
-        None, description="Variable IDs where output is stored."
+        default=None, description="Variable IDs where output is stored."
     )
     component: Optional[str] = Field(
-        None,
+        default=None,
         description="ID of the component to invoke (e.g., prompt ID, tool ID).",
     )
 
@@ -340,21 +342,34 @@ class FlowMode(str, Enum):
 class Flow(Step):
     """A flow represents the full composition of steps a user or system interacts with."""
 
+    # Override inherited fields to make them explicitly optional for mypy
+    input_vars: Optional[List[str]] = Field(
+        default=None, description="Input variable IDs required by this step."
+    )
+    output_vars: Optional[List[str]] = Field(
+        default=None, description="Variable IDs where output is stored."
+    )
+    component: Optional[str] = Field(
+        default=None,
+        description="ID of the component to invoke (e.g., prompt ID, tool ID).",
+    )
+
+    # Flow-specific fields
     mode: FlowMode = Field(..., description="Interaction mode for the flow.")
     inputs: Optional[List[str]] = Field(
-        None, description="Input variable IDs accepted by the flow."
+        default=None, description="Input variable IDs accepted by the flow."
     )
     outputs: Optional[List[str]] = Field(
-        None, description="Output variable IDs produced by the flow."
+        default=None, description="Output variable IDs produced by the flow."
     )
     steps: List[Union[Step, str]] = Field(
-        ..., description="List of steps or nested flow IDs."
+        default_factory=list, description="List of steps or nested flow IDs."
     )
     conditions: Optional[List[Condition]] = Field(
-        None, description="Optional conditional logic within the flow."
+        default=None, description="Optional conditional logic within the flow."
     )
     memory: Optional[List[str]] = Field(
-        None, description="List of memory IDs to include (chat mode only)."
+        default=None, description="List of memory IDs to include (chat mode only)."
     )
 
 
@@ -372,38 +387,38 @@ class QTypeSpec(BaseModel):
         ..., description="Version of the QType specification schema used."
     )
     models: Optional[List[Model]] = Field(
-        None,
+        default=None,
         description="List of generative models available for use, including their providers and inference parameters.",
     )
     inputs: Optional[List[Input]] = Field(
-        None,
+        default=None,
         description="User-facing inputs or parameters exposed by the application.",
     )
     prompts: Optional[List[Prompt]] = Field(
-        None,
+        default=None,
         description="Prompt templates used in generation steps or tools, referencing input and output variables.",
     )
     retrievers: Optional[List[BaseRetriever]] = Field(
-        None,
+        default=None,
         description="Document retrievers used to fetch context from indexes (e.g., vector search, keyword search).",
     )
     tools: Optional[List[ToolProvider]] = Field(
-        None,
+        default=None,
         description="Tool providers with optional OpenAPI specs, exposing callable tools for the model.",
     )
     flows: Optional[List[Flow]] = Field(
-        None,
+        default=None,
         description="Entry points to application logic. Each flow defines an executable composition of steps.",
     )
     feedback: Optional[List[Feedback]] = Field(
-        None,
+        default=None,
         description="Feedback configurations for collecting structured or unstructured user reactions to outputs.",
     )
     memory: Optional[List[Memory]] = Field(
-        None,
+        default=None,
         description="Session-level memory contexts, only used in chat-mode flows to persist state across turns.",
     )
     auth: Optional[List[AuthorizationProvider]] = Field(
-        None,
+        default=None,
         description="Authorization providers and credentials used to access external APIs or cloud services.",
     )
