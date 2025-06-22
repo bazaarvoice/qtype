@@ -104,7 +104,9 @@ class SemanticValidator:
             provider_tool_ids = set()
             for tool in tool_provider.tools or []:
                 if tool.id in provider_tool_ids:
-                    self._errors.append(f"Duplicate Tool.id: {tool.id} in provider {tool_provider.id}")
+                    self._errors.append(
+                        f"Duplicate Tool.id: {tool.id} in provider {tool_provider.id}"
+                    )
                 provider_tool_ids.add(tool.id)
                 # Store tools with provider prefix to avoid global collisions
                 registry.tools[f"{tool_provider.id}:{tool.id}"] = tool
@@ -136,32 +138,59 @@ class SemanticValidator:
                             if output_var in (prompt.output_vars or []):
                                 component_produces_var = True
 
-                        if not component_produces_var and output_var in registry.outputs:
+                        if (
+                            not component_produces_var
+                            and output_var in registry.outputs
+                        ):
                             self._errors.append(
                                 f"Duplicate Output.id: {output_var}"
                             )
                         registry.outputs[output_var] = None
 
-    def _validate_unique_ids(self, spec: QTypeSpec, registry: ComponentRegistry) -> None:
+    def _validate_unique_ids(
+        self, spec: QTypeSpec, registry: ComponentRegistry
+    ) -> None:
         """Ensure all IDs are unique within their component categories."""
         # Check each component type for duplicates
-        self._check_component_duplicates("Model", [m.id for m in spec.models or []])
-        self._check_component_duplicates("Input", [i.id for i in spec.inputs or []])
-        self._check_component_duplicates("Prompt", [p.id for p in spec.prompts or []])
-        self._check_component_duplicates("Memory", [m.id for m in spec.memory or []])
-        self._check_component_duplicates("ToolProvider", [tp.id for tp in spec.tools or []])
-        self._check_component_duplicates("AuthorizationProvider", [a.id for a in spec.auth or []])
-        self._check_component_duplicates("Feedback", [f.id for f in spec.feedback or []])
-        self._check_component_duplicates("Retriever", [r.id for r in spec.retrievers or []])
-        self._check_component_duplicates("Flow", [f.id for f in spec.flows or []])
+        self._check_component_duplicates(
+            "Model", [m.id for m in spec.models or []]
+        )
+        self._check_component_duplicates(
+            "Input", [i.id for i in spec.inputs or []]
+        )
+        self._check_component_duplicates(
+            "Prompt", [p.id for p in spec.prompts or []]
+        )
+        self._check_component_duplicates(
+            "Memory", [m.id for m in spec.memory or []]
+        )
+        self._check_component_duplicates(
+            "ToolProvider", [tp.id for tp in spec.tools or []]
+        )
+        self._check_component_duplicates(
+            "AuthorizationProvider", [a.id for a in spec.auth or []]
+        )
+        self._check_component_duplicates(
+            "Feedback", [f.id for f in spec.feedback or []]
+        )
+        self._check_component_duplicates(
+            "Retriever", [r.id for r in spec.retrievers or []]
+        )
+        self._check_component_duplicates(
+            "Flow", [f.id for f in spec.flows or []]
+        )
         # Tools and steps are checked separately in _collect_nested_components
 
-    def _check_component_duplicates(self, component_type: str, component_ids: List[str]) -> None:
+    def _check_component_duplicates(
+        self, component_type: str, component_ids: List[str]
+    ) -> None:
         """Check for duplicate IDs in a component type."""
         seen_ids = set()
         for component_id in component_ids:
             if component_id in seen_ids:
-                self._errors.append(f"Duplicate {component_type}.id: {component_id}")
+                self._errors.append(
+                    f"Duplicate {component_type}.id: {component_id}"
+                )
             seen_ids.add(component_id)
 
     def _validate_referential_integrity(
@@ -214,7 +243,10 @@ class SemanticValidator:
                 else:
                     # Check if it's a tool (stored with provider prefix)
                     for tool_key in registry.tools:
-                        if ':' in tool_key and tool_key.split(':', 1)[1] == step.component:
+                        if (
+                            ":" in tool_key
+                            and tool_key.split(":", 1)[1] == step.component
+                        ):
                             component_found = True
                             break
 
