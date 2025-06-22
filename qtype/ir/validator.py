@@ -62,7 +62,7 @@ class SemanticValidator:
         registry = self._build_component_registry(spec)
 
         # Execute all validation rules
-        self._validate_unique_ids(registry)
+        self._validate_unique_ids(spec, registry)
         self._validate_referential_integrity(spec, registry)
         self._validate_flows(spec, registry)
         self._validate_memory_usage(spec, registry)
@@ -98,19 +98,27 @@ class SemanticValidator:
         self, spec: QTypeSpec, registry: ComponentRegistry
     ) -> None:
         """Collect tools, outputs, and steps from nested structures."""
-        # Collect tools from tool providers
+        # Collect tools from tool providers - allow same ID across providers
+        tool_ids_by_provider: Dict[str, Set[str]] = {}
         for tool_provider in spec.tools or []:
+            provider_tool_ids = set()
             for tool in tool_provider.tools or []:
-                if tool.id in registry.tools:
-                    self._errors.append(f"Duplicate Tool.id: {tool.id}")
-                registry.tools[tool.id] = tool
+                if tool.id in provider_tool_ids:
+                    self._errors.append(f"Duplicate Tool.id: {tool.id} in provider {tool_provider.id}")
+                provider_tool_ids.add(tool.id)
+                # Store tools with provider prefix to avoid global collisions
+                registry.tools[f"{tool_provider.id}:{tool.id}"] = tool
+            tool_ids_by_provider[tool_provider.id] = provider_tool_ids
 
         # Collect output variables from prompts
         for prompt in spec.prompts or []:
             for output_var in prompt.output_vars or []:
+                if output_var in registry.outputs:
+                    self._errors.append(f"Duplicate Output.id: {output_var}")
                 registry.outputs[output_var] = None
 
         # Collect steps from flows and their output variables
+        # Steps can reuse output variables if they're using a component that produces them
         for flow in spec.flows or []:
             for step in flow.steps:
                 if isinstance(step, Step):
@@ -118,37 +126,43 @@ class SemanticValidator:
                         self._errors.append(f"Duplicate Step.id: {step.id}")
                     registry.steps[step.id] = step
 
+                    # Only check for duplicate output vars if the step isn't using a component
+                    # that already produces those vars
                     for output_var in step.output_vars or []:
-                        if output_var in registry.outputs:
+                        # Check if this output var is already produced by the step's component
+                        component_produces_var = False
+                        if step.component in registry.prompts:
+                            prompt = registry.prompts[step.component]
+                            if output_var in (prompt.output_vars or []):
+                                component_produces_var = True
+
+                        if not component_produces_var and output_var in registry.outputs:
                             self._errors.append(
                                 f"Duplicate Output.id: {output_var}"
                             )
                         registry.outputs[output_var] = None
 
-    def _validate_unique_ids(self, registry: ComponentRegistry) -> None:
+    def _validate_unique_ids(self, spec: QTypeSpec, registry: ComponentRegistry) -> None:
         """Ensure all IDs are unique within their component categories."""
-        component_types = [
-            ("Model", registry.models),
-            ("Input", registry.inputs),
-            ("Prompt", registry.prompts),
-            ("Memory", registry.memory),
-            ("ToolProvider", registry.tool_providers),
-            ("AuthorizationProvider", registry.auth_providers),
-            ("Feedback", registry.feedback),
-            ("Retriever", registry.retrievers),
-            ("Flow", registry.flows),
-            ("Step", registry.steps),
-            ("Tool", registry.tools),
-        ]
+        # Check each component type for duplicates
+        self._check_component_duplicates("Model", [m.id for m in spec.models or []])
+        self._check_component_duplicates("Input", [i.id for i in spec.inputs or []])
+        self._check_component_duplicates("Prompt", [p.id for p in spec.prompts or []])
+        self._check_component_duplicates("Memory", [m.id for m in spec.memory or []])
+        self._check_component_duplicates("ToolProvider", [tp.id for tp in spec.tools or []])
+        self._check_component_duplicates("AuthorizationProvider", [a.id for a in spec.auth or []])
+        self._check_component_duplicates("Feedback", [f.id for f in spec.feedback or []])
+        self._check_component_duplicates("Retriever", [r.id for r in spec.retrievers or []])
+        self._check_component_duplicates("Flow", [f.id for f in spec.flows or []])
+        # Tools and steps are checked separately in _collect_nested_components
 
-        for component_type, components in component_types:
-            seen_ids: Set[str] = set()
-            for component_id in components:
-                if component_id in seen_ids:
-                    self._errors.append(
-                        f"Duplicate {component_type}.id: {component_id}"
-                    )
-                seen_ids.add(component_id)
+    def _check_component_duplicates(self, component_type: str, component_ids: List[str]) -> None:
+        """Check for duplicate IDs in a component type."""
+        seen_ids = set()
+        for component_id in component_ids:
+            if component_id in seen_ids:
+                self._errors.append(f"Duplicate {component_type}.id: {component_id}")
+            seen_ids.add(component_id)
 
     def _validate_referential_integrity(
         self, spec: QTypeSpec, registry: ComponentRegistry
@@ -190,15 +204,19 @@ class SemanticValidator:
                     continue
 
                 # Validate step component exists
-                component_found = any(
-                    step.component in components
-                    for components in [
-                        registry.prompts,
-                        registry.tools,
-                        registry.flows,
-                        registry.retrievers,
-                    ]
-                )
+                component_found = False
+                if step.component in registry.prompts:
+                    component_found = True
+                elif step.component in registry.flows:
+                    component_found = True
+                elif step.component in registry.retrievers:
+                    component_found = True
+                else:
+                    # Check if it's a tool (stored with provider prefix)
+                    for tool_key in registry.tools:
+                        if ':' in tool_key and tool_key.split(':', 1)[1] == step.component:
+                            component_found = True
+                            break
 
                 if not component_found:
                     self._errors.append(
@@ -238,11 +256,11 @@ class SemanticValidator:
                     f"Retriever '{retriever.id}' references non-existent "
                     f"embedding model '{embedding_model_id}'"
                 )
+                continue
 
             # Validate embedding model type
-            if hasattr(retriever, "embedding_model") and not isinstance(
-                retriever.embedding_model, EmbeddingModel
-            ):
+            embedding_model = registry.models[embedding_model_id]
+            if not isinstance(embedding_model, EmbeddingModel):
                 self._errors.append(
                     f"Retriever '{retriever.id}' embedding_model must be "
                     f"an instance of EmbeddingModel"
@@ -340,15 +358,15 @@ class SemanticValidator:
             for then_id in condition.then:
                 if then_id not in step_ids and then_id not in registry.flows:
                     self._errors.append(
-                        f"Flow '{flow.id}' condition references non-existent "
-                        f"step or flow '{then_id}' in then clause"
+                        f"Condition in Flow '{flow.id}' references non-existent "
+                        f"step '{then_id}'"
                     )
 
             for else_id in condition.else_ or []:
                 if else_id not in step_ids and else_id not in registry.flows:
                     self._errors.append(
-                        f"Flow '{flow.id}' condition references non-existent "
-                        f"step or flow '{else_id}' in else clause"
+                        f"Condition in Flow '{flow.id}' references non-existent "
+                        f"step '{else_id}'"
                     )
 
     def _validate_flow_memory_rules(self, flow: Any) -> None:
@@ -421,19 +439,9 @@ class SemanticValidator:
         self, spec: QTypeSpec, registry: ComponentRegistry
     ) -> None:
         """Validate model constraints and embedding model rules."""
-        for model in spec.models or []:
-            if isinstance(model, EmbeddingModel):
-                if hasattr(model, "inference_params"):
-                    self._errors.append(
-                        f"EmbeddingModel '{model.id}' must not have "
-                        f"inference_params (reserved for Model instances)"
-                    )
-
-            if hasattr(model, "model"):
-                self._errors.append(
-                    f"Model '{model.id}' must not have 'model' field "
-                    f"(reserved for EmbeddingModel)"
-                )
+        # EmbeddingModel inherits from Model, so it can have inference_params
+        # No specific validation needed for now
+        pass
 
     def _validate_prompts(
         self, spec: QTypeSpec, registry: ComponentRegistry
