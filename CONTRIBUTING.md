@@ -131,7 +131,7 @@ ruff check qtype/ tests/
 isort qtype/ tests/
 
 # Type checking with mypy
-mypy qtype/
+mypy qtype/ tests/
 ```
 
 #### Pre-commit hooks (Optional but recommended):
