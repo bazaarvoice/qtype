@@ -41,7 +41,7 @@ def env_var_constructor(loader: EnvVarLoader, node: yaml.ScalarNode) -> str:
     value = loader.construct_scalar(node)
 
     # Pattern to match ${VAR_NAME} or ${VAR_NAME:default}
-    pattern = r'\$\{([^}:]+)(?::([^}]*))?\}'
+    pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
 
     def replace_env_var(match: re.Match[str]) -> str:
         var_name = match.group(1)
@@ -62,7 +62,7 @@ def env_var_constructor(loader: EnvVarLoader, node: yaml.ScalarNode) -> str:
 
 
 # Add the constructor for environment variable pattern
-EnvVarLoader.add_constructor('tag:yaml.org,2002:str', env_var_constructor)
+EnvVarLoader.add_constructor("tag:yaml.org,2002:str", env_var_constructor)
 
 
 def load_yaml_with_env_vars(file_path: str) -> Dict[str, Any]:

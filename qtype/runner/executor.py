@@ -210,7 +210,9 @@ class FlowExecutor:
         rendered_template = prompt.template
         for var_name, value in self.context.items():
             placeholder = f"{{{{ {var_name} }}}}"
-            rendered_template = rendered_template.replace(placeholder, str(value))
+            rendered_template = rendered_template.replace(
+                placeholder, str(value)
+            )
 
         logger.info(f"Rendered prompt template for '{prompt.id}'")
         logger.debug(f"Template content: {rendered_template}")
@@ -218,7 +220,9 @@ class FlowExecutor:
         # Find the appropriate model to use for this prompt
         model = self._get_prompt_model()
         if not model:
-            raise FlowExecutionError("No suitable model found for prompt execution")
+            raise FlowExecutionError(
+                "No suitable model found for prompt execution"
+            )
 
         # Get the auth provider for the model
         auth_provider = self._get_auth_provider(model.provider)
@@ -229,7 +233,9 @@ class FlowExecutor:
 
         # Call the actual model
         try:
-            response = self._call_model(model, auth_provider, rendered_template)
+            response = self._call_model(
+                model, auth_provider, rendered_template
+            )
         except Exception as e:
             raise FlowExecutionError(f"Model call failed: {str(e)}")
 
@@ -257,7 +263,9 @@ class FlowExecutor:
 
         return None
 
-    def _get_auth_provider(self, provider_name: str) -> Optional[AuthorizationProvider]:
+    def _get_auth_provider(
+        self, provider_name: str
+    ) -> Optional[AuthorizationProvider]:
         """
         Get the auth provider for a given provider name.
 
@@ -337,7 +345,9 @@ class FlowExecutor:
                 **inference_params,
             }
 
-            logger.info(f"Calling OpenAI model '{model_id}' with params: {call_params}")
+            logger.info(
+                f"Calling OpenAI model '{model_id}' with params: {call_params}"
+            )
 
             response = client.chat.completions.create(**call_params)
 
@@ -346,7 +356,9 @@ class FlowExecutor:
 
             content = response.choices[0].message.content
             if content is None:
-                raise FlowExecutionError("OpenAI returned empty response content")
+                raise FlowExecutionError(
+                    "OpenAI returned empty response content"
+                )
 
             return str(content)
 

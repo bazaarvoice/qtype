@@ -60,7 +60,9 @@ def run_main(args: Any) -> None:
     ]
 
     if not complete_flows:
-        logger.error("❌ No 'complete' mode flows found. Only 'complete' mode is currently supported.")
+        logger.error(
+            "❌ No 'complete' mode flows found. Only 'complete' mode is currently supported."
+        )
         sys.exit(1)
 
     # Use the first complete flow

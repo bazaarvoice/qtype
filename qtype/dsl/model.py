@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class StrictBaseModel(BaseModel):
     """Base model with extra fields forbidden."""
+
     model_config = ConfigDict(extra="forbid")
 
 
