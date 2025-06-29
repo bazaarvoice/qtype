@@ -1,6 +1,7 @@
 {
   "$defs": {
     "AuthorizationProvider": {
+      "additionalProperties": false,
       "description": "Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys.",
       "properties": {
         "id": {
@@ -103,6 +104,7 @@
       "type": "object"
     },
     "BaseRetriever": {
+      "additionalProperties": false,
       "description": "Abstract base class for all retriever types that supply context for prompt execution.",
       "properties": {
         "id": {
@@ -124,6 +126,7 @@
       "type": "object"
     },
     "Condition": {
+      "additionalProperties": false,
       "description": "Conditional logic gate within a flow. Supports branching logic for execution based on variable values.",
       "properties": {
         "if_var": {
@@ -199,6 +202,7 @@
       "type": "object"
     },
     "DisplayMetadata": {
+      "additionalProperties": false,
       "description": "Additional UI hints used to customize how input fields are displayed in the generated application UI.",
       "properties": {
         "placeholder": {
@@ -391,6 +395,7 @@
       "type": "string"
     },
     "Feedback": {
+      "additionalProperties": false,
       "description": "Schema to define how user feedback is collected, structured, and optionally used to guide future prompts.",
       "properties": {
         "id": {
@@ -450,6 +455,7 @@
       "type": "string"
     },
     "Flow": {
+      "additionalProperties": false,
       "description": "Composable structure that defines the interaction logic for a generative AI application.\nSupports branching, memory, and sequencing of steps.",
       "properties": {
         "id": {
@@ -603,6 +609,7 @@
       "type": "string"
     },
     "Input": {
+      "additionalProperties": false,
       "description": "Schema for a single user input or external parameter required for a flow or prompt within the DSL.",
       "properties": {
         "id": {
@@ -660,6 +667,7 @@
       "type": "object"
     },
     "Memory": {
+      "additionalProperties": false,
       "description": "Session or persistent memory used to store relevant conversation or state data across steps or turns.",
       "properties": {
         "id": {
@@ -719,6 +727,7 @@
       "type": "string"
     },
     "Model": {
+      "additionalProperties": false,
       "description": "Describes a generative model configuration, including provider and model ID.",
       "properties": {
         "id": {
@@ -767,6 +776,7 @@
       "type": "object"
     },
     "Prompt": {
+      "additionalProperties": false,
       "description": "References a prompt template, either inline or from file, along with expected input and output variable bindings.",
       "properties": {
         "id": {
@@ -833,6 +843,7 @@
       "type": "object"
     },
     "Step": {
+      "additionalProperties": false,
       "description": "A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation.",
       "properties": {
         "id": {
@@ -893,6 +904,7 @@
       "type": "object"
     },
     "Tool": {
+      "additionalProperties": false,
       "description": "Callable function or external operation available to the model. Input/output shapes are described via JSON Schema.",
       "properties": {
         "id": {
@@ -934,6 +946,7 @@
       "type": "object"
     },
     "ToolProvider": {
+      "additionalProperties": false,
       "description": "Logical grouping of tools, often backed by an API or OpenAPI spec, and optionally authenticated.\n\nThis should show the Pydantic fields.",
       "properties": {
         "id": {
@@ -1038,6 +1051,7 @@
       "type": "string"
     }
   },
+  "additionalProperties": false,
   "description": "The root configuration object for a QType AI application. Includes flows, models, tools, and more.\nThis object is expected to be serialized into YAML and consumed by the QType runtime.",
   "properties": {
     "version": {
