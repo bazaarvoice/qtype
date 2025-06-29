@@ -1,8 +1,7 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "$defs": {
     "AuthorizationProvider": {
-      "description": "Represents credentials and auth settings for accessing protected APIs.",
+      "description": "Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys.",
       "properties": {
         "id": {
           "description": "Unique ID of the authorization configuration.",
@@ -104,7 +103,7 @@
       "type": "object"
     },
     "BaseRetriever": {
-      "description": "Abstract base class for retrievers that fetch supporting documents.",
+      "description": "Abstract base class for all retriever types that supply context for prompt execution.",
       "properties": {
         "id": {
           "description": "Unique ID of the retriever.",
@@ -125,7 +124,7 @@
       "type": "object"
     },
     "Condition": {
-      "description": "Conditional logic for branching execution within a flow.",
+      "description": "Conditional logic gate within a flow. Supports branching logic for execution based on variable values.",
       "properties": {
         "if_var": {
           "description": "ID of the variable to evaluate.",
@@ -200,7 +199,7 @@
       "type": "object"
     },
     "DisplayMetadata": {
-      "description": "UI display hints for rendering an input field.",
+      "description": "Additional UI hints used to customize how input fields are displayed in the generated application UI.",
       "properties": {
         "placeholder": {
           "anyOf": [
@@ -376,7 +375,7 @@
       "type": "object"
     },
     "DisplayType": {
-      "description": "Display type hint for rendering input UI components.",
+      "description": "UI rendering hint for how an input should appear in the frontend (e.g., text box, dropdown, file upload).",
       "enum": [
         "text",
         "textarea",
@@ -392,7 +391,7 @@
       "type": "string"
     },
     "Feedback": {
-      "description": "Describes how and where to collect feedback on generated responses.",
+      "description": "Schema to define how user feedback is collected, structured, and optionally used to guide future prompts.",
       "properties": {
         "id": {
           "description": "Unique ID of the feedback config.",
@@ -438,7 +437,7 @@
       "type": "object"
     },
     "FeedbackType": {
-      "description": "Types of feedback mechanisms available.",
+      "description": "Enum of supported feedback mechanisms such as thumbs, stars, or text responses.",
       "enum": [
         "thumbs",
         "star",
@@ -451,7 +450,7 @@
       "type": "string"
     },
     "Flow": {
-      "description": "A flow represents the full composition of steps a user or system interacts with.",
+      "description": "Composable structure that defines the interaction logic for a generative AI application.\nSupports branching, memory, and sequencing of steps.",
       "properties": {
         "id": {
           "description": "Unique ID of the step.",
@@ -595,7 +594,7 @@
       "type": "object"
     },
     "FlowMode": {
-      "description": "Execution mode for a flow.",
+      "description": "Execution context for the flow. `chat` maintains history, while `complete` operates statelessly.",
       "enum": [
         "chat",
         "complete"
@@ -604,7 +603,7 @@
       "type": "string"
     },
     "Input": {
-      "description": "Represents an input field provided by the user or external system.",
+      "description": "Schema for a single user input or external parameter required for a flow or prompt within the DSL.",
       "properties": {
         "id": {
           "description": "Unique ID of the input. Referenced in prompts or steps.",
@@ -661,7 +660,7 @@
       "type": "object"
     },
     "Memory": {
-      "description": "Persistent or session-level memory context for a user or flow.",
+      "description": "Session or persistent memory used to store relevant conversation or state data across steps or turns.",
       "properties": {
         "id": {
           "description": "Unique ID of the memory block.",
@@ -712,7 +711,7 @@
       "type": "object"
     },
     "MemoryType": {
-      "description": "Enum for memory types.",
+      "description": "Enum to differentiate supported memory types, such as vector memory for embedding-based recall.",
       "enum": [
         "vector"
       ],
@@ -720,7 +719,7 @@
       "type": "string"
     },
     "Model": {
-      "description": "Represents a generative model configuration.",
+      "description": "Describes a generative model configuration, including provider and model ID.",
       "properties": {
         "id": {
           "description": "Unique ID for the model.",
@@ -768,7 +767,7 @@
       "type": "object"
     },
     "Prompt": {
-      "description": "Points to a prompt template used for generation.",
+      "description": "References a prompt template, either inline or from file, along with expected input and output variable bindings.",
       "properties": {
         "id": {
           "description": "Unique ID for the prompt.",
@@ -834,7 +833,7 @@
       "type": "object"
     },
     "Step": {
-      "description": "A single execution step within a flow (e.g., prompt, tool call, or memory update).",
+      "description": "A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation.",
       "properties": {
         "id": {
           "description": "Unique ID of the step.",
@@ -894,7 +893,7 @@
       "type": "object"
     },
     "Tool": {
-      "description": "A single callable tool/function exposed to the model.",
+      "description": "Callable function or external operation available to the model. Input/output shapes are described via JSON Schema.",
       "properties": {
         "id": {
           "description": "Unique ID of the tool.",
@@ -935,7 +934,7 @@
       "type": "object"
     },
     "ToolProvider": {
-      "description": "Wraps and authenticates access to a set of tools (often from a single API or OpenAPI spec).",
+      "description": "Logical grouping of tools, often backed by an API or OpenAPI spec, and optionally authenticated.\n\nThis should show the Pydantic fields.",
       "properties": {
         "id": {
           "description": "Unique ID of the tool provider.",
@@ -1023,7 +1022,7 @@
       "type": "object"
     },
     "VariableType": {
-      "description": "Type of input expected from the user.",
+      "description": "Represents the type of data a user or system input can accept within the DSL.\nUsed for schema validation and UI rendering of input fields.",
       "enum": [
         "text",
         "number",
@@ -1039,7 +1038,7 @@
       "type": "string"
     }
   },
-  "description": "The top-level definition of a QType specification.\n\nThis class represents the full configuration of a generative AI application,\nincluding models, inputs, prompts, tools, flows, and supporting infrastructure.\n\nOnly one `QTypeSpec` should exist per YAML spec file.",
+  "description": "The root configuration object for a QType AI application. Includes flows, models, tools, and more.\nThis object is expected to be serialized into YAML and consumed by the QType runtime.",
   "properties": {
     "version": {
       "description": "Version of the QType specification schema used.",
@@ -1195,5 +1194,6 @@
     "version"
   ],
   "title": "QTypeSpec",
-  "type": "object"
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#"
 }
