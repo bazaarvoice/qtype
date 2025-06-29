@@ -13,7 +13,6 @@ inputs:
     type: text
     display_name: "Your Question"
     display_type: textarea
-    required: true
 
 prompts:
   - id: answer_prompt
@@ -29,8 +28,4 @@ flows:
     mode: complete
     steps:
       - id: answer_step
-        type: prompt
         component: answer_prompt
-        model: gpt4
-        input_mapping:
-          user_question: user_question

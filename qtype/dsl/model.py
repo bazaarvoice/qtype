@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class StrictBaseModel(BaseModel):
+    """Base model with extra fields forbidden."""
+    model_config = ConfigDict(extra="forbid")
+
+
 class VariableType(str, Enum):
     """Represents the type of data a user or system input can accept within the DSL.
     Used for schema validation and UI rendering of input fields."""
@@ -36,7 +41,7 @@ class DisplayType(str, Enum):
     section = "section"
 
 
-class DisplayMetadata(BaseModel):
+class DisplayMetadata(StrictBaseModel):
     """Additional UI hints used to customize how input fields are displayed in the generated application UI."""
 
     placeholder: Optional[str] = Field(
@@ -81,7 +86,7 @@ class DisplayMetadata(BaseModel):
     )
 
 
-class Input(BaseModel):
+class Input(StrictBaseModel):
     """Schema for a single user input or external parameter required for a flow or prompt within the DSL."""
 
     id: str = Field(
@@ -100,7 +105,7 @@ class Input(BaseModel):
     )
 
 
-class Output(BaseModel):
+class Output(StrictBaseModel):
     """Schema for a single output produced by a prompt, tool, or flow component."""
 
     id: str = Field(
@@ -112,7 +117,7 @@ class Output(BaseModel):
     )
 
 
-class Prompt(BaseModel):
+class Prompt(StrictBaseModel):
     """References a prompt template, either inline or from file, along with expected input and output variable bindings."""
 
     id: str = Field(..., description="Unique ID for the prompt.")
@@ -131,10 +136,10 @@ class Prompt(BaseModel):
     )
 
 
-class Model(BaseModel):
+class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
 
-    model_config = ConfigDict(extra="forbid")
+    # model_config = ConfigDict(extra="forbid")
 
     id: str = Field(..., description="Unique ID for the model.")
     provider: str = Field(
@@ -159,7 +164,7 @@ class EmbeddingModel(Model):
     )
 
 
-class BaseRetriever(BaseModel, ABC):
+class BaseRetriever(StrictBaseModel, ABC):
     """Abstract base class for all retriever types that supply context for prompt execution."""
 
     id: str = Field(..., description="Unique ID of the retriever.")
@@ -192,7 +197,7 @@ class MemoryType(str, Enum):
     vector = "vector"
 
 
-class Memory(BaseModel):
+class Memory(StrictBaseModel):
     """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
@@ -214,7 +219,7 @@ class Memory(BaseModel):
     )
 
 
-class Tool(BaseModel):
+class Tool(StrictBaseModel):
     """Callable function or external operation available to the model. Input/output shapes are described via JSON Schema."""
 
     id: str = Field(..., description="Unique ID of the tool.")
@@ -232,7 +237,7 @@ class Tool(BaseModel):
     )
 
 
-class ToolProvider(BaseModel):
+class ToolProvider(StrictBaseModel):
     """Logical grouping of tools, often backed by an API or OpenAPI spec, and optionally authenticated.
 
     This should show the Pydantic fields."""
@@ -259,7 +264,7 @@ class ToolProvider(BaseModel):
     )
 
 
-class AuthorizationProvider(BaseModel):
+class AuthorizationProvider(StrictBaseModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
 
     id: str = Field(
@@ -299,7 +304,7 @@ class FeedbackType(str, Enum):
     BOOLEAN = "boolean"
 
 
-class Feedback(BaseModel):
+class Feedback(StrictBaseModel):
     """Schema to define how user feedback is collected, structured, and optionally used to guide future prompts."""
 
     id: str = Field(..., description="Unique ID of the feedback config.")
@@ -314,7 +319,7 @@ class Feedback(BaseModel):
     )
 
 
-class Condition(BaseModel):
+class Condition(StrictBaseModel):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
     if_var: str = Field(..., description="ID of the variable to evaluate.")
@@ -334,7 +339,7 @@ class Condition(BaseModel):
     )
 
 
-class Step(BaseModel):
+class Step(StrictBaseModel):
     """A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation."""
 
     id: str = Field(..., description="Unique ID of the step.")
@@ -393,7 +398,7 @@ class Flow(Step):
     )
 
 
-class QTypeSpec(BaseModel):
+class QTypeSpec(StrictBaseModel):
     """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
     This object is expected to be serialized into YAML and consumed by the QType runtime."""
 
