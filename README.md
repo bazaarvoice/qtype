@@ -13,15 +13,44 @@ Install QType:
 pip install qtype
 ```
 
-Then run the built-in CLI on the provided Hello World example:
+Set your openai key and run the [hello world example](examples/hello_world.qtype.yaml) which simply asks a model a question:
+:
 
 ```bash
-qtype validate examples/hello_world.qtype.yaml
+OPENAI_KEY=<YOUR_OPENAI_KEY> qtype run examples/hello_world.qtype.yaml
 ```
 
-You should see output confirming the file is valid according to the QType schema and passes semantic validation.
+You'll see a prompt asking to enter the question. Type what you like and enter Ctrl+D:
 
----
+```shell
+INFO: 🚀 Running flow 'simple_qa'...
+INFO: Starting execution of flow: simple_qa
+
+==================================================
+INPUTS REQUIRED
+==================================================
+Your Question (press Ctrl+D when finished): 
+
+Hi! This is just a test of QType -- an ai dsl. What model are you?  
+
+INFO: Executing step: answer_step
+INFO: Rendered prompt template for 'answer_prompt'
+INFO: Calling OpenAI model 'gpt-4o' with params: {'model': 'gpt-4o', 'messages': [{'role': 'user', 'content': 'You are a helpful assistant.\nAnswer the following question:\n\nHi! This is just a test of QType -- an ai dsl. What model are you?\n\n'}], 'temperature': 0.7, 'max_tokens': 512}
+INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+
+🤖 Generated Response:
+------------------------------
+Hello! I am an AI language model developed by OpenAI, known as ChatGPT. I'm designed to assist with a wide range of questions and tasks. How can I help you today?
+------------------------------
+INFO: ✅ Flow execution completed successfully.
+
+==================================================
+RESULT:
+==================================================
+Hello! I am an AI language model developed by OpenAI, known as ChatGPT. I'm designed to assist with a wide range of questions and tasks. How can I help you today?
+==================================================
+```
+
 
 ## 📁 Examples
 
@@ -32,7 +61,7 @@ See the [`examples/`](./examples/) folder for more usage examples, including:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow the instructions in the [contribution guide](./CONTRIBUTING.md).
+Contributions welcome! Please follow the instructions in the [contribution guide](./CONTRIBUTING.md).
 
 ---
 
