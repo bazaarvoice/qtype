@@ -27,7 +27,7 @@ def validate_main(args: Any) -> None:
     """
     try:
         spec = validate_spec(args)
-        logger.info("✅ Schema validation successful")
+        logger.info("✅ Schema validation successful %s", spec)
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
         sys.exit(1)
