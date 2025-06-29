@@ -4,7 +4,7 @@ from abc import ABC
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VariableType(str, Enum):
@@ -133,6 +133,8 @@ class Prompt(BaseModel):
 
 class Model(BaseModel):
     """Describes a generative model configuration, including provider and model ID."""
+
+    model_config = ConfigDict(extra="forbid")
 
     id: str = Field(..., description="Unique ID for the model.")
     provider: str = Field(
