@@ -31,7 +31,6 @@ def run_main(args: Any) -> None:
     # Step 1: Validate the spec
     try:
         spec = validate_spec(args)
-        logger.info("✅ Schema validation successful")
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
         sys.exit(1)
@@ -39,7 +38,6 @@ def run_main(args: Any) -> None:
     # Step 2: Validate semantics
     try:
         validate_semantics(spec)
-        logger.info("✅ Semantic validation successful.")
     except Exception as exc:
         logger.error("❌ Semantic validation failed:\n%s", exc)
         sys.exit(1)
@@ -47,7 +45,6 @@ def run_main(args: Any) -> None:
     # Step 3: Resolve semantic IR
     try:
         ir_spec = resolve_semantic_ir(spec)
-        logger.info("✅ Semantic resolution successful.")
     except Exception as exc:
         logger.error("❌ Semantic resolution failed:\n%s", exc)
         sys.exit(1)

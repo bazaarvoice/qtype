@@ -30,6 +30,6 @@ flows:
         component: answer_prompt
 
 auth:
-  - id: openai_auth
+  - id: openai
     type: api_key
     api_key: ${OPENAI_KEY}

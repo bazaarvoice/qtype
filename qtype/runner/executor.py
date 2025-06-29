@@ -7,7 +7,18 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from qtype.ir.model import Flow, Input, Prompt, QTypeSpec, Step
+from openai import OpenAI
+
+from qtype.ir.model import (
+    AuthorizationProvider,
+    EmbeddingModel,
+    Flow,
+    Input,
+    Model,
+    Prompt,
+    QTypeSpec,
+    Step,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +190,7 @@ class FlowExecutor:
 
     def _execute_prompt_step(self, prompt: Prompt) -> str:
         """
-        Execute a prompt step by rendering the template and simulating model call.
+        Execute a prompt step by rendering the template and calling the model.
 
         Args:
             prompt: The prompt component to execute.
@@ -204,21 +215,144 @@ class FlowExecutor:
         logger.info(f"Rendered prompt template for '{prompt.id}'")
         logger.debug(f"Template content: {rendered_template}")
 
-        # For now, we'll just return the rendered template as a placeholder
-        # In a real implementation, this would call the actual model
-        print(f"\n🤖 Generated Response:")
+        # Find the appropriate model to use for this prompt
+        model = self._get_prompt_model()
+        if not model:
+            raise FlowExecutionError("No suitable model found for prompt execution")
+
+        # Get the auth provider for the model
+        auth_provider = self._get_auth_provider(model.provider)
+        if not auth_provider:
+            raise FlowExecutionError(
+                f"No auth provider found for provider '{model.provider}'"
+            )
+
+        # Call the actual model
+        try:
+            response = self._call_model(model, auth_provider, rendered_template)
+        except Exception as e:
+            raise FlowExecutionError(f"Model call failed: {str(e)}")
+
+        print("\n🤖 Generated Response:")
         print("-" * 30)
-
-        # Simulate a simple response based on the prompt content
-        if "question" in rendered_template.lower():
-            response = self._generate_mock_response(rendered_template)
-        else:
-            response = f"Response to: {rendered_template}"
-
         print(response)
         print("-" * 30)
 
         return response
+
+    def _get_prompt_model(self) -> Optional[Model]:
+        """
+        Get the first available non-embedding model for prompt execution.
+
+        Returns:
+            The model to use, or None if no suitable model found.
+        """
+        if not self.spec.models:
+            return None
+
+        # Find the first non-embedding model
+        for model in self.spec.models:
+            if not isinstance(model, EmbeddingModel):
+                return model
+
+        return None
+
+    def _get_auth_provider(self, provider_name: str) -> Optional[AuthorizationProvider]:
+        """
+        Get the auth provider for a given provider name.
+
+        Args:
+            provider_name: The name of the provider (e.g., 'openai').
+
+        Returns:
+            The auth provider, or None if not found.
+        """
+        if not self.spec.auth:
+            return None
+
+        # Find auth provider by ID matching the provider name
+        for auth in self.spec.auth:
+            if auth.id == provider_name:
+                return auth
+
+        return None
+
+    def _call_model(
+        self, model: Model, auth_provider: AuthorizationProvider, prompt: str
+    ) -> str:
+        """
+        Call the model with the given prompt.
+
+        Args:
+            model: The model configuration to use.
+            auth_provider: The auth provider for the model.
+            prompt: The rendered prompt text.
+
+        Returns:
+            The model's response.
+
+        Raises:
+            FlowExecutionError: If the model call fails.
+        """
+        if model.provider == "openai":
+            return self._call_openai_model(model, auth_provider, prompt)
+        else:
+            raise FlowExecutionError(
+                f"Unsupported model provider: {model.provider}"
+            )
+
+    def _call_openai_model(
+        self, model: Model, auth_provider: AuthorizationProvider, prompt: str
+    ) -> str:
+        """
+        Call an OpenAI model with the given prompt.
+
+        Args:
+            model: The OpenAI model configuration.
+            auth_provider: The auth provider with the API key.
+            prompt: The rendered prompt text.
+
+        Returns:
+            The model's response.
+
+        Raises:
+            FlowExecutionError: If the OpenAI call fails.
+        """
+        if not auth_provider.api_key:
+            raise FlowExecutionError("OpenAI auth provider missing api_key")
+
+        try:
+            client = OpenAI(api_key=auth_provider.api_key)
+
+            # Determine the model ID to use
+            model_id = model.model_id or model.id
+
+            # Prepare the inference parameters
+            inference_params = model.inference_params or {}
+
+            # Ensure we have required parameters
+            call_params = {
+                "model": model_id,
+                "messages": [{"role": "user", "content": prompt}],
+                **inference_params,
+            }
+
+            logger.info(f"Calling OpenAI model '{model_id}' with params: {call_params}")
+
+            response = client.chat.completions.create(**call_params)
+
+            if not response.choices:
+                raise FlowExecutionError("OpenAI returned no choices")
+
+            content = response.choices[0].message.content
+            if content is None:
+                raise FlowExecutionError("OpenAI returned empty response content")
+
+            return str(content)
+
+        except Exception as e:
+            logger.error(f"OpenAI API call failed: {str(e)}")
+            raise FlowExecutionError(f"OpenAI API call failed: {str(e)}")
 
     def _generate_mock_response(self, prompt: str) -> str:
         """
