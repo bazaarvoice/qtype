@@ -13,6 +13,8 @@ def generate_schema_main(args: argparse.Namespace) -> None:
             'output' attribute specifying the output file path.
     """
     schema = QTypeSpec.model_json_schema()
+    # Add the $schema property to indicate JSON Schema version
+    schema["$schema"] = "http://json-schema.org/draft-07/schema#"
     output = json.dumps(schema, indent=2)
     output_path: Optional[str] = getattr(args, "output", None)
     if output_path:

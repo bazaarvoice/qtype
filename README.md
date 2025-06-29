@@ -27,7 +27,6 @@ You should see output confirming the file is valid according to the QType schema
 
 See the [`examples/`](./examples/) folder for more usage examples, including:
 - `hello_world.qtype.yaml`: a minimal flow with a single prompt
-- `demo_with_retriever.yaml`: demonstrates use of a retriever and inputs
 
 ---
 

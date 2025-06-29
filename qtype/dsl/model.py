@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 
 class VariableType(str, Enum):
-    """Type of input expected from the user."""
+    """Represents the type of data a user or system input can accept within the DSL.
+    Used for schema validation and UI rendering of input fields."""
 
     text = "text"
     number = "number"
@@ -22,7 +23,7 @@ class VariableType(str, Enum):
 
 
 class DisplayType(str, Enum):
-    """Display type hint for rendering input UI components."""
+    """UI rendering hint for how an input should appear in the frontend (e.g., text box, dropdown, file upload)."""
 
     text = "text"
     textarea = "textarea"
@@ -36,14 +37,18 @@ class DisplayType(str, Enum):
 
 
 class DisplayMetadata(BaseModel):
-    """UI display hints for rendering an input field."""
+    """Additional UI hints used to customize how input fields are displayed in the generated application UI."""
 
     placeholder: Optional[str] = Field(
-        default=None, description="Placeholder text shown inside the input field."
+        default=None,
+        description="Placeholder text shown inside the input field.",
     )
-    tooltip: Optional[str] = Field(default=None, description="Tooltip shown on hover.")
+    tooltip: Optional[str] = Field(
+        default=None, description="Tooltip shown on hover."
+    )
     default_value: Optional[Any] = Field(
-        default=None, description="Default value if the user doesn't supply one."
+        default=None,
+        description="Default value if the user doesn't supply one.",
     )
     min_value: Optional[Union[int, float]] = Field(
         default=None, description="Minimum value for numeric inputs."
@@ -58,13 +63,15 @@ class DisplayMetadata(BaseModel):
         default=None, description="Allowed file types for file upload."
     )
     options: Optional[List[str]] = Field(
-        default=None, description="Options for dropdowns, radios, or checkboxes."
+        default=None,
+        description="Options for dropdowns, radios, or checkboxes.",
     )
     group: Optional[str] = Field(
         default=None, description="Grouping section this input belongs to."
     )
     section: Optional[str] = Field(
-        default=None, description="Section name used to visually separate inputs."
+        default=None,
+        description="Section name used to visually separate inputs.",
     )
     icon: Optional[str] = Field(
         default=None, description="Icon shown alongside input (optional)."
@@ -75,7 +82,7 @@ class DisplayMetadata(BaseModel):
 
 
 class Input(BaseModel):
-    """Represents an input field provided by the user or external system."""
+    """Schema for a single user input or external parameter required for a flow or prompt within the DSL."""
 
     id: str = Field(
         ...,
@@ -94,7 +101,7 @@ class Input(BaseModel):
 
 
 class Output(BaseModel):
-    """Defines the structure of a single output."""
+    """Schema for a single output produced by a prompt, tool, or flow component."""
 
     id: str = Field(
         ...,
@@ -106,7 +113,7 @@ class Output(BaseModel):
 
 
 class Prompt(BaseModel):
-    """Points to a prompt template used for generation."""
+    """References a prompt template, either inline or from file, along with expected input and output variable bindings."""
 
     id: str = Field(..., description="Unique ID for the prompt.")
     path: Optional[str] = Field(
@@ -125,7 +132,7 @@ class Prompt(BaseModel):
 
 
 class Model(BaseModel):
-    """Represents a generative model configuration."""
+    """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
     provider: str = Field(
@@ -142,7 +149,7 @@ class Model(BaseModel):
 
 
 class EmbeddingModel(Model):
-    """Describes a model used for embedding text for vector search or memory."""
+    """Specialized model used for embedding generation, such as vector search or memory storage."""
 
     dimensions: int = Field(
         ...,
@@ -151,14 +158,14 @@ class EmbeddingModel(Model):
 
 
 class BaseRetriever(BaseModel, ABC):
-    """Abstract base class for retrievers that fetch supporting documents."""
+    """Abstract base class for all retriever types that supply context for prompt execution."""
 
     id: str = Field(..., description="Unique ID of the retriever.")
     index: str = Field(..., description="ID of the index this retriever uses.")
 
 
 class VectorDBRetriever(BaseRetriever):
-    """Retriever that queries a vector database using an embedding-based search."""
+    """Retriever that fetches top-K documents using a vector database and embedding-based similarity search."""
 
     embedding_model: str = Field(
         ...,
@@ -168,22 +175,23 @@ class VectorDBRetriever(BaseRetriever):
 
 
 class SearchRetriever(BaseRetriever):
-    """Retriever that queries a keyword or hybrid search engine."""
+    """Retriever that generates and executes a keyword or hybrid search query against a search engine."""
 
     top_k: int = Field(5, description="Number of top documents to retrieve.")
     query_prompt: Optional[str] = Field(
-        default=None, description="Prompt ID used to generate the search query."
+        default=None,
+        description="Prompt ID used to generate the search query.",
     )
 
 
 class MemoryType(str, Enum):
-    """Enum for memory types."""
+    """Enum to differentiate supported memory types, such as vector memory for embedding-based recall."""
 
     vector = "vector"
 
 
 class Memory(BaseModel):
-    """Persistent or session-level memory context for a user or flow."""
+    """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
     type: MemoryType = Field(
@@ -205,7 +213,7 @@ class Memory(BaseModel):
 
 
 class Tool(BaseModel):
-    """A single callable tool/function exposed to the model."""
+    """Callable function or external operation available to the model. Input/output shapes are described via JSON Schema."""
 
     id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
@@ -223,7 +231,9 @@ class Tool(BaseModel):
 
 
 class ToolProvider(BaseModel):
-    """Wraps and authenticates access to a set of tools (often from a single API or OpenAPI spec)."""
+    """Logical grouping of tools, often backed by an API or OpenAPI spec, and optionally authenticated.
+
+    This should show the Pydantic fields."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
     name: str = Field(..., description="Name of the tool provider.")
@@ -235,7 +245,8 @@ class ToolProvider(BaseModel):
         description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
     )
     include_tags: Optional[List[str]] = Field(
-        default=None, description="Limit tool generation to specific OpenAPI tags."
+        default=None,
+        description="Limit tool generation to specific OpenAPI tags.",
     )
     exclude_paths: Optional[List[str]] = Field(
         default=None, description="Exclude specific endpoints by path."
@@ -247,7 +258,7 @@ class ToolProvider(BaseModel):
 
 
 class AuthorizationProvider(BaseModel):
-    """Represents credentials and auth settings for accessing protected APIs."""
+    """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
 
     id: str = Field(
         ..., description="Unique ID of the authorization configuration."
@@ -258,11 +269,15 @@ class AuthorizationProvider(BaseModel):
     host: Optional[str] = Field(
         default=None, description="Base URL or domain of the provider."
     )
-    client_id: Optional[str] = Field(default=None, description="OAuth2 client ID.")
+    client_id: Optional[str] = Field(
+        default=None, description="OAuth2 client ID."
+    )
     client_secret: Optional[str] = Field(
         default=None, description="OAuth2 client secret."
     )
-    token_url: Optional[str] = Field(default=None, description="Token endpoint URL.")
+    token_url: Optional[str] = Field(
+        default=None, description="Token endpoint URL."
+    )
     scopes: Optional[List[str]] = Field(
         default=None, description="OAuth2 scopes required."
     )
@@ -272,7 +287,7 @@ class AuthorizationProvider(BaseModel):
 
 
 class FeedbackType(str, Enum):
-    """Types of feedback mechanisms available."""
+    """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
 
     THUMBS = "thumbs"
     STAR = "star"
@@ -283,12 +298,13 @@ class FeedbackType(str, Enum):
 
 
 class Feedback(BaseModel):
-    """Describes how and where to collect feedback on generated responses."""
+    """Schema to define how user feedback is collected, structured, and optionally used to guide future prompts."""
 
     id: str = Field(..., description="Unique ID of the feedback config.")
     type: FeedbackType = Field(..., description="Feedback mechanism type.")
     question: Optional[str] = Field(
-        default=None, description="Question to show user for qualitative feedback."
+        default=None,
+        description="Question to show user for qualitative feedback.",
     )
     prompt: Optional[str] = Field(
         default=None,
@@ -297,7 +313,7 @@ class Feedback(BaseModel):
 
 
 class Condition(BaseModel):
-    """Conditional logic for branching execution within a flow."""
+    """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
     if_var: str = Field(..., description="ID of the variable to evaluate.")
     equals: Optional[Union[str, int, float, bool]] = Field(
@@ -317,7 +333,7 @@ class Condition(BaseModel):
 
 
 class Step(BaseModel):
-    """A single execution step within a flow (e.g., prompt, tool call, or memory update)."""
+    """A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation."""
 
     id: str = Field(..., description="Unique ID of the step.")
     input_vars: Optional[List[str]] = Field(
@@ -333,14 +349,15 @@ class Step(BaseModel):
 
 
 class FlowMode(str, Enum):
-    """Execution mode for a flow."""
+    """Execution context for the flow. `chat` maintains history, while `complete` operates statelessly."""
 
     chat = "chat"
     complete = "complete"
 
 
 class Flow(Step):
-    """A flow represents the full composition of steps a user or system interacts with."""
+    """Composable structure that defines the interaction logic for a generative AI application.
+    Supports branching, memory, and sequencing of steps."""
 
     # Override inherited fields to make them explicitly optional for mypy
     input_vars: Optional[List[str]] = Field(
@@ -369,19 +386,14 @@ class Flow(Step):
         default=None, description="Optional conditional logic within the flow."
     )
     memory: Optional[List[str]] = Field(
-        default=None, description="List of memory IDs to include (chat mode only)."
+        default=None,
+        description="List of memory IDs to include (chat mode only).",
     )
 
 
 class QTypeSpec(BaseModel):
-    """
-    The top-level definition of a QType specification.
-
-    This class represents the full configuration of a generative AI application,
-    including models, inputs, prompts, tools, flows, and supporting infrastructure.
-
-    Only one `QTypeSpec` should exist per YAML spec file.
-    """
+    """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
+    This object is expected to be serialized into YAML and consumed by the QType runtime."""
 
     version: str = Field(
         ..., description="Version of the QType specification schema used."
