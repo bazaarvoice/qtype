@@ -903,6 +903,41 @@
       "title": "Step",
       "type": "object"
     },
+    "TelemetrySink": {
+      "additionalProperties": false,
+      "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the telemetry sink configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "endpoint": {
+          "description": "URL endpoint where telemetry data will be sent.",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AuthorizationProvider ID used to authenticate telemetry data transmission.",
+          "title": "Auth"
+        }
+      },
+      "required": [
+        "id",
+        "endpoint"
+      ],
+      "title": "TelemetrySink",
+      "type": "object"
+    },
     "Tool": {
       "additionalProperties": false,
       "description": "Callable function or external operation available to the model. Input/output shapes are described via JSON Schema.",
@@ -1202,6 +1237,22 @@
       "default": null,
       "description": "Authorization providers and credentials used to access external APIs or cloud services.",
       "title": "Auth"
+    },
+    "telemetry": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/TelemetrySink"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Telemetry sinks for collecting observability data from the QType runtime.",
+      "title": "Telemetry"
     }
   },
   "required": [
