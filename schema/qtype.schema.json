@@ -463,55 +463,6 @@
           "title": "Id",
           "type": "string"
         },
-        "input_vars": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variable IDs required by this step.",
-          "title": "Input Vars"
-        },
-        "output_vars": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable IDs where output is stored.",
-          "title": "Output Vars"
-        },
-        "component": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
-          "title": "Component"
-        },
-        "mode": {
-          "$ref": "#/$defs/FlowMode",
-          "description": "Interaction mode for the flow."
-        },
         "inputs": {
           "anyOf": [
             {
@@ -543,6 +494,23 @@
           "default": null,
           "description": "Output variable IDs produced by the flow.",
           "title": "Outputs"
+        },
+        "component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
+          "title": "Component"
+        },
+        "mode": {
+          "$ref": "#/$defs/FlowMode",
+          "description": "Interaction mode for the flow."
         },
         "steps": {
           "description": "List of steps or nested flow IDs.",
@@ -607,64 +575,6 @@
       ],
       "title": "FlowMode",
       "type": "string"
-    },
-    "Input": {
-      "additionalProperties": false,
-      "description": "Schema for a single user input or external parameter required for a flow or prompt within the DSL.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the input. Referenced in prompts or steps.",
-          "title": "Id",
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/$defs/VariableType",
-          "description": "Type of data expected."
-        },
-        "display_name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Label shown in the UI.",
-          "title": "Display Name"
-        },
-        "display_type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/DisplayType"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Hint for how to render this input."
-        },
-        "display_metadata": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/DisplayMetadata"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Additional UI hints."
-        }
-      },
-      "required": [
-        "id",
-        "type"
-      ],
-      "title": "Input",
-      "type": "object"
     },
     "Memory": {
       "additionalProperties": false,
@@ -810,15 +720,15 @@
           "description": "Inline template string for the prompt.",
           "title": "Template"
         },
-        "input_vars": {
+        "inputs": {
           "description": "List of input variable IDs this prompt expects.",
           "items": {
             "type": "string"
           },
-          "title": "Input Vars",
+          "title": "Inputs",
           "type": "array"
         },
-        "output_vars": {
+        "outputs": {
           "anyOf": [
             {
               "items": {
@@ -832,12 +742,12 @@
           ],
           "default": null,
           "description": "Optional list of output variable IDs this prompt generates.",
-          "title": "Output Vars"
+          "title": "Outputs"
         }
       },
       "required": [
         "id",
-        "input_vars"
+        "inputs"
       ],
       "title": "Prompt",
       "type": "object"
@@ -851,7 +761,7 @@
           "title": "Id",
           "type": "string"
         },
-        "input_vars": {
+        "inputs": {
           "anyOf": [
             {
               "items": {
@@ -865,9 +775,9 @@
           ],
           "default": null,
           "description": "Input variable IDs required by this step.",
-          "title": "Input Vars"
+          "title": "Inputs"
         },
-        "output_vars": {
+        "outputs": {
           "anyOf": [
             {
               "items": {
@@ -881,7 +791,7 @@
           ],
           "default": null,
           "description": "Variable IDs where output is stored.",
-          "title": "Output Vars"
+          "title": "Outputs"
         },
         "component": {
           "anyOf": [
@@ -1069,6 +979,75 @@
       "title": "ToolProvider",
       "type": "object"
     },
+    "Variable": {
+      "additionalProperties": false,
+      "description": "Schema for a variable that can serve as input, output, or parameter within the DSL.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the variable. Referenced in prompts or steps.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/VariableType",
+          "description": "Type of data expected or produced."
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Label shown in the UI.",
+          "title": "Display Name"
+        },
+        "display_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DisplayType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hint for how to render this variable."
+        },
+        "display_metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DisplayMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional UI hints."
+        },
+        "value": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The hydrated value of the variable when set.",
+          "title": "Value"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "Variable",
+      "type": "object"
+    },
     "VariableType": {
       "description": "Represents the type of data a user or system input can accept within the DSL.\nUsed for schema validation and UI rendering of input fields.",
       "enum": [
@@ -1114,7 +1093,7 @@
       "anyOf": [
         {
           "items": {
-            "$ref": "#/$defs/Input"
+            "$ref": "#/$defs/Variable"
           },
           "type": "array"
         },
