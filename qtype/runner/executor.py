@@ -13,7 +13,7 @@ from qtype.ir.model import (
     AuthorizationProvider,
     EmbeddingModel,
     Flow,
-    Input,
+    Variable,
     Model,
     Prompt,
     QTypeSpec,
@@ -73,7 +73,7 @@ class FlowExecutor:
 
         return result
 
-    def _collect_required_inputs(self, flow: Flow) -> List[Input]:
+    def _collect_required_inputs(self, flow: Flow) -> List[Variable]:
         """
         Collect all required inputs from the flow and its steps.
 
@@ -100,7 +100,7 @@ class FlowExecutor:
         return required_inputs
 
     def _collect_inputs_from_step(
-        self, step: Step, required_inputs: List[Input], inputs_seen: set
+        self, step: Step, required_inputs: List[Variable], inputs_seen: set
     ) -> None:
         """
         Recursively collect inputs from a step and its components.
@@ -111,21 +111,21 @@ class FlowExecutor:
             inputs_seen: Set of input IDs already seen.
         """
         # Check step-level inputs
-        if step.input_vars:
-            for inp in step.input_vars:
+        if step.inputs:
+            for inp in step.inputs:
                 if inp.id not in inputs_seen:
                     required_inputs.append(inp)
                     inputs_seen.add(inp.id)
 
         # Check component inputs (if it's a prompt)
         if step.component and isinstance(step.component, Prompt):
-            if step.component.input_vars:
-                for inp in step.component.input_vars:
+            if step.component.inputs:
+                for inp in step.component.inputs:
                     if inp.id not in inputs_seen:
                         required_inputs.append(inp)
                         inputs_seen.add(inp.id)
 
-    def _collect_inputs(self, inputs: List[Input]) -> None:
+    def _collect_inputs(self, inputs: List[Variable]) -> None:
         """
         Collect input values from the user via command line prompts.
 

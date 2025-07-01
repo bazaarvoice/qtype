@@ -115,13 +115,13 @@ def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
 
     # Populate outputs from prompts and steps
     for prompt in dsl_spec.prompts or []:
-        for output_id in prompt.output_vars or []:
+        for output_id in prompt.outputs or []:
             lookup_maps["outputs"][output_id] = output_id
 
     for flow in dsl_spec.flows or []:
         for step in flow.steps:
             if isinstance(step, dsl.Step):
-                for output_id in step.output_vars or []:
+                for output_id in step.outputs or []:
                     lookup_maps["outputs"][output_id] = output_id
 
     return lookup_maps
@@ -155,25 +155,25 @@ def _resolve_models(
     return ir_models
 
 
-def _resolve_inputs(dsl_inputs: List[dsl.Input]) -> List[ir.Input]:
+def _resolve_inputs(dsl_inputs: List[dsl.Variable]) -> List[ir.Variable]:
     """Resolve DSL inputs to IR inputs."""
-    # Input objects are imported directly from DSL
+    # Variable objects are imported directly from DSL
     return list(dsl_inputs)
 
 
 def _resolve_outputs(
     dsl_prompts: List[dsl.Prompt], dsl_flows: List[dsl.Flow]
-) -> List[ir.Output]:
+) -> List[ir.Variable]:
     """Create output objects from prompt and step output variable IDs."""
     outputs = []
     output_ids = set()
 
     # Collect output IDs from prompts
     for prompt in dsl_prompts:
-        for output_id in prompt.output_vars or []:
+        for output_id in prompt.outputs or []:
             if output_id not in output_ids:
                 outputs.append(
-                    ir.Output(
+                    ir.Variable(
                         id=output_id,
                         type=dsl.VariableType.text,  # Default to text, could be inferred
                     )
@@ -184,10 +184,10 @@ def _resolve_outputs(
     for flow in dsl_flows:
         for step in flow.steps:
             if isinstance(step, dsl.Step):
-                for output_id in step.output_vars or []:
+                for output_id in step.outputs or []:
                     if output_id not in output_ids:
                         outputs.append(
-                            ir.Output(
+                            ir.Variable(
                                 id=output_id,
                                 type=dsl.VariableType.text,  # Default to text
                             )
@@ -199,8 +199,8 @@ def _resolve_outputs(
 
 def _resolve_prompts(
     dsl_prompts: List[dsl.Prompt],
-    ir_inputs: List[ir.Input],
-    ir_outputs: List[ir.Output],
+    ir_inputs: List[ir.Variable],
+    ir_outputs: List[ir.Variable],
 ) -> List[ir.Prompt]:
     """Resolve DSL prompts to IR prompts with object references."""
     input_map = {inp.id: inp for inp in ir_inputs}
@@ -210,7 +210,7 @@ def _resolve_prompts(
     for prompt in dsl_prompts:
         # Resolve input variable IDs to Input objects
         resolved_inputs = []
-        for input_id in prompt.input_vars:
+        for input_id in prompt.inputs:
             if input_id not in input_map:
                 raise IRResolutionError(
                     f"Input '{input_id}' not found for prompt '{prompt.id}'"
@@ -219,7 +219,7 @@ def _resolve_prompts(
 
         # Resolve output variable IDs to Output objects
         resolved_outputs = []
-        for output_id in prompt.output_vars or []:
+        for output_id in prompt.outputs or []:
             if output_id not in output_map:
                 raise IRResolutionError(
                     f"Output '{output_id}' not found for prompt '{prompt.id}'"
@@ -231,8 +231,8 @@ def _resolve_prompts(
                 id=prompt.id,
                 path=prompt.path,
                 template=prompt.template,
-                input_vars=resolved_inputs,
-                output_vars=resolved_outputs if resolved_outputs else None,
+                inputs=resolved_inputs,
+                outputs=resolved_outputs if resolved_outputs else None,
             )
         )
 
@@ -404,8 +404,8 @@ def _resolve_feedback(
 
 def _resolve_flows(
     dsl_flows: List[dsl.Flow],
-    ir_inputs: List[ir.Input],
-    ir_outputs: List[ir.Output],
+    ir_inputs: List[ir.Variable],
+    ir_outputs: List[ir.Variable],
     ir_prompts: List[ir.Prompt],
     ir_tools: List[ir.ToolProvider],
     ir_retrievers: List[ir.BaseRetriever],
@@ -457,11 +457,9 @@ def _resolve_flows(
         ir_flow = ir.Flow(
             id=flow.id,
             mode=flow.mode,
-            input_vars=resolved_inputs if resolved_inputs else None,
-            output_vars=resolved_outputs if resolved_outputs else None,
-            component=None,  # Flows don't have components
             inputs=resolved_inputs if resolved_inputs else None,
             outputs=resolved_outputs if resolved_outputs else None,
+            component=None,  # Flows don't have components
             steps=[],  # Will be resolved in second pass
             conditions=None,  # Will be resolved in second pass
             memory=resolved_memory if resolved_memory else None,
@@ -557,8 +555,8 @@ def _resolve_flows(
 
 def _resolve_step(
     dsl_step: dsl.Step,
-    input_map: Dict[str, ir.Input],
-    output_map: Dict[str, ir.Output],
+    input_map: Dict[str, ir.Variable],
+    output_map: Dict[str, ir.Variable],
     prompt_map: Dict[str, ir.Prompt],
     tool_map: Dict[str, ir.Tool],
     retriever_map: Dict[str, ir.BaseRetriever],
@@ -567,7 +565,7 @@ def _resolve_step(
     """Resolve a DSL step to an IR step with object references."""
     # Resolve input variables
     resolved_inputs = []
-    for input_id in dsl_step.input_vars or []:
+    for input_id in dsl_step.inputs or []:
         if input_id not in input_map:
             raise IRResolutionError(
                 f"Input '{input_id}' not found for step '{dsl_step.id}'"
@@ -576,7 +574,7 @@ def _resolve_step(
 
     # Resolve output variables
     resolved_outputs = []
-    for output_id in dsl_step.output_vars or []:
+    for output_id in dsl_step.outputs or []:
         if output_id not in output_map:
             raise IRResolutionError(
                 f"Output '{output_id}' not found for step '{dsl_step.id}'"
@@ -605,8 +603,8 @@ def _resolve_step(
 
     return ir.Step(
         id=dsl_step.id,
-        input_vars=resolved_inputs if resolved_inputs else None,
-        output_vars=resolved_outputs if resolved_outputs else None,
+        inputs=resolved_inputs if resolved_inputs else None,
+        outputs=resolved_outputs if resolved_outputs else None,
         component=component_obj,
     )
 

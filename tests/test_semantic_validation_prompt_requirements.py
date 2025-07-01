@@ -7,7 +7,7 @@ as defined in semantic_ir.md Section 7.
 
 import unittest
 
-from qtype.dsl.model import Input, Prompt, QTypeSpec, VariableType
+from qtype.dsl.model import Variable, Prompt, QTypeSpec, VariableType
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
 
@@ -18,13 +18,13 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with template (and no path) pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="inline_prompt",
                     template="Process this: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
         )
@@ -34,13 +34,13 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with path (and no template) pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="file_prompt",
                     path="prompts/process.txt",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
         )
@@ -50,14 +50,14 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with both template and path fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="invalid_prompt",
                     template="Process this: {user_input}",
                     path="prompts/process.txt",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
         )
@@ -72,12 +72,12 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with neither template nor path fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="invalid_prompt",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                     # Neither template nor path specified
                 )
             ],
@@ -89,20 +89,20 @@ class PromptRequirementsTest(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_prompt_input_vars_reference_existing_inputs_success(self) -> None:
-        """Test that prompt input_vars must reference existing Input components."""
+    def test_prompt_inputs_reference_existing_inputs_success(self) -> None:
+        """Test that prompt inputs must reference existing Variable components."""
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="name", type=VariableType.text),
-                Input(id="age", type=VariableType.number),
+                Variable(id="name", type=VariableType.text),
+                Variable(id="age", type=VariableType.number),
             ],
             prompts=[
                 Prompt(
                     id="greeting",
                     template="Hello {name}, you are {age} years old",
-                    input_vars=["name", "age"],
-                    output_vars=["greeting_message"],
+                    inputs=["name", "age"],
+                    outputs=["greeting_message"],
                 )
             ],
         )
@@ -113,80 +113,80 @@ class PromptRequirementsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="user_name", type=VariableType.text),
-                Input(id="context", type=VariableType.text),
-                Input(id="task", type=VariableType.text),
+                Variable(id="user_name", type=VariableType.text),
+                Variable(id="context", type=VariableType.text),
+                Variable(id="task", type=VariableType.text),
             ],
             prompts=[
                 Prompt(
                     id="complex_prompt",
                     template="Hello {user_name}! Given this context: {context}, please {task}.",
-                    input_vars=["user_name", "context", "task"],
-                    output_vars=["response"],
+                    inputs=["user_name", "context", "task"],
+                    outputs=["response"],
                 )
             ],
         )
         validate_semantics(spec)
 
-    def test_prompt_with_optional_output_vars_success(self) -> None:
-        """Test that prompts with no output_vars pass validation."""
+    def test_prompt_with_optional_outputs_success(self) -> None:
+        """Test that prompts with no outputs pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="no_output_prompt",
                     template="Just process: {user_input}",
-                    input_vars=["user_input"],
-                    # No output_vars specified
+                    inputs=["user_input"],
+                    # No outputs specified
                 )
             ],
         )
         validate_semantics(spec)
 
-    def test_prompt_with_empty_output_vars_success(self) -> None:
-        """Test that prompts with empty output_vars list pass validation."""
+    def test_prompt_with_empty_outputs_success(self) -> None:
+        """Test that prompts with empty outputs list pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="empty_output_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=[],  # Empty list
+                    inputs=["user_input"],
+                    outputs=[],  # Empty list
                 )
             ],
         )
         validate_semantics(spec)
 
-    def test_multiple_prompts_with_different_input_vars_success(self) -> None:
+    def test_multiple_prompts_with_different_inputs_success(self) -> None:
         """Test that multiple prompts with different input variable sets pass validation."""
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="user_name", type=VariableType.text),
-                Input(id="user_email", type=VariableType.text),
-                Input(id="message", type=VariableType.text),
+                Variable(id="user_name", type=VariableType.text),
+                Variable(id="user_email", type=VariableType.text),
+                Variable(id="message", type=VariableType.text),
             ],
             prompts=[
                 Prompt(
                     id="greeting_prompt",
                     template="Hello {user_name}!",
-                    input_vars=["user_name"],
-                    output_vars=["greeting"],
+                    inputs=["user_name"],
+                    outputs=["greeting"],
                 ),
                 Prompt(
                     id="email_prompt",
                     template="Send email to {user_email}: {message}",
-                    input_vars=["user_email", "message"],
-                    output_vars=["email_sent"],
+                    inputs=["user_email", "message"],
+                    outputs=["email_sent"],
                 ),
                 Prompt(
                     id="full_prompt",
                     template="Hi {user_name}, sending {message} to {user_email}",
-                    input_vars=["user_name", "user_email", "message"],
-                    output_vars=["full_response"],
+                    inputs=["user_name", "user_email", "message"],
+                    outputs=["full_response"],
                 ),
             ],
         )
@@ -196,22 +196,22 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompt paths with various valid extensions pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="input", type=VariableType.text)],
+            inputs=[Variable(id="input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="txt_prompt",
                     path="prompts/system.txt",
-                    input_vars=["input"],
+                    inputs=["input"],
                 ),
                 Prompt(
                     id="md_prompt",
                     path="prompts/user.md",
-                    input_vars=["input"],
+                    inputs=["input"],
                 ),
                 Prompt(
                     id="jinja_prompt",
                     path="prompts/template.j2",
-                    input_vars=["input"],
+                    inputs=["input"],
                 ),
             ],
         )

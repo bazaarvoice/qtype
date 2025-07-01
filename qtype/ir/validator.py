@@ -116,9 +116,9 @@ class SemanticValidator:
 
         # Collect output variables from prompts
         for prompt in spec.prompts or []:
-            for output_var in prompt.output_vars or []:
+            for output_var in prompt.outputs or []:
                 if output_var in registry.outputs:
-                    self._errors.append(f"Duplicate Output.id: {output_var}")
+                    self._errors.append(f"Duplicate Variable.id: {output_var}")
                 registry.outputs[output_var] = None
 
         # Collect steps from flows and their output variables
@@ -132,12 +132,12 @@ class SemanticValidator:
 
                     # Only check for duplicate output vars if the step isn't using a component
                     # that already produces those vars
-                    for output_var in step.output_vars or []:
+                    for output_var in step.outputs or []:
                         # Check if this output var is already produced by the step's component
                         component_produces_var = False
                         if step.component in registry.prompts:
                             prompt = registry.prompts[step.component]
-                            if output_var in (prompt.output_vars or []):
+                            if output_var in (prompt.outputs or []):
                                 component_produces_var = True
 
                         if (
@@ -145,7 +145,7 @@ class SemanticValidator:
                             and output_var in registry.outputs
                         ):
                             self._errors.append(
-                                f"Duplicate Output.id: {output_var}"
+                                f"Duplicate Variable.id: {output_var}"
                             )
                         registry.outputs[output_var] = None
 
@@ -158,7 +158,7 @@ class SemanticValidator:
             "Model", [m.id for m in spec.models or []]
         )
         self._check_component_duplicates(
-            "Input", [i.id for i in spec.inputs or []]
+            "Variable", [i.id for i in spec.inputs or []]
         )
         self._check_component_duplicates(
             "Prompt", [p.id for p in spec.prompts or []]
@@ -216,14 +216,14 @@ class SemanticValidator:
     ) -> None:
         """Validate that prompt input/output variables reference existing components."""
         for prompt in spec.prompts or []:
-            for input_var in prompt.input_vars:
+            for input_var in prompt.inputs:
                 if input_var not in registry.inputs:
                     self._errors.append(
                         f"Prompt '{prompt.id}' references non-existent "
                         f"input variable '{input_var}'"
                     )
 
-            for output_var in prompt.output_vars or []:
+            for output_var in prompt.outputs or []:
                 if output_var not in registry.outputs:
                     self._errors.append(
                         f"Prompt '{prompt.id}' references non-existent "
@@ -264,14 +264,14 @@ class SemanticValidator:
                     )
 
                 # Validate step variables
-                for input_var in step.input_vars or []:
+                for input_var in step.inputs or []:
                     if input_var not in registry.inputs:
                         self._errors.append(
                             f"Step '{step.id}' references non-existent "
                             f"input variable '{input_var}'"
                         )
 
-                for output_var in step.output_vars or []:
+                for output_var in step.outputs or []:
                     if output_var not in registry.outputs:
                         self._errors.append(
                             f"Step '{step.id}' references non-existent "

@@ -87,34 +87,26 @@ class DisplayMetadata(StrictBaseModel):
     )
 
 
-class Input(StrictBaseModel):
-    """Schema for a single user input or external parameter required for a flow or prompt within the DSL."""
+class Variable(StrictBaseModel):
+    """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
     id: str = Field(
         ...,
-        description="Unique ID of the input. Referenced in prompts or steps.",
+        description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType = Field(..., description="Type of data expected.")
+    type: VariableType = Field(..., description="Type of data expected or produced.")
     display_name: Optional[str] = Field(
         default=None, description="Label shown in the UI."
     )
     display_type: Optional[DisplayType] = Field(
-        default=None, description="Hint for how to render this input."
+        default=None, description="Hint for how to render this variable."
     )
     display_metadata: Optional[DisplayMetadata] = Field(
         default=None, description="Additional UI hints."
     )
-
-
-class Output(StrictBaseModel):
-    """Schema for a single output produced by a prompt, tool, or flow component."""
-
-    id: str = Field(
-        ...,
-        description="Unique ID of the output. Referenced by prompt outputs or step responses.",
-    )
-    type: VariableType = Field(
-        ..., description="Type of output produced (e.g., text, image, json)."
+    value: Optional[Any] = Field(
+        default=None,
+        description="The hydrated value of the variable when set.",
     )
 
 
@@ -128,10 +120,10 @@ class Prompt(StrictBaseModel):
     template: Optional[str] = Field(
         default=None, description="Inline template string for the prompt."
     )
-    input_vars: List[str] = Field(
+    inputs: List[str] = Field(
         ..., description="List of input variable IDs this prompt expects."
     )
-    output_vars: Optional[List[str]] = Field(
+    outputs: Optional[List[str]] = Field(
         default=None,
         description="Optional list of output variable IDs this prompt generates.",
     )
@@ -139,8 +131,6 @@ class Prompt(StrictBaseModel):
 
 class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
-
-    # model_config = ConfigDict(extra="forbid")
 
     id: str = Field(..., description="Unique ID for the model.")
     provider: str = Field(
@@ -359,10 +349,10 @@ class Step(StrictBaseModel):
     """A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation."""
 
     id: str = Field(..., description="Unique ID of the step.")
-    input_vars: Optional[List[str]] = Field(
+    inputs: Optional[List[str]] = Field(
         default=None, description="Input variable IDs required by this step."
     )
-    output_vars: Optional[List[str]] = Field(
+    outputs: Optional[List[str]] = Field(
         default=None, description="Variable IDs where output is stored."
     )
     component: Optional[str] = Field(
@@ -382,18 +372,10 @@ class Flow(Step):
     """Composable structure that defines the interaction logic for a generative AI application.
     Supports branching, memory, and sequencing of steps."""
 
-    # Override inherited fields to make them explicitly optional for mypy
-    input_vars: Optional[List[str]] = Field(
-        default=None, description="Input variable IDs required by this step."
-    )
-    output_vars: Optional[List[str]] = Field(
-        default=None, description="Variable IDs where output is stored."
-    )
     component: Optional[str] = Field(
         default=None,
         description="ID of the component to invoke (e.g., prompt ID, tool ID).",
     )
-
     # Flow-specific fields
     mode: FlowMode = Field(..., description="Interaction mode for the flow.")
     inputs: Optional[List[str]] = Field(
@@ -413,6 +395,14 @@ class Flow(Step):
         description="List of memory IDs to include (chat mode only).",
     )
 
+class Agent(Step):
+    model: str = Field(..., description="The id of the model for this agent to use.")
+    prompt: str = Field(..., description="The id of the prompt for this agent to use")
+    tools: Optional[List[str]] = Field(
+        default=None,
+        description="Tools that this agent has access to"
+    )
+
 
 class QTypeSpec(StrictBaseModel):
     """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
@@ -425,7 +415,7 @@ class QTypeSpec(StrictBaseModel):
         default=None,
         description="List of generative models available for use, including their providers and inference parameters.",
     )
-    inputs: Optional[List[Input]] = Field(
+    inputs: Optional[List[Variable]] = Field(
         default=None,
         description="User-facing inputs or parameters exposed by the application.",
     )

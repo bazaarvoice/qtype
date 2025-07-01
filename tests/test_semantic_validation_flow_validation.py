@@ -12,7 +12,7 @@ from qtype.dsl.model import (
     EmbeddingModel,
     Flow,
     FlowMode,
-    Input,
+    Variable,
     Memory,
     MemoryType,
     Prompt,
@@ -30,13 +30,13 @@ class FlowValidationTest(unittest.TestCase):
         """Test that unique step IDs within a flow pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -47,14 +47,14 @@ class FlowValidationTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result1"],
+                            inputs=["user_input"],
+                            outputs=["result1"],
                         ),
                         Step(
                             id="step2",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result2"],
+                            inputs=["user_input"],
+                            outputs=["result2"],
                         ),
                     ],
                 )
@@ -100,13 +100,13 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow inputs and outputs referencing valid variables pass."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="flow_input", type=VariableType.text)],
+            inputs=[Variable(id="flow_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {flow_input}",
-                    input_vars=["flow_input"],
-                    output_vars=["flow_output"],
+                    inputs=["flow_input"],
+                    outputs=["flow_output"],
                 )
             ],
             flows=[
@@ -119,8 +119,8 @@ class FlowValidationTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["flow_input"],
-                            output_vars=["flow_output"],
+                            inputs=["flow_input"],
+                            outputs=["flow_output"],
                         )
                     ],
                 )
@@ -132,13 +132,13 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow conditions reference valid step IDs."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -149,14 +149,14 @@ class FlowValidationTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result"],
+                            inputs=["user_input"],
+                            outputs=["result"],
                         ),
                         Step(
                             id="step2",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result2"],
+                            inputs=["user_input"],
+                            outputs=["result2"],
                         ),
                     ],
                     conditions=[
@@ -175,13 +175,13 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow conditions referencing invalid step IDs fail."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -192,8 +192,8 @@ class FlowValidationTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result"],
+                            inputs=["user_input"],
+                            outputs=["result"],
                         )
                     ],
                     conditions=[

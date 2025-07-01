@@ -55,7 +55,7 @@ class MemoryUsageTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="doc_retriever",
-                            output_vars=["retrieved_docs"],
+                            outputs=["retrieved_docs"],
                         )
                     ],
                 )
@@ -87,7 +87,7 @@ class MemoryUsageTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="chat_memory",  # Invalid: memory as component
-                            output_vars=["result"],
+                            outputs=["result"],
                         )
                     ],
                 )
@@ -127,7 +127,7 @@ class MemoryUsageTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="doc_retriever",
-                            output_vars=["retrieved_docs"],
+                            outputs=["retrieved_docs"],
                         )
                     ],
                 )
@@ -169,7 +169,7 @@ class MemoryUsageTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="doc_retriever",
-                            output_vars=["retrieved_docs"],
+                            outputs=["retrieved_docs"],
                         )
                     ],
                 )

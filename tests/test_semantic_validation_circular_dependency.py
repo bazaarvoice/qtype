@@ -10,7 +10,7 @@ import unittest
 from qtype.dsl.model import (
     Flow,
     FlowMode,
-    Input,
+    Variable,
     Prompt,
     QTypeSpec,
     Step,
@@ -98,13 +98,13 @@ class CircularDependencyTest(unittest.TestCase):
         """Test complex flow structure without cycles passes validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result1"],
+                    inputs=["user_input"],
+                    outputs=["result1"],
                 )
             ],
             flows=[
@@ -116,8 +116,8 @@ class CircularDependencyTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="prompt1",
-                            input_vars=["user_input"],
-                            output_vars=["result1"],
+                            inputs=["user_input"],
+                            outputs=["result1"],
                         ),
                         "base_flow",  # Reference to another flow
                     ],
@@ -213,8 +213,8 @@ class CircularDependencyTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="used_input", type=VariableType.text),
-                Input(
+                Variable(id="used_input", type=VariableType.text),
+                Variable(
                     id="orphaned_input", type=VariableType.text
                 ),  # Not used anywhere
             ],
@@ -222,14 +222,14 @@ class CircularDependencyTest(unittest.TestCase):
                 Prompt(
                     id="used_prompt",
                     template="Process: {used_input}",
-                    input_vars=["used_input"],
-                    output_vars=["result"],
+                    inputs=["used_input"],
+                    outputs=["result"],
                 ),
                 Prompt(
                     id="orphaned_prompt",  # Not used anywhere
                     template="Orphaned: {used_input}",
-                    input_vars=["used_input"],
-                    output_vars=["orphaned_result"],
+                    inputs=["used_input"],
+                    outputs=["orphaned_result"],
                 ),
             ],
             flows=[
@@ -240,8 +240,8 @@ class CircularDependencyTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="used_prompt",
-                            input_vars=["used_input"],
-                            output_vars=["result"],
+                            inputs=["used_input"],
+                            outputs=["result"],
                         )
                     ],
                 )

@@ -14,7 +14,7 @@ from qtype.dsl.model import (
     FeedbackType,
     Flow,
     FlowMode,
-    Input,
+    Variable,
     Memory,
     MemoryType,
     Model,
@@ -72,8 +72,8 @@ class UniqueIdsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="input1", type=VariableType.text),
-                Input(id="input2", type=VariableType.number),
+                Variable(id="input1", type=VariableType.text),
+                Variable(id="input2", type=VariableType.number),
             ],
         )
         validate_semantics(spec)
@@ -83,29 +83,29 @@ class UniqueIdsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="duplicate", type=VariableType.text),
-                Input(id="duplicate", type=VariableType.number),
+                Variable(id="duplicate", type=VariableType.text),
+                Variable(id="duplicate", type=VariableType.number),
             ],
         )
         with self.assertRaises(SemanticValidationError) as context:
             validate_semantics(spec)
-        self.assertIn("Duplicate Input.id: duplicate", str(context.exception))
+        self.assertIn("Duplicate Variable.id: duplicate", str(context.exception))
 
     def test_unique_prompt_ids_success(self) -> None:
         """Test that unique prompt IDs pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
                     template="Hello {user_input}",
-                    input_vars=["user_input"],
+                    inputs=["user_input"],
                 ),
                 Prompt(
                     id="prompt2",
                     template="Goodbye {user_input}",
-                    input_vars=["user_input"],
+                    inputs=["user_input"],
                 ),
             ],
         )
@@ -115,17 +115,17 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate prompt IDs raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="duplicate",
                     template="Hello {user_input}",
-                    input_vars=["user_input"],
+                    inputs=["user_input"],
                 ),
                 Prompt(
                     id="duplicate",
                     template="Goodbye {user_input}",
-                    input_vars=["user_input"],
+                    inputs=["user_input"],
                 ),
             ],
         )
@@ -407,13 +407,13 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that unique step IDs within a flow pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
                     template="Hello {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["output1"],
+                    inputs=["user_input"],
+                    outputs=["output1"],
                 )
             ],
             flows=[
@@ -424,14 +424,14 @@ class UniqueIdsTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="prompt1",
-                            input_vars=["user_input"],
-                            output_vars=["output1"],
+                            inputs=["user_input"],
+                            outputs=["output1"],
                         ),
                         Step(
                             id="step2",
                             component="prompt1",
-                            input_vars=["user_input"],
-                            output_vars=["output2"],
+                            inputs=["user_input"],
+                            outputs=["output2"],
                         ),
                     ],
                 )
@@ -443,13 +443,13 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate step IDs within a flow raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
                     template="Hello {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["output1"],
+                    inputs=["user_input"],
+                    outputs=["output1"],
                 )
             ],
             flows=[
@@ -460,14 +460,14 @@ class UniqueIdsTest(unittest.TestCase):
                         Step(
                             id="duplicate",
                             component="prompt1",
-                            input_vars=["user_input"],
-                            output_vars=["output1"],
+                            inputs=["user_input"],
+                            outputs=["output1"],
                         ),
                         Step(
                             id="duplicate",
                             component="prompt1",
-                            input_vars=["user_input"],
-                            output_vars=["output2"],
+                            inputs=["user_input"],
+                            outputs=["output2"],
                         ),
                     ],
                 )

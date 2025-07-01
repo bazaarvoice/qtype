@@ -12,7 +12,7 @@ from qtype.dsl.model import (
     EmbeddingModel,
     Flow,
     FlowMode,
-    Input,
+    Variable,
     Memory,
     MemoryType,
     Prompt,
@@ -28,34 +28,34 @@ from qtype.ir.validator import SemanticValidationError, validate_semantics
 class ReferentialIntegrityTest(unittest.TestCase):
     """Test Section 2: Referential Integrity validation rules."""
 
-    def test_prompt_input_vars_valid_reference_success(self) -> None:
-        """Test that prompt input_vars referencing existing Input.id passes."""
+    def test_prompt_inputs_valid_reference_success(self) -> None:
+        """Test that prompt inputs referencing existing Variable.id passes."""
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Input(id="user_name", type=VariableType.text),
-                Input(id="user_age", type=VariableType.number),
+                Variable(id="user_name", type=VariableType.text),
+                Variable(id="user_age", type=VariableType.number),
             ],
             prompts=[
                 Prompt(
                     id="greeting",
                     template="Hello {user_name}, you are {user_age} years old",
-                    input_vars=["user_name", "user_age"],
+                    inputs=["user_name", "user_age"],
                 )
             ],
         )
         validate_semantics(spec)
 
-    def test_prompt_input_vars_invalid_reference_failure(self) -> None:
-        """Test that prompt input_vars referencing non-existent Input.id fails."""
+    def test_prompt_inputs_invalid_reference_failure(self) -> None:
+        """Test that prompt inputs referencing non-existent Variable.id fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_name", type=VariableType.text)],
+            inputs=[Variable(id="user_name", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="greeting",
                     template="Hello {user_name}, you are {nonexistent} years old",
-                    input_vars=["user_name", "nonexistent"],
+                    inputs=["user_name", "nonexistent"],
                 )
             ],
         )
@@ -66,17 +66,17 @@ class ReferentialIntegrityTest(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_prompt_output_vars_valid_reference_success(self) -> None:
-        """Test that prompt output_vars referencing existing Output.id passes."""
+    def test_prompt_outputs_valid_reference_success(self) -> None:
+        """Test that prompt outputs referencing existing Output.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="generator",
                     template="Generate: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["generated_output"],
+                    inputs=["user_input"],
+                    outputs=["generated_output"],
                 )
             ],
         )
@@ -86,13 +86,13 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step component referencing existing Prompt.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -103,8 +103,8 @@ class ReferentialIntegrityTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result"],
+                            inputs=["user_input"],
+                            outputs=["result"],
                         )
                     ],
                 )
@@ -116,7 +116,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step component referencing non-existent component fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             flows=[
                 Flow(
                     id="test_flow",
@@ -125,8 +125,8 @@ class ReferentialIntegrityTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="nonexistent_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result"],
+                            inputs=["user_input"],
+                            outputs=["result"],
                         )
                     ],
                 )
@@ -139,17 +139,17 @@ class ReferentialIntegrityTest(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_step_input_vars_valid_reference_success(self) -> None:
-        """Test that step input_vars referencing existing Input.id passes."""
+    def test_step_inputs_valid_reference_success(self) -> None:
+        """Test that step inputs referencing existing Variable.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -160,8 +160,8 @@ class ReferentialIntegrityTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["user_input"],
-                            output_vars=["result"],
+                            inputs=["user_input"],
+                            outputs=["result"],
                         )
                     ],
                 )
@@ -169,17 +169,17 @@ class ReferentialIntegrityTest(unittest.TestCase):
         )
         validate_semantics(spec)
 
-    def test_step_input_vars_invalid_reference_failure(self) -> None:
-        """Test that step input_vars referencing non-existent Input.id fails."""
+    def test_step_inputs_invalid_reference_failure(self) -> None:
+        """Test that step inputs referencing non-existent Variable.id fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableType.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
                     template="Process: {user_input}",
-                    input_vars=["user_input"],
-                    output_vars=["result"],
+                    inputs=["user_input"],
+                    outputs=["result"],
                 )
             ],
             flows=[
@@ -190,8 +190,8 @@ class ReferentialIntegrityTest(unittest.TestCase):
                         Step(
                             id="step1",
                             component="test_prompt",
-                            input_vars=["nonexistent_input"],
-                            output_vars=["result"],
+                            inputs=["nonexistent_input"],
+                            outputs=["result"],
                         )
                     ],
                 )
@@ -317,10 +317,10 @@ class ReferentialIntegrityTest(unittest.TestCase):
         )
 
     def test_flow_inputs_valid_reference_success(self) -> None:
-        """Test that flow inputs referencing existing Input.id passes."""
+        """Test that flow inputs referencing existing Variable.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Input(id="flow_input", type=VariableType.text)],
+            inputs=[Variable(id="flow_input", type=VariableType.text)],
             flows=[
                 Flow(
                     id="test_flow",
@@ -333,7 +333,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         validate_semantics(spec)
 
     def test_flow_inputs_invalid_reference_failure(self) -> None:
-        """Test that flow inputs referencing non-existent Input.id fails."""
+        """Test that flow inputs referencing non-existent Variable.id fails."""
         spec = QTypeSpec(
             version="1.0",
             flows=[

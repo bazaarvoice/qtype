@@ -17,9 +17,8 @@ from qtype.dsl.model import (
     BaseRetriever,
     FeedbackType,
     FlowMode,
-    Input,
+    Variable,
     MemoryType,
-    Output,
     Tool,
 )
 
@@ -34,10 +33,10 @@ class Prompt(BaseModel):
     template: Optional[str] = Field(
         None, description="Inline template string for the prompt."
     )
-    input_vars: List[Input] = Field(
+    inputs: List[Variable] = Field(
         ..., description="List of input objects this prompt expects."
     )
-    output_vars: Optional[List[Output]] = Field(
+    outputs: Optional[List[Variable]] = Field(
         None,
         description="Optional list of output objects this prompt generates.",
     )
@@ -191,10 +190,10 @@ class Step(BaseModel):
     """A single execution step within a flow (e.g., prompt, tool call, or memory update)."""
 
     id: str = Field(..., description="Unique ID of the step.")
-    input_vars: Optional[List[Input]] = Field(
+    inputs: Optional[List[Variable]] = Field(
         None, description="Input objects required by this step."
     )
-    output_vars: Optional[List[Output]] = Field(
+    outputs: Optional[List[Variable]] = Field(
         None, description="Output objects where results are stored."
     )
     component: Optional[
@@ -209,10 +208,10 @@ class Flow(Step):
     """A flow represents the full composition of steps a user or system interacts with."""
 
     mode: FlowMode = Field(..., description="Interaction mode for the flow.")
-    inputs: Optional[List[Input]] = Field(
+    inputs: Optional[List[Variable]] = Field(
         None, description="Input objects accepted by the flow."
     )
-    outputs: Optional[List[Output]] = Field(
+    outputs: Optional[List[Variable]] = Field(
         None, description="Output objects produced by the flow."
     )
     steps: List[Union[Step, "Flow"]] = Field(
@@ -245,7 +244,7 @@ class QTypeSpec(BaseModel):
         None,
         description="List of generative model objects available for use, including their providers and inference parameters.",
     )
-    inputs: Optional[List[Input]] = Field(
+    inputs: Optional[List[Variable]] = Field(
         None,
         description="User-facing input objects exposed by the application.",
     )
