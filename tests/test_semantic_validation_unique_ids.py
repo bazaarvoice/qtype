@@ -21,6 +21,7 @@ from qtype.dsl.model import (
     Prompt,
     QTypeSpec,
     Step,
+    TelemetrySink,
     Tool,
     ToolProvider,
     VariableType,
@@ -477,6 +478,44 @@ class UniqueIdsTest(unittest.TestCase):
         self.assertIn(
             "Duplicate Step.id 'duplicate' in Flow 'flow1'",
             str(context.exception),
+        )
+
+    def test_unique_telemetry_sink_ids_success(self) -> None:
+        """Test that unique telemetry sink IDs pass validation."""
+        spec = QTypeSpec(
+            version="1.0",
+            telemetry=[
+                TelemetrySink(
+                    id="sink1",
+                    endpoint="https://telemetry1.example.com/events",
+                ),
+                TelemetrySink(
+                    id="sink2",
+                    endpoint="https://telemetry2.example.com/events",
+                ),
+            ],
+        )
+        validate_semantics(spec)
+
+    def test_duplicate_telemetry_sink_ids_failure(self) -> None:
+        """Test that duplicate telemetry sink IDs raise validation error."""
+        spec = QTypeSpec(
+            version="1.0",
+            telemetry=[
+                TelemetrySink(
+                    id="duplicate",
+                    endpoint="https://telemetry1.example.com/events",
+                ),
+                TelemetrySink(
+                    id="duplicate",
+                    endpoint="https://telemetry2.example.com/events",
+                ),
+            ],
+        )
+        with self.assertRaises(SemanticValidationError) as context:
+            validate_semantics(spec)
+        self.assertIn(
+            "Duplicate TelemetrySink.id: duplicate", str(context.exception)
         )
 
 

@@ -40,6 +40,7 @@ class ComponentRegistry:
     flows: Dict[str, Any]
     steps: Dict[str, Any]
     tools: Dict[str, Any]
+    telemetry: Dict[str, Any]
 
 
 class SemanticValidator:
@@ -89,6 +90,7 @@ class SemanticValidator:
             flows={f.id: f for f in spec.flows or []},
             steps={},
             tools={},
+            telemetry={t.id: t for t in spec.telemetry or []},
         )
 
         self._collect_nested_components(spec, registry)
@@ -179,6 +181,9 @@ class SemanticValidator:
         self._check_component_duplicates(
             "Flow", [f.id for f in spec.flows or []]
         )
+        self._check_component_duplicates(
+            "TelemetrySink", [t.id for t in spec.telemetry or []]
+        )
         # Tools and steps are checked separately in _collect_nested_components
 
     def _check_component_duplicates(
@@ -202,6 +207,8 @@ class SemanticValidator:
         self._validate_retriever_references(spec, registry)
         self._validate_memory_references(spec, registry)
         self._validate_tool_provider_references(spec, registry)
+        self._validate_telemetry_references(spec, registry)
+        self._validate_flow_references(spec, registry)
         self._validate_flow_references(spec, registry)
 
     def _validate_prompt_references(
@@ -323,25 +330,42 @@ class SemanticValidator:
                     f"auth provider '{tool_provider.auth}'"
                 )
 
+    def _validate_telemetry_references(
+        self, spec: QTypeSpec, registry: ComponentRegistry
+    ) -> None:
+        """Validate that telemetry sinks reference valid auth providers."""
+        for telemetry_sink in spec.telemetry or []:
+            if (
+                telemetry_sink.auth
+                and telemetry_sink.auth not in registry.auth_providers
+            ):
+                self._errors.append(
+                    f"TelemetrySink '{telemetry_sink.id}' references non-existent "
+                    f"auth provider '{telemetry_sink.auth}'"
+                )
+
     def _validate_flow_references(
         self, spec: QTypeSpec, registry: ComponentRegistry
     ) -> None:
         """Validate that flows reference valid inputs, outputs, and memory."""
         for flow in spec.flows or []:
-            for input_var in flow.inputs or []:
-                if input_var not in registry.inputs:
+            # Validate flow inputs
+            for input_id in flow.inputs or []:
+                if input_id not in registry.inputs:
                     self._errors.append(
                         f"Flow '{flow.id}' references non-existent "
-                        f"input variable '{input_var}'"
+                        f"input variable '{input_id}'"
                     )
 
-            for output_var in flow.outputs or []:
-                if output_var not in registry.outputs:
+            # Validate flow outputs
+            for output_id in flow.outputs or []:
+                if output_id not in registry.outputs:
                     self._errors.append(
                         f"Flow '{flow.id}' references non-existent "
-                        f"output variable '{output_var}'"
+                        f"output '{output_id}'"
                     )
 
+            # Validate flow memory references
             for memory_id in flow.memory or []:
                 if memory_id not in registry.memory:
                     self._errors.append(

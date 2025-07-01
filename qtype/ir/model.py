@@ -136,6 +136,21 @@ class ToolProvider(BaseModel):
     )
 
 
+class TelemetrySink(BaseModel):
+    """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
+
+    id: str = Field(
+        ..., description="Unique ID of the telemetry sink configuration."
+    )
+    endpoint: str = Field(
+        ..., description="URL endpoint where telemetry data will be sent."
+    )
+    auth: Optional[AuthorizationProvider] = Field(
+        None,
+        description="AuthorizationProvider object used to authenticate telemetry data transmission.",
+    )
+
+
 class Feedback(BaseModel):
     """Describes how and where to collect >feedback on generated responses."""
 
@@ -261,4 +276,8 @@ class QTypeSpec(BaseModel):
     auth: Optional[List[AuthorizationProvider]] = Field(
         None,
         description="Authorization provider objects and credentials used to access external APIs or cloud services.",
+    )
+    telemetry: Optional[List[TelemetrySink]] = Field(
+        None,
+        description="Telemetry sink objects for collecting observability data from the QType runtime.",
     )

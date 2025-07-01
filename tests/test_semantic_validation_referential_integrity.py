@@ -18,7 +18,7 @@ from qtype.dsl.model import (
     Prompt,
     QTypeSpec,
     Step,
-    ToolProvider,
+    TelemetrySink,ToolProvider,
     VariableType,
     VectorDBRetriever,
 )
@@ -396,6 +396,40 @@ class ReferentialIntegrityTest(unittest.TestCase):
             validate_semantics(spec)
         self.assertIn(
             "Flow 'chat_flow' references non-existent memory 'nonexistent_memory'",
+            str(context.exception),
+        )
+
+    def test_telemetry_sink_auth_valid_reference_success(self) -> None:
+        """Test that telemetry sink auth referencing existing AuthorizationProvider.id passes."""
+        spec = QTypeSpec(
+            version="1.0",
+            auth=[AuthorizationProvider(id="telemetry_auth", type="api_key")],
+            telemetry=[
+                TelemetrySink(
+                    id="secure_sink",
+                    endpoint="https://secure-telemetry.example.com/events",
+                    auth="telemetry_auth",
+                )
+            ],
+        )
+        validate_semantics(spec)
+
+    def test_telemetry_sink_auth_invalid_reference_failure(self) -> None:
+        """Test that telemetry sink auth referencing non-existent auth provider fails."""
+        spec = QTypeSpec(
+            version="1.0",
+            telemetry=[
+                TelemetrySink(
+                    id="broken_sink",
+                    endpoint="https://telemetry.example.com/events",
+                    auth="nonexistent_auth",
+                )
+            ],
+        )
+        with self.assertRaises(SemanticValidationError) as context:
+            validate_semantics(spec)
+        self.assertIn(
+            "TelemetrySink 'broken_sink' references non-existent auth provider 'nonexistent_auth'",
             str(context.exception),
         )
 

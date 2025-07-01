@@ -294,6 +294,21 @@ class AuthorizationProvider(StrictBaseModel):
     )
 
 
+class TelemetrySink(StrictBaseModel):
+    """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
+
+    id: str = Field(
+        ..., description="Unique ID of the telemetry sink configuration."
+    )
+    endpoint: str = Field(
+        ..., description="URL endpoint where telemetry data will be sent."
+    )
+    auth: Optional[str] = Field(
+        default=None,
+        description="AuthorizationProvider ID used to authenticate telemetry data transmission.",
+    )
+
+
 class FeedbackType(str, Enum):
     """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
 
@@ -441,4 +456,8 @@ class QTypeSpec(StrictBaseModel):
     auth: Optional[List[AuthorizationProvider]] = Field(
         default=None,
         description="Authorization providers and credentials used to access external APIs or cloud services.",
+    )
+    telemetry: Optional[List[TelemetrySink]] = Field(
+        default=None,
+        description="Telemetry sinks for collecting observability data from the QType runtime.",
     )

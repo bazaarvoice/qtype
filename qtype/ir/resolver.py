@@ -67,6 +67,7 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
     ir_auth = list(
         dsl_spec.auth or []
     )  # AuthorizationProvider is imported directly
+    ir_telemetry = _resolve_telemetry(dsl_spec.telemetry or [], ir_auth)
 
     return ir.QTypeSpec(
         version=dsl_spec.version,
@@ -79,6 +80,7 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
         feedback=ir_feedback if ir_feedback else None,
         memory=ir_memory if ir_memory else None,
         auth=ir_auth if ir_auth else None,
+        telemetry=ir_telemetry if ir_telemetry else None,
     )
 
 
@@ -95,6 +97,7 @@ def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
         "memory": {m.id: m for m in dsl_spec.memory or []},
         "auth": {a.id: a for a in dsl_spec.auth or []},
         "feedback": {f.id: f for f in dsl_spec.feedback or []},
+        "telemetry": {t.id: t for t in dsl_spec.telemetry or []},
         "steps": {},  # Will be populated from flows
         "outputs": {},  # Will be populated from prompts and steps
     }
@@ -606,3 +609,34 @@ def _resolve_step(
         output_vars=resolved_outputs if resolved_outputs else None,
         component=component_obj,
     )
+
+
+def _resolve_telemetry(
+    dsl_telemetry: List[dsl.TelemetrySink],
+    ir_auth: List[dsl.AuthorizationProvider],
+) -> List[ir.TelemetrySink]:
+    """Resolve DSL telemetry sinks to IR telemetry sinks."""
+    ir_telemetry_sinks = []
+
+    # Build auth lookup map
+    auth_lookup = {auth.id: auth for auth in ir_auth}
+
+    for telemetry_sink in dsl_telemetry:
+        # Resolve auth reference
+        auth_obj = None
+        if telemetry_sink.auth:
+            if telemetry_sink.auth not in auth_lookup:
+                raise IRResolutionError(
+                    f"Auth provider '{telemetry_sink.auth}' not found"
+                )
+            auth_obj = auth_lookup[telemetry_sink.auth]
+
+        ir_telemetry_sinks.append(
+            ir.TelemetrySink(
+                id=telemetry_sink.id,
+                endpoint=telemetry_sink.endpoint,
+                auth=auth_obj,
+            )
+        )
+
+    return ir_telemetry_sinks
