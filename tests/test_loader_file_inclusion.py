@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from qtype.parser.loader import (
-    load_yaml_with_includes,
+    load_yaml,
     _resolve_path,
 )
 
@@ -41,7 +41,7 @@ app:
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["app"]["name"], "Test App")
             self.assertEqual(result["app"]["database"]["host"], "localhost")
@@ -64,7 +64,7 @@ message: !include_raw {text_file.name}
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["message"], "Hello, World!\nThis is a test file.")
 
@@ -94,7 +94,7 @@ app:
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["app"]["settings"]["config"]["secret"], "deep_value")
             self.assertEqual(result["app"]["settings"]["middle_value"], "test")
@@ -120,7 +120,7 @@ database: !include {included_file.name}
 """)
 
                 # Load and verify
-                result = load_yaml_with_includes(str(main_file))
+                result = load_yaml(str(main_file))
 
                 self.assertEqual(result["database"]["host"], "production.example.com")
                 self.assertEqual(result["database"]["port"], 443)
@@ -143,7 +143,7 @@ data: !include {included_file.absolute()}
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["data"]["value"], "absolute_test")
 
@@ -160,7 +160,7 @@ data: !include nonexistent.yaml
 
             # Verify error is raised
             with self.assertRaisesRegex(FileNotFoundError, "Failed to load included file"):
-                load_yaml_with_includes(str(main_file))
+                load_yaml(str(main_file))
 
     def test_malformed_yaml_in_included_file(self) -> None:
         """Test error handling when included file contains malformed YAML."""
@@ -182,7 +182,7 @@ data: !include {included_file.name}
 
             # Verify error is raised
             with self.assertRaisesRegex(FileNotFoundError, "Failed to load included file"):
-                load_yaml_with_includes(str(main_file))
+                load_yaml(str(main_file))
 
     def test_include_empty_file(self) -> None:
         """Test including an empty file."""
@@ -200,7 +200,7 @@ data: !include {empty_file.name}
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertIsNone(result["data"])
 
@@ -237,7 +237,7 @@ welcome_message: !include_raw {text_file.name}
 """)
 
             # Load and verify
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["services"]["primary"]["service"], "service1")
             self.assertEqual(result["services"]["primary"]["port"], 8080)
@@ -320,7 +320,7 @@ app:
   version: "1.0.0"
 """)
 
-                result = load_yaml_with_includes(str(main_file))
+                result = load_yaml(str(main_file))
 
                 self.assertEqual(result["app"]["name"], "TestApp")
 
@@ -343,7 +343,7 @@ database: !include {included_file.name}
 """)
 
             # Load without setting env vars (should use defaults)
-            result = load_yaml_with_includes(str(main_file))
+            result = load_yaml(str(main_file))
 
             self.assertEqual(result["database"]["host"], "localhost")
             self.assertEqual(result["database"]["port"], "5432")
@@ -367,7 +367,7 @@ config: !include {included_file.name}
 
             # Should raise error for missing required env var
             with self.assertRaisesRegex(ValueError, "Environment variable 'REQUIRED_SECRET' is required"):
-                load_yaml_with_includes(str(main_file))
+                load_yaml(str(main_file))
 
 
 @unittest.skipIf(
@@ -393,7 +393,7 @@ remote_data: !include https://raw.githubusercontent.com/example/repo/main/config
             # This would normally test against a real URL
             # For now, we'll just test that the function tries to load it
             with self.assertRaises((FileNotFoundError, Exception)):
-                load_yaml_with_includes(temp_file)
+                load_yaml(temp_file)
         finally:
             os.unlink(temp_file)
 

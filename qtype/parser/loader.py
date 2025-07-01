@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
 import fsspec
@@ -15,19 +15,9 @@ import yaml
 from dotenv import load_dotenv
 
 
-class EnvVarLoader(yaml.SafeLoader):
+class YamlLoader(yaml.SafeLoader):
     """
-    YAML loader that supports environment variable substitution.
-
-    Supports the following syntax:
-    - ${VAR_NAME} - Required environment variable (raises error if not found)
-    - ${VAR_NAME:default_value} - Optional with default value
-    """
-
-
-class FileIncludeLoader(yaml.SafeLoader):
-    """
-    YAML loader that supports file inclusion with environment variable substitution.
+    YAML loader that supports environment variable substitution and file inclusion.
 
     Supports the following syntax:
     - ${VAR_NAME} - Required environment variable (raises error if not found)
@@ -52,9 +42,7 @@ class FileIncludeLoader(yaml.SafeLoader):
             self._current_path = str(Path.cwd())
 
 
-def _env_var_constructor(
-    loader: Union[EnvVarLoader, FileIncludeLoader], node: yaml.ScalarNode
-) -> str:
+def _env_var_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
     """
     Constructor for environment variable substitution.
 
@@ -90,9 +78,7 @@ def _env_var_constructor(
     return re.sub(pattern, replace_env_var, value)
 
 
-def _include_file_constructor(
-    loader: FileIncludeLoader, node: yaml.ScalarNode
-) -> Any:
+def _include_file_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> Any:
     """
     Constructor for !include tag to load external YAML files using fsspec.
 
@@ -133,7 +119,7 @@ def _include_file_constructor(
                     return result
 
             stream = IncludeStream(content, resolved_path)
-            return yaml.load(stream, Loader=FileIncludeLoader)
+            return yaml.load(stream, Loader=YamlLoader)
     except ValueError:
         # Re-raise ValueError (e.g., missing environment variables) without wrapping
         raise
@@ -142,9 +128,7 @@ def _include_file_constructor(
         raise FileNotFoundError(msg) from e
 
 
-def _include_raw_constructor(
-    loader: FileIncludeLoader, node: yaml.ScalarNode
-) -> str:
+def _include_raw_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
     """
     Constructor for !include_raw tag to load external text files using fsspec.
 
@@ -221,43 +205,15 @@ def _load_env_files(file_path: str) -> None:
         load_dotenv(cwd_env_file)
 
 
-# Register constructors for EnvVarLoader
-EnvVarLoader.add_constructor("tag:yaml.org,2002:str", _env_var_constructor)
-
-# Register constructors for FileIncludeLoader
-FileIncludeLoader.add_constructor("tag:yaml.org,2002:str", _env_var_constructor)
-FileIncludeLoader.add_constructor("!include", _include_file_constructor)
-FileIncludeLoader.add_constructor("!include_raw", _include_raw_constructor)
+# Register constructors for YamlLoader
+YamlLoader.add_constructor("tag:yaml.org,2002:str", _env_var_constructor)
+YamlLoader.add_constructor("!include", _include_file_constructor)
+YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_yaml_with_env_vars(file_path: str) -> Dict[str, Any]:
+def load_yaml(file_path: str) -> Dict[str, Any]:
     """
-    Load a YAML file with environment variable substitution support.
-
-    Automatically loads .env files from the current directory and the
-    directory containing the YAML file.
-
-    Args:
-        file_path: Path to the YAML file to load.
-
-    Returns:
-        The parsed YAML data with environment variables resolved.
-
-    Raises:
-        ValueError: If a required environment variable is not found.
-        FileNotFoundError: If the YAML file doesn't exist.
-        yaml.YAMLError: If the YAML file is malformed.
-    """
-    _load_env_files(file_path)
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        result = yaml.load(f, Loader=EnvVarLoader)
-        return result if result is not None else {}
-
-
-def load_yaml_with_includes(file_path: str) -> Dict[str, Any]:
-    """
-    Load a YAML file with file inclusion and environment variable support.
+    Load a YAML file with environment variable substitution and file inclusion support.
 
     Automatically loads .env files from the current directory and the
     directory containing the YAML file (for local files only).
@@ -297,5 +253,5 @@ def load_yaml_with_includes(file_path: str) -> Dict[str, Any]:
 
         mock_stream = MockStream(content, file_path)
         # Use the mock stream directly with the loader
-        result = yaml.load(mock_stream, Loader=FileIncludeLoader)
+        result = yaml.load(mock_stream, Loader=YamlLoader)
         return result if result is not None else {}
