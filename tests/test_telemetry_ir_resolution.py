@@ -26,7 +26,7 @@ class TelemetryResolutionTest(unittest.TestCase):
             ],
         )
         ir_spec = resolve_semantic_ir(dsl_spec)
-        
+
         self.assertEqual(len(ir_spec.telemetry), 1)
         sink = ir_spec.telemetry[0]
         self.assertEqual(sink.id, "simple_sink")
@@ -53,7 +53,7 @@ class TelemetryResolutionTest(unittest.TestCase):
             ],
         )
         ir_spec = resolve_semantic_ir(dsl_spec)
-        
+
         self.assertEqual(len(ir_spec.telemetry), 1)
         sink = ir_spec.telemetry[0]
         self.assertEqual(sink.id, "authenticated_sink")
@@ -74,7 +74,7 @@ class TelemetryResolutionTest(unittest.TestCase):
                 )
             ],
         )
-        
+
         with self.assertRaises(IRResolutionError) as context:
             resolve_semantic_ir(dsl_spec)
         self.assertIn(
@@ -118,21 +118,21 @@ class TelemetryResolutionTest(unittest.TestCase):
             ],
         )
         ir_spec = resolve_semantic_ir(dsl_spec)
-        
+
         self.assertEqual(len(ir_spec.telemetry), 3)
-        
+
         # Check sink1 (no auth)
         sink1 = ir_spec.telemetry[0]
         self.assertEqual(sink1.id, "sink1")
         self.assertIsNone(sink1.auth)
-        
+
         # Check sink2 (api_key auth)
         sink2 = ir_spec.telemetry[1]
         self.assertEqual(sink2.id, "sink2")
         self.assertIsNotNone(sink2.auth)
         self.assertEqual(sink2.auth.id, "auth1")
         self.assertEqual(sink2.auth.type, "api_key")
-        
+
         # Check sink3 (oauth2 auth)
         sink3 = ir_spec.telemetry[2]
         self.assertEqual(sink3.id, "sink3")
@@ -147,7 +147,7 @@ class TelemetryResolutionTest(unittest.TestCase):
             telemetry=[],
         )
         ir_spec = resolve_semantic_ir(dsl_spec)
-        
+
         self.assertIsNone(ir_spec.telemetry)
 
     def test_none_telemetry_resolution_success(self) -> None:
@@ -157,7 +157,7 @@ class TelemetryResolutionTest(unittest.TestCase):
             telemetry=None,
         )
         ir_spec = resolve_semantic_ir(dsl_spec)
-        
+
         self.assertIsNone(ir_spec.telemetry)
 
 
