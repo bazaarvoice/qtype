@@ -1,52 +1,21 @@
-Business Source License 1.1
+MIT License
 
-Parameters
+Copyright (c) 2025 Lou Kratz
 
-Licensor: Lou Kratz
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Licensed Work: QType
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Additional Use Grant:
-You may make use of this Licensed Work, provided you do not use it for a Commercial Purpose.
-
-Change Date: None
-
-Change License: None
-
-License Terms
-
-The Business Source License (this “License”) is an agreement between the Licensor and You, the recipient of the Licensed Work.
-
-1. **License Grant**: 
-Subject to the conditions below, Licensor grants you a non-exclusive, worldwide, royalty-free license to use, copy, modify, and create derivative works of the Licensed Work, in source or object form, for non-commercial purposes.
-
-2. **Limitations**:
-You may not use the Licensed Work for any Commercial Purpose except with the express, written permission of the Licensor.
-
-3. **Commercial Purpose** means:
-    a. Using the Licensed Work or any derivative works to provide a product or service to third parties.
-    b. Using the Licensed Work in any production or revenue-generating context.
-    c. Distributing the Licensed Work or derivative works as part of a commercial offering.
-
-4. **Change Date**:
-There is no Change Date. This license will remain in effect indefinitely unless otherwise stated by the Licensor.
-
-5. **No Trademark License**:
-This license does not grant you rights to use the trademarks, service marks, or logos of the Licensor.
-
-6. **Disclaimer of Warranty**:
-THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
-
-7. **Limitation of Liability**:
-IN NO EVENT WILL THE LICENSOR BE LIABLE FOR ANY DAMAGES RELATED TO THIS LICENSED WORK, INCLUDING DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-
-8. **Termination**:
-If you breach the terms of this License, your rights under this License will terminate automatically.
-
-For more information about this license, see https://mariadb.com/bsl11
-
----
-
-Licensed Work: QType  
-Licensor: Lou Kratz  
-Change Date: None
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

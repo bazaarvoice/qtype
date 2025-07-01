@@ -67,7 +67,7 @@ Contributions welcome! Please follow the instructions in the [contribution guide
 
 ## 📄 License
 
-This project is licensed under a **non-commercial license**.  
+This project is licensed under the **MIT License**.  
 See the [LICENSE](./LICENSE) file for details.
 
 ---
