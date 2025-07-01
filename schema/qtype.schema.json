@@ -1,5 +1,93 @@
 {
   "$defs": {
+    "Agent": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Unique ID of the step.",
+          "title": "Id",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variable IDs required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable IDs where output is stored.",
+          "title": "Outputs"
+        },
+        "component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
+          "title": "Component"
+        },
+        "model": {
+          "description": "The id of the model for this agent to use.",
+          "title": "Model",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "The id of the prompt for this agent to use",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tools that this agent has access to",
+          "title": "Tools"
+        }
+      },
+      "required": [
+        "id",
+        "model",
+        "prompt"
+      ],
+      "title": "Agent",
+      "type": "object"
+    },
     "AuthorizationProvider": {
       "additionalProperties": false,
       "description": "Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys.",
@@ -1168,6 +1256,22 @@
       "default": null,
       "description": "Entry points to application logic. Each flow defines an executable composition of steps.",
       "title": "Flows"
+    },
+    "agents": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "AI agents with specific models, prompts, and tools for autonomous task execution.",
+      "title": "Agents"
     },
     "feedback": {
       "anyOf": [
