@@ -435,6 +435,10 @@ class QTypeSpec(StrictBaseModel):
         default=None,
         description="Entry points to application logic. Each flow defines an executable composition of steps.",
     )
+    agents: Optional[List[Agent]] = Field(
+        default=None,
+        description="AI agents with specific models, prompts, and tools for autonomous task execution.",
+    )
     feedback: Optional[List[Feedback]] = Field(
         default=None,
         description="Feedback configurations for collecting structured or unstructured user reactions to outputs.",

@@ -55,6 +55,9 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
     ir_tools = _resolve_tool_providers(dsl_spec.tools or [], lookup_maps)
     ir_memory = _resolve_memory(dsl_spec.memory or [], ir_models)
     ir_feedback = _resolve_feedback(dsl_spec.feedback or [], ir_prompts)
+    ir_agents = _resolve_agents(
+        dsl_spec.agents or [], ir_models, ir_prompts, ir_tools
+    )
     ir_flows = _resolve_flows(
         dsl_spec.flows or [],
         ir_inputs,
@@ -77,6 +80,7 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
         retrievers=ir_retrievers if ir_retrievers else None,
         tools=ir_tools if ir_tools else None,
         flows=ir_flows if ir_flows else None,
+        agents=ir_agents if ir_agents else None,
         feedback=ir_feedback if ir_feedback else None,
         memory=ir_memory if ir_memory else None,
         auth=ir_auth if ir_auth else None,
@@ -94,6 +98,7 @@ def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
         "tools": {},  # Will be populated from tool providers
         "tool_providers": {tp.id: tp for tp in dsl_spec.tools or []},
         "flows": {f.id: f for f in dsl_spec.flows or []},
+        "agents": {a.id: a for a in dsl_spec.agents or []},
         "memory": {m.id: m for m in dsl_spec.memory or []},
         "auth": {a.id: a for a in dsl_spec.auth or []},
         "feedback": {f.id: f for f in dsl_spec.feedback or []},
@@ -400,6 +405,60 @@ def _resolve_feedback(
         )
 
     return ir_feedback
+
+
+def _resolve_agents(
+    dsl_agents: List[dsl.Agent],
+    ir_models: List[ir.Model],
+    ir_prompts: List[ir.Prompt],
+    ir_tools: List[ir.ToolProvider],
+) -> List[ir.Agent]:
+    """Resolve DSL agents to IR agents with object references."""
+    model_map = {m.id: m for m in ir_models}
+    prompt_map = {p.id: p for p in ir_prompts}
+    tool_map = {}
+    for tp in ir_tools:
+        for tool in tp.tools:
+            tool_map[tool.id] = tool
+
+    ir_agents = []
+    for agent in dsl_agents:
+        # Resolve model
+        if agent.model not in model_map:
+            raise IRResolutionError(
+                f"Model '{agent.model}' not found for agent '{agent.id}'"
+            )
+        resolved_model = model_map[agent.model]
+
+        # Resolve prompt
+        if agent.prompt not in prompt_map:
+            raise IRResolutionError(
+                f"Prompt '{agent.prompt}' not found for agent '{agent.id}'"
+            )
+        resolved_prompt = prompt_map[agent.prompt]
+
+        # Resolve tools (optional)
+        resolved_tools = []
+        for tool_id in agent.tools or []:
+            if tool_id not in tool_map:
+                raise IRResolutionError(
+                    f"Tool '{tool_id}' not found for agent '{agent.id}'"
+                )
+            resolved_tools.append(tool_map[tool_id])
+
+        ir_agents.append(
+            ir.Agent(
+                id=agent.id,
+                input_vars=agent.input_vars,
+                output_vars=agent.output_vars,
+                component=agent.component,
+                model=resolved_model,
+                prompt=resolved_prompt,
+                tools=resolved_tools if resolved_tools else None,
+            )
+        )
+
+    return ir_agents
 
 
 def _resolve_flows(

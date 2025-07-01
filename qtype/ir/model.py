@@ -204,6 +204,17 @@ class Step(BaseModel):
     )
 
 
+class Agent(Step):
+    """An AI agent with a specific model, prompt, and tools for autonomous task execution."""
+
+    model: Model = Field(..., description="The model object for this agent to use.")
+    prompt: Prompt = Field(..., description="The prompt object for this agent to use.")
+    tools: Optional[List[Tool]] = Field(
+        default=None,
+        description="Tool objects that this agent has access to.",
+    )
+
+
 class Flow(Step):
     """A flow represents the full composition of steps a user or system interacts with."""
 
@@ -263,6 +274,10 @@ class QTypeSpec(BaseModel):
     flows: Optional[List[Flow]] = Field(
         None,
         description="Entry point flow objects to application logic. Each flow defines an executable composition of steps.",
+    )
+    agents: Optional[List[Agent]] = Field(
+        None,
+        description="AI agent objects with specific models, prompts, and tools for autonomous task execution.",
     )
     feedback: Optional[List[Feedback]] = Field(
         None,
