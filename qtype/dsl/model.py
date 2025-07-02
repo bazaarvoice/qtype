@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -103,10 +103,6 @@ class Variable(StrictBaseModel):
     )
     display_metadata: Optional[DisplayMetadata] = Field(
         default=None, description="Additional UI hints."
-    )
-    value: Optional[Any] = Field(
-        default=None,
-        description="The hydrated value of the variable when set.",
     )
 
 
@@ -213,6 +209,7 @@ class Memory(StrictBaseModel):
 class Tool(StrictBaseModel):
     """Callable function or external operation available to the model. Input/output shapes are described via JSON Schema."""
 
+    type: Literal["tool"]
     id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
@@ -344,22 +341,16 @@ class Condition(StrictBaseModel):
         description="Optional list of step IDs to run if condition fails.",
     )
 
+class Actionable(StrictBaseModel):
+    """Base class for components that can be executed with inputs and outputs."""
 
-class Step(StrictBaseModel):
-    """A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation."""
-
-    id: str = Field(..., description="Unique ID of the step.")
+    id: str = Field(..., description="Unique ID of this component.")
     inputs: Optional[List[str]] = Field(
-        default=None, description="Input variable IDs required by this step."
+        default=None, description="Input variable IDs required by this component."
     )
     outputs: Optional[List[str]] = Field(
         default=None, description="Variable IDs where output is stored."
     )
-    component: Optional[str] = Field(
-        default=None,
-        description="ID of the component to invoke (e.g., prompt ID, tool ID).",
-    )
-
 
 class FlowMode(str, Enum):
     """Execution context for the flow. `chat` maintains history, while `complete` operates statelessly."""
@@ -368,24 +359,13 @@ class FlowMode(str, Enum):
     complete = "complete"
 
 
-class Flow(Step):
+class Flow(Actionable):
     """Composable structure that defines the interaction logic for a generative AI application.
     Supports branching, memory, and sequencing of steps."""
 
-    component: Optional[str] = Field(
-        default=None,
-        description="ID of the component to invoke (e.g., prompt ID, tool ID).",
-    )
-    # Flow-specific fields
     mode: FlowMode = Field(..., description="Interaction mode for the flow.")
-    inputs: Optional[List[str]] = Field(
-        default=None, description="Input variable IDs accepted by the flow."
-    )
-    outputs: Optional[List[str]] = Field(
-        default=None, description="Output variable IDs produced by the flow."
-    )
     steps: List[Union[Step, str]] = Field(
-        default_factory=list, description="List of steps or nested flow IDs."
+        default_factory=list, description="List of steps or nested step IDs."
     )
     conditions: Optional[List[Condition]] = Field(
         default=None, description="Optional conditional logic within the flow."
@@ -395,7 +375,8 @@ class Flow(Step):
         description="List of memory IDs to include (chat mode only).",
     )
 
-class Agent(Step):
+class Agent(Actionable):
+    type: Literal["agent"] ="agent"
     model: str = Field(..., description="The id of the model for this agent to use.")
     prompt: str = Field(..., description="The id of the prompt for this agent to use")
     tools: Optional[List[str]] = Field(
@@ -403,6 +384,11 @@ class Agent(Step):
         description="Tools that this agent has access to"
     )
 
+
+Step = Annotated[
+    Union[Agent, Tool],
+    Field(discriminator='type')
+]
 
 class QTypeSpec(StrictBaseModel):
     """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
@@ -415,9 +401,9 @@ class QTypeSpec(StrictBaseModel):
         default=None,
         description="List of generative models available for use, including their providers and inference parameters.",
     )
-    inputs: Optional[List[Variable]] = Field(
+    variables: Optional[List[Variable]] = Field(
         default=None,
-        description="User-facing inputs or parameters exposed by the application.",
+        description="Variables or parameters exposed by the application.",
     )
     prompts: Optional[List[Prompt]] = Field(
         default=None,
