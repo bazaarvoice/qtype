@@ -4,7 +4,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "Unique ID of the step.",
+          "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
         },
@@ -21,7 +21,7 @@
             }
           ],
           "default": null,
-          "description": "Input variable IDs required by this step.",
+          "description": "Input variable IDs required by this component.",
           "title": "Inputs"
         },
         "outputs": {
@@ -40,18 +40,11 @@
           "description": "Variable IDs where output is stored.",
           "title": "Outputs"
         },
-        "component": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
-          "title": "Component"
+        "type": {
+          "const": "agent",
+          "default": "agent",
+          "title": "Type",
+          "type": "string"
         },
         "model": {
           "description": "The id of the model for this agent to use.",
@@ -189,28 +182,6 @@
         "type"
       ],
       "title": "AuthorizationProvider",
-      "type": "object"
-    },
-    "BaseRetriever": {
-      "additionalProperties": false,
-      "description": "Abstract base class for all retriever types that supply context for prompt execution.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the retriever.",
-          "title": "Id",
-          "type": "string"
-        },
-        "index": {
-          "description": "ID of the index this retriever uses.",
-          "title": "Index",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "index"
-      ],
-      "title": "BaseRetriever",
       "type": "object"
     },
     "Condition": {
@@ -547,7 +518,7 @@
       "description": "Composable structure that defines the interaction logic for a generative AI application.\nSupports branching, memory, and sequencing of steps.",
       "properties": {
         "id": {
-          "description": "Unique ID of the step.",
+          "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
         },
@@ -564,7 +535,7 @@
             }
           ],
           "default": null,
-          "description": "Input variable IDs accepted by the flow.",
+          "description": "Input variable IDs required by this component.",
           "title": "Inputs"
         },
         "outputs": {
@@ -580,32 +551,37 @@
             }
           ],
           "default": null,
-          "description": "Output variable IDs produced by the flow.",
+          "description": "Variable IDs where output is stored.",
           "title": "Outputs"
-        },
-        "component": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
-          "title": "Component"
         },
         "mode": {
           "$ref": "#/$defs/FlowMode",
           "description": "Interaction mode for the flow."
         },
         "steps": {
-          "description": "List of steps or nested flow IDs.",
+          "description": "List of steps or nested step IDs.",
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/Step"
+                "discriminator": {
+                  "mapping": {
+                    "agent": "#/$defs/Agent",
+                    "tool": "#/$defs/Tool",
+                    "vector_retrieve": "#/$defs/VectorDBRetriever"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Agent"
+                  },
+                  {
+                    "$ref": "#/$defs/Tool"
+                  },
+                  {
+                    "$ref": "#/$defs/VectorDBRetriever"
+                  }
+                ]
               },
               {
                 "type": "string"
@@ -764,6 +740,19 @@
           "default": null,
           "description": "Optional inference parameters like temperature or max_tokens.",
           "title": "Inference Params"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Dimensionality of the embedding vectors produced by this model if an embedding model.",
+          "title": "Dimensions"
         }
       },
       "required": [
@@ -840,67 +829,6 @@
       "title": "Prompt",
       "type": "object"
     },
-    "Step": {
-      "additionalProperties": false,
-      "description": "A modular unit of execution in a flow. Can represent a prompt, tool call, or memory operation.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the step.",
-          "title": "Id",
-          "type": "string"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variable IDs required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable IDs where output is stored.",
-          "title": "Outputs"
-        },
-        "component": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "ID of the component to invoke (e.g., prompt ID, tool ID).",
-          "title": "Component"
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "title": "Step",
-      "type": "object"
-    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -940,6 +868,11 @@
       "additionalProperties": false,
       "description": "Callable function or external operation available to the model. Input/output shapes are described via JSON Schema.",
       "properties": {
+        "type": {
+          "const": "tool",
+          "title": "Type",
+          "type": "string"
+        },
         "id": {
           "description": "Unique ID of the tool.",
           "title": "Id",
@@ -955,25 +888,30 @@
           "title": "Description",
           "type": "string"
         },
-        "input_schema": {
-          "additionalProperties": true,
-          "description": "JSON Schema describing the input parameters for the API endpoint.",
-          "title": "Input Schema",
-          "type": "object"
+        "inputs": {
+          "description": "List of input variable IDs this prompt expects.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
         },
-        "output_schema": {
-          "additionalProperties": true,
-          "description": "JSON Schema describing the response structure from the API endpoint.",
-          "title": "Output Schema",
-          "type": "object"
+        "outputs": {
+          "description": "Optional list of output variable IDs this prompt generates.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Outputs",
+          "type": "array"
         }
       },
       "required": [
+        "type",
         "id",
         "name",
         "description",
-        "input_schema",
-        "output_schema"
+        "inputs",
+        "outputs"
       ],
       "title": "Tool",
       "type": "object"
@@ -1116,17 +1054,6 @@
           ],
           "default": null,
           "description": "Additional UI hints."
-        },
-        "value": {
-          "anyOf": [
-            {},
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The hydrated value of the variable when set.",
-          "title": "Value"
         }
       },
       "required": [
@@ -1151,6 +1078,92 @@
       ],
       "title": "VariableType",
       "type": "string"
+    },
+    "VectorDBRetriever": {
+      "additionalProperties": false,
+      "description": "Retriever that fetches top-K documents using a vector database and embedding-based similarity search.",
+      "properties": {
+        "type": {
+          "const": "vector_retrieve",
+          "default": "vector_retrieve",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique ID of the retriever.",
+          "title": "Id",
+          "type": "string"
+        },
+        "index": {
+          "description": "ID of the index this retriever uses.",
+          "title": "Index",
+          "type": "string"
+        },
+        "embedding_model": {
+          "description": "ID of the embedding model used to vectorize the query.",
+          "title": "Embedding Model",
+          "type": "string"
+        },
+        "top_k": {
+          "default": 5,
+          "description": "Number of top documents to retrieve.",
+          "title": "Top K",
+          "type": "integer"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Arbitrary arguments as JSON/YAML for custom retriever configuration.",
+          "title": "Args"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variable IDs required by this retriever.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional list of output variable IDs this prompt generates.",
+          "title": "Outputs"
+        }
+      },
+      "required": [
+        "id",
+        "index",
+        "embedding_model"
+      ],
+      "title": "VectorDBRetriever",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -1177,7 +1190,7 @@
       "description": "List of generative models available for use, including their providers and inference parameters.",
       "title": "Models"
     },
-    "inputs": {
+    "variables": {
       "anyOf": [
         {
           "items": {
@@ -1190,8 +1203,8 @@
         }
       ],
       "default": null,
-      "description": "User-facing inputs or parameters exposed by the application.",
-      "title": "Inputs"
+      "description": "Variables or parameters exposed by the application.",
+      "title": "Variables"
     },
     "prompts": {
       "anyOf": [
@@ -1209,23 +1222,7 @@
       "description": "Prompt templates used in generation steps or tools, referencing input and output variables.",
       "title": "Prompts"
     },
-    "retrievers": {
-      "anyOf": [
-        {
-          "items": {
-            "$ref": "#/$defs/BaseRetriever"
-          },
-          "type": "array"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Document retrievers used to fetch context from indexes (e.g., vector search, keyword search).",
-      "title": "Retrievers"
-    },
-    "tools": {
+    "tool_providers": {
       "anyOf": [
         {
           "items": {
@@ -1239,7 +1236,7 @@
       ],
       "default": null,
       "description": "Tool providers with optional OpenAPI specs, exposing callable tools for the model.",
-      "title": "Tools"
+      "title": "Tool Providers"
     },
     "flows": {
       "anyOf": [
