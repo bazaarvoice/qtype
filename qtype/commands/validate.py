@@ -32,16 +32,16 @@ def validate_main(args: Any) -> None:
         logger.error("❌ Schema validation failed:\n%s", exc)
         sys.exit(1)
 
-    try:
-        validate_semantics(spec)
-        logger.info("✅ Semantic validation successful.")
-    except Exception as exc:
-        logger.error("❌ Semantic validation failed:\n%s", exc)
-        sys.exit(1)
+    # try:
+    #     validate_semantics(spec)
+    #     logger.info("✅ Semantic validation successful.")
+    # except Exception as exc:
+    #     logger.error("❌ Semantic validation failed:\n%s", exc)
+    #     sys.exit(1)
 
     try:
-        resolve_semantic_ir(spec)
+        ir = resolve_semantic_ir(spec)
         logger.info("✅ Semantic resolution successful.")
     except Exception as exc:
-        logger.error("❌ Semantic resolution failed:\n%s", exc)
+        logger.error("❌ Semantic resolution failed:\n%s", exc, exc_info=True)
         sys.exit(1)

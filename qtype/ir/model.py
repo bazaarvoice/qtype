@@ -6,6 +6,7 @@ specification where all ID references have been replaced with actual object
 references.
 """
 
+from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -14,13 +15,23 @@ from pydantic import BaseModel, Field
 # modifications
 from qtype.dsl.model import (
     AuthorizationProvider,
-    BaseRetriever,
     FeedbackType,
     FlowMode,
-    Variable,
     MemoryType,
-    Tool,
 )
+from qtype.dsl.model import Variable as DSLVariable
+
+class Variable(DSLVariable):
+    """IR Variable that extends DSL Variable with a value field."""
+
+    value: Optional[Any] = Field(None, description="The value of this variable if defined.")
+
+    # A copy constructor from DSLVariable
+    def __init__(self, f: DSLVariable):
+        super().__init__(id=f.id, type=f.type, display_name=f.display_name)
+
+    def is_set(self) -> bool:
+        return self.value is not None
 
 
 class Prompt(BaseModel):
@@ -71,23 +82,6 @@ class EmbeddingModel(Model):
     )
 
 
-class VectorDBRetriever(BaseRetriever):
-    """Retriever that queries a vector database using an embedding-based search."""
-
-    embedding_model: EmbeddingModel = Field(
-        ..., description="Embedding model object used to vectorize the query."
-    )
-    top_k: int = Field(5, description="Number of top documents to retrieve.")
-
-
-class SearchRetriever(BaseRetriever):
-    """Retriever that queries a keyword or hybrid search engine."""
-
-    top_k: int = Field(5, description="Number of top documents to retrieve.")
-    query_prompt: Optional[Prompt] = Field(
-        None, description="Prompt object used to generate the search query."
-    )
-
 
 class Memory(BaseModel):
     """Persistent or session-level memory context for a user or flow."""
@@ -116,7 +110,7 @@ class ToolProvider(BaseModel):
 
     id: str = Field(..., description="Unique ID of the tool provider.")
     name: str = Field(..., description="Name of the tool provider.")
-    tools: List[Tool] = Field(
+    tools: List["Tool"] = Field(
         ..., description="List of tools exposed by this provider."
     )
     openapi_spec: Optional[str] = Field(
@@ -186,8 +180,8 @@ class Condition(BaseModel):
     )
 
 
-class Step(BaseModel):
-    """A single execution step within a flow (e.g., prompt, tool call, or memory update)."""
+class Step(BaseModel, ABC):
+    """Abstract base class for execution steps within a flow."""
 
     id: str = Field(..., description="Unique ID of the step.")
     inputs: Optional[List[Variable]] = Field(
@@ -196,13 +190,32 @@ class Step(BaseModel):
     outputs: Optional[List[Variable]] = Field(
         None, description="Output objects where results are stored."
     )
-    component: Optional[
-        Union[Prompt, Tool, ToolProvider, BaseRetriever, "Flow"]
-    ] = Field(
+
+
+class VectorDBRetriever(Step):
+    """Retriever that queries a vector database using an embedding-based search."""
+
+    id: str = Field(..., description="Unique ID of the retriever.")
+    index: str = Field(..., description="ID of the index this retriever uses.")
+    embedding_model: EmbeddingModel = Field(
+        ..., description="Embedding model object used to vectorize the query."
+    )
+    top_k: int = Field(5, description="Number of top documents to retrieve.")
+    args: Optional[Dict[str, Any]] = Field(
         None,
-        description="Component object to invoke (e.g., prompt, tool, retriever).",
+        description=(
+            "Optional additional arguments for the vector search, "
+            "e.g., filtering or scoring parameters."
+        )
     )
 
+class Tool(Step):
+    """Callable function or external operation available to the model."""
+
+    name: str = Field(..., description="Name of the tool function.")
+    description: str = Field(
+        ..., description="Description of what the tool does."
+    )
 
 class Agent(Step):
     """An AI agent with a specific model, prompt, and tools for autonomous task execution."""
@@ -219,12 +232,6 @@ class Flow(Step):
     """A flow represents the full composition of steps a user or system interacts with."""
 
     mode: FlowMode = Field(..., description="Interaction mode for the flow.")
-    inputs: Optional[List[Variable]] = Field(
-        None, description="Input objects accepted by the flow."
-    )
-    outputs: Optional[List[Variable]] = Field(
-        None, description="Output objects produced by the flow."
-    )
     steps: List[Union[Step, "Flow"]] = Field(
         ..., description="List of step objects or nested flow objects."
     )
@@ -255,19 +262,15 @@ class QTypeSpec(BaseModel):
         None,
         description="List of generative model objects available for use, including their providers and inference parameters.",
     )
-    inputs: Optional[List[Variable]] = Field(
+    variables: Optional[List[Variable]] = Field(
         None,
-        description="User-facing input objects exposed by the application.",
+        description="Variables used around this thing",
     )
     prompts: Optional[List[Prompt]] = Field(
         None,
         description="Prompt template objects used in generation steps or tools, with resolved input and output references.",
     )
-    retrievers: Optional[List[BaseRetriever]] = Field(
-        None,
-        description="Document retriever objects used to fetch context from indexes (e.g., vector search, keyword search).",
-    )
-    tools: Optional[List[ToolProvider]] = Field(
+    tools_provider: Optional[List[ToolProvider]] = Field(
         None,
         description="Tool provider objects with optional OpenAPI specs, exposing callable tools for the model.",
     )

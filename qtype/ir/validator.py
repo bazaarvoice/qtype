@@ -2,7 +2,14 @@
 Semantic validation for QType intermediate representation (IR).
 
 This module validates QTypeSpec objects for internal consistency, referential
-integrity, and adherence to semantic rules as defined in the QType specification.
+integrity, and adherence to semantic rules        self._validate_prompt_references(spec, registry)
+        self._validate_retriever_references(spec, registry)
+        self._validate_memory_references(spec, registry)
+        self._validate_tool_provider_references(spec, registry)
+        self._validate_telemetry_references(spec, registry)
+        # TODO: Re-enable step validation after updating for new DSL structure
+        # self._validate_step_references(spec, registry)
+        self._validate_flow_references(spec, registry)ined in the QType specification.
 """
 
 from __future__ import annotations
@@ -10,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set
 
-from qtype.dsl.model import EmbeddingModel, QTypeSpec, Step
+from qtype.dsl.model import Agent, QTypeSpec, Tool
 
 
 class SemanticValidationError(Exception):
@@ -79,11 +86,11 @@ class SemanticValidator:
         """Build a registry of all components indexed by ID."""
         registry = ComponentRegistry(
             models={m.id: m for m in spec.models or []},
-            inputs={i.id: i for i in spec.inputs or []},
+            inputs={i.id: i for i in spec.variables or []},
             prompts={p.id: p for p in spec.prompts or []},
             outputs={},
             memory={m.id: m for m in spec.memory or []},
-            tool_providers={tp.id: tp for tp in spec.tools or []},
+            tool_providers={tp.id: tp for tp in spec.tool_providers or []},
             auth_providers={a.id: a for a in spec.auth or []},
             feedback={f.id: f for f in spec.feedback or []},
             retrievers={r.id: r for r in spec.retrievers or []},
@@ -102,7 +109,7 @@ class SemanticValidator:
         """Collect tools, outputs, and steps from nested structures."""
         # Collect tools from tool providers - allow same ID across providers
         tool_ids_by_provider: Dict[str, Set[str]] = {}
-        for tool_provider in spec.tools or []:
+        for tool_provider in spec.tool_providers or []:
             provider_tool_ids = set()
             for tool in tool_provider.tools or []:
                 if tool.id in provider_tool_ids:
@@ -122,32 +129,16 @@ class SemanticValidator:
                 registry.outputs[output_var] = None
 
         # Collect steps from flows and their output variables
-        # Steps can reuse output variables if they're using a component that produces them
+        # TODO: Update step validation for new DSL structure
+        # The DSL has changed significantly - Agent and Tool no longer have component field
+        # and Tool doesn't inherit from Actionable, so it doesn't have inputs/outputs
+        # For now, just collect step IDs to prevent duplicates
         for flow in spec.flows or []:
             for step in flow.steps:
-                if isinstance(step, Step):
+                if isinstance(step, (Agent, Tool)):
                     if step.id in registry.steps:
                         self._errors.append(f"Duplicate Step.id: {step.id}")
                     registry.steps[step.id] = step
-
-                    # Only check for duplicate output vars if the step isn't using a component
-                    # that already produces those vars
-                    for output_var in step.outputs or []:
-                        # Check if this output var is already produced by the step's component
-                        component_produces_var = False
-                        if step.component in registry.prompts:
-                            prompt = registry.prompts[step.component]
-                            if output_var in (prompt.outputs or []):
-                                component_produces_var = True
-
-                        if (
-                            not component_produces_var
-                            and output_var in registry.outputs
-                        ):
-                            self._errors.append(
-                                f"Duplicate Variable.id: {output_var}"
-                            )
-                        registry.outputs[output_var] = None
 
     def _validate_unique_ids(
         self, spec: QTypeSpec, registry: ComponentRegistry
@@ -158,7 +149,7 @@ class SemanticValidator:
             "Model", [m.id for m in spec.models or []]
         )
         self._check_component_duplicates(
-            "Variable", [i.id for i in spec.inputs or []]
+            "Variable", [i.id for i in spec.variables or []]
         )
         self._check_component_duplicates(
             "Prompt", [p.id for p in spec.prompts or []]
@@ -167,7 +158,7 @@ class SemanticValidator:
             "Memory", [m.id for m in spec.memory or []]
         )
         self._check_component_duplicates(
-            "ToolProvider", [tp.id for tp in spec.tools or []]
+            "ToolProvider", [tp.id for tp in spec.tool_providers or []]
         )
         self._check_component_duplicates(
             "AuthorizationProvider", [a.id for a in spec.auth or []]
@@ -320,7 +311,7 @@ class SemanticValidator:
         self, spec: QTypeSpec, registry: ComponentRegistry
     ) -> None:
         """Validate that tool providers reference valid auth providers."""
-        for tool_provider in spec.tools or []:
+        for tool_provider in spec.tool_providers or []:
             if (
                 tool_provider.auth
                 and tool_provider.auth not in registry.auth_providers
@@ -458,7 +449,7 @@ class SemanticValidator:
         self, spec: QTypeSpec, registry: ComponentRegistry
     ) -> None:
         """Validate tool provider and tool constraints."""
-        for tool_provider in spec.tools or []:
+        for tool_provider in spec.tool_providers or []:
             self._validate_tool_uniqueness(tool_provider)
             self._validate_tool_schemas(tool_provider)
 

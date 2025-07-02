@@ -189,7 +189,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that unique tool provider IDs pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(id="provider1", name="Provider 1", tools=[]),
                 ToolProvider(id="provider2", name="Provider 2", tools=[]),
             ],
@@ -200,7 +200,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate tool provider IDs raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(id="duplicate", name="Provider 1", tools=[]),
                 ToolProvider(id="duplicate", name="Provider 2", tools=[]),
             ],
@@ -344,7 +344,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that unique tool IDs within a provider pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Provider 1",
@@ -373,7 +373,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate tool IDs within a provider raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Provider 1",

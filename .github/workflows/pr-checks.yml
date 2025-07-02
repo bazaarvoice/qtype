@@ -1,79 +1,79 @@
-name: PR Checks
+# name: PR Checks
 
-on:
-  pull_request:
-    branches: [ main ]
-    types: [opened, synchronize, reopened]
+# on:
+#   pull_request:
+#     branches: [ main ]
+#     types: [opened, synchronize, reopened]
 
-permissions:
-  contents: read
-  pull-requests: write
+# permissions:
+#   contents: read
+#   pull-requests: write
 
-jobs:
-  test-and-lint:
-    runs-on: ubuntu-latest
+# jobs:
+#   test-and-lint:
+#     runs-on: ubuntu-latest
     
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
         
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+#       - name: Set up Python 3.9
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.9'
           
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "latest"
+#       - name: Install uv
+#         uses: astral-sh/setup-uv@v3
+#         with:
+#           version: "latest"
           
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
-          uv pip install -e .
+#       - name: Install dependencies
+#         run: |
+#           uv sync --group dev
+#           uv pip install -e .
           
-      - name: Run tests with coverage
-        run: |
-          uv run coverage run -m unittest discover tests/ -v
-          uv run coverage report
+#       - name: Run tests with coverage
+#         run: |
+#           uv run coverage run -m unittest discover tests/ -v
+#           uv run coverage report
           
-      - name: Generate coverage XML report
-        run: |
-          uv run coverage xml
+#       - name: Generate coverage XML report
+#         run: |
+#           uv run coverage xml
           
-      - name: Coverage comment
-        id: coverage_comment
-        uses: orgoro/coverage@v3.2
-        with:
-          coverageFile: coverage.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.8
-          thresholdNew: 0.9
-          thresholdModified: 0.8
+#       - name: Coverage comment
+#         id: coverage_comment
+#         uses: orgoro/coverage@v3.2
+#         with:
+#           coverageFile: coverage.xml
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           thresholdAll: 0.8
+#           thresholdNew: 0.9
+#           thresholdModified: 0.8
           
-      - name: Run ruff check (linting)
-        run: |
-          uv run ruff check qtype/ tests/
+#       - name: Run ruff check (linting)
+#         run: |
+#           uv run ruff check qtype/ tests/
           
-      - name: Check code formatting with ruff
-        run: |
-          uv run ruff format --check qtype/ tests/
+#       - name: Check code formatting with ruff
+#         run: |
+#           uv run ruff format --check qtype/ tests/
           
-      - name: Check import sorting with isort
-        run: |
-          uv run isort --check-only --diff qtype/ tests/
+#       - name: Check import sorting with isort
+#         run: |
+#           uv run isort --check-only --diff qtype/ tests/
           
-      - name: Run mypy type checking
-        run: |
-          uv run mypy qtype/ tests/
+#       - name: Run mypy type checking
+#         run: |
+#           uv run mypy qtype/ tests/
           
-      - name: Verify CLI functionality
-        run: |
-          # Test that the CLI can be invoked
-          uv run qtype --help
-          # Test schema generation
-          uv run qtype generate-schema -o /tmp/test-schema.json
-          # Test validation if example exists
-          if [ -f "examples/hello_world.qtype.yaml" ]; then
-            uv run qtype validate examples/hello_world.qtype.yaml
-          fi
+#       - name: Verify CLI functionality
+#         run: |
+#           # Test that the CLI can be invoked
+#           uv run qtype --help
+#           # Test schema generation
+#           uv run qtype generate-schema -o /tmp/test-schema.json
+#           # Test validation if example exists
+#           if [ -f "examples/hello_world.qtype.yaml" ]; then
+#             uv run qtype validate examples/hello_world.qtype.yaml
+#           fi

@@ -12,7 +12,7 @@ variables:
     type: text
     display_name: "Your Question"
     display_type: textarea
-  - id: llm_response
+  - id: response
     type: text
   
 agents:
@@ -21,6 +21,8 @@ agents:
     model: gpt4
     inputs: 
       - user_question
+    outputs:
+      - response
 
 prompts:
   - id: answer_prompt

@@ -94,7 +94,9 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType = Field(..., description="Type of data expected or produced.")
+    type: VariableType = Field(
+        ..., description="Type of data expected or produced."
+    )
     display_name: Optional[str] = Field(
         default=None, description="Label shown in the UI."
     )
@@ -140,41 +142,33 @@ class Model(StrictBaseModel):
         default=None,
         description="Optional inference parameters like temperature or max_tokens.",
     )
-
-
-class EmbeddingModel(Model):
-    """Specialized model used for embedding generation, such as vector search or memory storage."""
-
-    dimensions: int = Field(
-        ...,
-        description="Dimensionality of the embedding vectors produced by this model.",
+    dimensions: Optional[int] = Field(
+        default=None,
+        description="Dimensionality of the embedding vectors produced by this model if an embedding model.",
     )
 
-
-class BaseRetriever(StrictBaseModel, ABC):
-    """Abstract base class for all retriever types that supply context for prompt execution."""
-
-    id: str = Field(..., description="Unique ID of the retriever.")
-    index: str = Field(..., description="ID of the index this retriever uses.")
-
-
-class VectorDBRetriever(BaseRetriever):
+class VectorDBRetriever(StrictBaseModel):
     """Retriever that fetches top-K documents using a vector database and embedding-based similarity search."""
 
+    type: Literal["vector_retrieve"] = "vector_retrieve"
+    id: str = Field(..., description="Unique ID of the retriever.")
+    index: str = Field(..., description="ID of the index this retriever uses.")
     embedding_model: str = Field(
         ...,
         description="ID of the embedding model used to vectorize the query.",
     )
     top_k: int = Field(5, description="Number of top documents to retrieve.")
-
-
-class SearchRetriever(BaseRetriever):
-    """Retriever that generates and executes a keyword or hybrid search query against a search engine."""
-
-    top_k: int = Field(5, description="Number of top documents to retrieve.")
-    query_prompt: Optional[str] = Field(
+    args: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="Prompt ID used to generate the search query.",
+        description="Arbitrary arguments as JSON/YAML for custom retriever configuration.",
+    )
+    inputs: Optional[List[str]] = Field(
+        default=None,
+        description="Input variable IDs required by this retriever.",
+    )
+    outputs: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of output variable IDs this prompt generates.",
     )
 
 
@@ -205,7 +199,6 @@ class Memory(StrictBaseModel):
         description="Whether this memory should be injected as context.",
     )
 
-
 class Tool(StrictBaseModel):
     """Callable function or external operation available to the model. Input/output shapes are described via JSON Schema."""
 
@@ -215,13 +208,12 @@ class Tool(StrictBaseModel):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    input_schema: Dict[str, Any] = Field(
-        ...,
-        description="JSON Schema describing the input parameters for the API endpoint.",
+    inputs: List[str] = Field(
+        ..., description="List of input variable IDs this prompt expects."
     )
-    output_schema: Dict[str, Any] = Field(
+    outputs: List[str] = Field(
         ...,
-        description="JSON Schema describing the response structure from the API endpoint.",
+        description="Optional list of output variable IDs this prompt generates.",
     )
 
 
@@ -341,16 +333,19 @@ class Condition(StrictBaseModel):
         description="Optional list of step IDs to run if condition fails.",
     )
 
+
 class Actionable(StrictBaseModel):
     """Base class for components that can be executed with inputs and outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
     inputs: Optional[List[str]] = Field(
-        default=None, description="Input variable IDs required by this component."
+        default=None,
+        description="Input variable IDs required by this component.",
     )
     outputs: Optional[List[str]] = Field(
         default=None, description="Variable IDs where output is stored."
     )
+
 
 class FlowMode(str, Enum):
     """Execution context for the flow. `chat` maintains history, while `complete` operates statelessly."""
@@ -375,20 +370,22 @@ class Flow(Actionable):
         description="List of memory IDs to include (chat mode only).",
     )
 
+
 class Agent(Actionable):
-    type: Literal["agent"] ="agent"
-    model: str = Field(..., description="The id of the model for this agent to use.")
-    prompt: str = Field(..., description="The id of the prompt for this agent to use")
+    type: Literal["agent"] = "agent"
+    model: str = Field(
+        ..., description="The id of the model for this agent to use."
+    )
+    prompt: str = Field(
+        ..., description="The id of the prompt for this agent to use"
+    )
     tools: Optional[List[str]] = Field(
-        default=None,
-        description="Tools that this agent has access to"
+        default=None, description="Tools that this agent has access to"
     )
 
 
-Step = Annotated[
-    Union[Agent, Tool],
-    Field(discriminator='type')
-]
+Step = Annotated[Union[Agent, Tool, VectorDBRetriever], Field(discriminator="type")]
+
 
 class QTypeSpec(StrictBaseModel):
     """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
@@ -409,11 +406,7 @@ class QTypeSpec(StrictBaseModel):
         default=None,
         description="Prompt templates used in generation steps or tools, referencing input and output variables.",
     )
-    retrievers: Optional[List[BaseRetriever]] = Field(
-        default=None,
-        description="Document retrievers used to fetch context from indexes (e.g., vector search, keyword search).",
-    )
-    tools: Optional[List[ToolProvider]] = Field(
+    tool_providers: Optional[List[ToolProvider]] = Field(
         default=None,
         description="Tool providers with optional OpenAPI specs, exposing callable tools for the model.",
     )

@@ -40,45 +40,39 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
 
     # Resolve each component type
     ir_models = _resolve_models(dsl_spec.models or [], lookup_maps)
-    ir_inputs = _resolve_inputs(dsl_spec.inputs or [])
-    ir_outputs = _resolve_outputs(dsl_spec.prompts or [], dsl_spec.flows or [])
+    ir_variables = _resolve_variables(dsl_spec.variables or [])
     ir_prompts = _resolve_prompts(
-        dsl_spec.prompts or [], ir_inputs, ir_outputs
-    )
-    ir_retrievers = _resolve_retrievers(dsl_spec.retrievers or [], ir_models)
-
-    # Second pass to resolve SearchRetriever query_prompt references
-    _resolve_retriever_prompts(
-        ir_retrievers, ir_prompts, dsl_spec.retrievers or []
+        dsl_spec.prompts or [], ir_variables
     )
 
-    ir_tools = _resolve_tool_providers(dsl_spec.tools or [], lookup_maps)
-    ir_memory = _resolve_memory(dsl_spec.memory or [], ir_models)
-    ir_feedback = _resolve_feedback(dsl_spec.feedback or [], ir_prompts)
-    ir_agents = _resolve_agents(
-        dsl_spec.agents or [], ir_models, ir_prompts, ir_tools
-    )
-    ir_flows = _resolve_flows(
-        dsl_spec.flows or [],
-        ir_inputs,
-        ir_outputs,
-        ir_prompts,
-        ir_tools,
-        ir_retrievers,
-        ir_memory,
-    )
     ir_auth = list(
         dsl_spec.auth or []
     )  # AuthorizationProvider is imported directly
+
+    ir_tools = _resolve_tools(lookup_maps["tools"], ir_variables)
+
+    ir_tool_providers = _resolve_tool_providers(dsl_spec.tool_providers or [], lookup_maps, ir_tools)
+    ir_memory = _resolve_memory(dsl_spec.memory or [], ir_models)
+    ir_feedback = _resolve_feedback(dsl_spec.feedback or [], ir_prompts)
+    ir_agents = _resolve_agents(
+        dsl_spec.agents or [], ir_models, ir_prompts, ir_tool_providers, ir_variables
+    )
+    ir_flows = _resolve_flows(
+        dsl_spec.flows or [],
+        ir_variables,
+        ir_agents,
+        ir_models,
+        ir_tool_providers,
+        ir_memory,
+    )
     ir_telemetry = _resolve_telemetry(dsl_spec.telemetry or [], ir_auth)
 
     return ir.QTypeSpec(
         version=dsl_spec.version,
         models=ir_models if ir_models else None,
-        inputs=ir_inputs if ir_inputs else None,
+        variables=ir_variables if ir_variables else None,
         prompts=ir_prompts if ir_prompts else None,
-        retrievers=ir_retrievers if ir_retrievers else None,
-        tools=ir_tools if ir_tools else None,
+        tools_provider=ir_tool_providers if ir_tool_providers else None,
         flows=ir_flows if ir_flows else None,
         agents=ir_agents if ir_agents else None,
         feedback=ir_feedback if ir_feedback else None,
@@ -87,16 +81,42 @@ def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
         telemetry=ir_telemetry if ir_telemetry else None,
     )
 
+def _resolve_tools(tools: Dict[str, dsl.Tool], ir_variables: List[ir.Variable]) -> Dict[str, ir.Tool]:
+    """Resolve DSL tools to IR tools."""
+    var_map = {var.id: var for var in ir_variables}
+    ir_tools = {}
+    for tool_id, tool in tools.items():
+        # Ensure all inputs and outputs are resolved to Variable objects
+        for input_id in tool.inputs:
+            if input_id not in var_map:
+                raise IRResolutionError(
+                    f"Input '{input_id}' not found for tool '{tool_id}'"
+                )
+        for output_id in tool.outputs:
+            if output_id not in var_map:
+                raise IRResolutionError(
+                    f"Output '{output_id}' not found for tool '{tool_id}'"
+                )
+
+        # Convert DSL Tool to IR Tool
+        ir_tools[tool_id] = ir.Tool(
+            id=tool.id,
+            name=tool.name,
+            description=tool.description,
+            inputs=[var_map[input_id] for input_id in tool.inputs],
+            outputs=[var_map[output_id] for output_id in tool.outputs]
+        )
+    return ir_tools
+
 
 def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
     """Build lookup maps for all objects in the DSL spec."""
     lookup_maps: Dict[str, Dict[str, Any]] = {
         "models": {m.id: m for m in dsl_spec.models or []},
-        "inputs": {i.id: i for i in dsl_spec.inputs or []},
+        "variables": {v.id: v for v in dsl_spec.variables or []},
         "prompts": {p.id: p for p in dsl_spec.prompts or []},
-        "retrievers": {r.id: r for r in dsl_spec.retrievers or []},
         "tools": {},  # Will be populated from tool providers
-        "tool_providers": {tp.id: tp for tp in dsl_spec.tools or []},
+        "tool_providers": {tp.id: tp for tp in dsl_spec.tool_providers or []},
         "flows": {f.id: f for f in dsl_spec.flows or []},
         "agents": {a.id: a for a in dsl_spec.agents or []},
         "memory": {m.id: m for m in dsl_spec.memory or []},
@@ -104,30 +124,19 @@ def _build_lookup_maps(dsl_spec: dsl.QTypeSpec) -> Dict[str, Dict[str, Any]]:
         "feedback": {f.id: f for f in dsl_spec.feedback or []},
         "telemetry": {t.id: t for t in dsl_spec.telemetry or []},
         "steps": {},  # Will be populated from flows
-        "outputs": {},  # Will be populated from prompts and steps
     }
 
     # Populate tools from tool providers
-    for tp in dsl_spec.tools or []:
+    for tp in dsl_spec.tool_providers or []:
         for tool in tp.tools:
             lookup_maps["tools"][tool.id] = tool
 
     # Populate steps from flows
     for flow in dsl_spec.flows or []:
         for step in flow.steps:
-            if isinstance(step, dsl.Step):
+            if isinstance(step, (dsl.Agent, dsl.Tool)):
                 lookup_maps["steps"][step.id] = step
 
-    # Populate outputs from prompts and steps
-    for prompt in dsl_spec.prompts or []:
-        for output_id in prompt.outputs or []:
-            lookup_maps["outputs"][output_id] = output_id
-
-    for flow in dsl_spec.flows or []:
-        for step in flow.steps:
-            if isinstance(step, dsl.Step):
-                for output_id in step.outputs or []:
-                    lookup_maps["outputs"][output_id] = output_id
 
     return lookup_maps
 
@@ -138,7 +147,7 @@ def _resolve_models(
     """Resolve DSL models to IR models."""
     ir_models: List[ir.Model] = []
     for model in dsl_models:
-        if isinstance(model, dsl.EmbeddingModel):
+        if model.dimensions is not None:
             ir_models.append(
                 ir.EmbeddingModel(
                     id=model.id,
@@ -160,76 +169,38 @@ def _resolve_models(
     return ir_models
 
 
-def _resolve_inputs(dsl_inputs: List[dsl.Variable]) -> List[ir.Variable]:
+def _resolve_variables(dsl_inputs: List[dsl.Variable]) -> List[ir.Variable]:
     """Resolve DSL inputs to IR inputs."""
     # Variable objects are imported directly from DSL
-    return list(dsl_inputs)
-
-
-def _resolve_outputs(
-    dsl_prompts: List[dsl.Prompt], dsl_flows: List[dsl.Flow]
-) -> List[ir.Variable]:
-    """Create output objects from prompt and step output variable IDs."""
-    outputs = []
-    output_ids = set()
-
-    # Collect output IDs from prompts
-    for prompt in dsl_prompts:
-        for output_id in prompt.outputs or []:
-            if output_id not in output_ids:
-                outputs.append(
-                    ir.Variable(
-                        id=output_id,
-                        type=dsl.VariableType.text,  # Default to text, could be inferred
-                    )
-                )
-                output_ids.add(output_id)
-
-    # Collect output IDs from flow steps
-    for flow in dsl_flows:
-        for step in flow.steps:
-            if isinstance(step, dsl.Step):
-                for output_id in step.outputs or []:
-                    if output_id not in output_ids:
-                        outputs.append(
-                            ir.Variable(
-                                id=output_id,
-                                type=dsl.VariableType.text,  # Default to text
-                            )
-                        )
-                        output_ids.add(output_id)
-
-    return outputs
+    return [ir.Variable(var) for var in dsl_inputs]
 
 
 def _resolve_prompts(
     dsl_prompts: List[dsl.Prompt],
-    ir_inputs: List[ir.Variable],
-    ir_outputs: List[ir.Variable],
+    ir_variables: List[ir.Variable]
 ) -> List[ir.Prompt]:
     """Resolve DSL prompts to IR prompts with object references."""
-    input_map = {inp.id: inp for inp in ir_inputs}
-    output_map = {out.id: out for out in ir_outputs}
+    var_map = {var.id: var for var in ir_variables}
 
     ir_prompts = []
     for prompt in dsl_prompts:
         # Resolve input variable IDs to Input objects
         resolved_inputs = []
         for input_id in prompt.inputs:
-            if input_id not in input_map:
+            if input_id not in var_map:
                 raise IRResolutionError(
                     f"Input '{input_id}' not found for prompt '{prompt.id}'"
                 )
-            resolved_inputs.append(input_map[input_id])
+            resolved_inputs.append(var_map[input_id])
 
         # Resolve output variable IDs to Output objects
         resolved_outputs = []
         for output_id in prompt.outputs or []:
-            if output_id not in output_map:
+            if output_id not in var_map:
                 raise IRResolutionError(
                     f"Output '{output_id}' not found for prompt '{prompt.id}'"
                 )
-            resolved_outputs.append(output_map[output_id])
+            resolved_outputs.append(var_map[output_id])
 
         ir_prompts.append(
             ir.Prompt(
@@ -244,80 +215,10 @@ def _resolve_prompts(
     return ir_prompts
 
 
-def _resolve_retrievers(
-    dsl_retrievers: List[dsl.BaseRetriever], ir_models: List[ir.Model]
-) -> List[ir.BaseRetriever]:
-    """Resolve DSL retrievers to IR retrievers with model object references."""
-    model_map = {m.id: m for m in ir_models}
-
-    ir_retrievers: List[ir.BaseRetriever] = []
-    for retriever in dsl_retrievers:
-        if isinstance(retriever, dsl.VectorDBRetriever):
-            # Find the embedding model
-            if retriever.embedding_model not in model_map:
-                raise IRResolutionError(
-                    f"Embedding model '{retriever.embedding_model}' not found"
-                )
-
-            embedding_model = model_map[retriever.embedding_model]
-            if not isinstance(embedding_model, ir.EmbeddingModel):
-                raise IRResolutionError(
-                    f"Model '{retriever.embedding_model}' is not an EmbeddingModel"
-                )
-
-            ir_retrievers.append(
-                ir.VectorDBRetriever(
-                    id=retriever.id,
-                    index=retriever.index,
-                    embedding_model=embedding_model,
-                    top_k=retriever.top_k,
-                )
-            )
-        elif isinstance(retriever, dsl.SearchRetriever):
-            # Note: query_prompt will be resolved later if needed
-            ir_retrievers.append(
-                ir.SearchRetriever(
-                    id=retriever.id,
-                    index=retriever.index,
-                    top_k=retriever.top_k,
-                    query_prompt=None,  # Will be resolved in a second pass if needed
-                )
-            )
-
-    return ir_retrievers
-
-
-def _resolve_retriever_prompts(
-    ir_retrievers: List[ir.BaseRetriever],
-    ir_prompts: List[ir.Prompt],
-    dsl_retrievers: List[dsl.BaseRetriever],
-) -> None:
-    """Second pass to resolve SearchRetriever query_prompt references."""
-    prompt_map = {p.id: p for p in ir_prompts}
-
-    # Create a mapping from IR retrievers back to DSL retrievers
-    dsl_retriever_map = {r.id: r for r in dsl_retrievers}
-
-    for ir_retriever in ir_retrievers:
-        if isinstance(ir_retriever, ir.SearchRetriever):
-            dsl_retriever = dsl_retriever_map.get(ir_retriever.id)
-            if (
-                dsl_retriever
-                and isinstance(dsl_retriever, dsl.SearchRetriever)
-                and dsl_retriever.query_prompt
-            ):
-                if dsl_retriever.query_prompt not in prompt_map:
-                    raise IRResolutionError(
-                        f"Query prompt '{dsl_retriever.query_prompt}' not found for retriever '{ir_retriever.id}'"
-                    )
-                ir_retriever.query_prompt = prompt_map[
-                    dsl_retriever.query_prompt
-                ]
-
-
 def _resolve_tool_providers(
     dsl_tool_providers: List[dsl.ToolProvider],
     lookup_maps: Dict[str, Dict[str, Any]],
+    ir_tools: Dict[str, ir.Tool]
 ) -> List[ir.ToolProvider]:
     """Resolve DSL tool providers to IR tool providers."""
     ir_tool_providers = []
@@ -330,12 +231,18 @@ def _resolve_tool_providers(
                 raise IRResolutionError(f"Auth provider '{tp.auth}' not found")
             auth_obj = lookup_maps["auth"][tp.auth]
 
+        # make sure all tools in the provider exist in ir_tools
+        for tool in tp.tools if tp.tools else []:
+            if tool.id not in ir_tools:
+                raise IRResolutionError(
+                    f"Tool '{tool.id}' not found in ToolProvider '{tp.id}'"
+                )
         # Tools are imported directly from DSL
         ir_tool_providers.append(
             ir.ToolProvider(
                 id=tp.id,
                 name=tp.name,
-                tools=list(tp.tools),  # Tool objects are imported from DSL
+                tools=[ir_tools[tool.id] for tool in tp.tools],
                 openapi_spec=tp.openapi_spec,
                 include_tags=tp.include_tags,
                 exclude_paths=tp.exclude_paths,
@@ -411,13 +318,15 @@ def _resolve_agents(
     dsl_agents: List[dsl.Agent],
     ir_models: List[ir.Model],
     ir_prompts: List[ir.Prompt],
-    ir_tools: List[ir.ToolProvider],
+    ir_tool_providers: List[ir.ToolProvider],
+    ir_variables: List[ir.Variable]
 ) -> List[ir.Agent]:
     """Resolve DSL agents to IR agents with object references."""
     model_map = {m.id: m for m in ir_models}
     prompt_map = {p.id: p for p in ir_prompts}
+    var_map = {inp.id: inp for inp in ir_variables}
     tool_map = {}
-    for tp in ir_tools:
+    for tp in ir_tool_providers:
         for tool in tp.tools:
             tool_map[tool.id] = tool
 
@@ -437,6 +346,24 @@ def _resolve_agents(
             )
         resolved_prompt = prompt_map[agent.prompt]
 
+        # Resolve inputs
+        resolved_inputs = []
+        for input_id in agent.inputs or []:
+            if input_id not in var_map:
+                raise IRResolutionError(
+                    f"Input '{input_id}' not found for agent '{agent.id}'"
+                )
+            resolved_inputs.append(var_map[input_id])
+
+        # Resolve outputs
+        resolved_outputs = []
+        for output_id in agent.outputs or []:
+            if output_id not in var_map:
+                raise IRResolutionError(
+                    f"Output '{output_id}' not found for agent '{agent.id}'"
+                )
+            resolved_outputs.append(var_map[output_id])
+
         # Resolve tools (optional)
         resolved_tools = []
         for tool_id in agent.tools or []:
@@ -449,9 +376,8 @@ def _resolve_agents(
         ir_agents.append(
             ir.Agent(
                 id=agent.id,
-                input_vars=agent.input_vars,
-                output_vars=agent.output_vars,
-                component=agent.component,
+                inputs=resolved_inputs if resolved_inputs else None,
+                outputs=resolved_outputs if resolved_outputs else None,
                 model=resolved_model,
                 prompt=resolved_prompt,
                 tools=resolved_tools if resolved_tools else None,
@@ -463,22 +389,20 @@ def _resolve_agents(
 
 def _resolve_flows(
     dsl_flows: List[dsl.Flow],
-    ir_inputs: List[ir.Variable],
-    ir_outputs: List[ir.Variable],
-    ir_prompts: List[ir.Prompt],
-    ir_tools: List[ir.ToolProvider],
-    ir_retrievers: List[ir.BaseRetriever],
+    ir_variables: List[ir.Variable],
+    ir_agents: List[ir.Agent],
+    ir_models: List[ir.Model],
+    ir_tool_provider: List[ir.ToolProvider],
     ir_memory: List[ir.Memory],
 ) -> List[ir.Flow]:
     """Resolve DSL flows to IR flows with object references."""
-    input_map = {inp.id: inp for inp in ir_inputs}
-    output_map = {out.id: out for out in ir_outputs}
-    prompt_map = {p.id: p for p in ir_prompts}
+    var_map = {inp.id: inp for inp in ir_variables}
+    agent_map = {a.id: a for a in ir_agents}
+    model_map = {m.id: m for m in ir_models}
     tool_map = {}
-    for tp in ir_tools:
+    for tp in ir_tool_provider:
         for tool in tp.tools:
             tool_map[tool.id] = tool
-    retriever_map = {r.id: r for r in ir_retrievers}
     memory_map = {m.id: m for m in ir_memory}
     flow_map = {}  # Will be populated as we resolve flows
 
@@ -489,20 +413,20 @@ def _resolve_flows(
         # Resolve inputs
         resolved_inputs = []
         for input_id in flow.inputs or []:
-            if input_id not in input_map:
+            if input_id not in var_map:
                 raise IRResolutionError(
                     f"Input '{input_id}' not found for flow '{flow.id}'"
                 )
-            resolved_inputs.append(input_map[input_id])
+            resolved_inputs.append(var_map[input_id])
 
         # Resolve outputs
         resolved_outputs = []
         for output_id in flow.outputs or []:
-            if output_id not in output_map:
+            if output_id not in var_map:
                 raise IRResolutionError(
                     f"Output '{output_id}' not found for flow '{flow.id}'"
                 )
-            resolved_outputs.append(output_map[output_id])
+            resolved_outputs.append(var_map[output_id])
 
         # Resolve memory
         resolved_memory = []
@@ -515,10 +439,9 @@ def _resolve_flows(
 
         ir_flow = ir.Flow(
             id=flow.id,
-            mode=flow.mode,
             inputs=resolved_inputs if resolved_inputs else None,
             outputs=resolved_outputs if resolved_outputs else None,
-            component=None,  # Flows don't have components
+            mode=flow.mode,
             steps=[],  # Will be resolved in second pass
             conditions=None,  # Will be resolved in second pass
             memory=resolved_memory if resolved_memory else None,
@@ -527,30 +450,65 @@ def _resolve_flows(
         ir_flows.append(ir_flow)
         flow_map[flow.id] = ir_flow
 
+    # Combine the agent and tool maps into a step map
+    step_map = {**agent_map, **tool_map}
+
     # Second pass: resolve steps and conditions
     for i, flow in enumerate(dsl_flows):
         ir_flow = ir_flows[i]
 
         # Resolve steps
-        resolved_steps: List[Union[ir.Step, ir.Flow]] = []
+        resolved_steps: List[ir.Step] = []
         for step in flow.steps:
             if isinstance(step, str):
                 # Flow reference
-                if step not in flow_map:
+                if step not in step_map:
                     raise IRResolutionError(f"Flow '{step}' not found")
-                resolved_steps.append(flow_map[step])
-            else:
-                # Step object
-                resolved_step = _resolve_step(
-                    step,
-                    input_map,
-                    output_map,
-                    prompt_map,
-                    tool_map,
-                    retriever_map,
-                    flow_map,
+                resolved_steps.append(step_map[step])
+            elif isinstance(step, dsl.Agent):
+                if step.id not in agent_map:
+                    raise IRResolutionError(f"Agent '{step.id}' not found")
+                resolved_steps.append(agent_map[step.id])
+            elif isinstance(step, dsl.Tool):
+                if step.id not in tool_map:
+                    raise IRResolutionError(f"Tool '{step.id}' not found")
+                resolved_steps.append(tool_map[step.id])
+            elif isinstance(step, dsl.VectorDBRetriever):
+                if step.embedding_model not in model_map:
+                    raise IRResolutionError(
+                        f"Embedding model '{step.embedding_model}' not found for retriever '{step.id}'"
+                    )
+                model = model_map[step.embedding_model]
+
+                # look up inputs and outputs in the variable map
+                resolved_inputs = []
+                for input_id in step.inputs or []:
+                    if input_id not in var_map:
+                        raise IRResolutionError(
+                            f"Input '{input_id}' not found for retriever '{step.id}'"
+                        )
+                    resolved_inputs.append(var_map[input_id])
+                resolved_outputs = []
+                for output_id in step.outputs or []:
+                    if output_id not in var_map:
+                        raise IRResolutionError(
+                            f"Output '{output_id}' not found for retriever '{step.id}'"
+                        )
+                    resolved_outputs.append(var_map[output_id])
+
+                resolved_steps.append(
+                    ir.VectorDBRetriever(
+                        id=step.id,
+                        index=step.index,
+                        embedding_model=model, # type: ignore
+                        top_k=step.top_k,
+                        inputs=resolved_inputs,
+                        outputs=resolved_outputs, 
+                        args=step.args or {},
+                    )
                 )
-                resolved_steps.append(resolved_step)
+            else:
+                raise IRResolutionError(f"Unknown step type: {type(step)}")
 
         ir_flow.steps = resolved_steps
 
@@ -610,62 +568,6 @@ def _resolve_flows(
             ir_flow.conditions = resolved_conditions
 
     return ir_flows
-
-
-def _resolve_step(
-    dsl_step: dsl.Step,
-    input_map: Dict[str, ir.Variable],
-    output_map: Dict[str, ir.Variable],
-    prompt_map: Dict[str, ir.Prompt],
-    tool_map: Dict[str, ir.Tool],
-    retriever_map: Dict[str, ir.BaseRetriever],
-    flow_map: Dict[str, ir.Flow],
-) -> ir.Step:
-    """Resolve a DSL step to an IR step with object references."""
-    # Resolve input variables
-    resolved_inputs = []
-    for input_id in dsl_step.inputs or []:
-        if input_id not in input_map:
-            raise IRResolutionError(
-                f"Input '{input_id}' not found for step '{dsl_step.id}'"
-            )
-        resolved_inputs.append(input_map[input_id])
-
-    # Resolve output variables
-    resolved_outputs = []
-    for output_id in dsl_step.outputs or []:
-        if output_id not in output_map:
-            raise IRResolutionError(
-                f"Output '{output_id}' not found for step '{dsl_step.id}'"
-            )
-        resolved_outputs.append(output_map[output_id])
-
-    # Resolve component
-    component_obj: Optional[
-        Union[ir.Prompt, ir.Tool, ir.ToolProvider, ir.BaseRetriever, ir.Flow]
-    ] = None
-    if dsl_step.component:
-        # Check in each component type
-        if dsl_step.component in prompt_map:
-            component_obj = prompt_map[dsl_step.component]
-        elif dsl_step.component in tool_map:
-            component_obj = tool_map[dsl_step.component]
-        elif dsl_step.component in retriever_map:
-            component_obj = retriever_map[dsl_step.component]
-        elif dsl_step.component in flow_map:
-            component_obj = flow_map[dsl_step.component]
-        else:
-            raise IRResolutionError(
-                f"Component '{dsl_step.component}' not found for step "
-                f"'{dsl_step.id}'"
-            )
-
-    return ir.Step(
-        id=dsl_step.id,
-        inputs=resolved_inputs if resolved_inputs else None,
-        outputs=resolved_outputs if resolved_outputs else None,
-        component=component_obj,
-    )
 
 
 def _resolve_telemetry(

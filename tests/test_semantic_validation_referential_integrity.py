@@ -285,7 +285,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             auth=[AuthorizationProvider(id="api_auth", type="api_key")],
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="secure_provider",
                     name="Secure Provider",
@@ -300,7 +300,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that tool provider auth referencing non-existent auth provider fails."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="secure_provider",
                     name="Secure Provider",

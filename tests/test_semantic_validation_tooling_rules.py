@@ -18,7 +18,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tool IDs are unique within a provider."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -47,7 +47,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tool names are unique within a provider."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -76,7 +76,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that duplicate tool names within a provider fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -110,7 +110,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tools with both input and output schemas pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -138,7 +138,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tools missing input schema fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -165,7 +165,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tools missing output schema fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Test Provider",
@@ -192,7 +192,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tool providers with OpenAPI spec and empty tools pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="OpenAPI Provider",
@@ -207,7 +207,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tool providers with include/exclude tags pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="Filtered Provider",
@@ -226,7 +226,7 @@ class ToolingRulesTest(unittest.TestCase):
         """Test that tools in different providers can have the same names."""
         spec = QTypeSpec(
             version="1.0",
-            tools=[
+            tool_providers=[
                 ToolProvider(
                     id="provider1",
                     name="First Provider",
