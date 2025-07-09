@@ -27,65 +27,6 @@ class VariableType(str, Enum):
     audio = "audio"
 
 
-class DisplayType(str, Enum):
-    """UI rendering hint for how an input should appear in the frontend (e.g., text box, dropdown, file upload)."""
-
-    text = "text"
-    textarea = "textarea"
-    dropdown = "dropdown"
-    file_upload = "file_upload"
-    checkbox = "checkbox"
-    slider = "slider"
-    radio = "radio"
-    group = "group"
-    section = "section"
-
-
-class DisplayMetadata(StrictBaseModel):
-    """Additional UI hints used to customize how input fields are displayed in the generated application UI."""
-
-    placeholder: Optional[str] = Field(
-        default=None,
-        description="Placeholder text shown inside the input field.",
-    )
-    tooltip: Optional[str] = Field(
-        default=None, description="Tooltip shown on hover."
-    )
-    default_value: Optional[Any] = Field(
-        default=None,
-        description="Default value if the user doesn't supply one.",
-    )
-    min_value: Optional[Union[int, float]] = Field(
-        default=None, description="Minimum value for numeric inputs."
-    )
-    max_value: Optional[Union[int, float]] = Field(
-        default=None, description="Maximum value for numeric inputs."
-    )
-    step: Optional[Union[int, float]] = Field(
-        default=None, description="Step size for numeric inputs."
-    )
-    allowed_types: Optional[List[str]] = Field(
-        default=None, description="Allowed file types for file upload."
-    )
-    options: Optional[List[str]] = Field(
-        default=None,
-        description="Options for dropdowns, radios, or checkboxes.",
-    )
-    group: Optional[str] = Field(
-        default=None, description="Grouping section this input belongs to."
-    )
-    section: Optional[str] = Field(
-        default=None,
-        description="Section name used to visually separate inputs.",
-    )
-    icon: Optional[str] = Field(
-        default=None, description="Icon shown alongside input (optional)."
-    )
-    css_class: Optional[str] = Field(
-        default=None, description="Optional CSS class for advanced styling."
-    )
-
-
 class Variable(StrictBaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
@@ -95,15 +36,6 @@ class Variable(StrictBaseModel):
     )
     type: VariableType = Field(
         ..., description="Type of data expected or produced."
-    )
-    display_name: Optional[str] = Field(
-        default=None, description="Label shown in the UI."
-    )
-    display_type: Optional[DisplayType] = Field(
-        default=None, description="Hint for how to render this variable."
-    )
-    display_metadata: Optional[DisplayMetadata] = Field(
-        default=None, description="Additional UI hints."
     )
 
 

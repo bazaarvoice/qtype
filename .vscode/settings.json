@@ -3,5 +3,8 @@
         {
             "text": "Follow the Conventional Commits specification (https://www.conventionalcommits.org/en/v1.0.0/) strictly for commit messages. Use the structure below:\n\n```\n<type>[optional scope]: <description>\n\n[optional body]\n\n[optional footer(s)]\n```\n\nCommit Types:\n- `feat`: A new feature\n- `fix`: A bug fix\n- `docs`: Documentation only changes\n- `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)\n- `refactor`: A code change that neither fixes a bug nor adds a feature\n- `perf`: A code change that improves performance\n- `test`: Adding missing tests or correcting existing tests\n- `build`: Changes that affect the build system or external dependencies\n- `ci`: Changes to CI configuration files and scripts\n- `chore`: Other changes that don't modify src or test files\n- `revert`: Reverts a previous commit\n\nGuidelines:\n1. **Type and Scope**: Choose an appropriate type and optional scope to describe the affected module or feature (e.g., `feat(parser)`, `fix(validator)`, `docs(dsl)`).\n2. **Description**: Write a concise, informative description in the present tense; use backticks if referencing code or specific terms.\n3. **Body**: For additional details, use a well-structured body section with bullet points for clarity.\n4. **Breaking Changes**: Append `!` after the type/scope for breaking changes or include `BREAKING CHANGE:` in the footer.\n\nExamples:\n- `feat(parser): add support for YAML configuration files`\n- `fix(validator): resolve circular dependency detection bug`\n- `docs: update getting started guide`\n- `refactor(ir): simplify model resolution logic`\n- `test(dsl): add comprehensive validation tests`\n\nCommit messages should be clear, informative, and professional, aiding readability and project tracking."
         }
-    ]
+    ],
+    "yaml.schemas" : {
+        "schema/qtype.schema.json": ["qtype.config.yaml", "*.qtype.yaml"],
+    }
 }
