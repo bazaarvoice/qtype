@@ -1,0 +1,45 @@
+version: "0.1.1"
+models:
+  - id: gpt4
+    provider: openai
+    model_id: gpt-4o
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+
+variables:
+  - id: user_question
+    type: text
+    display_name: "Your Question"
+    display_type: textarea
+  - id: response
+    type: text
+  
+agents:
+  - id: my_agent
+    prompt: answer_prompt
+    model: gpt4
+    inputs: 
+      - user_question
+    outputs:
+      - response
+
+prompts:
+  - id: answer_prompt
+    template: |
+      You are a helpful assistant.
+      Answer the following question:
+      {{ user_question }}
+    inputs: ["user_question"]
+    outputs: ["response"]
+
+flows:
+  - id: simple_qa
+    mode: complete
+    steps:
+      - my_agent
+
+auth:
+  - id: openai
+    type: api_key
+    api_key: ${OPENAI_KEY}

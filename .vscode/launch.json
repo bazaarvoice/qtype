@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug QType CLI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "qtype.cli",
+            "args": "${input:cliArgs}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "cliArgs",
+            "description": "CLI arguments (e.g., 'validate examples/hello_world.qtype.yaml' or 'generate-schema -o schema.json')",
+            "type": "promptString"
+        }
+    ]
+}
