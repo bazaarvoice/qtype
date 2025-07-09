@@ -16,7 +16,7 @@ Welcome to the QType development guide! This document provides comprehensive ins
 
 ## Prerequisites
 
-- **Python 3.9 or higher** (this project targets Python 3.9+)
+- **Python 3.10 or higher** (this project targets Python 3.10+)
 - **uv** package manager (recommended) or **pip**
 - **Git** for version control
 

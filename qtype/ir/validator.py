@@ -2,14 +2,7 @@
 Semantic validation for QType intermediate representation (IR).
 
 This module validates QTypeSpec objects for internal consistency, referential
-integrity, and adherence to semantic rules        self._validate_prompt_references(spec, registry)
-        self._validate_retriever_references(spec, registry)
-        self._validate_memory_references(spec, registry)
-        self._validate_tool_provider_references(spec, registry)
-        self._validate_telemetry_references(spec, registry)
-        # TODO: Re-enable step validation after updating for new DSL structure
-        # self._validate_step_references(spec, registry)
-        self._validate_flow_references(spec, registry)ined in the QType specification.
+integrity, and adherence to semantic rules defined in the QType specification.
 """
 
 from __future__ import annotations
@@ -18,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Set
 
 from qtype.dsl.model import Agent, QTypeSpec, Tool
+from qtype.ir.model import EmbeddingModel, Step
 
 
 class SemanticValidationError(Exception):

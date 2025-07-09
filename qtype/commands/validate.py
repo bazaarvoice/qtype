@@ -10,7 +10,6 @@ from pydantic import ValidationError
 
 from qtype.dsl.validator import validate_spec
 from qtype.ir.resolver import resolve_semantic_ir
-from qtype.ir.validator import validate_semantics
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ def validate_main(args: Any) -> None:
     #     sys.exit(1)
 
     try:
-        ir = resolve_semantic_ir(spec)
+        _ir = resolve_semantic_ir(spec)
         logger.info("✅ Semantic resolution successful.")
     except Exception as exc:
         logger.error("❌ Semantic resolution failed:\n%s", exc, exc_info=True)

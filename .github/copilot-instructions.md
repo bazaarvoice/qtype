@@ -54,12 +54,13 @@
     - Use `__main__.py` for executable scripts
     - Use `pydantic BaseModel` for simple data structures
 
-This project is using python 3.9, so you should not use any features that are not available in Python 3.9.
-You should, however, use features that are available in Python 3.9. Some examples are:
-    - Type hinting with `typing` module (use `typing.List` instead of `list`, `typing.Dict` instead of `dict`, etc.)
+This project is using python 3.10, so you should not use any features that are not available in Python 3.10.
+You should, however, use features that are available in Python 3.10. Some examples are:
+    - Type hinting with built-in types (use `list` instead of `typing.List`, `dict` instead of `typing.Dict`, etc.)
     - f-strings for string formatting
     - Dictionary merging with `|` operator
-    - Use `typing.Union` instead of `|` for union types (e.g., `Union[int, str]` not `int | str`)
-    - Use `typing.Optional` for optional parameters
+    - Use `|` operator for union types (e.g., `int | str` instead of `Union[int, str]`)
+    - Use `Optional` or `| None` for optional parameters (e.g., `str | None` instead of `Optional[str]`)
     - Use `from __future__ import annotations` for forward references and string annotations
+    - Pattern matching with `match`/`case` statements (new in 3.10)
  
