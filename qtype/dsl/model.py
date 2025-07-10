@@ -17,19 +17,18 @@ class StrictBaseModel(BaseModel):
 
 
 class VariableType(str, Enum):
-    """Represents the type of data a user or system input can accept within the DSL.
-    Used for schema validation and UI rendering of input fields."""
+    """Represents the type of data a user or system input can accept within the DSL."""
 
-    text = "text"
-    number = "number"
+    audio = "audio"
+    date = "date"
+    datetime = "datetime"
+    embedding = "embedding"
     file = "file"
     image = "image"
-    date = "date"
+    number = "number"
+    text = "text"
     time = "time"
-    datetime = "datetime"
     video = "video"
-    audio = "audio"
-    embedding = "embedding"
 
 
 class Variable(StrictBaseModel):
@@ -39,16 +38,16 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType | dict[str, VariableType | dict | list] = Field(
-        ..., 
+    type: VariableType | dict[str, "VariableType | dict | list"] = Field(
+        ...,
         description=(
-            "Type of data expected or produced. Can be:\n" +
-            "- A simple type from VariableType enum (e.g., 'text', 'number')\n" +
-            "- A dict defining object structure with property names as keys\n" +
-            "- For arrays: use [type] syntax (e.g., [text] for array of strings)\n" +
-            "- For nested objects: use nested dict structure\n" +
-            "- For tuples: use [type1, type2] syntax"
-        )
+            "Type of data expected or produced. Can be:\n"
+            + "- A simple type from VariableType enum (e.g., 'text', 'number')\n"
+            + "- A dict defining object structure with property names as keys\n"
+            + "- For arrays: use [type] syntax (e.g., [text] for array of strings)\n"
+            + "- For nested objects: use nested dict structure\n"
+            + "- For tuples: use [type1, type2] syntax"
+        ),
     )
 
 
@@ -56,20 +55,21 @@ class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    provider: str = Field(
-        ..., description="Name of the provider, e.g., openai or anthropic."
-    )
-    model_id: str | None = Field(
+    auth: AuthorizationProvider | str | None = Field(
         default=None,
-        description="The specific model name or ID for the provider. If None, id is used",
+        description="AuthorizationProvider used for model access.",
     )
     inference_params: dict[str, Any] | None = Field(
         default=None,
         description="Optional inference parameters like temperature or max_tokens.",
     )
-    auth: AuthorizationProvider | str | None = Field(
+    model_id: str | None = Field(
         default=None,
-        description="AuthorizationProvider ID used to authenticate model access.",
+        description="The specific model name or ID for the provider. If None, id is used",
+    )
+    # TODO(maybe): Make this an enum?
+    provider: str = Field(
+        ..., description="Name of the provider, e.g., openai or anthropic."
     )
 
 
@@ -78,7 +78,7 @@ class EmbeddingModel(Model):
 
     dimensions: int | None = Field(
         default=None,
-        description="Dimensionality of the embedding vectors produced by this model if an embedding model.",
+        description="Dimensionality of the embedding vectors produced by this model.",
     )
 
 
@@ -103,7 +103,7 @@ class Step(StrictBaseModel):
         description="Input variables required by this step.",
     )
     outputs: list[Variable | str] | None = Field(
-        default=None, description="Variable IDs where output is stored."
+        default=None, description="Variable where output is stored."
     )
 
 
@@ -134,16 +134,16 @@ class Condition(Step):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
     # TODO: Add support for more complex conditions
+    else_: StepType | str | None = Field(
+        default=None,
+        alias="else",
+        description="Optional step to run if condition fails.",
+    )
     equals: Variable | str | None = Field(
         default=None, description="Match condition for equality check."
     )
     then: StepType | str = Field(
         ..., description="Step to run if condition matches."
-    )
-    else_: StepType | str | None = Field(
-        default=None,
-        alias="else",
-        description="Optional step to run if condition fails.",
     )
 
     @model_validator(mode="after")
@@ -171,20 +171,16 @@ class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
-    model: ModelType | str = Field(
-        ..., description="The model to use for inference."
-    )
     memory: Memory | None = Field(
         default=None,
         description="Memory object to retain context across interactions.",
     )
+    model: ModelType | str = Field(
+        ..., description="The model to use for inference."
+    )
     system_message: str | None = Field(
         default=None,
         description="Optional system message to set the context for the model.",
-    )
-    outputs: list[Variable | str] | None = Field(
-        default=None,
-        description="Output variables produced by the inference. If not provided, defaults to <id>.response variable.",
     )
 
     @model_validator(mode="after")
@@ -216,6 +212,7 @@ class Flow(Step):
         default_factory=list, description="List of steps or step IDs."
     )
 
+
 #
 # ---------------- Observability and Provider Components ----------------
 #
@@ -226,35 +223,33 @@ class ToolProvider(StrictBaseModel):
     OpenAPI spec, and optionally authenticated."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
-    openapi_spec: str | None = Field(
+    auth: AuthorizationProvider | str | None = Field(
         default=None,
-        description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
+        description="AuthorizationProvider ID used to authenticate tool access.",
+    )
+    exclude_paths: list[str] | None = Field(
+        default=None, description="Exclude specific endpoints by path."
     )
     include_tags: list[str] | None = Field(
         default=None,
         description="Limit tool generation to specific OpenAPI tags.",
     )
-    exclude_paths: list[str] | None = Field(
-        default=None, description="Exclude specific endpoints by path."
-    )
-    auth: AuthorizationProvider | str | None = Field(
+    openapi_spec: str | None = Field(
         default=None,
-        description="AuthorizationProvider ID used to authenticate tool access.",
+        description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
     )
 
 
 class AuthorizationProvider(StrictBaseModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
+
     # TODO: think through this more and decide if it's the right shape...
 
     id: str = Field(
         ..., description="Unique ID of the authorization configuration."
     )
-    type: str = Field(
-        ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
-    )
-    host: str | None = Field(
-        default=None, description="Base URL or domain of the provider."
+    api_key: str | None = Field(
+        default=None, description="API key if using token-based auth."
     )
     client_id: str | None = Field(
         default=None, description="OAuth2 client ID."
@@ -262,14 +257,17 @@ class AuthorizationProvider(StrictBaseModel):
     client_secret: str | None = Field(
         default=None, description="OAuth2 client secret."
     )
-    token_url: str | None = Field(
-        default=None, description="Token endpoint URL."
+    host: str | None = Field(
+        default=None, description="Base URL or domain of the provider."
     )
     scopes: list[str] | None = Field(
         default=None, description="OAuth2 scopes required."
     )
-    api_key: str | None = Field(
-        default=None, description="API key if using token-based auth."
+    token_url: str | None = Field(
+        default=None, description="Token endpoint URL."
+    )
+    type: str = Field(
+        ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
     )
 
 
@@ -279,20 +277,23 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    endpoint: str = Field(
-        ..., description="URL endpoint where telemetry data will be sent."
-    )
     auth: AuthorizationProvider | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
+    endpoint: str = Field(
+        ..., description="URL endpoint where telemetry data will be sent."
+    )
+
 
 #
 # ---------------- Application Definition ----------------
 #
 
+
 class Application(StrictBaseModel):
     """Defines a QType application that can include models, variables, and other components."""
+
     id: str = Field(..., description="Unique ID of the application.")
     description: str | None = Field(
         default=None, description="Optional description of the application."
@@ -301,7 +302,7 @@ class Application(StrictBaseModel):
     # Core components
     memories: list[Memory] | None = Field(
         default=None,
-        description="List of memory definitions used in this application."
+        description="List of memory definitions used in this application.",
     )
     models: list[ModelType] | None = Field(
         default=None, description="List of models used in this application."
@@ -312,20 +313,17 @@ class Application(StrictBaseModel):
 
     # Step components (can be referenced by ID in flows)
     agents: list[Agent] | None = Field(
-        default=None,
-        description="List of agents defined in this application."
+        default=None, description="List of agents defined in this application."
     )
     conditions: list[Condition] | None = Field(
-        default=None,
-        description="List of reusable condition steps."
+        default=None, description="List of reusable condition steps."
     )
     prompt_templates: list[PromptTemplate] | None = Field(
-        default=None,
-        description="List of reusable prompt templates."
+        default=None, description="List of reusable prompt templates."
     )
     steps: list[StepType] | None = Field(
         default=None,
-        description="List of individual steps that can be referenced by flows."
+        description="List of individual steps that can be referenced by flows.",
     )
 
     # Orchestration
@@ -336,24 +334,24 @@ class Application(StrictBaseModel):
     # External integrations
     auths: list[AuthorizationProvider] | None = Field(
         default=None,
-        description="List of authorization providers used for API access."
+        description="List of authorization providers used for API access.",
     )
     tool_providers: list[ToolProvider] | None = Field(
         default=None,
-        description="List of tool providers that can auto-generate tools from OpenAPI specs."
+        description="List of tool providers that can auto-generate tools from OpenAPI specs.",
     )
     tools: list[Tool] | None = Field(
-        default=None, description="List of tools available in this application."
+        default=None,
+        description="List of tools available in this application.",
     )
     indexes: list[IndexType] | None = Field(
         default=None,
-        description="List of indexes available for search operations."
+        description="List of indexes available for search operations.",
     )
 
     # Observability
     telemetry: TelemetrySink | None = Field(
-        default=None,
-        description="Optional telemetry sink for observability."
+        default=None, description="Optional telemetry sink for observability."
     )
 
     # Extensibility
@@ -362,23 +360,25 @@ class Application(StrictBaseModel):
         description="List of other q-type documents you may use. This allows modular composition and reuse of components across applications.",
     )
 
+
 #
 # ---------------- Retrieval Augmented Generation Components ----------------
 #
+
 
 class Index(StrictBaseModel, ABC):
     """Base class for searchable indexes that can be queried by search steps."""
 
     id: str = Field(..., description="Unique ID of the index.")
-    name: str = Field(..., description="Name of the index/collection/table.")
-    auth: AuthorizationProvider | str | None = Field(
-        default=None,
-        description="AuthorizationProvider for accessing the index."
-    )
     args: dict[str, Any] | None = Field(
         default=None,
-        description="Index-specific configuration and connection parameters."
+        description="Index-specific configuration and connection parameters.",
     )
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="AuthorizationProvider for accessing the index.",
+    )
+    name: str = Field(..., description="Name of the index/collection/table.")
 
 
 class VectorIndex(Index):
@@ -386,12 +386,13 @@ class VectorIndex(Index):
 
     embedding_model: EmbeddingModel | str = Field(
         ...,
-        description="Embedding model used to vectorize queries and documents."
+        description="Embedding model used to vectorize queries and documents.",
     )
 
 
 class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
+
     # TODO: add anything that is needed for document search indexes
     pass
 
@@ -399,13 +400,11 @@ class DocumentIndex(Index):
 class Search(Step, ABC):
     """Base class for search operations against indexes."""
 
-    index: IndexType | str = Field(
-        ...,
-        description="Index to search against (object or ID reference)."
-    )
     filters: dict[str, Any] | None = Field(
-        default=None,
-        description="Optional filters to apply during search."
+        default=None, description="Optional filters to apply during search."
+    )
+    index: IndexType | str = Field(
+        ..., description="Index to search against (object or ID reference)."
     )
 
 
@@ -422,12 +421,12 @@ class VectorSearch(Search):
         if self.inputs is None:
             self.inputs = [
                 Variable(id="top_k", type=VariableType.number),
-                Variable(id="query", type=VariableType.text)
+                Variable(id="query", type=VariableType.text),
             ]
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type={"search_results": list[Any]})
+                Variable(id=f"{self.id}.results", type=[VariableType.text])
             ]
         return self
 
@@ -439,9 +438,7 @@ class DocumentSearch(Search):
     def set_default_inputs_outputs(self) -> "DocumentSearch":
         """Set default input and output variables if none provided."""
         if self.inputs is None:
-            self.inputs = [
-                Variable(id="query", type=VariableType.text)
-            ]
+            self.inputs = [Variable(id="query", type=VariableType.text)]
 
         if self.outputs is None:
             self.outputs = [
@@ -452,26 +449,26 @@ class DocumentSearch(Search):
 
 # Create a union type for all step types
 StepType = Union[
-    PromptTemplate,
-    Condition,
-    Tool,
-    LLMInference,
     Agent,
-    VectorSearch,
+    Condition,
     DocumentSearch,
     Flow,
+    LLMInference,
+    PromptTemplate,
+    Tool,
+    VectorSearch,
 ]
 
 # Create a union type for all index types
 IndexType = Union[
-    VectorIndex,
     DocumentIndex,
+    VectorIndex,
 ]
 
 # Create a union type for all model types
 ModelType = Union[
-    Model,
     EmbeddingModel,
+    Model,
 ]
 
 
@@ -480,42 +477,48 @@ ModelType = Union[
 # The following shapes let users define a set of flexible document structures
 #
 
+
 class AuthorizationProviderList(RootModel[list[AuthorizationProvider]]):
     """Schema for a standalone list of authorization providers."""
 
     root: list[AuthorizationProvider]
+
 
 class IndexList(RootModel[list[IndexType]]):
     """Schema for a standalone list of indexes."""
 
     root: list[IndexType]
 
+
 class ModelList(RootModel[list[ModelType]]):
     """Schema for a standalone list of models."""
 
     root: list[ModelType]
+
 
 class ToolProviderList(RootModel[list[ToolProvider]]):
     """Schema for a standalone list of tool providers."""
 
     root: list[ToolProvider]
 
+
 class VariableList(RootModel[list[Variable]]):
     """Schema for a standalone list of variables."""
 
     root: list[Variable]
 
+
 class Document(
     RootModel[
         Union[
-            Application,
             Agent,
+            Application,
+            AuthorizationProviderList,
             Flow,
             IndexList,
             ModelList,
-            VariableList,
-            AuthorizationProviderList,
             ToolProviderList,
+            VariableList,
         ]
     ]
 ):
@@ -526,14 +529,14 @@ class Document(
     """
 
     root: Union[
-        Application,
         Agent,
+        Application,
+        AuthorizationProviderList,
         Flow,
         IndexList,
         ModelList,
-        VariableList,
-        AuthorizationProviderList,
         ToolProviderList,
+        VariableList,
     ]
 
 
@@ -565,5 +568,3 @@ class Document(
 #         default=None,
 #         description="ID of prompt used to generate a follow-up based on feedback.",
 #     )
-
-
