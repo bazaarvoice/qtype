@@ -342,6 +342,12 @@ class Application(StrictBaseModel):
         description="Optional telemetry sink for observability."
     )
 
+    # Extensibility
+    references: list[Document] | None = Field(
+        default=None,
+        description="List of other q-type documents you may use. This allows modular composition and reuse of components across applications.",
+    )
+
 
 #
 # ---------------- Document Flexibility Shapes ----------------
@@ -361,22 +367,45 @@ class VariableList(RootModel[list[Variable]]):
     root: list[Variable]
 
 
+class AuthorizationProviderList(RootModel[list[AuthorizationProvider]]):
+    """Schema for a standalone list of authorization providers."""
+
+    root: list[AuthorizationProvider]
+
+
+class ToolProviderList(RootModel[list[ToolProvider]]):
+    """Schema for a standalone list of tool providers."""
+
+    root: list[ToolProvider]
+
+
 class Document(
     RootModel[
         Union[
             Application,
-            ModelList, VariableList
+            Agent,
+            Flow,
+            ModelList,
+            VariableList,
+            AuthorizationProviderList,
+            ToolProviderList,
         ]
     ]
 ):
     """Schema for any valid QType document structure.
 
-    This allows validation of standalone lists of components or full QType specs.
+    This allows validation of standalone lists of components, individual components,
+    or full QType application specs. Supports modular composition and reuse.
     """
 
     root: Union[
         Application,
-        ModelList, VariableList
+        Agent,
+        Flow,
+        ModelList,
+        VariableList,
+        AuthorizationProviderList,
+        ToolProviderList,
     ]
 
 
