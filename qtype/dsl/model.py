@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Any, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
+
+#
+# ---------------- Base Components ----------------
+#
 
 
 class StrictBaseModel(BaseModel):
@@ -34,27 +38,8 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType = Field(
+    type: VariableType | dict | list = Field(
         ..., description="Type of data expected or produced."
-    )
-
-
-class Prompt(StrictBaseModel):
-    """References a prompt template, either inline or from file, along with expected input and output variable bindings."""
-
-    id: str = Field(..., description="Unique ID for the prompt.")
-    path: str | None = Field(
-        default=None, description="File path to the prompt template."
-    )
-    template: str | None = Field(
-        default=None, description="Inline template string for the prompt."
-    )
-    inputs: list[str] = Field(
-        ..., description="List of input variable IDs this prompt expects."
-    )
-    outputs: list[str] | None = Field(
-        default=None,
-        description="Optional list of output variable IDs this prompt generates.",
     )
 
 
@@ -73,91 +58,164 @@ class Model(StrictBaseModel):
         default=None,
         description="Optional inference parameters like temperature or max_tokens.",
     )
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="AuthorizationProvider ID used to authenticate model access.",
+    )
+
+
+class EmbeddingModel(Model):
+    """Describes an embedding model configuration, extending the base Model class."""
+
     dimensions: int | None = Field(
         default=None,
         description="Dimensionality of the embedding vectors produced by this model if an embedding model.",
     )
-
-class VectorDBRetriever(StrictBaseModel):
-    """Retriever that fetches top-K documents using a vector database and embedding-based similarity search."""
-
-    type: Literal["vector_retrieve"] = "vector_retrieve"
-    id: str = Field(..., description="Unique ID of the retriever.")
-    index: str = Field(..., description="ID of the index this retriever uses.")
-    embedding_model: str = Field(
-        ...,
-        description="ID of the embedding model used to vectorize the query.",
-    )
-    top_k: int = Field(5, description="Number of top documents to retrieve.")
-    args: dict[str, Any] | None = Field(
-        default=None,
-        description="Arbitrary arguments as JSON/YAML for custom retriever configuration.",
-    )
-    inputs: list[str] | None = Field(
-        default=None,
-        description="Input variable IDs required by this retriever.",
-    )
-    outputs: list[str] | None = Field(
-        default=None,
-        description="Optional list of output variable IDs this prompt generates.",
-    )
-
-
-class MemoryType(str, Enum):
-    """Enum to differentiate supported memory types, such as vector memory for embedding-based recall."""
-
-    vector = "vector"
 
 
 class Memory(StrictBaseModel):
     """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
-    type: MemoryType = Field(
-        ..., description="The type of memory to store context."
+    # TODO: flush this out with options for vector memory, etc.
+
+
+#
+# ---------------- Core Steps and Flow Components ----------------
+#
+
+
+class Step(StrictBaseModel):
+    """Base class for components that take inputs and produce outputs."""
+
+    id: str = Field(..., description="Unique ID of this component.")
+    inputs: list[Variable | str] | None = Field(
+        default=None,
+        description="Input variables required by this step.",
     )
-    embedding_model: str = Field(
-        ..., description="Embedding model ID used for storage."
-    )
-    persist: bool = Field(
-        default=False, description="Whether memory persists across sessions."
-    )
-    ttl_minutes: int | None = Field(
-        default=None, description="Optional TTL for temporary memory."
-    )
-    use_for_context: bool = Field(
-        default=True,
-        description="Whether this memory should be injected as context.",
+    outputs: list[Variable | str] | None = Field(
+        default=None, description="Variable IDs where output is stored."
     )
 
-class Tool(StrictBaseModel):
-    """Callable function or external operation available to the model. Input/output shapes are described via JSON Schema."""
 
-    type: Literal["tool"]
+class PromptTemplate(Step):
+    """Defines a prompt template with a string format and variable bindings.
+    This is used to generate prompts dynamically based on input variables."""
+
+    template: str = Field(
+        ...,
+        description="String template for the prompt with variable placeholders.",
+    )
+    outputs: list[Variable | str] | None = Field(
+        default=None,
+        description="The result of applying this template to the input variables. If not provided, defaults to a single text output variable called <id>.prompt",
+    )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "PromptTemplate":
+        """Set default output variable if none provided."""
+        if self.outputs is None:
+            self.outputs = [
+                Variable(id=f"{self.id}.prompt", type=VariableType.text)
+            ]
+        return self
+
+
+class Condition(Step):
+    """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
+
+    # TODO: Add support for more complex conditions
+    equals: Variable | str | None = Field(
+        default=None, description="Match condition for equality check."
+    )
+    then: Step | str = Field(
+        ..., description="Step to run if condition matches."
+    )
+    else_: Step | str | None = Field(
+        default=None,
+        alias="else",
+        description="Optional step to run if condition fails.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "Condition":
+        """Set default output variable if none provided."""
+        if not self.inputs or len(self.inputs) != 1:
+            raise ValueError(
+                "Condition steps must have exactly one input variable."
+            )
+        return self
+
+
+class Tool(Step):
+    """
+    Callable function or external operation available to the model or as a step in a flow.
+    """
+
     id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: list[str] = Field(
-        ..., description="List of input variable IDs this prompt expects."
+
+
+class LLMInference(Step):
+    """Defines a step that performs inference using a language model.
+    It can take input variables and produce output variables based on the model's response."""
+
+    model: Model = Field(..., description="The model to use for inference.")
+    memory: Memory | None = Field(
+        default=None,
+        description="Memory object to retain context across interactions.",
     )
-    outputs: list[str] = Field(
-        ...,
-        description="Optional list of output variable IDs this prompt generates.",
+    system_message: str | None = Field(
+        default=None,
+        description="Optional system message to set the context for the model.",
     )
+    outputs: list[Variable | str] | None = Field(
+        default=None,
+        description="Output variables produced by the inference. If not provided, defaults to <id>.response variable.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "LLMInference":
+        """Set default output variable if none provided."""
+        if self.outputs is None:
+            self.outputs = [
+                Variable(id=f"{self.id}.response", type=VariableType.text)
+            ]
+        return self
+
+
+class Agent(LLMInference):
+    """Defines an agent that can perform tasks and make decisions based on user input and context."""
+
+    tools: list[Tool] | None = Field(
+        default=None, description="List of tools available to the agent."
+    )
+
+
+class Flow(Step):
+    """Defines a flow of steps that can be executed in sequence or parallel.
+    Flows can include conditions and memory for state management.
+    If input or output variables are not specified, they are inferred from
+    the first and last step, respectively.
+    """
+
+    steps: list[Step | str] = Field(
+        default_factory=list, description="List of steps or step IDs."
+    )
+
+#
+# ---------------- Observability and Provider Components ----------------
+#
 
 
 class ToolProvider(StrictBaseModel):
-    """Logical grouping of tools, often backed by an API or OpenAPI spec, and optionally authenticated.
-
-    This should show the Pydantic fields."""
+    """Logical grouping of tools, often backed by an API or 
+    OpenAPI spec, and optionally authenticated."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
-    name: str = Field(..., description="Name of the tool provider.")
-    tools: list[Tool] = Field(
-        ..., description="List of tools exposed by this provider."
-    )
     openapi_spec: str | None = Field(
         default=None,
         description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
@@ -169,7 +227,7 @@ class ToolProvider(StrictBaseModel):
     exclude_paths: list[str] | None = Field(
         default=None, description="Exclude specific endpoints by path."
     )
-    auth: str | None = Field(
+    auth: AuthorizationProvider | str | None = Field(
         default=None,
         description="AuthorizationProvider ID used to authenticate tool access.",
     )
@@ -177,6 +235,7 @@ class ToolProvider(StrictBaseModel):
 
 class AuthorizationProvider(StrictBaseModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
+    # TODO: think through this more and decide if it's the right shape...
 
     id: str = Field(
         ..., description="Unique ID of the authorization configuration."
@@ -213,155 +272,166 @@ class TelemetrySink(StrictBaseModel):
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
-    auth: str | None = Field(
+    auth: AuthorizationProvider | str | None = Field(
         default=None,
-        description="AuthorizationProvider ID used to authenticate telemetry data transmission.",
+        description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
 
+#
+# ---------------- Application Definition ----------------
+#
 
-class FeedbackType(str, Enum):
-    """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
+class Application(StrictBaseModel):
+    """Defines a QType application that can include models, variables, and other components."""
+    id: str = Field(..., description="Unique ID of the application.")
+    description: str | None = Field(
+        default=None, description="Optional description of the application."
+    )
 
-    THUMBS = "thumbs"
-    STAR = "star"
-    TEXT = "text"
-    RATING = "rating"
-    CHOICE = "choice"
-    BOOLEAN = "boolean"
-
-
-class Feedback(StrictBaseModel):
-    """Schema to define how user feedback is collected, structured, and optionally used to guide future prompts."""
-
-    id: str = Field(..., description="Unique ID of the feedback config.")
-    type: FeedbackType = Field(..., description="Feedback mechanism type.")
-    question: str | None = Field(
+    # Core components
+    memories: list[Memory] | None = Field(
         default=None,
-        description="Question to show user for qualitative feedback.",
+        description="List of memory definitions used in this application."
     )
-    prompt: str | None = Field(
-        default=None,
-        description="ID of prompt used to generate a follow-up based on feedback.",
-    )
-
-
-class Condition(StrictBaseModel):
-    """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
-
-    if_var: str = Field(..., description="ID of the variable to evaluate.")
-    equals: str | int | float | bool | None = Field(
-        default=None, description="Match condition for equality check."
-    )
-    exists: bool | None = Field(
-        default=None, description="Condition to check existence of a variable."
-    )
-    then: list[str] = Field(
-        ..., description="List of step IDs to run if condition matches."
-    )
-    else_: list[str] | None = Field(
-        default=None,
-        alias="else",
-        description="Optional list of step IDs to run if condition fails.",
-    )
-
-
-class Actionable(StrictBaseModel):
-    """Base class for components that can be executed with inputs and outputs."""
-
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[str] | None = Field(
-        default=None,
-        description="Input variable IDs required by this component.",
-    )
-    outputs: list[str] | None = Field(
-        default=None, description="Variable IDs where output is stored."
-    )
-
-
-class FlowMode(str, Enum):
-    """Execution context for the flow. `chat` maintains history, while `complete` operates statelessly."""
-
-    chat = "chat"
-    complete = "complete"
-
-
-class Flow(Actionable):
-    """Composable structure that defines the interaction logic for a generative AI application.
-    Supports branching, memory, and sequencing of steps."""
-
-    mode: FlowMode = Field(..., description="Interaction mode for the flow.")
-    steps: list["Step | str"] = Field(
-        default_factory=list, description="List of steps or nested step IDs."
-    )
-    conditions: list[Condition] | None = Field(
-        default=None, description="Optional conditional logic within the flow."
-    )
-    memory: list[str] | None = Field(
-        default=None,
-        description="List of memory IDs to include (chat mode only).",
-    )
-
-
-class Agent(Actionable):
-    type: Literal["agent"] = "agent"
-    model: str = Field(
-        ..., description="The id of the model for this agent to use."
-    )
-    prompt: str = Field(
-        ..., description="The id of the prompt for this agent to use"
-    )
-    tools: list[str] | None = Field(
-        default=None, description="Tools that this agent has access to"
-    )
-
-
-Step = Annotated[Agent | Tool | VectorDBRetriever, Field(discriminator="type")]
-
-
-class QTypeSpec(StrictBaseModel):
-    """The root configuration object for a QType AI application. Includes flows, models, tools, and more.
-    This object is expected to be serialized into YAML and consumed by the QType runtime."""
-
-    version: str = Field(
-        ..., description="Version of the QType specification schema used."
-    )
-    models: list[Model] | None = Field(
-        default=None,
-        description="List of generative models available for use, including their providers and inference parameters.",
+    models: list[Model | EmbeddingModel] | None = Field(
+        default=None, description="List of models used in this application."
     )
     variables: list[Variable] | None = Field(
-        default=None,
-        description="Variables or parameters exposed by the application.",
+        default=None, description="List of variables used in this application."
     )
-    prompts: list[Prompt] | None = Field(
+
+    # Step components (can be referenced by ID in flows)
+    agents: list[Agent] | None = Field(
         default=None,
-        description="Prompt templates used in generation steps or tools, referencing input and output variables.",
+        description="List of agents defined in this application."
+    )
+    conditions: list[Condition] | None = Field(
+        default=None,
+        description="List of reusable condition steps."
+    )
+    prompt_templates: list[PromptTemplate] | None = Field(
+        default=None,
+        description="List of reusable prompt templates."
+    )
+    steps: list[Step] | None = Field(
+        default=None,
+        description="List of individual steps that can be referenced by flows."
+    )
+
+    # Orchestration
+    flows: list[Flow] | None = Field(
+        default=None, description="List of flows defined in this application."
+    )
+
+    # External integrations
+    auths: list[AuthorizationProvider] | None = Field(
+        default=None,
+        description="List of authorization providers used for API access."
     )
     tool_providers: list[ToolProvider] | None = Field(
         default=None,
-        description="Tool providers with optional OpenAPI specs, exposing callable tools for the model.",
+        description="List of tool providers that can auto-generate tools from OpenAPI specs."
     )
-    flows: list[Flow] | None = Field(
+    tools: list[Tool] | None = Field(
+        default=None, description="List of tools available in this application."
+    )
+
+    # Observability
+    telemetry: TelemetrySink | None = Field(
         default=None,
-        description="Entry points to application logic. Each flow defines an executable composition of steps.",
+        description="Optional telemetry sink for observability."
     )
-    agents: list[Agent] | None = Field(
-        default=None,
-        description="AI agents with specific models, prompts, and tools for autonomous task execution.",
-    )
-    feedback: list[Feedback] | None = Field(
-        default=None,
-        description="Feedback configurations for collecting structured or unstructured user reactions to outputs.",
-    )
-    memory: list[Memory] | None = Field(
-        default=None,
-        description="Session-level memory contexts, only used in chat-mode flows to persist state across turns.",
-    )
-    auth: list[AuthorizationProvider] | None = Field(
-        default=None,
-        description="Authorization providers and credentials used to access external APIs or cloud services.",
-    )
-    telemetry: list[TelemetrySink] | None = Field(
-        default=None,
-        description="Telemetry sinks for collecting observability data from the QType runtime.",
-    )
+
+
+#
+# ---------------- Document Flexibility Shapes ----------------
+# The following shapes let users define a set of flexible document structures
+#
+
+
+class ModelList(RootModel[list[Model | EmbeddingModel]]):
+    """Schema for a standalone list of models."""
+
+    root: list[Model | EmbeddingModel]
+
+
+class VariableList(RootModel[list[Variable]]):
+    """Schema for a standalone list of variables."""
+
+    root: list[Variable]
+
+
+class Document(
+    RootModel[
+        Union[
+            Application,
+            ModelList, VariableList
+        ]
+    ]
+):
+    """Schema for any valid QType document structure.
+
+    This allows validation of standalone lists of components or full QType specs.
+    """
+
+    root: Union[
+        Application,
+        ModelList, VariableList
+    ]
+
+
+#
+# ---------------- Shapes we've disabled for now but will need soon ----------------
+#
+
+
+
+# class VectorDBRetriever(StrictBaseModel):
+#     """Retriever that fetches top-K documents using a vector database and embedding-based similarity search."""
+
+#     type: Literal["vector_retrieve"] = "vector_retrieve"
+#     id: str = Field(..., description="Unique ID of the retriever.")
+#     index: str = Field(..., description="ID of the index this retriever uses.")
+#     embedding_model: str = Field(
+#         ...,
+#         description="ID of the embedding model used to vectorize the query.",
+#     )
+#     top_k: int = Field(5, description="Number of top documents to retrieve.")
+#     args: dict[str, Any] | None = Field(
+#         default=None,
+#         description="Arbitrary arguments as JSON/YAML for custom retriever configuration.",
+#     )
+#     inputs: list[str] | None = Field(
+#         default=None,
+#         description="Input variable IDs required by this retriever.",
+#     )
+#     outputs: list[str] | None = Field(
+#         default=None,
+#         description="Optional list of output variable IDs this prompt generates.",
+#     )
+
+
+# class FeedbackType(str, Enum):
+#     """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
+
+#     THUMBS = "thumbs"
+#     STAR = "star"
+#     TEXT = "text"
+#     RATING = "rating"
+#     CHOICE = "choice"
+#     BOOLEAN = "boolean"
+
+
+# class Feedback(StrictBaseModel):
+#     """Schema to define how user feedback is collected, structured, and optionally used to guide future prompts."""
+
+#     id: str = Field(..., description="Unique ID of the feedback config.")
+#     type: FeedbackType = Field(..., description="Feedback mechanism type.")
+#     question: str | None = Field(
+#         default=None,
+#         description="Question to show user for qualitative feedback.",
+#     )
+#     prompt: str | None = Field(
+#         default=None,
+#         description="ID of prompt used to generate a follow-up based on feedback.",
+#     )
