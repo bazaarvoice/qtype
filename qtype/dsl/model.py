@@ -29,6 +29,7 @@ class VariableType(str, Enum):
     datetime = "datetime"
     video = "video"
     audio = "audio"
+    embedding = "embedding"
 
 
 class Variable(StrictBaseModel):
@@ -38,8 +39,16 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType | dict | list = Field(
-        ..., description="Type of data expected or produced."
+    type: VariableType | dict[str, VariableType | dict | list] = Field(
+        ..., 
+        description=(
+            "Type of data expected or produced. Can be:\n" +
+            "- A simple type from VariableType enum (e.g., 'text', 'number')\n" +
+            "- A dict defining object structure with property names as keys\n" +
+            "- For arrays: use [type] syntax (e.g., [text] for array of strings)\n" +
+            "- For nested objects: use nested dict structure\n" +
+            "- For tuples: use [type1, type2] syntax"
+        )
     )
 
 
@@ -128,10 +137,10 @@ class Condition(Step):
     equals: Variable | str | None = Field(
         default=None, description="Match condition for equality check."
     )
-    then: Step | str = Field(
+    then: StepType | str = Field(
         ..., description="Step to run if condition matches."
     )
-    else_: Step | str | None = Field(
+    else_: StepType | str | None = Field(
         default=None,
         alias="else",
         description="Optional step to run if condition fails.",
@@ -152,7 +161,6 @@ class Tool(Step):
     Callable function or external operation available to the model or as a step in a flow.
     """
 
-    id: str = Field(..., description="Unique ID of the tool.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
         ..., description="Description of what the tool does."
@@ -163,7 +171,9 @@ class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
-    model: Model = Field(..., description="The model to use for inference.")
+    model: ModelType | str = Field(
+        ..., description="The model to use for inference."
+    )
     memory: Memory | None = Field(
         default=None,
         description="Memory object to retain context across interactions.",
@@ -293,7 +303,7 @@ class Application(StrictBaseModel):
         default=None,
         description="List of memory definitions used in this application."
     )
-    models: list[Model | EmbeddingModel] | None = Field(
+    models: list[ModelType] | None = Field(
         default=None, description="List of models used in this application."
     )
     variables: list[Variable] | None = Field(
@@ -313,7 +323,7 @@ class Application(StrictBaseModel):
         default=None,
         description="List of reusable prompt templates."
     )
-    steps: list[Step] | None = Field(
+    steps: list[StepType] | None = Field(
         default=None,
         description="List of individual steps that can be referenced by flows."
     )
@@ -402,9 +412,8 @@ class Search(Step, ABC):
 class VectorSearch(Search):
     """Performs vector similarity search against a vector index."""
 
-    top_k: int = Field(
-        default=5,
-        description="Number of top results to retrieve."
+    default_top_k: int | None = Field(
+        description="Number of top results to retrieve if not provided in the inputs.",
     )
 
     @model_validator(mode="after")
@@ -418,7 +427,7 @@ class VectorSearch(Search):
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type=VariableType.text)
+                Variable(id=f"{self.id}.results", type={"search_results": list[Any]})
             ]
         return self
 
@@ -443,7 +452,6 @@ class DocumentSearch(Search):
 
 # Create a union type for all step types
 StepType = Union[
-    Step,
     PromptTemplate,
     Condition,
     Tool,
@@ -451,12 +459,19 @@ StepType = Union[
     Agent,
     VectorSearch,
     DocumentSearch,
+    Flow,
 ]
 
 # Create a union type for all index types
 IndexType = Union[
     VectorIndex,
     DocumentIndex,
+]
+
+# Create a union type for all model types
+ModelType = Union[
+    Model,
+    EmbeddingModel,
 ]
 
 
@@ -475,10 +490,10 @@ class IndexList(RootModel[list[IndexType]]):
 
     root: list[IndexType]
 
-class ModelList(RootModel[list[Model | EmbeddingModel]]):
+class ModelList(RootModel[list[ModelType]]):
     """Schema for a standalone list of models."""
 
-    root: list[Model | EmbeddingModel]
+    root: list[ModelType]
 
 class ToolProviderList(RootModel[list[ToolProvider]]):
     """Schema for a standalone list of tool providers."""
