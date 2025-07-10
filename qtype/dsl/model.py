@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
-
+from abc import ABC
 #
 # ---------------- Base Components ----------------
 #
@@ -202,7 +202,7 @@ class Flow(Step):
     the first and last step, respectively.
     """
 
-    steps: list[Step | str] = Field(
+    steps: list[StepType | str] = Field(
         default_factory=list, description="List of steps or step IDs."
     )
 
@@ -212,7 +212,7 @@ class Flow(Step):
 
 
 class ToolProvider(StrictBaseModel):
-    """Logical grouping of tools, often backed by an API or 
+    """Logical grouping of tools, often backed by an API or
     OpenAPI spec, and optionally authenticated."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
@@ -335,6 +335,10 @@ class Application(StrictBaseModel):
     tools: list[Tool] | None = Field(
         default=None, description="List of tools available in this application."
     )
+    indexes: list[IndexType] | None = Field(
+        default=None,
+        description="List of indexes available for search operations."
+    )
 
     # Observability
     telemetry: TelemetrySink | None = Field(
@@ -348,36 +352,143 @@ class Application(StrictBaseModel):
         description="List of other q-type documents you may use. This allows modular composition and reuse of components across applications.",
     )
 
+#
+# ---------------- Retrieval Augmented Generation Components ----------------
+#
+
+class Index(StrictBaseModel, ABC):
+    """Base class for searchable indexes that can be queried by search steps."""
+
+    id: str = Field(..., description="Unique ID of the index.")
+    name: str = Field(..., description="Name of the index/collection/table.")
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="AuthorizationProvider for accessing the index."
+    )
+    args: dict[str, Any] | None = Field(
+        default=None,
+        description="Index-specific configuration and connection parameters."
+    )
+
+
+class VectorIndex(Index):
+    """Vector database index for similarity search using embeddings."""
+
+    embedding_model: EmbeddingModel | str = Field(
+        ...,
+        description="Embedding model used to vectorize queries and documents."
+    )
+
+
+class DocumentIndex(Index):
+    """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
+    # TODO: add anything that is needed for document search indexes
+    pass
+
+
+class Search(Step, ABC):
+    """Base class for search operations against indexes."""
+
+    index: IndexType | str = Field(
+        ...,
+        description="Index to search against (object or ID reference)."
+    )
+    filters: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional filters to apply during search."
+    )
+
+
+class VectorSearch(Search):
+    """Performs vector similarity search against a vector index."""
+
+    top_k: int = Field(
+        default=5,
+        description="Number of top results to retrieve."
+    )
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "VectorSearch":
+        """Set default input and output variables if none provided."""
+        if self.inputs is None:
+            self.inputs = [
+                Variable(id="top_k", type=VariableType.number),
+                Variable(id="query", type=VariableType.text)
+            ]
+
+        if self.outputs is None:
+            self.outputs = [
+                Variable(id=f"{self.id}.results", type=VariableType.text)
+            ]
+        return self
+
+
+class DocumentSearch(Search):
+    """Performs document search against a document index."""
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "DocumentSearch":
+        """Set default input and output variables if none provided."""
+        if self.inputs is None:
+            self.inputs = [
+                Variable(id="query", type=VariableType.text)
+            ]
+
+        if self.outputs is None:
+            self.outputs = [
+                Variable(id=f"{self.id}.results", type=VariableType.text)
+            ]
+        return self
+
+
+# Create a union type for all step types
+StepType = Union[
+    Step,
+    PromptTemplate,
+    Condition,
+    Tool,
+    LLMInference,
+    Agent,
+    VectorSearch,
+    DocumentSearch,
+]
+
+# Create a union type for all index types
+IndexType = Union[
+    VectorIndex,
+    DocumentIndex,
+]
+
 
 #
 # ---------------- Document Flexibility Shapes ----------------
 # The following shapes let users define a set of flexible document structures
 #
 
+class AuthorizationProviderList(RootModel[list[AuthorizationProvider]]):
+    """Schema for a standalone list of authorization providers."""
+
+    root: list[AuthorizationProvider]
+
+class IndexList(RootModel[list[IndexType]]):
+    """Schema for a standalone list of indexes."""
+
+    root: list[IndexType]
 
 class ModelList(RootModel[list[Model | EmbeddingModel]]):
     """Schema for a standalone list of models."""
 
     root: list[Model | EmbeddingModel]
 
-
-class VariableList(RootModel[list[Variable]]):
-    """Schema for a standalone list of variables."""
-
-    root: list[Variable]
-
-
-class AuthorizationProviderList(RootModel[list[AuthorizationProvider]]):
-    """Schema for a standalone list of authorization providers."""
-
-    root: list[AuthorizationProvider]
-
-
 class ToolProviderList(RootModel[list[ToolProvider]]):
     """Schema for a standalone list of tool providers."""
 
     root: list[ToolProvider]
 
+class VariableList(RootModel[list[Variable]]):
+    """Schema for a standalone list of variables."""
+
+    root: list[Variable]
 
 class Document(
     RootModel[
@@ -385,6 +496,7 @@ class Document(
             Application,
             Agent,
             Flow,
+            IndexList,
             ModelList,
             VariableList,
             AuthorizationProviderList,
@@ -402,6 +514,7 @@ class Document(
         Application,
         Agent,
         Flow,
+        IndexList,
         ModelList,
         VariableList,
         AuthorizationProviderList,
@@ -412,33 +525,6 @@ class Document(
 #
 # ---------------- Shapes we've disabled for now but will need soon ----------------
 #
-
-
-
-# class VectorDBRetriever(StrictBaseModel):
-#     """Retriever that fetches top-K documents using a vector database and embedding-based similarity search."""
-
-#     type: Literal["vector_retrieve"] = "vector_retrieve"
-#     id: str = Field(..., description="Unique ID of the retriever.")
-#     index: str = Field(..., description="ID of the index this retriever uses.")
-#     embedding_model: str = Field(
-#         ...,
-#         description="ID of the embedding model used to vectorize the query.",
-#     )
-#     top_k: int = Field(5, description="Number of top documents to retrieve.")
-#     args: dict[str, Any] | None = Field(
-#         default=None,
-#         description="Arbitrary arguments as JSON/YAML for custom retriever configuration.",
-#     )
-#     inputs: list[str] | None = Field(
-#         default=None,
-#         description="Input variable IDs required by this retriever.",
-#     )
-#     outputs: list[str] | None = Field(
-#         default=None,
-#         description="Optional list of output variable IDs this prompt generates.",
-#     )
-
 
 # class FeedbackType(str, Enum):
 #     """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
@@ -464,3 +550,5 @@ class Document(
 #         default=None,
 #         description="ID of prompt used to generate a follow-up based on feedback.",
 #     )
+
+
