@@ -81,8 +81,8 @@ class Model(StrictBaseModel):
 class EmbeddingModel(Model):
     """Describes an embedding model configuration, extending the base Model class."""
 
-    dimensions: int | None = Field(
-        default=None,
+    dimensions: int = Field(
+        ...,
         description="Dimensionality of the embedding vectors produced by this model.",
     )
 
@@ -205,8 +205,8 @@ class LLMInference(Step):
 class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
-    tools: list[Tool] | None = Field(
-        default=None, description="List of tools available to the agent."
+    tools: list[Tool] = Field(
+        ..., description="List of tools available to the agent."
     )
 
 

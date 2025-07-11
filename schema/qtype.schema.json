@@ -96,25 +96,18 @@
           "title": "System Message"
         },
         "tools": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Tool"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "List of tools available to the agent.",
-          "title": "Tools"
+          "items": {
+            "$ref": "#/$defs/Tool"
+          },
+          "title": "Tools",
+          "type": "array"
         }
       },
       "required": [
         "id",
-        "model"
+        "model",
+        "tools"
       ],
       "title": "Agent",
       "type": "object"
@@ -817,22 +810,15 @@
           "type": "string"
         },
         "dimensions": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "Dimensionality of the embedding vectors produced by this model.",
-          "title": "Dimensions"
+          "title": "Dimensions",
+          "type": "integer"
         }
       },
       "required": [
         "id",
-        "provider"
+        "provider",
+        "dimensions"
       ],
       "title": "EmbeddingModel",
       "type": "object"

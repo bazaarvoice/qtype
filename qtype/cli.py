@@ -44,6 +44,10 @@ def main() -> None:
     val_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
     )
+    val_parser.add_argument(
+        "-p", "--print", action="store_true",
+        help="Print the spec after validation (default: False)",
+    )
     val_parser.set_defaults(func=validate_main)
 
     # # run subcommand

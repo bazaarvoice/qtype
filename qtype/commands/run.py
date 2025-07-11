@@ -10,7 +10,6 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from qtype.dsl.validator import validate_spec
 from qtype.ir.resolver import resolve_semantic_ir
 from qtype.ir.validator import validate_semantics
 from qtype.runner.executor import FlowExecutor
@@ -30,7 +29,7 @@ def run_main(args: Any) -> None:
     """
     # Step 1: Validate the spec
     try:
-        spec = validate_spec(args)
+        spec = load(args.spec)
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
         sys.exit(1)

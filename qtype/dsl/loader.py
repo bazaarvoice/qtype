@@ -7,12 +7,63 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import fsspec
 import yaml
 from dotenv import load_dotenv
+from fsspec.core import url_to_fs
+
+from qtype.dsl.model import (
+    Agent,
+    Application,
+    AuthorizationProviderList,
+    Document,
+    Flow,
+    IndexList,
+    ModelList,
+    ToolProviderList,
+    VariableList,
+)
+
+
+class _StringStream:
+    """
+    A file-like stream wrapper around string content for YAML loading.
+    This class provides a readable stream interface that PyYAML can use
+    to parse string content as if it were reading from a file.
+    """
+
+    def __init__(self, content: str, name: str | None = None) -> None:
+        """
+        Initialize the string stream.
+
+        Args:
+            content: The string content to wrap.
+            name: Optional name/path for the stream (used for relative path resolution).
+        """
+        self.content = content
+        self.name = name
+        self._pos = 0
+
+    def read(self, size: int = -1) -> str:
+        """
+        Read content from the stream.
+
+        Args:
+            size: Number of characters to read. If -1, read all remaining content.
+
+        Returns:
+            The requested content as a string.
+        """
+        if size == -1:
+            result = self.content[self._pos :]
+            self._pos = len(self.content)
+        else:
+            result = self.content[self._pos : self._pos + size]
+            self._pos += len(result)
+        return result
 
 
 class YamlLoader(yaml.SafeLoader):
@@ -78,7 +129,9 @@ def _env_var_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
     return re.sub(pattern, replace_env_var, value)
 
 
-def _include_file_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> Any:
+def _include_file_constructor(
+    loader: YamlLoader, node: yaml.ScalarNode
+) -> Any:
     """
     Constructor for !include tag to load external YAML files using fsspec.
 
@@ -102,23 +155,8 @@ def _include_file_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> Any:
         with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
             content = f.read()  # type: ignore[misc]
 
-            # Create a mock stream with the resolved path for nested includes
-            class IncludeStream:
-                def __init__(self, content: str, name: str) -> None:
-                    self.content = content
-                    self.name = name
-                    self._pos = 0
-
-                def read(self, size: int = -1) -> str:
-                    if size == -1:
-                        result = self.content[self._pos:]
-                        self._pos = len(self.content)
-                    else:
-                        result = self.content[self._pos:self._pos + size]
-                        self._pos += len(result)
-                    return result
-
-            stream = IncludeStream(content, resolved_path)
+            # Create a string stream with the resolved path for nested includes
+            stream = _StringStream(content, resolved_path)
             return yaml.load(stream, Loader=YamlLoader)
     except ValueError:
         # Re-raise ValueError (e.g., missing environment variables) without wrapping
@@ -168,7 +206,7 @@ def _resolve_path(current_path: str, target_path: str) -> str:
     """
     # If target is already absolute (has scheme or starts with /), use as-is
     parsed_target = urlparse(target_path)
-    if parsed_target.scheme or target_path.startswith('/'):
+    if parsed_target.scheme or target_path.startswith("/"):
         return target_path
 
     # Check if current path is a URL
@@ -182,27 +220,12 @@ def _resolve_path(current_path: str, target_path: str) -> str:
         return str(current_dir / target_path)
 
 
-def _load_env_files(file_path: str) -> None:
-    """Load .env files in order of precedence."""
-    # Only load .env files for local file paths, not URLs
-    parsed = urlparse(file_path)
-    if parsed.scheme:
-        return  # Skip .env loading for URLs
-
-    # Load .env files in order of precedence:
-    # 1. .env in the directory containing the YAML file
-    # 2. .env in the current working directory
-    yaml_dir = Path(file_path).parent.resolve()
-    yaml_env_file = yaml_dir / ".env"
-    cwd_env_file = Path.cwd() / ".env"
-
-    # Load .env from YAML directory first (lower precedence)
-    if yaml_env_file.exists():
-        load_dotenv(yaml_env_file)
-
-    # Load .env from current directory (higher precedence)
-    if cwd_env_file.exists() and cwd_env_file != yaml_env_file:
-        load_dotenv(cwd_env_file)
+def _load_env_files(directories: list[Path]) -> None:
+    """Load .env files from the specified directories."""
+    for directory in directories:
+        env_file = directory / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
 
 
 # Register constructors for YamlLoader
@@ -211,15 +234,12 @@ YamlLoader.add_constructor("!include", _include_file_constructor)
 YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_yaml(file_path: str) -> Dict[str, Any]:
+def load_from_string(content: str) -> list[dict[str, Any]]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
-    Automatically loads .env files from the current directory and the
-    directory containing the YAML file (for local files only).
-
     Args:
-        file_path: Path or URL to the YAML file to load.
+        content: The YAML content to load.
 
     Returns:
         The parsed YAML data with includes resolved and environment variables substituted.
@@ -229,29 +249,95 @@ def load_yaml(file_path: str) -> Dict[str, Any]:
         FileNotFoundError: If the YAML file or included files don't exist.
         yaml.YAMLError: If the YAML file is malformed.
     """
-    _load_env_files(file_path)
 
-    # Use fsspec to open the file, supporting URLs and various protocols
-    with fsspec.open(file_path, "r", encoding="utf-8") as f:
-        content = f.read()  # type: ignore[misc]
+    # Create a string stream for the loader
+    stream = _StringStream(content)
+    # Use the string stream directly with the loader
+    results = yaml.load_all(stream, Loader=YamlLoader)
+    # Unsure if these checks are necessary, but they ensure we don't return None
+    if results is None:
+        return []
+    else:
+        return [result for result in results if result is not None]
 
-        # Create a mock stream with the file path as name for the loader
-        class MockStream:
-            def __init__(self, content: str, name: str) -> None:
-                self.content = content
-                self.name = name
-                self._pos = 0
 
-            def read(self, size: int = -1) -> str:
-                if size == -1:
-                    result = self.content[self._pos:]
-                    self._pos = len(self.content)
-                else:
-                    result = self.content[self._pos:self._pos + size]
-                    self._pos += len(result)
-                return result
+def load_yaml(content: str) -> list[dict[str, Any]]:
+    """
+    Load a YAML file with environment variable substitution and file inclusion support.
 
-        mock_stream = MockStream(content, file_path)
-        # Use the mock stream directly with the loader
-        result = yaml.load(mock_stream, Loader=YamlLoader)
-        return result if result is not None else {}
+    Args:
+        content: Either a fsspec uri/file path to load, or a string containing YAML content.
+
+    Returns:
+        The parsed YAML data with includes resolved and environment variables substituted.
+
+    Raises:
+        ValueError: If a required environment variable is not found.
+        FileNotFoundError: If the YAML file or included files don't exist.
+        yaml.YAMLError: If the YAML file is malformed.
+    """
+    try:
+        _ = url_to_fs(content)
+        is_uri = True
+    except ValueError:
+        is_uri = False
+
+    # Load the environment variables from .env files
+    directories = [Path.cwd()]
+
+    if is_uri:
+        # if the content is a uri, see if it is a local path. if it is, add the directory
+        try:
+            parsed = urlparse(content)
+            if parsed.scheme in ["file", ""]:
+                # For file-like URIs, resolve the path and add its directory
+                directories.append(Path(parsed.path).parent)
+        except Exception as e:
+            pass
+
+    # Load .env files from the specified directories
+    _load_env_files(directories)
+
+    # Load the yaml content
+    if is_uri:
+        with fsspec.open(content, "r", encoding="utf-8") as f:
+            content = f.read()  # type: ignore[misc]
+
+    return load_from_string(content)
+
+
+def load_documents(content: str) -> list[Document]:
+    """Validate a QType YAML file against the Document schema."""
+    # there may be many documents in a single spec file. Load them all
+
+    data = load_yaml(content)
+    return [Document.model_validate(doc) for doc in data]
+
+
+ResolveableType = Agent | Application | Flow | list
+
+
+def _resolve_root(doc: Document) -> ResolveableType:
+    root = doc.root
+    # If the docroot is a type that ends in the name `List`, resolve it again
+    types_to_resolve = set(
+        [
+            AuthorizationProviderList,
+            IndexList,
+            ModelList,
+            ToolProviderList,
+            VariableList,
+        ]
+    )
+    if root is not None and type(root) in types_to_resolve:
+        root = root.root  # type: ignore
+    return root  # type: ignore[return-value]
+
+
+def load(content: str) -> ResolveableType:
+    """Load a QType YAML file and resolve the root document."""
+    documents = load_documents(content)
+    resolved = [_resolve_root(doc) for doc in documents]
+    if len(resolved) == 1:
+        resolved = resolved[0]
+    return resolved

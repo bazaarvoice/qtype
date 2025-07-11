@@ -1,2 +1,2 @@
 from .model import *  # noqa: F403
-# from .validator import validate_spec  # noqa: F401
+from .loader import load, load_yaml, load_documents  # noqa: F401
