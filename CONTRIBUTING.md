@@ -61,37 +61,39 @@ qtype --help
 
 ## Running Tests
 
-The project uses Python's built-in unittest framework with coverage measurement:
+The project uses pytest for testing with coverage measurement:
 
 ```bash
-# Run all tests with coverage
-uv run coverage run -m unittest discover tests/
+# Run all tests
+uv run pytest
 
-# View coverage report in terminal
-uv run coverage report
+# Run tests with coverage
+uv run pytest --cov=qtype
 
-# View detailed coverage with missing lines
-uv run coverage report --show-missing
+# Run tests with coverage and generate HTML report
+uv run pytest --cov=qtype --cov-report=html
 
-# Generate HTML coverage report
-uv run coverage html
-# Open htmlcov/index.html in your browser to see detailed coverage
+# Run tests with verbose output
+uv run pytest -v
 
-# Run specific test file with coverage
-uv run coverage run -m unittest tests.test_semantic_validation
-uv run coverage report
+# Run specific test file
+uv run pytest tests/test_loader_file_inclusion.py
 
 # Run specific test class
-uv run coverage run -m unittest tests.test_semantic_validation.TestUniqueIDs
-uv run coverage report
+uv run pytest tests/test_loader_file_inclusion.py::TestFileIncludeLoader
 
 # Run specific test method
-uv run coverage run -m unittest tests.test_semantic_validation.TestUniqueIDs.test_unique_model_ids
-uv run coverage report
+uv run pytest tests/test_loader_file_inclusion.py::TestFileIncludeLoader::test_include_yaml_file
 
-# Run with verbose unittest output
-uv run coverage run -m unittest discover tests/ -v
-uv run coverage report
+# Run tests matching a pattern
+uv run pytest -k "test_include"
+
+# Run tests with specific markers
+uv run pytest -m "not network"  # Skip network tests
+uv run pytest -m "not slow"     # Skip slow tests
+
+# Run tests in parallel (if pytest-xdist is installed)
+uv run pytest -n auto
 ```
 
 ### Coverage Reports
@@ -103,6 +105,24 @@ Coverage reports show:
 - HTML report with line-by-line coverage highlighting
 
 The HTML coverage report (`htmlcov/index.html`) provides the most detailed view, showing exactly which lines need more test coverage.
+
+### Test Markers
+
+The project uses pytest markers to categorize tests:
+- `@pytest.mark.slow`: Tests that take longer to run
+- `@pytest.mark.network`: Tests requiring network access
+
+Skip specific test categories:
+```bash
+# Skip slow tests
+uv run pytest -m "not slow"
+
+# Skip network tests
+uv run pytest -m "not network"
+
+# Run only network tests
+uv run pytest -m "network"
+```
 
 ## Code Quality and Standards
 
@@ -196,7 +216,7 @@ qtype/
 
 4. **Run tests** to ensure nothing is broken:
    ```bash
-   coverage run -m unittest discover tests/
+   uv run pytest --cov=qtype
    ```
 
 5. **Check code quality:**

@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import os
 import tempfile
-import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from qtype.dsl.loader import (
     load_from_string,
@@ -17,7 +18,7 @@ from qtype.dsl.loader import (
 )
 
 
-class TestFileIncludeLoader(unittest.TestCase):
+class TestFileIncludeLoader:
     """Test suite for FileIncludeLoader functionality."""
 
     def test_include_yaml_file(self) -> None:
@@ -43,13 +44,13 @@ app:
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["app"]["name"], "Test App")
-            self.assertEqual(result["app"]["database"]["host"], "localhost")
-            self.assertEqual(result["app"]["database"]["port"], 5432)
-            self.assertEqual(result["app"]["database"]["database"], "testdb")
+            assert result["app"]["name"] == "Test App"
+            assert result["app"]["database"]["host"] == "localhost"
+            assert result["app"]["database"]["port"] == 5432
+            assert result["app"]["database"]["database"] == "testdb"
 
     def test_include_raw_text_file(self) -> None:
         """Test including a raw text file with !include_raw tag."""
@@ -68,10 +69,10 @@ message: !include_raw {text_file.name}
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["message"], "Hello, World!\nThis is a test file.")
+            assert result["message"] == "Hello, World!\nThis is a test file."
 
     def test_nested_includes(self) -> None:
         """Test nested file inclusion."""
@@ -100,11 +101,11 @@ app:
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["app"]["settings"]["config"]["secret"], "deep_value")
-            self.assertEqual(result["app"]["settings"]["middle_value"], "test")
+            assert result["app"]["settings"]["config"]["secret"] == "deep_value"
+            assert result["app"]["settings"]["middle_value"] == "test"
 
     def test_include_with_env_vars(self) -> None:
         """Test file inclusion combined with environment variables."""
@@ -128,11 +129,11 @@ database: !include {included_file.name}
 
                 # Load and verify
                 result_list = load_yaml(str(main_file))
-                self.assertEqual(len(result_list), 1)
+                assert len(result_list) == 1
                 result = result_list[0]
 
-                self.assertEqual(result["database"]["host"], "production.example.com")
-                self.assertEqual(result["database"]["port"], 443)
+                assert result["database"]["host"] == "production.example.com"
+                assert result["database"]["port"] == 443
 
     def test_absolute_path_include(self) -> None:
         """Test including files with absolute paths."""
@@ -153,10 +154,10 @@ data: !include {included_file.absolute()}
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["data"]["value"], "absolute_test")
+            assert result["data"]["value"] == "absolute_test"
 
     def test_file_not_found_error(self) -> None:
         """Test error handling when included file doesn't exist."""
@@ -170,7 +171,7 @@ data: !include nonexistent.yaml
 """)
 
             # Verify error is raised
-            with self.assertRaisesRegex(FileNotFoundError, "Failed to load included file"):
+            with pytest.raises(FileNotFoundError, match="Failed to load included file"):
                 load_yaml(str(main_file))
 
     def test_malformed_yaml_in_included_file(self) -> None:
@@ -192,7 +193,7 @@ data: !include {included_file.name}
 """)
 
             # Verify error is raised
-            with self.assertRaisesRegex(FileNotFoundError, "Failed to load included file"):
+            with pytest.raises(FileNotFoundError, match="Failed to load included file"):
                 load_yaml(str(main_file))
 
     def test_include_empty_file(self) -> None:
@@ -212,10 +213,10 @@ data: !include {empty_file.name}
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertIsNone(result["data"])
+            assert result["data"] is None
 
     def test_multiple_includes_in_same_file(self) -> None:
         """Test multiple includes in the same YAML file."""
@@ -251,17 +252,17 @@ welcome_message: !include_raw {text_file.name}
 
             # Load and verify
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["services"]["primary"]["service"], "service1")
-            self.assertEqual(result["services"]["primary"]["port"], 8080)
-            self.assertEqual(result["services"]["secondary"]["service"], "service2")
-            self.assertEqual(result["services"]["secondary"]["port"], 8081)
-            self.assertEqual(result["welcome_message"], "Welcome to the application!")
+            assert result["services"]["primary"]["service"] == "service1"
+            assert result["services"]["primary"]["port"] == 8080
+            assert result["services"]["secondary"]["service"] == "service2"
+            assert result["services"]["secondary"]["port"] == 8081
+            assert result["welcome_message"] == "Welcome to the application!"
 
 
-class TestPathResolution(unittest.TestCase):
+class TestPathResolution:
     """Test suite for path resolution functionality."""
 
     def test_resolve_relative_path(self) -> None:
@@ -271,7 +272,7 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "/home/user/project/config/database.yaml")
+        assert result == "/home/user/project/config/database.yaml"
 
     def test_resolve_absolute_path(self) -> None:
         """Test that absolute paths are returned as-is."""
@@ -280,7 +281,7 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "/etc/config/database.yaml")
+        assert result == "/etc/config/database.yaml"
 
     def test_resolve_url_with_relative_path(self) -> None:
         """Test resolving relative paths with URL base."""
@@ -289,7 +290,7 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "https://example.com/config/database.yaml")
+        assert result == "https://example.com/config/database.yaml"
 
     def test_resolve_url_with_subdirectory(self) -> None:
         """Test resolving relative paths in subdirectories with URL base."""
@@ -298,7 +299,7 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "https://example.com/project/secrets/db.yaml")
+        assert result == "https://example.com/project/secrets/db.yaml"
 
     def test_resolve_absolute_url(self) -> None:
         """Test that absolute URLs are returned as-is."""
@@ -307,7 +308,7 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "https://other.com/config/database.yaml")
+        assert result == "https://other.com/config/database.yaml"
 
     def test_resolve_scheme_url(self) -> None:
         """Test that URLs with schemes are returned as-is."""
@@ -316,10 +317,10 @@ class TestPathResolution(unittest.TestCase):
 
         result = _resolve_path(current_path, target_path)
 
-        self.assertEqual(result, "s3://bucket/config/database.yaml")
+        assert result == "s3://bucket/config/database.yaml"
 
 
-class TestEnvironmentVariablesWithIncludes(unittest.TestCase):
+class TestEnvironmentVariablesWithIncludes:
     """Test environment variable functionality with file includes."""
 
     def test_env_var_in_main_file(self) -> None:
@@ -336,10 +337,10 @@ app:
 """)
 
                 result_list = load_yaml(str(main_file))
-                self.assertEqual(len(result_list), 1)
+                assert len(result_list) == 1
                 result = result_list[0]
 
-                self.assertEqual(result["app"]["name"], "TestApp")
+                assert result["app"]["name"] == "TestApp"
 
     def test_env_var_with_default_in_included_file(self) -> None:
         """Test environment variables with defaults in included files."""
@@ -361,11 +362,11 @@ database: !include {included_file.name}
 
             # Load without setting env vars (should use defaults)
             result_list = load_yaml(str(main_file))
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["database"]["host"], "localhost")
-            self.assertEqual(result["database"]["port"], "5432")
+            assert result["database"]["host"] == "localhost"
+            assert result["database"]["port"] == "5432"
 
     def test_required_env_var_missing_in_included_file(self) -> None:
         """Test error when required env var is missing in included file."""
@@ -385,15 +386,16 @@ config: !include {included_file.name}
 """)
 
             # Should raise error for missing required env var
-            with self.assertRaisesRegex(ValueError, "Environment variable 'REQUIRED_SECRET' is required"):
+            with pytest.raises(ValueError, match="Environment variable 'REQUIRED_SECRET' is required"):
                 load_yaml(str(main_file))
 
 
-@unittest.skipIf(
+@pytest.mark.network
+@pytest.mark.skipif(
     "SKIP_NETWORK_TESTS" in os.environ,
-    "Network tests skipped (set SKIP_NETWORK_TESTS to skip)"
+    reason="Network tests skipped (set SKIP_NETWORK_TESTS to skip)"
 )
-class TestRemoteFileInclusion(unittest.TestCase):
+class TestRemoteFileInclusion:
     """Test suite for remote file inclusion (requires network access)."""
 
     def test_github_raw_include(self) -> None:
@@ -411,13 +413,13 @@ remote_data: !include https://raw.githubusercontent.com/example/repo/main/config
         try:
             # This would normally test against a real URL
             # For now, we'll just test that the function tries to load it
-            with self.assertRaises((FileNotFoundError, Exception)):
+            with pytest.raises((FileNotFoundError, Exception)):
                 load_yaml(temp_file)
         finally:
             os.unlink(temp_file)
 
 
-class TestLoadFromString(unittest.TestCase):
+class TestLoadFromString:
     """Test suite for load_from_string functionality."""
 
     def test_load_from_string_basic(self) -> None:
@@ -427,11 +429,11 @@ name: "Test App"
 version: "1.0.0"
 """
         result_list = load_from_string(yaml_content)
-        self.assertEqual(len(result_list), 1)
+        assert len(result_list) == 1
         result = result_list[0]
 
-        self.assertEqual(result["name"], "Test App")
-        self.assertEqual(result["version"], "1.0.0")
+        assert result["name"] == "Test App"
+        assert result["version"] == "1.0.0"
 
     def test_load_from_string_with_env_vars(self) -> None:
         """Test loading YAML from string with environment variables."""
@@ -442,10 +444,10 @@ app:
   version: "1.0.0"
 """
             result_list = load_from_string(yaml_content)
-            self.assertEqual(len(result_list), 1)
+            assert len(result_list) == 1
             result = result_list[0]
 
-            self.assertEqual(result["app"]["name"], "TestApp")
+            assert result["app"]["name"] == "TestApp"
 
     def test_load_from_string_multiple_documents(self) -> None:
         """Test loading multiple YAML documents from a string."""
@@ -455,11 +457,7 @@ name: "First Doc"
 name: "Second Doc"
 """
         result_list = load_from_string(yaml_content)
-        self.assertEqual(len(result_list), 2)
+        assert len(result_list) == 2
 
-        self.assertEqual(result_list[0]["name"], "First Doc")
-        self.assertEqual(result_list[1]["name"], "Second Doc")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result_list[0]["name"] == "First Doc"
+        assert result_list[1]["name"] == "Second Doc"
