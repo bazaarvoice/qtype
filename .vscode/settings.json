@@ -6,5 +6,10 @@
     ],
     "yaml.schemas" : {
         "schema/qtype.schema.json": ["qtype.config.yaml", "*.qtype.yaml"],
-    }
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

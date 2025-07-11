@@ -278,9 +278,16 @@ def load_yaml(content: str) -> list[dict[str, Any]]:
         yaml.YAMLError: If the YAML file is malformed.
     """
     try:
-        _ = url_to_fs(content)
-        is_uri = True
-    except ValueError:
+        # First check if content looks like a file path or URI
+        if '\n' in content:
+            # If it contains newlines, treat as raw YAML content
+            is_uri = False
+        else:
+            # it has no new lines, so it's probably a uri
+            # try to resolve it
+            _ = url_to_fs(content)
+            is_uri = True
+    except (ValueError, OSError):
         is_uri = False
 
     # Load the environment variables from .env files
