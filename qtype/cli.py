@@ -3,13 +3,36 @@ QType CLI entry point for generating schemas and validating QType specs.
 """
 
 import argparse
+import importlib
 import logging
+from pathlib import Path
 
-from .commands import (
-    setup_generate_schema_parser,
-    setup_run_parser,
-    setup_validate_parser,
-)
+
+def _discover_commands(subparsers: argparse._SubParsersAction) -> None:
+    """Automatically discover and register command modules.
+
+    Args:
+        subparsers: The subparsers object to add commands to.
+    """
+    commands_dir = Path(__file__).parent / "commands"
+
+    for py_file in commands_dir.glob("*.py"):
+        # Skip __init__.py and other private files
+        if py_file.name.startswith("_"):
+            continue
+
+        module_name = f"qtype.commands.{py_file.stem}"
+        try:
+            module = importlib.import_module(module_name)
+            # Call the parser function to set up the subparser
+            if hasattr(module, "parser"):
+                module.parser(subparsers)
+            else:
+                logging.warning(
+                    f"Command module {module_name} does not have a 'parser' function"
+                )
+        except Exception as e:
+            logging.error(f"Failed to load command module {module_name}: {e}")
 
 
 def main() -> None:
@@ -28,10 +51,8 @@ def main() -> None:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Set up subcommands using their respective setup functions
-    setup_generate_schema_parser(subparsers)
-    setup_validate_parser(subparsers)
-    setup_run_parser(subparsers)
+    # Auto-discover and register commands
+    _discover_commands(subparsers)
 
     args = parser.parse_args()
 
