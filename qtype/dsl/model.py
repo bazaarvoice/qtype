@@ -132,6 +132,10 @@ class PromptTemplate(Step):
             self.outputs = [
                 Variable(id=f"{self.id}.prompt", type=VariableTypeEnum.text)
             ]
+        if len(self.outputs) != 1:
+            raise ValueError(
+                "PromptTemplate steps must have exactly one output variable -- the result of applying the template."
+            )
         return self
 
 

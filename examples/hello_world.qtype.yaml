@@ -28,5 +28,3 @@ flows:
         inputs:
           # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
           - question_prompt_template.prompt
-        outputs:
-         - llm_response
