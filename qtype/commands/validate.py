@@ -2,6 +2,7 @@
 Command-line interface for validating QType YAML spec files.
 """
 
+import argparse
 import logging
 import sys
 from typing import Any
@@ -11,6 +12,25 @@ from pydantic import BaseModel, ValidationError
 from qtype.dsl.loader import load
 
 logger = logging.getLogger(__name__)
+
+
+def setup_validate_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Set up the validate subcommand parser.
+
+    Args:
+        subparsers: The subparsers object to add the command to.
+    """
+    parser = subparsers.add_parser(
+        "validate", help="Validate a QType YAML spec against the schema."
+    )
+    parser.add_argument(
+        "spec", type=str, help="Path to the QType YAML spec file."
+    )
+    parser.add_argument(
+        "-p", "--print", action="store_true",
+        help="Print the spec after validation (default: False)",
+    )
+    parser.set_defaults(func=validate_main)
 
 
 def validate_main(args: Any) -> None:

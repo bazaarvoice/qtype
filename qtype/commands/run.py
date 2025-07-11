@@ -4,17 +4,34 @@ Command-line interface for running QType YAML spec files.
 
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from typing import Any
 
 from pydantic import ValidationError
 
+from qtype.dsl.loader import load
 from qtype.ir.resolver import resolve_semantic_ir
 from qtype.ir.validator import validate_semantics
 from qtype.runner.executor import FlowExecutor
 
 logger = logging.getLogger(__name__)
+
+
+def setup_run_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Set up the run subcommand parser.
+
+    Args:
+        subparsers: The subparsers object to add the command to.
+    """
+    parser = subparsers.add_parser(
+        "run", help="Run a QType YAML spec by executing its flows."
+    )
+    parser.add_argument(
+        "spec", type=str, help="Path to the QType YAML spec file."
+    )
+    parser.set_defaults(func=run_main)
 
 
 def run_main(args: Any) -> None:

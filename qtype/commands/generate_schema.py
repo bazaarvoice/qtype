@@ -5,6 +5,24 @@ from typing import Optional
 from qtype.dsl.model import Document
 
 
+def setup_generate_schema_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Set up the generate-schema subcommand parser.
+
+    Args:
+        subparsers: The subparsers object to add the command to.
+    """
+    parser = subparsers.add_parser(
+        "generate-schema", help="Generate a JSON schema for QType specs."
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Output file for the schema (default: stdout)",
+    )
+    parser.set_defaults(func=generate_schema_main)
+
+
 def generate_schema_main(args: argparse.Namespace) -> None:
     """Generate and output the JSON schema for Document.
 

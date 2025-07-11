@@ -5,8 +5,11 @@ QType CLI entry point for generating schemas and validating QType specs.
 import argparse
 import logging
 
-from .commands import generate_schema_main, validate_main
-# , run_main, validate_main
+from .commands import (
+    setup_generate_schema_parser,
+    setup_run_parser,
+    setup_validate_parser,
+)
 
 
 def main() -> None:
@@ -25,39 +28,10 @@ def main() -> None:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # generate-schema subcommand
-    gen_parser = subparsers.add_parser(
-        "generate-schema", help="Generate a JSON schema for QType specs."
-    )
-    gen_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Output file for the schema (default: stdout)",
-    )
-    gen_parser.set_defaults(func=generate_schema_main)
-
-    # validate subcommand
-    val_parser = subparsers.add_parser(
-        "validate", help="Validate a QType YAML spec against the schema."
-    )
-    val_parser.add_argument(
-        "spec", type=str, help="Path to the QType YAML spec file."
-    )
-    val_parser.add_argument(
-        "-p", "--print", action="store_true",
-        help="Print the spec after validation (default: False)",
-    )
-    val_parser.set_defaults(func=validate_main)
-
-    # # run subcommand
-    # run_parser = subparsers.add_parser(
-    #     "run", help="Run a QType YAML spec by executing its flows."
-    # )
-    # run_parser.add_argument(
-    #     "spec", type=str, help="Path to the QType YAML spec file."
-    # )
-    # run_parser.set_defaults(func=run_main)
+    # Set up subcommands using their respective setup functions
+    setup_generate_schema_parser(subparsers)
+    setup_validate_parser(subparsers)
+    setup_run_parser(subparsers)
 
     args = parser.parse_args()
 
