@@ -1,10 +1,10 @@
 from argparse import Namespace
 
-from qtype.dsl.model import QTypeSpec
+from qtype.dsl.model import Document
 from qtype.parser.loader import load_yaml
 
 
-def validate_spec(args: Namespace) -> QTypeSpec:
-    """Validate a QType YAML spec file against the QTypeSpec schema."""
+def validate_spec(args: Namespace) -> Document:
+    """Validate a QType YAML spec file against the Document schema."""
     data = load_yaml(args.spec)
-    return QTypeSpec.model_validate(data)
+    return Document.model_validate(data)

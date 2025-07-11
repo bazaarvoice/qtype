@@ -14,7 +14,7 @@ from qtype.dsl.model import (
     Prompt,
     QTypeSpec,
     Step,
-    VariableType,
+    VariableTypeEnum,
 )
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
@@ -98,7 +98,7 @@ class CircularDependencyTest(unittest.TestCase):
         """Test complex flow structure without cycles passes validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
@@ -213,9 +213,9 @@ class CircularDependencyTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="used_input", type=VariableType.text),
+                Variable(id="used_input", type=VariableTypeEnum.text),
                 Variable(
-                    id="orphaned_input", type=VariableType.text
+                    id="orphaned_input", type=VariableTypeEnum.text
                 ),  # Not used anywhere
             ],
             prompts=[

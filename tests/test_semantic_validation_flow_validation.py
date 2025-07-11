@@ -18,7 +18,7 @@ from qtype.dsl.model import (
     Prompt,
     QTypeSpec,
     Step,
-    VariableType,
+    VariableTypeEnum,
 )
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
@@ -30,7 +30,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that unique step IDs within a flow pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -100,7 +100,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow inputs and outputs referencing valid variables pass."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="flow_input", type=VariableType.text)],
+            inputs=[Variable(id="flow_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -132,7 +132,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow conditions reference valid step IDs."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -175,7 +175,7 @@ class FlowValidationTest(unittest.TestCase):
         """Test that flow conditions referencing invalid step IDs fail."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",

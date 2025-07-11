@@ -24,7 +24,7 @@ from qtype.dsl.model import (
     TelemetrySink,
     Tool,
     ToolProvider,
-    VariableType,
+    VariableTypeEnum,
     VectorDBRetriever,
 )
 from qtype.ir.validator import SemanticValidationError, validate_semantics
@@ -72,8 +72,8 @@ class UniqueIdsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="input1", type=VariableType.text),
-                Variable(id="input2", type=VariableType.number),
+                Variable(id="input1", type=VariableTypeEnum.text),
+                Variable(id="input2", type=VariableTypeEnum.number),
             ],
         )
         validate_semantics(spec)
@@ -83,8 +83,8 @@ class UniqueIdsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="duplicate", type=VariableType.text),
-                Variable(id="duplicate", type=VariableType.number),
+                Variable(id="duplicate", type=VariableTypeEnum.text),
+                Variable(id="duplicate", type=VariableTypeEnum.number),
             ],
         )
         with self.assertRaises(SemanticValidationError) as context:
@@ -95,7 +95,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that unique prompt IDs pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
@@ -115,7 +115,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate prompt IDs raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="duplicate",
@@ -407,7 +407,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that unique step IDs within a flow pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="prompt1",
@@ -443,7 +443,7 @@ class UniqueIdsTest(unittest.TestCase):
         """Test that duplicate step IDs within a flow raise validation error."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="prompt1",

@@ -5,7 +5,8 @@ QType CLI entry point for generating schemas and validating QType specs.
 import argparse
 import logging
 
-from .commands import generate_schema_main, run_main, validate_main
+from .commands import generate_schema_main, validate_main
+# , run_main, validate_main
 
 
 def main() -> None:
@@ -45,14 +46,14 @@ def main() -> None:
     )
     val_parser.set_defaults(func=validate_main)
 
-    # run subcommand
-    run_parser = subparsers.add_parser(
-        "run", help="Run a QType YAML spec by executing its flows."
-    )
-    run_parser.add_argument(
-        "spec", type=str, help="Path to the QType YAML spec file."
-    )
-    run_parser.set_defaults(func=run_main)
+    # # run subcommand
+    # run_parser = subparsers.add_parser(
+    #     "run", help="Run a QType YAML spec by executing its flows."
+    # )
+    # run_parser.add_argument(
+    #     "spec", type=str, help="Path to the QType YAML spec file."
+    # )
+    # run_parser.set_defaults(func=run_main)
 
     args = parser.parse_args()
 

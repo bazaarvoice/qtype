@@ -7,7 +7,7 @@ as defined in semantic_ir.md Section 7.
 
 import unittest
 
-from qtype.dsl.model import Variable, Prompt, QTypeSpec, VariableType
+from qtype.dsl.model import Variable, Prompt, QTypeSpec, VariableTypeEnum
 from qtype.ir.validator import SemanticValidationError, validate_semantics
 
 
@@ -18,7 +18,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with template (and no path) pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="inline_prompt",
@@ -34,7 +34,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with path (and no template) pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="file_prompt",
@@ -50,7 +50,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with both template and path fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="invalid_prompt",
@@ -72,7 +72,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with neither template nor path fail validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="invalid_prompt",
@@ -94,8 +94,8 @@ class PromptRequirementsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="name", type=VariableType.text),
-                Variable(id="age", type=VariableType.number),
+                Variable(id="name", type=VariableTypeEnum.text),
+                Variable(id="age", type=VariableTypeEnum.number),
             ],
             prompts=[
                 Prompt(
@@ -113,9 +113,9 @@ class PromptRequirementsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="user_name", type=VariableType.text),
-                Variable(id="context", type=VariableType.text),
-                Variable(id="task", type=VariableType.text),
+                Variable(id="user_name", type=VariableTypeEnum.text),
+                Variable(id="context", type=VariableTypeEnum.text),
+                Variable(id="task", type=VariableTypeEnum.text),
             ],
             prompts=[
                 Prompt(
@@ -132,7 +132,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with no outputs pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="no_output_prompt",
@@ -148,7 +148,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompts with empty outputs list pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="empty_output_prompt",
@@ -165,9 +165,9 @@ class PromptRequirementsTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="user_name", type=VariableType.text),
-                Variable(id="user_email", type=VariableType.text),
-                Variable(id="message", type=VariableType.text),
+                Variable(id="user_name", type=VariableTypeEnum.text),
+                Variable(id="user_email", type=VariableTypeEnum.text),
+                Variable(id="message", type=VariableTypeEnum.text),
             ],
             prompts=[
                 Prompt(
@@ -196,7 +196,7 @@ class PromptRequirementsTest(unittest.TestCase):
         """Test that prompt paths with various valid extensions pass validation."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="input", type=VariableType.text)],
+            inputs=[Variable(id="input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="txt_prompt",

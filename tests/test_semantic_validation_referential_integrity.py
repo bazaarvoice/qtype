@@ -19,7 +19,7 @@ from qtype.dsl.model import (
     QTypeSpec,
     Step,
     TelemetrySink,ToolProvider,
-    VariableType,
+    VariableTypeEnum,
     VectorDBRetriever,
 )
 from qtype.ir.validator import SemanticValidationError, validate_semantics
@@ -33,8 +33,8 @@ class ReferentialIntegrityTest(unittest.TestCase):
         spec = QTypeSpec(
             version="1.0",
             inputs=[
-                Variable(id="user_name", type=VariableType.text),
-                Variable(id="user_age", type=VariableType.number),
+                Variable(id="user_name", type=VariableTypeEnum.text),
+                Variable(id="user_age", type=VariableTypeEnum.number),
             ],
             prompts=[
                 Prompt(
@@ -50,7 +50,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that prompt inputs referencing non-existent Variable.id fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_name", type=VariableType.text)],
+            inputs=[Variable(id="user_name", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="greeting",
@@ -70,7 +70,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that prompt outputs referencing existing Output.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="generator",
@@ -86,7 +86,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step component referencing existing Prompt.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -116,7 +116,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step component referencing non-existent component fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             flows=[
                 Flow(
                     id="test_flow",
@@ -143,7 +143,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step inputs referencing existing Variable.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -173,7 +173,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that step inputs referencing non-existent Variable.id fails."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="user_input", type=VariableType.text)],
+            inputs=[Variable(id="user_input", type=VariableTypeEnum.text)],
             prompts=[
                 Prompt(
                     id="test_prompt",
@@ -320,7 +320,7 @@ class ReferentialIntegrityTest(unittest.TestCase):
         """Test that flow inputs referencing existing Variable.id passes."""
         spec = QTypeSpec(
             version="1.0",
-            inputs=[Variable(id="flow_input", type=VariableType.text)],
+            inputs=[Variable(id="flow_input", type=VariableTypeEnum.text)],
             flows=[
                 Flow(
                     id="test_flow",

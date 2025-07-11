@@ -10,8 +10,6 @@ models:
 variables:
   - id: user_question
     type: text
-    display_name: "Your Question"
-    display_type: textarea
   - id: response
     type: text
   

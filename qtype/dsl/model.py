@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from abc import ABC
 from enum import Enum
 from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
-from abc import ABC
 #
 # ---------------- Base Components ----------------
 #
@@ -16,7 +16,7 @@ class StrictBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class VariableType(str, Enum):
+class VariableTypeEnum(str, Enum):
     """Represents the type of data a user or system input can accept within the DSL."""
 
     audio = "audio"
@@ -30,6 +30,11 @@ class VariableType(str, Enum):
     time = "time"
     video = "video"
 
+VariableType = Union[
+    VariableTypeEnum,
+    dict[str, Any]
+]
+
 
 class Variable(StrictBaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
@@ -38,7 +43,7 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType | dict[str, "VariableType | dict | list"] = Field(
+    type: VariableType = Field(
         ...,
         description=(
             "Type of data expected or produced. Can be:\n"
@@ -125,7 +130,7 @@ class PromptTemplate(Step):
         """Set default output variable if none provided."""
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.prompt", type=VariableType.text)
+                Variable(id=f"{self.id}.prompt", type=VariableTypeEnum.text)
             ]
         return self
 
@@ -188,7 +193,7 @@ class LLMInference(Step):
         """Set default output variable if none provided."""
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.response", type=VariableType.text)
+                Variable(id=f"{self.id}.response", type=VariableTypeEnum.text)
             ]
         return self
 
@@ -218,15 +223,18 @@ class Flow(Step):
 #
 
 
-class ToolProvider(StrictBaseModel):
-    """Logical grouping of tools, often backed by an API or
-    OpenAPI spec, and optionally authenticated."""
+class ToolProvider(StrictBaseModel, ABC):
+    """Base class for tool providers that can generate tools from various sources."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
     auth: AuthorizationProvider | str | None = Field(
         default=None,
         description="AuthorizationProvider ID used to authenticate tool access.",
     )
+
+class OpenAPIToolProvider(ToolProvider):
+    """Tool provider that generates tools from OpenAPI specifications."""
+
     exclude_paths: list[str] | None = Field(
         default=None, description="Exclude specific endpoints by path."
     )
@@ -237,6 +245,15 @@ class ToolProvider(StrictBaseModel):
     openapi_spec: str | None = Field(
         default=None,
         description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
+    )
+
+
+class PythonModuleToolProvider(ToolProvider):
+    """Tool provider that generates tools from Python module functions."""
+
+    module_path: str = Field(
+        ...,
+        description="Python module path (e.g., 'com.org.my_module.my_tools')"
     )
 
 
@@ -336,7 +353,7 @@ class Application(StrictBaseModel):
         default=None,
         description="List of authorization providers used for API access.",
     )
-    tool_providers: list[ToolProvider] | None = Field(
+    tool_providers: list[ToolProviderType] | None = Field(
         default=None,
         description="List of tool providers that can auto-generate tools from OpenAPI specs.",
     )
@@ -420,13 +437,13 @@ class VectorSearch(Search):
         """Set default input and output variables if none provided."""
         if self.inputs is None:
             self.inputs = [
-                Variable(id="top_k", type=VariableType.number),
-                Variable(id="query", type=VariableType.text),
+                Variable(id="top_k", type=VariableTypeEnum.number),
+                Variable(id="query", type=VariableTypeEnum.text),
             ]
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type=[VariableType.text])
+                Variable(id=f"{self.id}.results", type={"results": ["dict"]})
             ]
         return self
 
@@ -438,11 +455,11 @@ class DocumentSearch(Search):
     def set_default_inputs_outputs(self) -> "DocumentSearch":
         """Set default input and output variables if none provided."""
         if self.inputs is None:
-            self.inputs = [Variable(id="query", type=VariableType.text)]
+            self.inputs = [Variable(id="query", type=VariableTypeEnum.text)]
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type=VariableType.text)
+                Variable(id=f"{self.id}.results", type={"results": [Any]})
             ]
         return self
 
@@ -471,6 +488,12 @@ ModelType = Union[
     Model,
 ]
 
+# Create a union type for all tool provider types
+ToolProviderType = Union[
+    OpenAPIToolProvider,
+    PythonModuleToolProvider,
+]
+
 
 #
 # ---------------- Document Flexibility Shapes ----------------
@@ -496,10 +519,10 @@ class ModelList(RootModel[list[ModelType]]):
     root: list[ModelType]
 
 
-class ToolProviderList(RootModel[list[ToolProvider]]):
+class ToolProviderList(RootModel[list[ToolProviderType]]):
     """Schema for a standalone list of tool providers."""
 
-    root: list[ToolProvider]
+    root: list[ToolProviderType]
 
 
 class VariableList(RootModel[list[Variable]]):
