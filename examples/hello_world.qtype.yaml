@@ -1,43 +1,32 @@
-version: "0.1.1"
-models:
-  - id: gpt4
-    provider: openai
-    model_id: gpt-4o
-    inference_params:
-      temperature: 0.7
-      max_tokens: 512
-
-variables:
-  - id: user_question
-    type: text
-  - id: response
-    type: text
-  
-agents:
-  - id: my_agent
-    prompt: answer_prompt
-    model: gpt4
-    inputs: 
-      - user_question
-    outputs:
-      - response
-
-prompts:
-  - id: answer_prompt
-    template: |
-      You are a helpful assistant.
-      Answer the following question:
-      {{ user_question }}
-    inputs: ["user_question"]
-    outputs: ["response"]
+id: hello_world_app
+description: "A simple hello world application that answers user questions using GPT-4"
 
 flows:
-  - id: simple_qa
-    mode: complete
+  - id: simple_qa_flow
     steps:
-      - my_agent
-
-auth:
-  - id: openai
-    type: api_key
-    api_key: ${OPENAI_KEY}
+      - id: question_prompt_template
+        template: |
+          You are a helpful assistant.
+          Answer the following question:
+          {{ user_question }}
+        inputs:
+          - id: user_question
+            type: text
+      - id: llm_inference_step
+        model: 
+          id: gpt4
+          provider: openai
+          model_id: gpt-4o
+          inference_params:
+            temperature: 0.7
+            max_tokens: 512
+          auth: 
+            id: openai_auth
+            type: api_key
+            api_key: ${OPENAI_KEY}
+        system_message: "You are a helpful assistant."
+        inputs:
+          # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
+          - question_prompt_template.prompt
+        outputs:
+         - llm_response

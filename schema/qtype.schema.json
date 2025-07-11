@@ -196,95 +196,6 @@
           "description": "List of variables used in this application.",
           "title": "Variables"
         },
-        "agents": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Agent"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "List of agents defined in this application.",
-          "title": "Agents"
-        },
-        "conditions": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Condition"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "List of reusable condition steps.",
-          "title": "Conditions"
-        },
-        "prompt_templates": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/PromptTemplate"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "List of reusable prompt templates.",
-          "title": "Prompt Templates"
-        },
-        "steps": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Agent"
-                  },
-                  {
-                    "$ref": "#/$defs/Condition"
-                  },
-                  {
-                    "$ref": "#/$defs/DocumentSearch"
-                  },
-                  {
-                    "$ref": "#/$defs/Flow"
-                  },
-                  {
-                    "$ref": "#/$defs/LLMInference"
-                  },
-                  {
-                    "$ref": "#/$defs/PromptTemplate"
-                  },
-                  {
-                    "$ref": "#/$defs/Tool"
-                  },
-                  {
-                    "$ref": "#/$defs/VectorSearch"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "List of individual steps that can be referenced by flows.",
-          "title": "Steps"
-        },
         "flows": {
           "anyOf": [
             {
@@ -1563,7 +1474,21 @@
               "$ref": "#/$defs/VariableTypeEnum"
             },
             {
-              "additionalProperties": true,
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/VariableTypeEnum"
+                  }
+                ]
+              },
               "type": "object"
             }
           ],

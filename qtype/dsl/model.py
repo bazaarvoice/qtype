@@ -328,21 +328,6 @@ class Application(StrictBaseModel):
         default=None, description="List of variables used in this application."
     )
 
-    # Step components (can be referenced by ID in flows)
-    agents: list[Agent] | None = Field(
-        default=None, description="List of agents defined in this application."
-    )
-    conditions: list[Condition] | None = Field(
-        default=None, description="List of reusable condition steps."
-    )
-    prompt_templates: list[PromptTemplate] | None = Field(
-        default=None, description="List of reusable prompt templates."
-    )
-    steps: list[StepType] | None = Field(
-        default=None,
-        description="List of individual steps that can be referenced by flows.",
-    )
-
     # Orchestration
     flows: list[Flow] | None = Field(
         default=None, description="List of flows defined in this application."
