@@ -32,7 +32,7 @@ class VariableTypeEnum(str, Enum):
 
 VariableType = Union[
     VariableTypeEnum,
-    dict[str, Any]
+    dict[str, (dict | list | VariableTypeEnum)]
 ]
 
 
@@ -459,7 +459,8 @@ class DocumentSearch(Search):
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type={"results": [Any]})
+                # If not specified, use a generic results variable and let the user normalize it later.
+                Variable(id=f"{self.id}.results", type={"results": [dict]})
             ]
         return self
 
