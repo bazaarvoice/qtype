@@ -87,7 +87,7 @@ class YamlLoader(yaml.SafeLoader):
     def __init__(self, stream: Any) -> None:
         super().__init__(stream)
         # Store the base path/URL of the current file for relative path resolution
-        if hasattr(stream, "name"):
+        if hasattr(stream, "name") and stream.name is not None:
             self._current_path = stream.name
         else:
             self._current_path = str(Path.cwd())
@@ -234,7 +234,7 @@ YamlLoader.add_constructor("!include", _include_file_constructor)
 YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_from_string(content: str) -> list[dict[str, Any]]:
+def load_from_string(content: str, original_uri: str | None = None) -> list[dict[str, Any]]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
@@ -251,7 +251,8 @@ def load_from_string(content: str) -> list[dict[str, Any]]:
     """
 
     # Create a string stream for the loader
-    stream = _StringStream(content)
+    # Note: When loading from string, relative paths will be resolved relative to cwd
+    stream = _StringStream(content, original_uri)
     # Use the string stream directly with the loader
     results = yaml.load_all(stream, Loader=YamlLoader)
     # Unsure if these checks are necessary, but they ensure we don't return None
@@ -292,7 +293,7 @@ def load_yaml(content: str) -> list[dict[str, Any]]:
             if parsed.scheme in ["file", ""]:
                 # For file-like URIs, resolve the path and add its directory
                 directories.append(Path(parsed.path).parent)
-        except Exception as e:
+        except Exception:
             pass
 
     # Load .env files from the specified directories
@@ -300,10 +301,12 @@ def load_yaml(content: str) -> list[dict[str, Any]]:
 
     # Load the yaml content
     if is_uri:
+        original_uri = content
         with fsspec.open(content, "r", encoding="utf-8") as f:
             content = f.read()  # type: ignore[misc]
-
-    return load_from_string(content)
+        return load_from_string(content, original_uri)
+    else:
+        return load_from_string(content)
 
 
 def load_documents(content: str) -> list[Document]:

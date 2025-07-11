@@ -10,7 +10,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from qtype.parser.loader import (
+from qtype.dsl.loader import (
+    load_from_string,
     load_yaml,
     _resolve_path,
 )
@@ -41,7 +42,9 @@ app:
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["app"]["name"], "Test App")
             self.assertEqual(result["app"]["database"]["host"], "localhost")
@@ -64,7 +67,9 @@ message: !include_raw {text_file.name}
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["message"], "Hello, World!\nThis is a test file.")
 
@@ -94,7 +99,9 @@ app:
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["app"]["settings"]["config"]["secret"], "deep_value")
             self.assertEqual(result["app"]["settings"]["middle_value"], "test")
@@ -120,7 +127,9 @@ database: !include {included_file.name}
 """)
 
                 # Load and verify
-                result = load_yaml(str(main_file))
+                result_list = load_yaml(str(main_file))
+                self.assertEqual(len(result_list), 1)
+                result = result_list[0]
 
                 self.assertEqual(result["database"]["host"], "production.example.com")
                 self.assertEqual(result["database"]["port"], 443)
@@ -143,7 +152,9 @@ data: !include {included_file.absolute()}
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["data"]["value"], "absolute_test")
 
@@ -200,7 +211,9 @@ data: !include {empty_file.name}
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertIsNone(result["data"])
 
@@ -237,7 +250,9 @@ welcome_message: !include_raw {text_file.name}
 """)
 
             # Load and verify
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["services"]["primary"]["service"], "service1")
             self.assertEqual(result["services"]["primary"]["port"], 8080)
@@ -320,7 +335,9 @@ app:
   version: "1.0.0"
 """)
 
-                result = load_yaml(str(main_file))
+                result_list = load_yaml(str(main_file))
+                self.assertEqual(len(result_list), 1)
+                result = result_list[0]
 
                 self.assertEqual(result["app"]["name"], "TestApp")
 
@@ -343,7 +360,9 @@ database: !include {included_file.name}
 """)
 
             # Load without setting env vars (should use defaults)
-            result = load_yaml(str(main_file))
+            result_list = load_yaml(str(main_file))
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
 
             self.assertEqual(result["database"]["host"], "localhost")
             self.assertEqual(result["database"]["port"], "5432")
@@ -396,6 +415,50 @@ remote_data: !include https://raw.githubusercontent.com/example/repo/main/config
                 load_yaml(temp_file)
         finally:
             os.unlink(temp_file)
+
+
+class TestLoadFromString(unittest.TestCase):
+    """Test suite for load_from_string functionality."""
+
+    def test_load_from_string_basic(self) -> None:
+        """Test loading YAML from a string."""
+        yaml_content = """
+name: "Test App"
+version: "1.0.0"
+"""
+        result_list = load_from_string(yaml_content)
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+
+        self.assertEqual(result["name"], "Test App")
+        self.assertEqual(result["version"], "1.0.0")
+
+    def test_load_from_string_with_env_vars(self) -> None:
+        """Test loading YAML from string with environment variables."""
+        with patch.dict(os.environ, {"APP_NAME": "TestApp"}):
+            yaml_content = """
+app:
+  name: ${APP_NAME}
+  version: "1.0.0"
+"""
+            result_list = load_from_string(yaml_content)
+            self.assertEqual(len(result_list), 1)
+            result = result_list[0]
+
+            self.assertEqual(result["app"]["name"], "TestApp")
+
+    def test_load_from_string_multiple_documents(self) -> None:
+        """Test loading multiple YAML documents from a string."""
+        yaml_content = """
+name: "First Doc"
+---
+name: "Second Doc"
+"""
+        result_list = load_from_string(yaml_content)
+        self.assertEqual(len(result_list), 2)
+
+        self.assertEqual(result_list[0]["name"], "First Doc")
+        self.assertEqual(result_list[1]["name"], "Second Doc")
 
 
 if __name__ == "__main__":
