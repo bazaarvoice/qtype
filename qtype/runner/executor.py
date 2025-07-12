@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
-from qtype.ir.model import (
+from qtype.semantic.model import (
     AuthorizationProvider,
     EmbeddingModel,
     Flow,

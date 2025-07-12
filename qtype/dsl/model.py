@@ -20,10 +20,14 @@ class VariableTypeEnum(str, Enum):
     """Represents the type of data a user or system input can accept within the DSL."""
 
     audio = "audio"
+    boolean = "boolean"
+    bytes = "bytes"
     date = "date"
     datetime = "datetime"
     embedding = "embedding"
+    int = "int"
     file = "file"
+    float = "float"
     image = "image"
     number = "number"
     text = "text"
@@ -32,7 +36,8 @@ class VariableTypeEnum(str, Enum):
 
 VariableType = Union[
     VariableTypeEnum,
-    dict[str, (dict | list | VariableTypeEnum)]
+    dict,
+    list
 ]
 
 
@@ -165,14 +170,42 @@ class Condition(Step):
         return self
 
 
-class Tool(Step):
+class Tool(Step, ABC):
     """
-    Callable function or external operation available to the model or as a step in a flow.
+    Base class for callable functions or external operations available to the model or as a step in a flow.
     """
 
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
         ..., description="Description of what the tool does."
+    )
+
+
+class PythonFunctionTool(Tool):
+    """Tool that calls a Python function."""
+
+    function_name: str = Field(
+        ..., description="Name of the Python function to call."
+    )
+    module_path: str = Field(
+        ...,
+        description="Optional module path where the function is defined.",
+    )
+
+
+class APITool(Tool):
+    """Tool that invokes an API endpoint."""
+
+    endpoint: str = Field(..., description="API endpoint URL to call.")
+    method: str = Field(
+        default="GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
+    )
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="Optional AuthorizationProvider for API authentication.",
+    )
+    headers: dict[str, str] | None = Field(
+        default=None, description="Optional HTTP headers to include in the request."
     )
 
 
@@ -205,7 +238,7 @@ class LLMInference(Step):
 class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
-    tools: list[Tool] = Field(
+    tools: list[ToolType] = Field(
         ..., description="List of tools available to the agent."
     )
 
@@ -221,6 +254,38 @@ class Flow(Step):
         default_factory=list, description="List of steps or step IDs."
     )
 
+class DecoderFormat(str, Enum):
+    """Defines the format in which the decoder step processes data."""
+    json = "json"
+    xml = "xml"
+
+class Decoder(Step):
+    """Defines a step that decodes string data into structured outputs.
+
+    If parsing fails, the step will raise an error and halt execution.
+    Use conditional logic in your flow to handle potential parsing errors.
+    """
+
+    format: DecoderFormat = Field(
+        DecoderFormat.json,
+        description="Format in which the decoder processes data. Defaults to JSON.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "Decoder":
+        """Set default output variable if none provided."""
+
+        if self.inputs is None or len(self.inputs) != 1 or \
+           (isinstance(self.inputs[0], Variable) and self.inputs[0].type != VariableTypeEnum.text):
+            raise ValueError(
+                f"Decoder steps must have exactly one input variable of type 'text'. Found: {self.inputs}"
+            )
+        if self.outputs is None:
+            raise ValueError(
+                "Decoder steps must have at least one output variable defined."
+            )
+        return self
+
 
 #
 # ---------------- Observability and Provider Components ----------------
@@ -231,10 +296,6 @@ class ToolProvider(StrictBaseModel, ABC):
     """Base class for tool providers that can generate tools from various sources."""
 
     id: str = Field(..., description="Unique ID of the tool provider.")
-    auth: AuthorizationProvider | str | None = Field(
-        default=None,
-        description="AuthorizationProvider ID used to authenticate tool access.",
-    )
 
 class OpenAPIToolProvider(ToolProvider):
     """Tool provider that generates tools from OpenAPI specifications."""
@@ -249,6 +310,10 @@ class OpenAPIToolProvider(ToolProvider):
     openapi_spec: str | None = Field(
         default=None,
         description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
+    )
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="AuthorizationProvider ID used to authenticate tool access.",
     )
 
 
@@ -346,7 +411,7 @@ class Application(StrictBaseModel):
         default=None,
         description="List of tool providers that can auto-generate tools from OpenAPI specs.",
     )
-    tools: list[Tool] | None = Field(
+    tools: list[ToolType] | None = Field(
         default=None,
         description="List of tools available in this application.",
     )
@@ -454,15 +519,22 @@ class DocumentSearch(Search):
         return self
 
 
+# Create a union type for all tool types
+ToolType = Union[
+    APITool,
+    PythonFunctionTool,
+]
+
 # Create a union type for all step types
 StepType = Union[
     Agent,
+    APITool,
     Condition,
     DocumentSearch,
     Flow,
     LLMInference,
     PromptTemplate,
-    Tool,
+    PythonFunctionTool,
     VectorSearch,
 ]
 
@@ -515,6 +587,13 @@ class ToolProviderList(RootModel[list[ToolProviderType]]):
     root: list[ToolProviderType]
 
 
+class ToolList(RootModel[list[ToolType]]):
+    """Schema for a standalone list of tools."""
+
+    root: list[ToolType]
+
+
+
 class VariableList(RootModel[list[Variable]]):
     """Schema for a standalone list of variables."""
 
@@ -549,6 +628,7 @@ class Document(
         IndexList,
         ModelList,
         ToolProviderList,
+        ToolList,
         VariableList,
     ]
 

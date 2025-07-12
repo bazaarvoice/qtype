@@ -23,6 +23,7 @@ from qtype.dsl.model import (
     Flow,
     IndexList,
     ModelList,
+    ToolList,
     ToolProviderList,
     VariableList,
 )
@@ -336,6 +337,7 @@ def _resolve_root(doc: Document) -> ResolveableType:
             IndexList,
             ModelList,
             ToolProviderList,
+            ToolList,
             VariableList,
         ]
     )

@@ -14,10 +14,7 @@ from pydantic import BaseModel, Field
 # Import enums and simple classes from DSL that don't need IR-specific
 # modifications
 from qtype.dsl.model import (
-    AuthorizationProvider,
-    FeedbackType,
-    FlowMode,
-    MemoryType,
+    AuthorizationProvider
 )
 from qtype.dsl.model import Variable as DSLVariable
 

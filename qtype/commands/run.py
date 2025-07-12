@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 from typing import Any
 
-from pydantic import ValidationError
 
 # from qtype.dsl.loader import load
 # from qtype.ir.resolver import resolve_semantic_ir

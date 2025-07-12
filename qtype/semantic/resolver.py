@@ -9,14 +9,38 @@ are resolved to actual object references.
 from typing import Any, Dict, List
 
 import qtype.dsl.model as dsl
-import qtype.ir.model as ir
+import qtype.semantic.model as ir
 
 
-class IRResolutionError(Exception):
-    """Raised when there's an error during IR resolution."""
+class SemanticResolutionError(Exception):
+    """Raised when there's an error during semantic resolution."""
 
     pass
 
+def resolve(application: dsl.Application) -> dsl.Application:
+    """
+    Resolve a DSL Application into its semantic intermediate representation.
+
+    This function transforms the DSL Application into its IR equivalent,
+    resolving all ID references to actual object references.
+
+    Args:
+        application: The DSL Application to transform
+
+    Returns:
+        dsl.Application: The resolved IR application
+    """
+
+    # First, ensure everything has a unique id.
+
+    # Next, load the tools from the tool providers -- these will be necessary for resolution
+
+    # Next, replace any reference with the actual objects.
+
+    # We'll return the same type of object, but with all references resolved.
+    # This allows us to use the same type system for both DSL and IR, while
+    # ensuring that the IR is fully resolved and ready for execution or further processing.
+    return application
 
 def resolve_semantic_ir(dsl_spec: dsl.QTypeSpec) -> ir.QTypeSpec:
     """

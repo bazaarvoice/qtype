@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Set
 
 from qtype.dsl.model import Agent, QTypeSpec, Tool
-from qtype.ir.model import EmbeddingModel, Step
+from qtype.semantic.model import EmbeddingModel, Step
 
 
 class SemanticValidationError(Exception):
