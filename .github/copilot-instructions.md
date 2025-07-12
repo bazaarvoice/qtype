@@ -46,7 +46,8 @@
     - Use context managers for resource management
     - Avoid lambda assignments (use def for named functions)
     - Use enumerate() instead of manual counters
-    - Use zip() for parallel iteration
+    - Use zip() for parallel 
+    - blank lines should not include whitespace     
 
  All Python code generated for this repository *should*:
     - Use logging instead of print statements for debug/info/error messages

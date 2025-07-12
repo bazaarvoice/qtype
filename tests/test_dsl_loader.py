@@ -13,12 +13,12 @@ from unittest.mock import patch
 import pytest
 
 from qtype.dsl.loader import (
-    load_from_string,
-    load_yaml,
-    load_documents,
-    load,
     _resolve_path,
     _StringStream,
+    load,
+    load_documents,
+    load_from_string,
+    load_yaml,
 )
 from qtype.dsl.model import Document
 
