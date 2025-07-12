@@ -56,7 +56,6 @@
 - description: Get the current UTC timestamp.
   function_name: get_current_timestamp
   id: qtype.commons.tools.get_current_timestamp
-  inputs: null
   module_path: qtype.commons.tools
   name: get_current_timestamp
   outputs:

@@ -1,5 +1,123 @@
 {
   "$defs": {
+    "APITool": {
+      "additionalProperties": false,
+      "description": "Tool that invokes an API endpoint.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "name": {
+          "description": "Name of the tool function.",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description of what the tool does.",
+          "title": "Description",
+          "type": "string"
+        },
+        "endpoint": {
+          "description": "API endpoint URL to call.",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "method": {
+          "default": "GET",
+          "description": "HTTP method to use (GET, POST, PUT, DELETE, etc.).",
+          "title": "Method",
+          "type": "string"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthorizationProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional AuthorizationProvider for API authentication.",
+          "title": "Auth"
+        },
+        "headers": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional HTTP headers to include in the request.",
+          "title": "Headers"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "endpoint"
+      ],
+      "title": "APITool",
+      "type": "object"
+    },
     "Agent": {
       "additionalProperties": false,
       "description": "Defines an agent that can perform tasks and make decisions based on user input and context.",
@@ -98,7 +216,14 @@
         "tools": {
           "description": "List of tools available to the agent.",
           "items": {
-            "$ref": "#/$defs/Tool"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/APITool"
+              },
+              {
+                "$ref": "#/$defs/PythonFunctionTool"
+              }
+            ]
           },
           "title": "Tools",
           "type": "array"
@@ -248,7 +373,14 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/$defs/Tool"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/APITool"
+                  },
+                  {
+                    "$ref": "#/$defs/PythonFunctionTool"
+                  }
+                ]
               },
               "type": "array"
             },
@@ -490,6 +622,9 @@
               "$ref": "#/$defs/Agent"
             },
             {
+              "$ref": "#/$defs/APITool"
+            },
+            {
               "$ref": "#/$defs/Condition"
             },
             {
@@ -505,7 +640,7 @@
               "$ref": "#/$defs/PromptTemplate"
             },
             {
-              "$ref": "#/$defs/Tool"
+              "$ref": "#/$defs/PythonFunctionTool"
             },
             {
               "$ref": "#/$defs/VectorSearch"
@@ -543,6 +678,9 @@
               "$ref": "#/$defs/Agent"
             },
             {
+              "$ref": "#/$defs/APITool"
+            },
+            {
               "$ref": "#/$defs/Condition"
             },
             {
@@ -558,7 +696,7 @@
               "$ref": "#/$defs/PromptTemplate"
             },
             {
-              "$ref": "#/$defs/Tool"
+              "$ref": "#/$defs/PythonFunctionTool"
             },
             {
               "$ref": "#/$defs/VectorSearch"
@@ -600,6 +738,9 @@
         },
         {
           "$ref": "#/$defs/ToolProviderList"
+        },
+        {
+          "$ref": "#/$defs/ToolList"
         },
         {
           "$ref": "#/$defs/VariableList"
@@ -886,6 +1027,9 @@
                 "$ref": "#/$defs/Agent"
               },
               {
+                "$ref": "#/$defs/APITool"
+              },
+              {
                 "$ref": "#/$defs/Condition"
               },
               {
@@ -901,7 +1045,7 @@
                 "$ref": "#/$defs/PromptTemplate"
               },
               {
-                "$ref": "#/$defs/Tool"
+                "$ref": "#/$defs/PythonFunctionTool"
               },
               {
                 "$ref": "#/$defs/VectorSearch"
@@ -1144,22 +1288,6 @@
           "title": "Id",
           "type": "string"
         },
-        "auth": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AuthorizationProvider"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "AuthorizationProvider ID used to authenticate tool access.",
-          "title": "Auth"
-        },
         "exclude_paths": {
           "anyOf": [
             {
@@ -1204,6 +1332,22 @@
           "default": null,
           "description": "Optional path or URL to an OpenAPI spec to auto-generate tools.",
           "title": "Openapi Spec"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthorizationProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AuthorizationProvider ID used to authenticate tool access.",
+          "title": "Auth"
         }
       },
       "required": [
@@ -1280,85 +1424,9 @@
       "title": "PromptTemplate",
       "type": "object"
     },
-    "PythonModuleToolProvider": {
+    "PythonFunctionTool": {
       "additionalProperties": false,
-      "description": "Tool provider that generates tools from Python module functions.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the tool provider.",
-          "title": "Id",
-          "type": "string"
-        },
-        "auth": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AuthorizationProvider"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "AuthorizationProvider ID used to authenticate tool access.",
-          "title": "Auth"
-        },
-        "module_path": {
-          "description": "Python module path (e.g., 'com.org.my_module.my_tools')",
-          "title": "Module Path",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "module_path"
-      ],
-      "title": "PythonModuleToolProvider",
-      "type": "object"
-    },
-    "TelemetrySink": {
-      "additionalProperties": false,
-      "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the telemetry sink configuration.",
-          "title": "Id",
-          "type": "string"
-        },
-        "auth": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AuthorizationProvider"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "AuthorizationProvider used to authenticate telemetry data transmission.",
-          "title": "Auth"
-        },
-        "endpoint": {
-          "description": "URL endpoint where telemetry data will be sent.",
-          "title": "Endpoint",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "endpoint"
-      ],
-      "title": "TelemetrySink",
-      "type": "object"
-    },
-    "Tool": {
-      "additionalProperties": false,
-      "description": "Callable function or external operation available to the model or as a step in a flow.",
+      "description": "Tool that calls a Python function.",
       "properties": {
         "id": {
           "description": "Unique ID of this component.",
@@ -1420,15 +1488,102 @@
           "description": "Description of what the tool does.",
           "title": "Description",
           "type": "string"
+        },
+        "function_name": {
+          "description": "Name of the Python function to call.",
+          "title": "Function Name",
+          "type": "string"
+        },
+        "module_path": {
+          "description": "Optional module path where the function is defined.",
+          "title": "Module Path",
+          "type": "string"
         }
       },
       "required": [
         "id",
         "name",
-        "description"
+        "description",
+        "function_name",
+        "module_path"
       ],
-      "title": "Tool",
+      "title": "PythonFunctionTool",
       "type": "object"
+    },
+    "PythonModuleToolProvider": {
+      "additionalProperties": false,
+      "description": "Tool provider that generates tools from Python module functions.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the tool provider.",
+          "title": "Id",
+          "type": "string"
+        },
+        "module_path": {
+          "description": "Python module path (e.g., 'com.org.my_module.my_tools')",
+          "title": "Module Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "module_path"
+      ],
+      "title": "PythonModuleToolProvider",
+      "type": "object"
+    },
+    "TelemetrySink": {
+      "additionalProperties": false,
+      "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the telemetry sink configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthorizationProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AuthorizationProvider used to authenticate telemetry data transmission.",
+          "title": "Auth"
+        },
+        "endpoint": {
+          "description": "URL endpoint where telemetry data will be sent.",
+          "title": "Endpoint",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "endpoint"
+      ],
+      "title": "TelemetrySink",
+      "type": "object"
+    },
+    "ToolList": {
+      "description": "Schema for a standalone list of tools.",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/APITool"
+          },
+          {
+            "$ref": "#/$defs/PythonFunctionTool"
+          }
+        ]
+      },
+      "title": "ToolList",
+      "type": "array"
     },
     "ToolProviderList": {
       "description": "Schema for a standalone list of tool providers.",
@@ -1460,22 +1615,12 @@
               "$ref": "#/$defs/VariableTypeEnum"
             },
             {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "items": {},
-                    "type": "array"
-                  },
-                  {
-                    "$ref": "#/$defs/VariableTypeEnum"
-                  }
-                ]
-              },
+              "additionalProperties": true,
               "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
             }
           ],
           "description": "Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax",
@@ -1501,10 +1646,14 @@
       "description": "Represents the type of data a user or system input can accept within the DSL.",
       "enum": [
         "audio",
+        "boolean",
+        "bytes",
         "date",
         "datetime",
         "embedding",
+        "int",
         "file",
+        "float",
         "image",
         "number",
         "text",
