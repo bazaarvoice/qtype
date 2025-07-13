@@ -1305,7 +1305,7 @@
             }
           ],
           "default": null,
-          "description": "The result of applying this template to the input variables. If not provided, defaults to a single text output variable called <id>.prompt",
+          "description": "Variable where output is stored.",
           "title": "Outputs"
         },
         "template": {
