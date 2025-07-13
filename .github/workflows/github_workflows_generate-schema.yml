@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p schema
         
       - name: Generate JSON schema
-        run: qtype generate-schema -o schema/qtype.schema.json
+        run: qtype generate schema -o schema/qtype.schema.json
         
       - name: Check if schema changed
         id: check-changes
