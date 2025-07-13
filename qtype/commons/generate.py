@@ -2,11 +2,13 @@ import argparse
 import logging
 
 from pydantic import BaseModel
-from qtype.semantic.tool_provider_python_module import load_python_module_tools
-from qtype.dsl.model import Model, ModelList, PythonModuleToolProvider, ToolList
 from pydantic_yaml import to_yaml_str
 
+from qtype.converters.tools_from_module import tools_from_module
+from qtype.dsl.model import Model, ModelList, ToolList
+
 logger = logging.getLogger(__name__)
+
 
 def _write_yaml_file(data: BaseModel, output_path: str) -> None:
     """
@@ -23,10 +25,7 @@ def _write_yaml_file(data: BaseModel, output_path: str) -> None:
 
 
 def dump_built_in_tools(args: argparse.Namespace) -> None:
-    provider = PythonModuleToolProvider(
-        module_path="qtype.commons.tools", id="qtype.commons.tools"
-    )
-    tools = load_python_module_tools(provider)
+    tools = tools_from_module("qtype.commons.tools")
     if not tools:
         logger.error("No tools found in the commons library.")
         return
@@ -35,6 +34,7 @@ def dump_built_in_tools(args: argparse.Namespace) -> None:
     output_path = f"{args.prefix}/tools.qtype.yaml"
     _write_yaml_file(tool_list, output_path)
     logging.info(f"Built-in tools exported to {output_path}")
+
 
 def dump_aws_bedrock_models(args: argparse.Namespace) -> None:
     """
@@ -45,29 +45,34 @@ def dump_aws_bedrock_models(args: argparse.Namespace) -> None:
     """
     try:
         import boto3
+
         client = boto3.client("bedrock")
         models = client.list_foundation_models()
 
         # generate a model list from the AWS Bedrock models
-        # the return type of list_foundation_models is 
+        # the return type of list_foundation_models is
 
-        model_list = ModelList([
-            Model(
-                id=model_summary['modelId'],
-                provider='aws-bedrock',
-            ) for model_summary in models.get("modelSummaries", [])
-        ])
+        model_list = ModelList(
+            [
+                Model(
+                    id=model_summary["modelId"],
+                    provider="aws-bedrock",
+                )
+                for model_summary in models.get("modelSummaries", [])
+            ]
+        )
         output_path = f"{args.prefix}/aws.bedrock.models.qtype.yaml"
         _write_yaml_file(model_list, output_path)
         logging.info(f"AWS Bedrock Models exported to {output_path}")
-
 
         logger.info("Exporting AWS Bedrock models...")
         # Placeholder for actual implementation
         # This function should gather AWS Bedrock models and export them similarly to dump_built_in_tools
         logger.info("AWS Bedrock models exported successfully.")
     except ImportError:
-        logger.error("boto3 is not installed. Please install it to use AWS Bedrock model export.")
+        logger.error(
+            "boto3 is not installed. Please install it to use AWS Bedrock model export."
+        )
 
 
 def dump_commons_library(args: argparse.Namespace) -> None:
@@ -81,18 +86,3 @@ def dump_commons_library(args: argparse.Namespace) -> None:
     dump_built_in_tools(args)
     dump_aws_bedrock_models(args)
     logger.info("Commons library tools export complete.")
-
-
-def parser(subparsers: argparse._SubParsersAction) -> None:
-    """Set up the commons library subcommand parser."""
-    cmd_parser = subparsers.add_parser(
-        "generate-commons", help="Generates the commons library."
-    )
-    cmd_parser.add_argument(
-        "-p",
-        "--prefix",
-        type=str,
-        default="./common/",
-        help="Output prefix for the YAML file (default: ./common/)",
-    )
-    cmd_parser.set_defaults(func=dump_commons_library)

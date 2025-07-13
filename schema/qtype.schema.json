@@ -346,29 +346,6 @@
           "description": "List of authorization providers used for API access.",
           "title": "Auths"
         },
-        "tool_providers": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/OpenAPIToolProvider"
-                  },
-                  {
-                    "$ref": "#/$defs/PythonModuleToolProvider"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "List of tool providers that can auto-generate tools from OpenAPI specs.",
-          "title": "Tool Providers"
-        },
         "tools": {
           "anyOf": [
             {
@@ -735,9 +712,6 @@
         },
         {
           "$ref": "#/$defs/ModelList"
-        },
-        {
-          "$ref": "#/$defs/ToolProviderList"
         },
         {
           "$ref": "#/$defs/ToolList"
@@ -1279,83 +1253,6 @@
       "title": "ModelList",
       "type": "array"
     },
-    "OpenAPIToolProvider": {
-      "additionalProperties": false,
-      "description": "Tool provider that generates tools from OpenAPI specifications.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the tool provider.",
-          "title": "Id",
-          "type": "string"
-        },
-        "exclude_paths": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Exclude specific endpoints by path.",
-          "title": "Exclude Paths"
-        },
-        "include_tags": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Limit tool generation to specific OpenAPI tags.",
-          "title": "Include Tags"
-        },
-        "openapi_spec": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional path or URL to an OpenAPI spec to auto-generate tools.",
-          "title": "Openapi Spec"
-        },
-        "auth": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AuthorizationProvider"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "AuthorizationProvider ID used to authenticate tool access.",
-          "title": "Auth"
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "title": "OpenAPIToolProvider",
-      "type": "object"
-    },
     "PromptTemplate": {
       "additionalProperties": false,
       "description": "Defines a prompt template with a string format and variable bindings.\nThis is used to generate prompts dynamically based on input variables.",
@@ -1510,28 +1407,6 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
-    "PythonModuleToolProvider": {
-      "additionalProperties": false,
-      "description": "Tool provider that generates tools from Python module functions.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the tool provider.",
-          "title": "Id",
-          "type": "string"
-        },
-        "module_path": {
-          "description": "Python module path (e.g., 'com.org.my_module.my_tools')",
-          "title": "Module Path",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "module_path"
-      ],
-      "title": "PythonModuleToolProvider",
-      "type": "object"
-    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -1583,21 +1458,6 @@
         ]
       },
       "title": "ToolList",
-      "type": "array"
-    },
-    "ToolProviderList": {
-      "description": "Schema for a standalone list of tool providers.",
-      "items": {
-        "anyOf": [
-          {
-            "$ref": "#/$defs/OpenAPIToolProvider"
-          },
-          {
-            "$ref": "#/$defs/PythonModuleToolProvider"
-          }
-        ]
-      },
-      "title": "ToolProviderList",
       "type": "array"
     },
     "Variable": {

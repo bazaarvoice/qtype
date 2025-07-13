@@ -12,15 +12,14 @@ from pydantic import BaseModel
 
 from qtype.dsl.model import (
     PythonFunctionTool,
-    PythonModuleToolProvider,
     Variable,
     VariableTypeEnum,
 )
-from qtype.semantic.tool_provider_python_module import (
+from qtype.converters.tools_from_module import (
     _create_tool_from_function,
     _get_module_functions,
     _map_python_type_to_variable_type,
-    load_python_module_tools,
+    tools_from_module
 )
 
 
@@ -33,22 +32,20 @@ class SamplePydanticModel(BaseModel):
 
 
 class TestLoadPythonModuleTools:
-    """Test suite for load_python_module_tools function."""
+    """Test suite for tools_from_module function."""
 
     def test_successful_load_with_valid_module(self) -> None:
         """Test successful loading of tools from a valid module."""
-        provider = PythonModuleToolProvider(
-            id="test_provider", module_path="tests.test_module_fixtures"
-        )
+        module_path = "tests.test_module_fixtures"
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_module = Mock()
             mock_import.return_value = mock_module
 
             with patch(
-                "qtype.semantic.tool_provider_python_module._get_module_functions"
+                "qtype.converters.tools_from_module._get_module_functions"
             ) as mock_get_functions:
                 mock_functions = {
                     "test_func": {
@@ -63,12 +60,12 @@ class TestLoadPythonModuleTools:
                 mock_get_functions.return_value = mock_functions
 
                 with patch(
-                    "qtype.semantic.tool_provider_python_module._create_tool_from_function"
+                    "qtype.converters.tools_from_module._create_tool_from_function"
                 ) as mock_create_tool:
                     mock_tool = Mock(spec=PythonFunctionTool)
                     mock_create_tool.return_value = mock_tool
 
-                    result = load_python_module_tools(provider)
+                    result = tools_from_module(module_path)
 
                     assert len(result) == 1
                     assert result[0] == mock_tool
@@ -84,12 +81,10 @@ class TestLoadPythonModuleTools:
 
     def test_import_error_handling(self) -> None:
         """Test handling of ImportError when module cannot be imported."""
-        provider = PythonModuleToolProvider(
-            id="test_provider", module_path="nonexistent.module"
-        )
+        module_path = "nonexistent.module"
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_import.side_effect = ImportError(
                 "No module named 'nonexistent.module'"
@@ -98,22 +93,20 @@ class TestLoadPythonModuleTools:
             with pytest.raises(
                 ImportError, match="Cannot import module 'nonexistent.module'"
             ):
-                load_python_module_tools(provider)
+                tools_from_module(module_path)
 
     def test_no_functions_found_error(self) -> None:
         """Test handling when no public functions are found in module."""
-        provider = PythonModuleToolProvider(
-            id="test_provider", module_path="tests.empty_module"
-        )
+        module_path="tests.empty_module"
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_module = Mock()
             mock_import.return_value = mock_module
 
             with patch(
-                "qtype.semantic.tool_provider_python_module._get_module_functions"
+                "qtype.converters.tools_from_module._get_module_functions"
             ) as mock_get_functions:
                 mock_get_functions.return_value = {}
 
@@ -121,22 +114,20 @@ class TestLoadPythonModuleTools:
                     ValueError,
                     match="No public functions found in module 'tests.empty_module'",
                 ):
-                    load_python_module_tools(provider)
+                    tools_from_module(module_path)
 
     def test_multiple_functions_loaded(self) -> None:
         """Test loading multiple functions from a module."""
-        provider = PythonModuleToolProvider(
-            id="test_provider", module_path="tests.multi_function_module"
-        )
+        module_path="tests.multi_function_module"
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_module = Mock()
             mock_import.return_value = mock_module
 
             with patch(
-                "qtype.semantic.tool_provider_python_module._get_module_functions"
+                "qtype.converters.tools_from_module._get_module_functions"
             ) as mock_get_functions:
                 mock_functions = {
                     "func1": {
@@ -159,7 +150,7 @@ class TestLoadPythonModuleTools:
                 mock_get_functions.return_value = mock_functions
 
                 with patch(
-                    "qtype.semantic.tool_provider_python_module._create_tool_from_function"
+                    "qtype.converters.tools_from_module._create_tool_from_function"
                 ) as mock_create_tool:
                     mock_tools = [
                         Mock(spec=PythonFunctionTool),
@@ -167,7 +158,7 @@ class TestLoadPythonModuleTools:
                     ]
                     mock_create_tool.side_effect = mock_tools
 
-                    result = load_python_module_tools(provider)
+                    result = tools_from_module(module_path)
 
                     assert len(result) == 2
                     assert result == mock_tools
@@ -193,7 +184,7 @@ class TestGetModuleFunctions:
         _private_func.__module__ = "test.module"
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             # Mock getmembers to return only the functions (not the string)
             mock_getmembers.return_value = [
@@ -228,7 +219,7 @@ class TestGetModuleFunctions:
         ]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 
@@ -251,7 +242,7 @@ class TestGetModuleFunctions:
         mock_members = [("test_func", test_func)]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 
@@ -290,7 +281,7 @@ class TestGetModuleFunctions:
         mock_members = [("func_without_return_type", func_without_return_type)]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 
@@ -312,7 +303,7 @@ class TestGetModuleFunctions:
         mock_members = [("func_no_docstring", func_no_docstring)]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 
@@ -349,7 +340,7 @@ class TestCreateToolFromFunction:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module._map_python_type_to_variable_type"
+            "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
             mock_map_type.side_effect = [
                 VariableTypeEnum.int,
@@ -395,7 +386,7 @@ class TestCreateToolFromFunction:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module._map_python_type_to_variable_type"
+            "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
             mock_map_type.return_value = VariableTypeEnum.text
 
@@ -417,7 +408,7 @@ class TestCreateToolFromFunction:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module._map_python_type_to_variable_type"
+            "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
             mock_map_type.return_value = VariableTypeEnum.text
 
@@ -437,7 +428,7 @@ class TestCreateToolFromFunction:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module._map_python_type_to_variable_type"
+            "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
             mock_map_type.return_value = VariableTypeEnum.text
 
@@ -521,9 +512,7 @@ class TestIntegration:
 
     def test_end_to_end_tool_loading(self) -> None:
         """Test complete workflow from provider to tools."""
-        provider = PythonModuleToolProvider(
-            id="integration_test", module_path="test.integration.module"
-        )
+        module_path = "test.integration.module"
 
         # Mock function info that would be returned by _get_module_functions
         mock_func_info = {
@@ -549,19 +538,19 @@ class TestIntegration:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_module = Mock()
             mock_import.return_value = mock_module
 
             with patch(
-                "qtype.semantic.tool_provider_python_module._get_module_functions"
+                "qtype.converters.tools_from_module._get_module_functions"
             ) as mock_get_functions:
                 mock_get_functions.return_value = {
                     "sample_function": mock_func_info
                 }
 
-                tools = load_python_module_tools(provider)
+                tools = tools_from_module(module_path)
 
                 assert len(tools) == 1
                 tool = tools[0]
@@ -601,9 +590,7 @@ class TestIntegration:
             scores: list[float]
             metadata: dict[str, Any]
 
-        provider = PythonModuleToolProvider(
-            id="complex_test", module_path="test.complex.module"
-        )
+        module_path = "test.complex.module"
 
         # Mock function info with Pydantic model
         mock_func_info = {
@@ -623,19 +610,19 @@ class TestIntegration:
         }
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.importlib.import_module"
+            "qtype.converters.tools_from_module.importlib.import_module"
         ) as mock_import:
             mock_module = Mock()
             mock_import.return_value = mock_module
 
             with patch(
-                "qtype.semantic.tool_provider_python_module._get_module_functions"
+                "qtype.converters.tools_from_module._get_module_functions"
             ) as mock_get_functions:
                 mock_get_functions.return_value = {
                     "complex_function": mock_func_info
                 }
 
-                tools = load_python_module_tools(provider)
+                tools = tools_from_module(module_path)
 
                 assert len(tools) == 1
                 tool = tools[0]
@@ -670,7 +657,7 @@ class TestEdgeCases:
         mock_members = [("complex_func", complex_func)]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 
@@ -696,7 +683,7 @@ class TestEdgeCases:
         mock_members = [("no_annotations_func", no_annotations_func)]
 
         with patch(
-            "qtype.semantic.tool_provider_python_module.inspect.getmembers"
+            "qtype.converters.tools_from_module.inspect.getmembers"
         ) as mock_getmembers:
             mock_getmembers.return_value = mock_members
 

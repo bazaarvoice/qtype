@@ -288,42 +288,8 @@ class Decoder(Step):
 
 
 #
-# ---------------- Observability and Provider Components ----------------
+# ---------------- Observability and Authentication Components ----------------
 #
-
-
-class ToolProvider(StrictBaseModel, ABC):
-    """Base class for tool providers that can generate tools from various sources."""
-
-    id: str = Field(..., description="Unique ID of the tool provider.")
-
-class OpenAPIToolProvider(ToolProvider):
-    """Tool provider that generates tools from OpenAPI specifications."""
-
-    exclude_paths: list[str] | None = Field(
-        default=None, description="Exclude specific endpoints by path."
-    )
-    include_tags: list[str] | None = Field(
-        default=None,
-        description="Limit tool generation to specific OpenAPI tags.",
-    )
-    openapi_spec: str | None = Field(
-        default=None,
-        description="Optional path or URL to an OpenAPI spec to auto-generate tools.",
-    )
-    auth: AuthorizationProvider | str | None = Field(
-        default=None,
-        description="AuthorizationProvider ID used to authenticate tool access.",
-    )
-
-
-class PythonModuleToolProvider(ToolProvider):
-    """Tool provider that generates tools from Python module functions."""
-
-    module_path: str = Field(
-        ...,
-        description="Python module path (e.g., 'com.org.my_module.my_tools')"
-    )
 
 
 class AuthorizationProvider(StrictBaseModel):
@@ -406,10 +372,6 @@ class Application(StrictBaseModel):
     auths: list[AuthorizationProvider] | None = Field(
         default=None,
         description="List of authorization providers used for API access.",
-    )
-    tool_providers: list[ToolProviderType] | None = Field(
-        default=None,
-        description="List of tool providers that can auto-generate tools from OpenAPI specs.",
     )
     tools: list[ToolType] | None = Field(
         default=None,
@@ -550,13 +512,6 @@ ModelType = Union[
     Model,
 ]
 
-# Create a union type for all tool provider types
-ToolProviderType = Union[
-    OpenAPIToolProvider,
-    PythonModuleToolProvider,
-]
-
-
 #
 # ---------------- Document Flexibility Shapes ----------------
 # The following shapes let users define a set of flexible document structures
@@ -581,12 +536,6 @@ class ModelList(RootModel[list[ModelType]]):
     root: list[ModelType]
 
 
-class ToolProviderList(RootModel[list[ToolProviderType]]):
-    """Schema for a standalone list of tool providers."""
-
-    root: list[ToolProviderType]
-
-
 class ToolList(RootModel[list[ToolType]]):
     """Schema for a standalone list of tools."""
 
@@ -609,7 +558,6 @@ class Document(
             Flow,
             IndexList,
             ModelList,
-            ToolProviderList,
             VariableList,
         ]
     ]
@@ -627,7 +575,6 @@ class Document(
         Flow,
         IndexList,
         ModelList,
-        ToolProviderList,
         ToolList,
         VariableList,
     ]

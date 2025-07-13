@@ -4,7 +4,6 @@ from typing import Any
 
 from qtype.dsl.model import (
     PythonFunctionTool,
-    PythonModuleToolProvider,
     Variable,
     VariableType,
 )
@@ -13,8 +12,8 @@ from qtype.dsl.model import (
 from qtype.util import TYPE_TO_VARIABLE
 
 
-def load_python_module_tools(
-    provider: PythonModuleToolProvider,
+def tools_from_module(
+    module_path: str,
 ) -> list[PythonFunctionTool]:
     """
     Load tools from a Python module by introspecting its functions.
@@ -31,14 +30,14 @@ def load_python_module_tools(
     """
     try:
         # Import the module
-        module = importlib.import_module(provider.module_path)
+        module = importlib.import_module(module_path)
 
         # Get all functions from the module
-        functions = _get_module_functions(provider.module_path, module)
+        functions = _get_module_functions(module_path, module)
 
         if not functions:
             raise ValueError(
-                f"No public functions found in module '{provider.module_path}'"
+                f"No public functions found in module '{module_path}'"
             )
 
         # Create Tool instances from functions
@@ -47,9 +46,7 @@ def load_python_module_tools(
             for func_name, func_info in functions.items()
         ]
     except ImportError as e:
-        raise ImportError(
-            f"Cannot import module '{provider.module_path}': {e}"
-        ) from e
+        raise ImportError(f"Cannot import module '{module_path}': {e}") from e
 
 
 def _get_module_functions(

@@ -24,7 +24,6 @@ from qtype.dsl.model import (
     IndexList,
     ModelList,
     ToolList,
-    ToolProviderList,
     VariableList,
 )
 
@@ -336,7 +335,6 @@ def _resolve_root(doc: Document) -> ResolveableType:
             AuthorizationProviderList,
             IndexList,
             ModelList,
-            ToolProviderList,
             ToolList,
             VariableList,
         ]
