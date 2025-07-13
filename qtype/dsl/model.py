@@ -125,10 +125,6 @@ class PromptTemplate(Step):
         ...,
         description="String template for the prompt with variable placeholders.",
     )
-    outputs: list[Variable | str] | None = Field(
-        default=None,
-        description="The result of applying this template to the input variables. If not provided, defaults to a single text output variable called <id>.prompt",
-    )
 
     @model_validator(mode="after")
     def set_default_outputs(self) -> "PromptTemplate":
@@ -558,6 +554,7 @@ class Document(
             Flow,
             IndexList,
             ModelList,
+            ToolList,
             VariableList,
         ]
     ]

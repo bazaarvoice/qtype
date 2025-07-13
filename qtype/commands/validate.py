@@ -9,7 +9,9 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
+from qtype import dsl
 from qtype.dsl.loader import load
+from qtype.semantic.resolver import SemanticResolutionError, resolve
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,10 @@ def main(args: Any) -> None:
     """
     try:
         spec = load(args.spec)
+        if isinstance(spec, dsl.Application):
+            spec = resolve(spec)
+        else:
+            logger.info(f"Spec is a {spec.__class__.__name__}, skipping semantic resolution.")
         logger.info("✅ Schema validation successful")
         if args.print:
 
@@ -39,6 +45,9 @@ def main(args: Any) -> None:
                 print_model(spec)
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
+        sys.exit(1)
+    except SemanticResolutionError as exc:
+        logger.error("❌ Semantic resolution failed:\n%s", exc)
         sys.exit(1)
 
     # try:
