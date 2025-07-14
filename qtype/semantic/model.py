@@ -11,36 +11,24 @@ qtype generate semantic-model
 
 from __future__ import annotations
 
-from abc import ABC
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
-from qtype.dsl.model import VariableTypeEnum, VariableType, DecoderFormat
+from qtype.dsl.model import VariableTypeEnum, DecoderFormat
 
-class SemanticAPITool(BaseModel):
+class SemanticAPITool(SemanticTool):
     """Tool that invokes an API endpoint."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-    name: str = Field(..., description="Name of the tool function.")
-    description: str = Field(..., description="Description of what the tool does.")
     endpoint: str = Field(..., description="API endpoint URL to call.")
     method: str = Field("GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.).")
     auth: SemanticAuthorizationProvider | None = Field(None, description="Optional AuthorizationProvider for API authentication.")
     headers: dict[str, str] = Field({}, description="Optional HTTP headers to include in the request.")
 
-class SemanticAgent(BaseModel):
+class SemanticAgent(SemanticLLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-    memory: SemanticMemory | None = Field(None, description="Memory object to retain context across interactions.")
-    model: SemanticEmbeddingModel | SemanticModel = Field(..., description="The model to use for inference.")
-    system_message: str | None = Field(None, description="Optional system message to set the context for the model.")
     tools: list[SemanticAPITool | SemanticPythonFunctionTool] = Field(..., description="List of tools available to the agent.")
 
 class SemanticApplication(BaseModel):
@@ -56,7 +44,6 @@ class SemanticApplication(BaseModel):
     tools: list[SemanticAPITool | SemanticPythonFunctionTool] = Field([], description="List of tools available in this application.")
     indexes: list[SemanticDocumentIndex | SemanticVectorIndex] = Field([], description="List of indexes available for search operations.")
     telemetry: SemanticTelemetrySink | None = Field(None, description="Optional telemetry sink for observability.")
-    references: list[Document] = Field([], description="List of other q-type documents you may use. This allows modular composition and reuse of components across applications.")
 
 class SemanticAuthorizationProvider(BaseModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
@@ -70,65 +57,44 @@ class SemanticAuthorizationProvider(BaseModel):
     token_url: str | None = Field(None, description="Token endpoint URL.")
     type: str = Field(..., description="Authorization method, e.g., 'oauth2' or 'api_key'.")
 
-class SemanticCondition(BaseModel):
+class SemanticCondition(SemanticStep):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     else_: SemanticAgent | SemanticAPITool | SemanticCondition | SemanticDocumentSearch | SemanticFlow | SemanticLLMInference | SemanticPromptTemplate | SemanticPythonFunctionTool | SemanticVectorSearch | None = Field(None, description="Optional step to run if condition fails.", alias="else")
     equals: SemanticVariable | None = Field(None, description="Match condition for equality check.")
     then: SemanticAgent | SemanticAPITool | SemanticCondition | SemanticDocumentSearch | SemanticFlow | SemanticLLMInference | SemanticPromptTemplate | SemanticPythonFunctionTool | SemanticVectorSearch = Field(..., description="Step to run if condition matches.")
 
-class SemanticDecoder(BaseModel):
+class SemanticDecoder(SemanticStep):
     """Defines a step that decodes string data into structured outputs.
 
     If parsing fails, the step will raise an error and halt execution.
     Use conditional logic in your flow to handle potential parsing errors.
     """
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     format: DecoderFormat = Field("json", description="Format in which the decoder processes data. Defaults to JSON.")
 
-class SemanticDocumentIndex(BaseModel):
+class SemanticDocumentIndex(SemanticIndex):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
-    id: str = Field(..., description="Unique ID of the index.")
-    args: dict[str, Any] = Field({}, description="Index-specific configuration and connection parameters.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider for accessing the index.")
-    name: str = Field(..., description="Name of the index/collection/table.")
+    pass
 
-class SemanticDocumentSearch(BaseModel):
+class SemanticDocumentSearch(SemanticSearch):
     """Performs document search against a document index."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-    filters: dict[str, Any] = Field({}, description="Optional filters to apply during search.")
-    index: SemanticDocumentIndex | SemanticVectorIndex = Field(..., description="Index to search against (object or ID reference).")
+    pass
 
-class SemanticEmbeddingModel(BaseModel):
+class SemanticEmbeddingModel(SemanticModel):
     """Describes an embedding model configuration, extending the base Model class."""
 
-    id: str = Field(..., description="Unique ID for the model.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used for model access.")
-    inference_params: dict[str, Any] = Field({}, description="Optional inference parameters like temperature or max_tokens.")
-    model_id: str | None = Field(None, description="The specific model name or ID for the provider. If None, id is used")
-    provider: str = Field(..., description="Name of the provider, e.g., openai or anthropic.")
     dimensions: int = Field(..., description="Dimensionality of the embedding vectors produced by this model.")
 
-class SemanticFlow(BaseModel):
+class SemanticFlow(SemanticStep):
     """Defines a flow of steps that can be executed in sequence or parallel.
     Flows can include conditions and memory for state management.
     If input or output variables are not specified, they are inferred from
     the first and last step, respectively.
     """
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     steps: list[SemanticAgent | SemanticAPITool | SemanticCondition | SemanticDocumentSearch | SemanticFlow | SemanticLLMInference | SemanticPromptTemplate | SemanticPythonFunctionTool | SemanticVectorSearch] = Field(..., description="List of steps or step IDs.")
 
 class SemanticIndex(BaseModel):
@@ -139,13 +105,10 @@ class SemanticIndex(BaseModel):
     auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider for accessing the index.")
     name: str = Field(..., description="Name of the index/collection/table.")
 
-class SemanticLLMInference(BaseModel):
+class SemanticLLMInference(SemanticStep):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     memory: SemanticMemory | None = Field(None, description="Memory object to retain context across interactions.")
     model: SemanticEmbeddingModel | SemanticModel = Field(..., description="The model to use for inference.")
     system_message: str | None = Field(None, description="Optional system message to set the context for the model.")
@@ -164,32 +127,21 @@ class SemanticModel(BaseModel):
     model_id: str | None = Field(None, description="The specific model name or ID for the provider. If None, id is used")
     provider: str = Field(..., description="Name of the provider, e.g., openai or anthropic.")
 
-class SemanticPromptTemplate(BaseModel):
+class SemanticPromptTemplate(SemanticStep):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     template: str = Field(..., description="String template for the prompt with variable placeholders.")
 
-class SemanticPythonFunctionTool(BaseModel):
+class SemanticPythonFunctionTool(SemanticTool):
     """Tool that calls a Python function."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-    name: str = Field(..., description="Name of the tool function.")
-    description: str = Field(..., description="Description of what the tool does.")
     function_name: str = Field(..., description="Name of the Python function to call.")
     module_path: str = Field(..., description="Optional module path where the function is defined.")
 
-class SemanticSearch(BaseModel):
+class SemanticSearch(SemanticStep):
     """Base class for search operations against indexes."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     filters: dict[str, Any] = Field({}, description="Optional filters to apply during search.")
     index: SemanticDocumentIndex | SemanticVectorIndex = Field(..., description="Index to search against (object or ID reference).")
 
@@ -207,14 +159,11 @@ class SemanticTelemetrySink(BaseModel):
     auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used to authenticate telemetry data transmission.")
     endpoint: str = Field(..., description="URL endpoint where telemetry data will be sent.")
 
-class SemanticTool(BaseModel):
+class SemanticTool(SemanticStep):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(..., description="Description of what the tool does.")
 
@@ -224,23 +173,14 @@ class SemanticVariable(BaseModel):
     id: str = Field(..., description="Unique ID of the variable. Referenced in prompts or steps.")
     type: VariableTypeEnum | dict | list = Field(..., description="Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax")
 
-class SemanticVectorIndex(BaseModel):
+class SemanticVectorIndex(SemanticIndex):
     """Vector database index for similarity search using embeddings."""
 
-    id: str = Field(..., description="Unique ID of the index.")
-    args: dict[str, Any] = Field({}, description="Index-specific configuration and connection parameters.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider for accessing the index.")
-    name: str = Field(..., description="Name of the index/collection/table.")
     embedding_model: SemanticEmbeddingModel = Field(..., description="Embedding model used to vectorize queries and documents.")
 
-class SemanticVectorSearch(BaseModel):
+class SemanticVectorSearch(SemanticSearch):
     """Performs vector similarity search against a vector index."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-    filters: dict[str, Any] = Field({}, description="Optional filters to apply during search.")
-    index: SemanticDocumentIndex | SemanticVectorIndex = Field(..., description="Index to search against (object or ID reference).")
     default_top_k: int | None = Field(..., description="Number of top results to retrieve if not provided in the inputs.")
 
 # Union types for semantic models

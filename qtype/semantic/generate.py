@@ -15,6 +15,8 @@ TYPES_TO_IGNORE = {
     "DecoderFormat",
 }
 
+FIELDS_TO_IGNORE = {"Application.references"}
+
 
 def generate_semantic_model(args: argparse.Namespace) -> None:
     """Generate semantic model classes from DSL model classes.
@@ -35,9 +37,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             and not name.endswith("List")
         ):
             dsl_classes.append((name, cls))
-
-    # Sort classes to ensure consistent output
-    dsl_classes.sort(key=lambda x: x[0])
 
     # Generate semantic classes
     semantic_classes = []
@@ -69,12 +68,11 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
         # Write imports
         f.write("from __future__ import annotations\n\n")
-        f.write("from abc import ABC\n")
         f.write("from typing import Any\n\n")
-        f.write("from pydantic import BaseModel, ConfigDict, Field\n\n")
+        f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write(
-            "from qtype.dsl.model import VariableTypeEnum, VariableType, DecoderFormat\n\n"
+            "from qtype.dsl.model import VariableTypeEnum, DecoderFormat\n\n"
         )
 
         # Write classes
@@ -97,30 +95,52 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
     if inspect.isabstract(cls):
         inheritance = "ABC, BaseModel"
 
-    # Get field information from the class
+    # Check if this class inherits from another DSL class
+    for base in cls.__bases__:
+        if (
+            hasattr(base, "__module__")
+            and base.__module__ == dsl.__name__
+            and base.__name__ not in TYPES_TO_IGNORE
+            and not base.__name__.startswith("_")
+        ):
+            # This class inherits from another DSL class
+            semantic_base = f"Semantic{base.__name__}"
+            if inspect.isabstract(cls):
+                inheritance = f"ABC, {semantic_base}"
+            else:
+                inheritance = semantic_base
+            break
+
+    # Get field information from the class - only fields defined on this class, not inherited
     fields = []
-    if hasattr(cls, "model_fields"):
-        for field_name, field_info in cls.model_fields.items():
-            field_type = field_info.annotation
-            field_default = field_info.default
-            field_description = getattr(field_info, "description", None)
+    if hasattr(cls, "__annotations__") and hasattr(cls, "model_fields"):
+        # Only process fields that are actually defined on this class
+        for field_name in cls.__annotations__:
+            if (
+                field_name in cls.model_fields
+                and f"{class_name}.{field_name}" not in FIELDS_TO_IGNORE
+            ):
+                field_info = cls.model_fields[field_name]
+                field_type = field_info.annotation
+                field_default = field_info.default
+                field_description = getattr(field_info, "description", None)
 
-            # Transform the field type
-            semantic_type = transform_field_type(field_type, field_name)
+                # Transform the field type
+                semantic_type = transform_field_type(field_type, field_name)
 
-            # Check if we should change the default of `None` to `[]` if the type is a list
-            if field_default is None and semantic_type.startswith("list["):
-                field_default = []
+                # Check if we should change the default of `None` to `[]` if the type is a list
+                if field_default is None and semantic_type.startswith("list["):
+                    field_default = []
 
-            # Check if we should change the default of `None` to `{}` if the type is a dict
-            if field_default is None and semantic_type.startswith("dict["):
-                field_default = {}
+                # Check if we should change the default of `None` to `{}` if the type is a dict
+                if field_default is None and semantic_type.startswith("dict["):
+                    field_default = {}
 
-            # Create field definition
-            field_def = create_field_definition(
-                field_name, semantic_type, field_default, field_description
-            )
-            fields.append(field_def)
+                # Create field definition
+                field_def = create_field_definition(
+                    field_name, semantic_type, field_default, field_description
+                )
+                fields.append(field_def)
 
     # Build class definition
     lines = [f"class {semantic_name}({inheritance}):"]
@@ -165,7 +185,7 @@ def transform_field_type(field_type: Any, field_name: str) -> str:
     if hasattr(field_type, "__forward_arg__"):
         # Extract the string from ForwardRef and process it
         forward_ref_str = field_type.__forward_arg__
-        actual_type = eval(forward_ref_str, vars(dsl))
+        actual_type = eval(forward_ref_str, dict(vars(dsl)))
         return transform_field_type(actual_type, field_name)
 
     # Handle Union types (including | syntax)
@@ -196,17 +216,11 @@ def transform_field_type(field_type: Any, field_name: str) -> str:
     # Handle basic types
     if hasattr(field_type, "__name__"):
         type_name = field_type.__name__
-        if (
-            _is_dsl_type(field_type)
-            and type_name not in TYPES_TO_IGNORE
-        ):
+        if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
             return f"Semantic{type_name}"
         if type_name == "NoneType":
             return "None"
         return type_name
-
-    if field_type is None:
-        return "None"
 
     return str(field_type)
 
@@ -218,7 +232,7 @@ def transform_union_type(args: tuple, field_name: str) -> str:
         list_elems = [
             arg for arg in args if get_origin(arg) in set([list, dict])
         ]
-        has_none = any(arg == type(None) for arg in args)
+        has_none = any(arg is type(None) for arg in args)
         if len(list_elems) > 0 and has_none:
             # If we have a list and None, we return the list type
             # This is to handle cases like List[SomeType] | None
