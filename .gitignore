@@ -193,3 +193,7 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .env
+
+
+# Stuff I don't want to see in my editor
+ignored
