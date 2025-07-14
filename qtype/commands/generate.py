@@ -5,7 +5,6 @@ from typing import Optional
 
 from qtype.commons.generate import dump_commons_library
 from qtype.dsl.model import Document
-from qtype.semantic.generate import generate_semantic_model
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +66,8 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     try:
         import networkx  # noqa: F401
         import ruff  # noqa: F401
+        from qtype.semantic.generate import generate_semantic_model
+
         semantic_parser = generate_subparsers.add_parser(
             "semantic-model", help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL."
         )
