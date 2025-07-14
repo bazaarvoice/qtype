@@ -13,6 +13,7 @@ dependencies = [
     "openai>=1.93.0",
     "fsspec>=2025.5.1",
     "pydantic-yaml>=1.5.1",
+    "networkx>=3.4.2",
 ]
 
 [dependency-groups]

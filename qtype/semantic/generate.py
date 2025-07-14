@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any, Union, get_origin, get_args
 
 import qtype.dsl.model as dsl
+import networkx as nx  # Add this dependency for topological sorting
+
 
 TYPES_TO_IGNORE = {
     "Document",
@@ -17,6 +19,27 @@ TYPES_TO_IGNORE = {
 
 FIELDS_TO_IGNORE = {"Application.references"}
 
+def sort_classes_by_inheritance(classes: list[tuple[str, type]]) -> list[tuple[str, type]]:
+    """Sort classes based on their inheritance hierarchy."""
+    graph = nx.DiGraph()
+    class_dict = dict(classes)
+
+    # Build dependency graph
+    for class_name, cls in classes:
+        graph.add_node(class_name)
+        for base in cls.__bases__:
+            if (
+                hasattr(base, "__module__")
+                and base.__module__ == dsl.__name__
+                and base.__name__ not in TYPES_TO_IGNORE
+                and not base.__name__.startswith("_")
+            ):
+                graph.add_edge(base.__name__, class_name)
+
+    sorted_names = list(nx.topological_sort(graph))
+
+    # sorted_names = sorted(graph.nodes, key=lambda node: depths[node])
+    return [(name, class_dict[name]) for name in sorted_names]
 
 def generate_semantic_model(args: argparse.Namespace) -> None:
     """Generate semantic model classes from DSL model classes.
@@ -38,13 +61,14 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         ):
             dsl_classes.append((name, cls))
 
-    # Generate semantic classes
-    semantic_classes = []
+    # Sort classes based on inheritance hierarchy
+    sorted_classes = sort_classes_by_inheritance(dsl_classes)
 
-    for class_name, cls in dsl_classes:
-        semantic_code = generate_semantic_class(class_name, cls)
-        if semantic_code:
-            semantic_classes.append(semantic_code)
+    # Generate semantic classes in sorted order
+    generated = [
+        generate_semantic_class(class_name, cls)
+        for class_name, cls in sorted_classes
+    ]
 
     # Generate union types
     union_types = generate_union_types()
@@ -76,7 +100,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         )
 
         # Write classes
-        f.write("\n\n".join(semantic_classes))
+        f.write("\n\n".join(generated))
         f.write("\n\n")
 
         # Write union types

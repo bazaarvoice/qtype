@@ -18,19 +18,6 @@ from pydantic import BaseModel, Field
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableTypeEnum, DecoderFormat
 
-class SemanticAPITool(SemanticTool):
-    """Tool that invokes an API endpoint."""
-
-    endpoint: str = Field(..., description="API endpoint URL to call.")
-    method: str = Field("GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.).")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="Optional AuthorizationProvider for API authentication.")
-    headers: dict[str, str] = Field({}, description="Optional HTTP headers to include in the request.")
-
-class SemanticAgent(SemanticLLMInference):
-    """Defines an agent that can perform tasks and make decisions based on user input and context."""
-
-    tools: list[SemanticAPITool | SemanticPythonFunctionTool] = Field(..., description="List of tools available to the agent.")
-
 class SemanticApplication(BaseModel):
     """Defines a QType application that can include models, variables, and other components."""
 
@@ -57,6 +44,48 @@ class SemanticAuthorizationProvider(BaseModel):
     token_url: str | None = Field(None, description="Token endpoint URL.")
     type: str = Field(..., description="Authorization method, e.g., 'oauth2' or 'api_key'.")
 
+class SemanticStep(BaseModel):
+    """Base class for components that take inputs and produce outputs."""
+
+    id: str = Field(..., description="Unique ID of this component.")
+    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
+    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
+
+class SemanticIndex(BaseModel):
+    """Base class for searchable indexes that can be queried by search steps."""
+
+    id: str = Field(..., description="Unique ID of the index.")
+    args: dict[str, Any] = Field({}, description="Index-specific configuration and connection parameters.")
+    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider for accessing the index.")
+    name: str = Field(..., description="Name of the index/collection/table.")
+
+class SemanticModel(BaseModel):
+    """Describes a generative model configuration, including provider and model ID."""
+
+    id: str = Field(..., description="Unique ID for the model.")
+    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used for model access.")
+    inference_params: dict[str, Any] = Field({}, description="Optional inference parameters like temperature or max_tokens.")
+    model_id: str | None = Field(None, description="The specific model name or ID for the provider. If None, id is used")
+    provider: str = Field(..., description="Name of the provider, e.g., openai or anthropic.")
+
+class SemanticMemory(BaseModel):
+    """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
+
+    id: str = Field(..., description="Unique ID of the memory block.")
+
+class SemanticTelemetrySink(BaseModel):
+    """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
+
+    id: str = Field(..., description="Unique ID of the telemetry sink configuration.")
+    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used to authenticate telemetry data transmission.")
+    endpoint: str = Field(..., description="URL endpoint where telemetry data will be sent.")
+
+class SemanticVariable(BaseModel):
+    """Schema for a variable that can serve as input, output, or parameter within the DSL."""
+
+    id: str = Field(..., description="Unique ID of the variable. Referenced in prompts or steps.")
+    type: VariableTypeEnum | dict | list = Field(..., description="Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax")
+
 class SemanticCondition(SemanticStep):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
@@ -73,21 +102,6 @@ class SemanticDecoder(SemanticStep):
 
     format: DecoderFormat = Field("json", description="Format in which the decoder processes data. Defaults to JSON.")
 
-class SemanticDocumentIndex(SemanticIndex):
-    """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
-
-    pass
-
-class SemanticDocumentSearch(SemanticSearch):
-    """Performs document search against a document index."""
-
-    pass
-
-class SemanticEmbeddingModel(SemanticModel):
-    """Describes an embedding model configuration, extending the base Model class."""
-
-    dimensions: int = Field(..., description="Dimensionality of the embedding vectors produced by this model.")
-
 class SemanticFlow(SemanticStep):
     """Defines a flow of steps that can be executed in sequence or parallel.
     Flows can include conditions and memory for state management.
@@ -97,14 +111,6 @@ class SemanticFlow(SemanticStep):
 
     steps: list[SemanticAgent | SemanticAPITool | SemanticCondition | SemanticDocumentSearch | SemanticFlow | SemanticLLMInference | SemanticPromptTemplate | SemanticPythonFunctionTool | SemanticVectorSearch] = Field(..., description="List of steps or step IDs.")
 
-class SemanticIndex(BaseModel):
-    """Base class for searchable indexes that can be queried by search steps."""
-
-    id: str = Field(..., description="Unique ID of the index.")
-    args: dict[str, Any] = Field({}, description="Index-specific configuration and connection parameters.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider for accessing the index.")
-    name: str = Field(..., description="Name of the index/collection/table.")
-
 class SemanticLLMInference(SemanticStep):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
@@ -113,51 +119,17 @@ class SemanticLLMInference(SemanticStep):
     model: SemanticEmbeddingModel | SemanticModel = Field(..., description="The model to use for inference.")
     system_message: str | None = Field(None, description="Optional system message to set the context for the model.")
 
-class SemanticMemory(BaseModel):
-    """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
-
-    id: str = Field(..., description="Unique ID of the memory block.")
-
-class SemanticModel(BaseModel):
-    """Describes a generative model configuration, including provider and model ID."""
-
-    id: str = Field(..., description="Unique ID for the model.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used for model access.")
-    inference_params: dict[str, Any] = Field({}, description="Optional inference parameters like temperature or max_tokens.")
-    model_id: str | None = Field(None, description="The specific model name or ID for the provider. If None, id is used")
-    provider: str = Field(..., description="Name of the provider, e.g., openai or anthropic.")
-
 class SemanticPromptTemplate(SemanticStep):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
 
     template: str = Field(..., description="String template for the prompt with variable placeholders.")
 
-class SemanticPythonFunctionTool(SemanticTool):
-    """Tool that calls a Python function."""
-
-    function_name: str = Field(..., description="Name of the Python function to call.")
-    module_path: str = Field(..., description="Optional module path where the function is defined.")
-
 class SemanticSearch(SemanticStep):
     """Base class for search operations against indexes."""
 
     filters: dict[str, Any] = Field({}, description="Optional filters to apply during search.")
     index: SemanticDocumentIndex | SemanticVectorIndex = Field(..., description="Index to search against (object or ID reference).")
-
-class SemanticStep(BaseModel):
-    """Base class for components that take inputs and produce outputs."""
-
-    id: str = Field(..., description="Unique ID of this component.")
-    inputs: list[SemanticVariable] = Field([], description="Input variables required by this step.")
-    outputs: list[SemanticVariable] = Field([], description="Variable where output is stored.")
-
-class SemanticTelemetrySink(BaseModel):
-    """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
-
-    id: str = Field(..., description="Unique ID of the telemetry sink configuration.")
-    auth: SemanticAuthorizationProvider | None = Field(None, description="AuthorizationProvider used to authenticate telemetry data transmission.")
-    endpoint: str = Field(..., description="URL endpoint where telemetry data will be sent.")
 
 class SemanticTool(SemanticStep):
     """
@@ -167,21 +139,49 @@ class SemanticTool(SemanticStep):
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(..., description="Description of what the tool does.")
 
-class SemanticVariable(BaseModel):
-    """Schema for a variable that can serve as input, output, or parameter within the DSL."""
+class SemanticDocumentIndex(SemanticIndex):
+    """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
-    id: str = Field(..., description="Unique ID of the variable. Referenced in prompts or steps.")
-    type: VariableTypeEnum | dict | list = Field(..., description="Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax")
+    pass
 
 class SemanticVectorIndex(SemanticIndex):
     """Vector database index for similarity search using embeddings."""
 
     embedding_model: SemanticEmbeddingModel = Field(..., description="Embedding model used to vectorize queries and documents.")
 
+class SemanticEmbeddingModel(SemanticModel):
+    """Describes an embedding model configuration, extending the base Model class."""
+
+    dimensions: int = Field(..., description="Dimensionality of the embedding vectors produced by this model.")
+
+class SemanticAgent(SemanticLLMInference):
+    """Defines an agent that can perform tasks and make decisions based on user input and context."""
+
+    tools: list[SemanticAPITool | SemanticPythonFunctionTool] = Field(..., description="List of tools available to the agent.")
+
+class SemanticDocumentSearch(SemanticSearch):
+    """Performs document search against a document index."""
+
+    pass
+
 class SemanticVectorSearch(SemanticSearch):
     """Performs vector similarity search against a vector index."""
 
     default_top_k: int | None = Field(..., description="Number of top results to retrieve if not provided in the inputs.")
+
+class SemanticAPITool(SemanticTool):
+    """Tool that invokes an API endpoint."""
+
+    endpoint: str = Field(..., description="API endpoint URL to call.")
+    method: str = Field("GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.).")
+    auth: SemanticAuthorizationProvider | None = Field(None, description="Optional AuthorizationProvider for API authentication.")
+    headers: dict[str, str] = Field({}, description="Optional HTTP headers to include in the request.")
+
+class SemanticPythonFunctionTool(SemanticTool):
+    """Tool that calls a Python function."""
+
+    function_name: str = Field(..., description="Name of the Python function to call.")
+    module_path: str = Field(..., description="Optional module path where the function is defined.")
 
 # Union types for semantic models
 SemanticToolType = SemanticAPITool | SemanticPythonFunctionTool
