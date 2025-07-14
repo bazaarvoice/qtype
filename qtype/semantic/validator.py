@@ -79,7 +79,7 @@ def _update_maps_with_embedded_objects(
             _update_map_with_unique_check(lookup_map, [obj])
 
         if isinstance(obj, dsl.Model):
-            # note inputs/
+            # note inputs
             _update_map_with_unique_check(lookup_map, [obj.auth])
 
         if isinstance(obj, dsl.Condition):
@@ -87,9 +87,9 @@ def _update_maps_with_embedded_objects(
             _update_map_with_unique_check(lookup_map, [obj.then, obj.else_])
             _update_map_with_unique_check(lookup_map, [obj.equals])
             if obj.then and isinstance(obj.then, dsl.Step):
-                _update_maps_with_embedded_objects(lookup_map, obj.then)
+                _update_maps_with_embedded_objects(lookup_map, [obj.then])
             if obj.else_ and isinstance(obj.else_, dsl.Step):
-                _update_maps_with_embedded_objects(lookup_map, obj.else_)
+                _update_maps_with_embedded_objects(lookup_map, [obj.else_])
 
         if isinstance(obj, dsl.APITool):
             # API tools have inputs and outputs
@@ -98,6 +98,7 @@ def _update_maps_with_embedded_objects(
         if isinstance(obj, dsl.LLMInference):
             # LLM Inference steps have inputs and outputs
             _update_map_with_unique_check(lookup_map, [obj.model])
+            _update_maps_with_embedded_objects(lookup_map, [obj.model])
             _update_map_with_unique_check(lookup_map, [obj.memory])
 
         if isinstance(obj, dsl.Agent):
@@ -154,6 +155,10 @@ def _update_maps_with_embedded_objects(
         if isinstance(obj, dsl.VariableList):
             # VariableList is a list of Variable objects
             _update_map_with_unique_check(lookup_map, obj.root)
+
+        if isinstance(obj, dsl.TelemetrySink):
+            # TelemetrySink is a list of TelemetrySink objects
+            _update_map_with_unique_check(lookup_map, [obj.auth])
 
 
 def _build_lookup_maps(

@@ -30,3 +30,7 @@ flows:
         inputs:
           # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
           - question_prompt_template.prompt
+telemetry: 
+  id: telemetry_sink
+  endpoint: "https://localhost:6666/telemetry"
+  auth: openai_auth

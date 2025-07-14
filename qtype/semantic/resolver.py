@@ -48,7 +48,7 @@ def to_semantic_ir(
         )
 
     if dslobj is None:
-        # If the object is None, we return None.
+        # If the object is None, return it
         return None
 
     if isinstance(dslobj, list):
@@ -66,60 +66,62 @@ def to_semantic_ir(
         }  # type: ignore
 
     if _is_dsl_type(type(dslobj)) and obj_id is not None:
+        # If the object is a DSL type and has an ID, we will resolve it to the semantic IR.
         # Get the type name of the DSL object
         type_name = dsl_to_semantic_type_name(type(dslobj))
-        if isinstance(dslobj, str) and type_name != "str":
-            # we need to lookup the type in the DSL lookup table
-            if dslobj in dsl_lookup_table:
-                return to_semantic_ir(
-                    dsl_lookup_table[dslobj], symbol_table, dsl_lookup_table
+        # Get the constructor for the type
+        constructor = getattr(ir, type_name)
+        # Handle the parameters
+        params = {}
+        for param_name, param in constructor.model_fields.items():
+            if type_name == "TelemetrySink":
+                pass
+            if param_name not in {"self"}:
+                # If the parameter is not self, we will resolve it.
+                param_value = getattr(dslobj, param_name)
+                semantic_type_name = dsl_to_semantic_type_name(
+                    param.annotation
                 )
-            else:
-                raise SemanticResolutionError(
-                    f"Could not find object with id: {dslobj}"
-                )
-        else:
-            # Get the constructor for the type
-            constructor = getattr(ir, type_name)
-            # Handle the parameters
-            params = {}
-            for param_name, param in constructor.model_fields.items():
-                if param_name not in {"self"}:
-                    # If the parameter is not self, we will resolve it.
-                    param_value = getattr(dslobj, param_name)
-                    semantic_type_name = dsl_to_semantic_type_name(
-                        param.annotation
-                    )
-                    if semantic_type_name.startswith("list["):
-                        if param_value is None:
-                            # If the parameter is None but the annotation is a list, we will use an empty list.
-                            params[param_name] = []
-                        else:
-                            params[param_name] = to_semantic_ir(
-                                param_value, symbol_table, dsl_lookup_table
-                            )
-                    elif semantic_type_name.startswith("dict["):
-                        if param_value is None:
-                            # If the parameter is None but the annotation is a dict, we will use an empty dict.
-                            params[param_name] = {}
-                        else:
-                            params[param_name] = to_semantic_ir(
-                                param_value, symbol_table, dsl_lookup_table
-                            )
+                if semantic_type_name.startswith("list["):
+                    if param_value is None:
+                        # If the parameter is None but the annotation is a list, we will use an empty list.
+                        params[param_name] = []
                     else:
-                        # resolve the parameter value
-                        if _is_dsl_type(type(param_value)):
-                            params[param_name] = to_semantic_ir(
-                                param_value, symbol_table, dsl_lookup_table
-                            )
-                        else:
-                            # If the parameter is not a DSL type, we will just use the value as is.
-                            params[param_name] = param_value
-            # Create the semantic object using the constructor and the resolved parameters
-            result = constructor(**params)
-            symbol_table[obj_id] = result
-            return result
+                        params[param_name] = to_semantic_ir(
+                            param_value, symbol_table, dsl_lookup_table
+                        )
+                elif semantic_type_name.startswith("dict["):
+                    if param_value is None:
+                        # If the parameter is None but the annotation is a dict, we will use an empty dict.
+                        params[param_name] = {}
+                    else:
+                        params[param_name] = to_semantic_ir(
+                            param_value, symbol_table, dsl_lookup_table
+                        )
+                elif semantic_type_name != "str" and isinstance(param_value, str) and param_value in dsl_lookup_table:
+                    # We've hit a reference in the DSL, so we will resolve it.
+                    params[param_name] = to_semantic_ir(
+                        dsl_lookup_table[param_value],
+                        symbol_table,
+                        dsl_lookup_table,
+                    )
+                else:
+                    # resolve the parameter value if it's a DSL type
+                    if _is_dsl_type(type(param_value)):
+                        params[param_name] = to_semantic_ir(
+                            param_value, symbol_table, dsl_lookup_table
+                        )
+                    else:
+                        # If the parameter is not a DSL type, we will just use the value as is.
+                        params[param_name] = param_value
+        # Create the semantic object using the constructor and the resolved parameters
+        result = constructor(**params)
+        # Save it in the symbol table so it is not created again.
+        symbol_table[obj_id] = result
+        return result
     else:
+        # Just return the object as is since we don't know how to resolve it.
+        # It is likely an enum or a primitive type.
         return dslobj
 
 
