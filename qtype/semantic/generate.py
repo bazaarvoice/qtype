@@ -2,10 +2,10 @@ import argparse
 import inspect
 from pathlib import Path
 from typing import Any, Union, get_origin, get_args
+import subprocess
 
 import qtype.dsl.model as dsl
 import networkx as nx  # Add this dependency for topological sorting
-
 
 TYPES_TO_IGNORE = {
     "Document",
@@ -17,9 +17,23 @@ TYPES_TO_IGNORE = {
     "DecoderFormat",
 }
 
+# These types are used only for the DSL and should not be converted to semantic types
+# They are used for JSON schema generation
+# They will be switched to their semantic abstract class in the generation.
+# i.e., `ToolType` will be switched to `Tool`
+DSL_ONLY_UNION_TYPES = {
+    get_args(dsl.ToolType): "Tool",
+    get_args(dsl.StepType): "Step",
+    get_args(dsl.IndexType): "Index",
+    get_args(dsl.ModelType): "Model",
+}
+
 FIELDS_TO_IGNORE = {"Application.references"}
 
-def sort_classes_by_inheritance(classes: list[tuple[str, type]]) -> list[tuple[str, type]]:
+
+def sort_classes_by_inheritance(
+    classes: list[tuple[str, type]],
+) -> list[tuple[str, type]]:
     """Sort classes based on their inheritance hierarchy."""
     graph = nx.DiGraph()
     class_dict = dict(classes)
@@ -40,6 +54,7 @@ def sort_classes_by_inheritance(classes: list[tuple[str, type]]) -> list[tuple[s
 
     # sorted_names = sorted(graph.nodes, key=lambda node: depths[node])
     return [(name, class_dict[name]) for name in sorted_names]
+
 
 def generate_semantic_model(args: argparse.Namespace) -> None:
     """Generate semantic model classes from DSL model classes.
@@ -69,9 +84,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         generate_semantic_class(class_name, cls)
         for class_name, cls in sorted_classes
     ]
-
-    # Generate union types
-    union_types = generate_union_types()
 
     # Write to output file
     with open(output_path, "w") as f:
@@ -103,13 +115,22 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("\n\n".join(generated))
         f.write("\n\n")
 
-        # Write union types
-        f.write(union_types)
+    # Format the file with Ruff
+    format_with_ruff(str(output_path))
+
+
+def format_with_ruff(file_path: str) -> None:
+    """Format the given file using Ruff."""
+    try:
+        subprocess.run(["ruff", "check", "--fix", file_path], check=True)
+        subprocess.run(["ruff", "format", file_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error while formatting with Ruff: {e}")
 
 
 def generate_semantic_class(class_name: str, cls: type) -> str:
     """Generate a semantic class from a DSL class."""
-    semantic_name = f"Semantic{class_name}"
+    semantic_name = f"{class_name}"
 
     # Get class docstring
     docstring = cls.__doc__ or f"Semantic version of {class_name}."
@@ -128,7 +149,7 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
             and not base.__name__.startswith("_")
         ):
             # This class inherits from another DSL class
-            semantic_base = f"Semantic{base.__name__}"
+            semantic_base = f"{base.__name__}"
             if inspect.isabstract(cls):
                 inheritance = f"ABC, {semantic_base}"
             else:
@@ -241,7 +262,7 @@ def transform_field_type(field_type: Any, field_name: str) -> str:
     if hasattr(field_type, "__name__"):
         type_name = field_type.__name__
         if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
-            return f"Semantic{type_name}"
+            return type_name
         if type_name == "NoneType":
             return "None"
         return type_name
@@ -251,12 +272,29 @@ def transform_field_type(field_type: Any, field_name: str) -> str:
 
 def transform_union_type(args: tuple, field_name: str) -> str:
     """Transform Union types, handling string ID references."""
+
+    args_without_str_none = tuple(
+        arg for arg in args if arg is not str and arg is not type(None)
+    )
+    has_none = any(arg is type(None) for arg in args)
+    has_str = any(arg is str for arg in args)
+
+    # First see if this is a DSL-only union type
+    # If so, just return the corresponding semantic type
+    if args_without_str_none in DSL_ONLY_UNION_TYPES:
+        if has_none:
+            # If we have a DSL type and None, we return the DSL type with None
+            return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
+        else:
+            # Note we don't handle the case where we have a DSL type and str,
+            # because that would indicate a reference to an ID, which we handle separately.
+            return DSL_ONLY_UNION_TYPES[args_without_str_none]
+
     # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
     if len(args) == 2:
         list_elems = [
             arg for arg in args if get_origin(arg) in set([list, dict])
         ]
-        has_none = any(arg is type(None) for arg in args)
         if len(list_elems) > 0 and has_none:
             # If we have a list and None, we return the list type
             # This is to handle cases like List[SomeType] | None
@@ -264,9 +302,7 @@ def transform_union_type(args: tuple, field_name: str) -> str:
             return transform_field_type(list_elems[0], field_name)
 
     # If the union contains a DSL type and a str, we need to drop the str
-    if any(_is_dsl_type(arg) for arg in args) and any(
-        arg is str for arg in args
-    ):
+    if any(_is_dsl_type(arg) for arg in args) and has_str:
         # There is a DSL type and a str, which indicates something that can reference an ID.
         # drop the str
         args = tuple(arg for arg in args if arg is not str)
@@ -289,19 +325,26 @@ def create_field_definition(
     # Handle default values
     # Check for PydanticUndefined (required field)
     from pydantic_core import PydanticUndefined
+    from enum import Enum
 
     if field_default is PydanticUndefined or field_default is ...:
         default_part = "..."
     elif field_default is None:
         default_part = "None"
+    elif isinstance(field_default, Enum):
+        # Handle enum values (like DecoderFormat.json) - check this before str since some enums inherit from str
+        enum_class_name = field_default.__class__.__name__
+        enum_value_name = field_default.name
+        default_part = f"{enum_class_name}.{enum_value_name}"
     elif isinstance(field_default, str):
         default_part = f'"{field_default}"'
-    elif hasattr(field_default, "__name__"):  # Enum or callable
-        # Handle enum defaults properly
+    elif hasattr(
+        field_default, "__name__"
+    ):  # Callable or other objects with names
+        # Handle other defaults with names
         if hasattr(field_default, "__module__") and hasattr(
             field_default, "__qualname__"
         ):
-            # For enums like DecoderFormat.json, use the qualified name
             default_part = f"{field_default.__qualname__}"
         else:
             default_part = str(field_default)
@@ -322,27 +365,3 @@ def create_field_definition(
     field_def = f"Field({', '.join(field_parts)})"
 
     return f"    {field_name}: {field_type} = {field_def}"
-
-
-def generate_union_types() -> str:
-    """Generate union type definitions."""
-    return """# Union types for semantic models
-SemanticToolType = SemanticAPITool | SemanticPythonFunctionTool
-
-SemanticStepType = (
-    SemanticAgent |
-    SemanticAPITool |
-    SemanticCondition |
-    SemanticDecoder |
-    SemanticDocumentSearch |
-    SemanticFlow |
-    SemanticLLMInference |
-    SemanticPromptTemplate |
-    SemanticPythonFunctionTool |
-    SemanticVectorSearch
-)
-
-SemanticIndexType = SemanticDocumentIndex | SemanticVectorIndex
-
-SemanticModelType = SemanticEmbeddingModel | SemanticModel
-"""
