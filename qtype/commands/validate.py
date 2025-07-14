@@ -11,7 +11,8 @@ from pydantic import BaseModel, ValidationError
 
 from qtype import dsl
 from qtype.dsl.loader import load
-from qtype.semantic.resolver import SemanticResolutionError, resolve
+from qtype.semantic.errors import SemanticResolutionError
+from qtype.semantic.resolver import resolve
 
 logger = logging.getLogger(__name__)
 

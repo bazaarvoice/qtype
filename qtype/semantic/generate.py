@@ -1,32 +1,16 @@
 import argparse
 import inspect
 from pathlib import Path
-from typing import Any, Union, get_origin, get_args
+from typing import Any
 import subprocess
 
 import qtype.dsl.model as dsl
-import networkx as nx  # Add this dependency for topological sorting
+import networkx as nx
 
-TYPES_TO_IGNORE = {
-    "Document",
-    "StrictBaseModel",
-    "VariableTypeEnum",
-    "DecoderFormat",
-    "VariableTypeEnum",
-    "VariableType",
-    "DecoderFormat",
-}
-
-# These types are used only for the DSL and should not be converted to semantic types
-# They are used for JSON schema generation
-# They will be switched to their semantic abstract class in the generation.
-# i.e., `ToolType` will be switched to `Tool`
-DSL_ONLY_UNION_TYPES = {
-    get_args(dsl.ToolType): "Tool",
-    get_args(dsl.StepType): "Step",
-    get_args(dsl.IndexType): "Index",
-    get_args(dsl.ModelType): "Model",
-}
+from qtype.semantic.validator import (
+    TYPES_TO_IGNORE,
+)
+from qtype.semantic.validator import dsl_to_semantic_type_name  # Add this dependency for topological sorting
 
 FIELDS_TO_IGNORE = {"Application.references"}
 
@@ -171,7 +155,7 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
                 field_description = getattr(field_info, "description", None)
 
                 # Transform the field type
-                semantic_type = transform_field_type(field_type, field_name)
+                semantic_type = dsl_to_semantic_type_name(field_type)
 
                 # Check if we should change the default of `None` to `[]` if the type is a list
                 if field_default is None and semantic_type.startswith("list["):
@@ -208,106 +192,6 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
         lines.append("    pass")
 
     return "\n".join(lines)
-
-
-def _is_dsl_type(type_obj: Any) -> bool:
-    """Check if a type is a DSL type that should be converted to semantic."""
-    if not hasattr(type_obj, "__name__"):
-        return False
-
-    # Check if it's defined in the DSL module
-    return (
-        hasattr(type_obj, "__module__")
-        and type_obj.__module__ == dsl.__name__
-        and not type_obj.__name__.startswith("_")
-    )
-
-
-def transform_field_type(field_type: Any, field_name: str) -> str:
-    """Transform a DSL field type to a semantic field type."""
-
-    # Handle ForwardRef objects
-    if hasattr(field_type, "__forward_arg__"):
-        # Extract the string from ForwardRef and process it
-        forward_ref_str = field_type.__forward_arg__
-        actual_type = eval(forward_ref_str, dict(vars(dsl)))
-        return transform_field_type(actual_type, field_name)
-
-    # Handle Union types (including | syntax)
-    origin = get_origin(field_type)
-    args = get_args(field_type)
-
-    if origin is Union or (
-        hasattr(field_type, "__class__")
-        and field_type.__class__.__name__ == "UnionType"
-    ):
-        return transform_union_type(args, field_name)
-
-    # Handle list types
-    if origin is list:
-        if args:
-            inner_type = transform_field_type(args[0], field_name)
-            return f"list[{inner_type}]"
-        return "list"
-
-    # Handle dict types
-    if origin is dict:
-        if len(args) == 2:
-            key_type = transform_field_type(args[0], field_name)
-            value_type = transform_field_type(args[1], field_name)
-            return f"dict[{key_type}, {value_type}]"
-        return "dict"
-
-    # Handle basic types
-    if hasattr(field_type, "__name__"):
-        type_name = field_type.__name__
-        if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
-            return type_name
-        if type_name == "NoneType":
-            return "None"
-        return type_name
-
-    return str(field_type)
-
-
-def transform_union_type(args: tuple, field_name: str) -> str:
-    """Transform Union types, handling string ID references."""
-
-    args_without_str_none = tuple(
-        arg for arg in args if arg is not str and arg is not type(None)
-    )
-    has_none = any(arg is type(None) for arg in args)
-    has_str = any(arg is str for arg in args)
-
-    # First see if this is a DSL-only union type
-    # If so, just return the corresponding semantic type
-    if args_without_str_none in DSL_ONLY_UNION_TYPES:
-        if has_none:
-            # If we have a DSL type and None, we return the DSL type with None
-            return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
-        else:
-            # Note we don't handle the case where we have a DSL type and str,
-            # because that would indicate a reference to an ID, which we handle separately.
-            return DSL_ONLY_UNION_TYPES[args_without_str_none]
-
-    # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
-    if len(args) == 2:
-        list_elems = [
-            arg for arg in args if get_origin(arg) in set([list, dict])
-        ]
-        if len(list_elems) > 0 and has_none:
-            # If we have a list and None, we return the list type
-            # This is to handle cases like List[SomeType] | None
-            # which in the DSL is needed, but here we will just have an empty list.
-            return transform_field_type(list_elems[0], field_name)
-
-    # If the union contains a DSL type and a str, we need to drop the str
-    if any(_is_dsl_type(arg) for arg in args) and has_str:
-        # There is a DSL type and a str, which indicates something that can reference an ID.
-        # drop the str
-        args = tuple(arg for arg in args if arg is not str)
-
-    return " | ".join(transform_field_type(a, field_name) for a in args)
 
 
 def create_field_definition(

@@ -1,6 +1,9 @@
 id: hello_world_app
 description: "A simple hello world application that answers user questions using GPT-4"
 
+variables:
+  - id: user_question
+    type: text
 flows:
   - id: simple_qa_flow
     steps:
@@ -10,10 +13,9 @@ flows:
           Answer the following question:
           {{ user_question }}
         inputs:
-          - id: user_question
-            type: text
+          - user_question
       - id: llm_inference_step
-        model: 
+        model:
           id: gpt4
           provider: openai
           model_id: gpt-4o

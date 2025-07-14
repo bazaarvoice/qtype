@@ -1,544 +1,349 @@
 """
-Semantic validation for QType intermediate representation (IR).
+Semantic resolution logic for QType.
 
-This module validates QTypeSpec objects for internal consistency, referential
-integrity, and adherence to semantic rules defined in the QType specification.
+This module contains functions to transform DSL QTypeSpec objects into their
+semantic intermediate representation equivalents, where all ID references
+are resolved to actual object references.
 """
 
-from __future__ import annotations
+import inspect
+from typing import Any, Dict, Union, get_args, get_origin
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Set
+import qtype.dsl.model as dsl
+from qtype.semantic.errors import SemanticResolutionError
 
-from qtype.dsl.model import Agent, QTypeSpec, Tool
-from qtype.semantic.model import EmbeddingModel, Step
 
-
-class SemanticValidationError(Exception):
-    """Raised when semantic validation fails on a QTypeSpec."""
-
-    def __init__(self, errors: List[str]) -> None:
-        super().__init__("Semantic validation failed")
-        self.errors = errors
-
-    def __str__(self) -> str:
-        return "\n".join(self.errors)
-
-
-@dataclass(frozen=True)
-class ComponentRegistry:
-    """Registry of component IDs organized by type for efficient lookups."""
-
-    models: Dict[str, Any]
-    inputs: Dict[str, Any]
-    prompts: Dict[str, Any]
-    outputs: Dict[str, Any]
-    memory: Dict[str, Any]
-    tool_providers: Dict[str, Any]
-    auth_providers: Dict[str, Any]
-    feedback: Dict[str, Any]
-    retrievers: Dict[str, Any]
-    flows: Dict[str, Any]
-    steps: Dict[str, Any]
-    tools: Dict[str, Any]
-    telemetry: Dict[str, Any]
-
-
-class SemanticValidator:
-    """Validates semantic rules for QType specifications."""
-
-    def __init__(self) -> None:
-        self._errors: List[str] = []
-
-    def validate(self, spec: QTypeSpec) -> None:
-        """
-        Validate a QTypeSpec for semantic correctness.
-
-        Args:
-            spec: The QType specification to validate
-
-        Raises:
-            SemanticValidationError: If validation fails with detailed errors
-        """
-        self._errors.clear()
-        registry = self._build_component_registry(spec)
-
-        # Execute all validation rules
-        self._validate_unique_ids(spec, registry)
-        self._validate_referential_integrity(spec, registry)
-        self._validate_flows(spec, registry)
-        self._validate_memory_usage(spec, registry)
-        self._validate_tooling(spec, registry)
-        self._validate_models(spec, registry)
-        self._validate_prompts(spec, registry)
-        self._validate_circular_dependencies(spec, registry)
-
-        if self._errors:
-            raise SemanticValidationError(self._errors)
-
-    def _build_component_registry(self, spec: QTypeSpec) -> ComponentRegistry:
-        """Build a registry of all components indexed by ID."""
-        registry = ComponentRegistry(
-            models={m.id: m for m in spec.models or []},
-            inputs={i.id: i for i in spec.variables or []},
-            prompts={p.id: p for p in spec.prompts or []},
-            outputs={},
-            memory={m.id: m for m in spec.memory or []},
-            tool_providers={tp.id: tp for tp in spec.tool_providers or []},
-            auth_providers={a.id: a for a in spec.auth or []},
-            feedback={f.id: f for f in spec.feedback or []},
-            retrievers={r.id: r for r in spec.retrievers or []},
-            flows={f.id: f for f in spec.flows or []},
-            steps={},
-            tools={},
-            telemetry={t.id: t for t in spec.telemetry or []},
-        )
-
-        self._collect_nested_components(spec, registry)
-        return registry
-
-    def _collect_nested_components(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Collect tools, outputs, and steps from nested structures."""
-        # Collect tools from tool providers - allow same ID across providers
-        tool_ids_by_provider: Dict[str, Set[str]] = {}
-        for tool_provider in spec.tool_providers or []:
-            provider_tool_ids = set()
-            for tool in tool_provider.tools or []:
-                if tool.id in provider_tool_ids:
-                    self._errors.append(
-                        f"Duplicate Tool.id: {tool.id} in provider {tool_provider.id}"
-                    )
-                provider_tool_ids.add(tool.id)
-                # Store tools with provider prefix to avoid global collisions
-                registry.tools[f"{tool_provider.id}:{tool.id}"] = tool
-            tool_ids_by_provider[tool_provider.id] = provider_tool_ids
-
-        # Collect output variables from prompts
-        for prompt in spec.prompts or []:
-            for output_var in prompt.outputs or []:
-                if output_var in registry.outputs:
-                    self._errors.append(f"Duplicate Variable.id: {output_var}")
-                registry.outputs[output_var] = None
-
-        # Collect steps from flows and their output variables
-        # TODO: Update step validation for new DSL structure
-        # The DSL has changed significantly - Agent and Tool no longer have component field
-        # and Tool doesn't inherit from Actionable, so it doesn't have inputs/outputs
-        # For now, just collect step IDs to prevent duplicates
-        for flow in spec.flows or []:
-            for step in flow.steps:
-                if isinstance(step, (Agent, Tool)):
-                    if step.id in registry.steps:
-                        self._errors.append(f"Duplicate Step.id: {step.id}")
-                    registry.steps[step.id] = step
-
-    def _validate_unique_ids(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Ensure all IDs are unique within their component categories."""
-        # Check each component type for duplicates
-        self._check_component_duplicates(
-            "Model", [m.id for m in spec.models or []]
-        )
-        self._check_component_duplicates(
-            "Variable", [i.id for i in spec.variables or []]
-        )
-        self._check_component_duplicates(
-            "Prompt", [p.id for p in spec.prompts or []]
-        )
-        self._check_component_duplicates(
-            "Memory", [m.id for m in spec.memory or []]
-        )
-        self._check_component_duplicates(
-            "ToolProvider", [tp.id for tp in spec.tool_providers or []]
-        )
-        self._check_component_duplicates(
-            "AuthorizationProvider", [a.id for a in spec.auth or []]
-        )
-        self._check_component_duplicates(
-            "Feedback", [f.id for f in spec.feedback or []]
-        )
-        self._check_component_duplicates(
-            "Retriever", [r.id for r in spec.retrievers or []]
-        )
-        self._check_component_duplicates(
-            "Flow", [f.id for f in spec.flows or []]
-        )
-        self._check_component_duplicates(
-            "TelemetrySink", [t.id for t in spec.telemetry or []]
-        )
-        # Tools and steps are checked separately in _collect_nested_components
-
-    def _check_component_duplicates(
-        self, component_type: str, component_ids: List[str]
-    ) -> None:
-        """Check for duplicate IDs in a component type."""
-        seen_ids = set()
-        for component_id in component_ids:
-            if component_id in seen_ids:
-                self._errors.append(
-                    f"Duplicate {component_type}.id: {component_id}"
-                )
-            seen_ids.add(component_id)
-
-    def _validate_referential_integrity(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that all component references point to existing components."""
-        self._validate_prompt_references(spec, registry)
-        self._validate_step_references(spec, registry)
-        self._validate_retriever_references(spec, registry)
-        self._validate_memory_references(spec, registry)
-        self._validate_tool_provider_references(spec, registry)
-        self._validate_telemetry_references(spec, registry)
-        self._validate_flow_references(spec, registry)
-        self._validate_flow_references(spec, registry)
-
-    def _validate_prompt_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that prompt input/output variables reference existing components."""
-        for prompt in spec.prompts or []:
-            for input_var in prompt.inputs:
-                if input_var not in registry.inputs:
-                    self._errors.append(
-                        f"Prompt '{prompt.id}' references non-existent "
-                        f"input variable '{input_var}'"
-                    )
-
-            for output_var in prompt.outputs or []:
-                if output_var not in registry.outputs:
-                    self._errors.append(
-                        f"Prompt '{prompt.id}' references non-existent "
-                        f"output variable '{output_var}'"
-                    )
-
-    def _validate_step_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that step components and variables reference existing components."""
-        for flow in spec.flows or []:
-            for step in flow.steps:
-                if not isinstance(step, Step):
-                    continue
-
-                # Validate step component exists
-                component_found = False
-                if step.component in registry.prompts:
-                    component_found = True
-                elif step.component in registry.flows:
-                    component_found = True
-                elif step.component in registry.retrievers:
-                    component_found = True
-                else:
-                    # Check if it's a tool (stored with provider prefix)
-                    for tool_key in registry.tools:
-                        if (
-                            ":" in tool_key
-                            and tool_key.split(":", 1)[1] == step.component
-                        ):
-                            component_found = True
-                            break
-
-                if not component_found:
-                    self._errors.append(
-                        f"Step '{step.id}' references non-existent "
-                        f"component '{step.component}'"
-                    )
-
-                # Validate step variables
-                for input_var in step.inputs or []:
-                    if input_var not in registry.inputs:
-                        self._errors.append(
-                            f"Step '{step.id}' references non-existent "
-                            f"input variable '{input_var}'"
-                        )
-
-                for output_var in step.outputs or []:
-                    if output_var not in registry.outputs:
-                        self._errors.append(
-                            f"Step '{step.id}' references non-existent "
-                            f"output variable '{output_var}'"
-                        )
-
-    def _validate_retriever_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that retrievers reference valid embedding models."""
-        for retriever in registry.retrievers.values():
-            if not hasattr(retriever, "embedding_model"):
-                continue
-
-            embedding_model_id = retriever.embedding_model
-            if hasattr(embedding_model_id, "id"):
-                embedding_model_id = embedding_model_id.id
-
-            if embedding_model_id not in registry.models:
-                self._errors.append(
-                    f"Retriever '{retriever.id}' references non-existent "
-                    f"embedding model '{embedding_model_id}'"
-                )
-                continue
-
-            # Validate embedding model type
-            embedding_model = registry.models[embedding_model_id]
-            if not isinstance(embedding_model, EmbeddingModel):
-                self._errors.append(
-                    f"Retriever '{retriever.id}' embedding_model must be "
-                    f"an instance of EmbeddingModel"
-                )
-
-    def _validate_memory_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that memory components reference valid embedding models."""
-        for memory in spec.memory or []:
-            if memory.embedding_model not in registry.models:
-                self._errors.append(
-                    f"Memory '{memory.id}' references non-existent "
-                    f"embedding model '{memory.embedding_model}'"
-                )
-
-    def _validate_tool_provider_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that tool providers reference valid auth providers."""
-        for tool_provider in spec.tool_providers or []:
-            if (
-                tool_provider.auth
-                and tool_provider.auth not in registry.auth_providers
-            ):
-                self._errors.append(
-                    f"ToolProvider '{tool_provider.id}' references non-existent "
-                    f"auth provider '{tool_provider.auth}'"
-                )
-
-    def _validate_telemetry_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that telemetry sinks reference valid auth providers."""
-        for telemetry_sink in spec.telemetry or []:
-            if (
-                telemetry_sink.auth
-                and telemetry_sink.auth not in registry.auth_providers
-            ):
-                self._errors.append(
-                    f"TelemetrySink '{telemetry_sink.id}' references non-existent "
-                    f"auth provider '{telemetry_sink.auth}'"
-                )
-
-    def _validate_flow_references(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate that flows reference valid inputs, outputs, and memory."""
-        for flow in spec.flows or []:
-            # Validate flow inputs
-            for input_id in flow.inputs or []:
-                if input_id not in registry.inputs:
-                    self._errors.append(
-                        f"Flow '{flow.id}' references non-existent "
-                        f"input variable '{input_id}'"
-                    )
-
-            # Validate flow outputs
-            for output_id in flow.outputs or []:
-                if output_id not in registry.outputs:
-                    self._errors.append(
-                        f"Flow '{flow.id}' references non-existent "
-                        f"output '{output_id}'"
-                    )
-
-            # Validate flow memory references
-            for memory_id in flow.memory or []:
-                if memory_id not in registry.memory:
-                    self._errors.append(
-                        f"Flow '{flow.id}' references non-existent "
-                        f"memory '{memory_id}'"
-                    )
-
-    def _validate_flows(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate flow structure and rules."""
-        for flow in spec.flows or []:
-            self._validate_flow_steps(flow, registry)
-            self._validate_flow_conditions(flow, registry)
-            self._validate_flow_memory_rules(flow)
-
-    def _validate_flow_steps(
-        self, flow: Any, registry: ComponentRegistry
-    ) -> None:
-        """Validate flow step uniqueness and references."""
-        step_ids: Set[str] = set()
-
-        for step in flow.steps:
-            if isinstance(step, Step):
-                if step.id in step_ids:
-                    self._errors.append(
-                        f"Duplicate Step.id '{step.id}' in Flow '{flow.id}'"
-                    )
-                step_ids.add(step.id)
-            elif isinstance(step, str):
-                if step not in registry.flows:
-                    self._errors.append(
-                        f"Flow '{flow.id}' references non-existent "
-                        f"nested flow '{step}'"
-                    )
-
-    def _validate_flow_conditions(
-        self, flow: Any, registry: ComponentRegistry
-    ) -> None:
-        """Validate flow conditional logic references."""
-        for condition in flow.conditions or []:
-            step_ids = {
-                step.id for step in flow.steps if isinstance(step, Step)
-            }
-
-            for then_id in condition.then:
-                if then_id not in step_ids and then_id not in registry.flows:
-                    self._errors.append(
-                        f"Condition in Flow '{flow.id}' references non-existent "
-                        f"step '{then_id}'"
-                    )
-
-            for else_id in condition.else_ or []:
-                if else_id not in step_ids and else_id not in registry.flows:
-                    self._errors.append(
-                        f"Condition in Flow '{flow.id}' references non-existent "
-                        f"step '{else_id}'"
-                    )
-
-    def _validate_flow_memory_rules(self, flow: Any) -> None:
-        """Validate flow memory rules based on mode."""
-        if flow.mode == "chat":
-            if not flow.memory:
-                self._errors.append(
-                    f"Flow '{flow.id}' with mode 'chat' must define memory"
-                )
-        else:
-            if flow.memory:
-                self._errors.append(
-                    f"Flow '{flow.id}' with mode '{flow.mode}' "
-                    f"must not define memory"
-                )
-
-    def _validate_memory_usage(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Ensure Memory IDs are not misused as Step components."""
-        memory_ids = {memory.id for memory in spec.memory or []}
-
-        for flow in spec.flows or []:
-            for step in flow.steps:
-                if isinstance(step, Step) and step.component in memory_ids:
-                    self._errors.append(
-                        f"Memory '{step.component}' cannot be used as a "
-                        f"Step component in Flow '{flow.id}'. "
-                        f"Use retrievers for step-level operations."
-                    )
-
-    def _validate_tooling(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate tool provider and tool constraints."""
-        for tool_provider in spec.tool_providers or []:
-            self._validate_tool_uniqueness(tool_provider)
-            self._validate_tool_schemas(tool_provider)
-
-    def _validate_tool_uniqueness(self, tool_provider: Any) -> None:
-        """Validate tool ID and name uniqueness within a provider."""
-        tool_names: Set[str] = set()
-        tool_ids: Set[str] = set()
-
-        for tool in tool_provider.tools or []:
-            if tool.id in tool_ids:
-                self._errors.append(
-                    f"Duplicate Tool.id '{tool.id}' in "
-                    f"ToolProvider '{tool_provider.id}'"
-                )
-            tool_ids.add(tool.id)
-
-            if tool.name in tool_names:
-                self._errors.append(
-                    f"Duplicate Tool.name '{tool.name}' in "
-                    f"ToolProvider '{tool_provider.id}'"
-                )
-            tool_names.add(tool.name)
-
-    def _validate_tool_schemas(self, tool_provider: Any) -> None:
-        """Validate that tools have required schemas."""
-        for tool in tool_provider.tools or []:
-            if not tool.input_schema or not tool.output_schema:
-                self._errors.append(
-                    f"Tool '{tool.id}' in ToolProvider '{tool_provider.id}' "
-                    f"must define both input_schema and output_schema"
-                )
-
-    def _validate_models(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate model constraints and embedding model rules."""
-        # EmbeddingModel inherits from Model, so it can have inference_params
-        # No specific validation needed for now
-        pass
-
-    def _validate_prompts(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Validate prompt template/path requirements."""
-        for prompt in spec.prompts or []:
-            has_template = prompt.template is not None
-            has_path = prompt.path is not None
-
-            if has_template == has_path:  # Both true or both false
-                self._errors.append(
-                    f"Prompt '{prompt.id}' must define either template "
-                    f"or path, but not both"
-                )
-
-    def _validate_circular_dependencies(
-        self, spec: QTypeSpec, registry: ComponentRegistry
-    ) -> None:
-        """Detect circular references in flow dependencies."""
-        for flow in spec.flows or []:
-            self._detect_circular_flow_reference(flow.id, set(), registry)
-
-    def _detect_circular_flow_reference(
-        self, flow_id: str, visited: Set[str], registry: ComponentRegistry
-    ) -> None:
-        """Recursively detect circular flow references."""
-        if flow_id in visited:
-            self._errors.append(
-                f"Circular reference detected in Flow '{flow_id}'"
-            )
-            return
-
-        flow = registry.flows.get(flow_id)
-        if not flow:
-            return
-
-        visited.add(flow_id)
-
-        for step in flow.steps:
-            if isinstance(step, str):  # Nested flow reference
-                self._detect_circular_flow_reference(
-                    step, visited.copy(), registry
-                )
-
-
-def validate_semantics(spec: QTypeSpec) -> None:
+def _update_map_with_unique_check(
+    current_map: Dict[str, dsl.StrictBaseModel],
+    new_objects,
+) -> None:
     """
-    Validate a QTypeSpec for semantic correctness.
-
-    This function provides a convenient interface to the SemanticValidator class.
+    Update a map with new objects, ensuring unique IDs.
 
     Args:
-        spec: The QType specification to validate
+        current_map: The current map of objects by ID.
+        new_objects: List of new objects to add to the map.
 
-    Raises:
-        SemanticValidationError: If validation fails with detailed errors
+    Returns:
+        Updated map with new objects added, ensuring unique IDs.
     """
-    validator = SemanticValidator()
-    validator.validate(spec)
+    for obj in new_objects:
+        if obj is None:
+            # If the object is None, we skip it.
+            continue
+        if isinstance(obj, str):
+            # If the object is a string, we assume it is an ID and skip it.
+            # This is a special case where we do not want to add the string itself.
+            continue
+        # Note: There is no current abstraction for the `id` field, so we assume it exists.
+        obj_id = obj.id
+        # If the object already exists in the map, we check if it is the same object.
+        # If it is not the same object, we raise an error.
+        # This ensures that we do not have duplicate components with the same ID.
+        if obj_id in current_map and id(current_map[obj_id]) != id(obj):
+            raise SemanticResolutionError(
+                f"Duplicate components with '{obj_id}' found:\n{obj.model_dump_json()}\nAlready exists:\n{current_map[obj_id].model_dump_json()}"
+            )
+        else:
+            current_map[obj_id] = obj
+
+
+def _update_maps_with_embedded_objects(
+    lookup_map: Dict[str, dsl.StrictBaseModel],
+    embedded_objects,
+) -> None:
+    """
+    Update lookup maps with embedded objects.
+    Embedded objects are when the user specifies the object and not just the ID.
+    For example, a prompt template may have variables embedded:
+    ```yaml
+    steps:
+    - id: my_prompt
+       variables:
+         - id: my_var
+           type: text
+       outputs:
+         - id: my_output
+           type: text
+    ```
+
+    Args:
+        lookup_maps: The current lookup maps to update.
+        embedded_objects: List of embedded objects to add to the maps.
+    """
+    for obj in embedded_objects:
+        if isinstance(obj, dsl.Step):
+            # All steps have inputs and outputs
+            _update_map_with_unique_check(lookup_map, obj.inputs or [])  # type: ignore
+            _update_map_with_unique_check(lookup_map, obj.outputs or [])  # type: ignore
+            _update_map_with_unique_check(lookup_map, [obj])
+
+        if isinstance(obj, dsl.Model):
+            # note inputs/
+            _update_map_with_unique_check(lookup_map, [obj.auth])
+
+        if isinstance(obj, dsl.Condition):
+            # Conditions have inputs and outputs
+            _update_map_with_unique_check(lookup_map, [obj.then, obj.else_])
+            _update_map_with_unique_check(lookup_map, [obj.equals])
+            if obj.then and isinstance(obj.then, dsl.Step):
+                _update_maps_with_embedded_objects(lookup_map, obj.then)
+            if obj.else_ and isinstance(obj.else_, dsl.Step):
+                _update_maps_with_embedded_objects(lookup_map, obj.else_)
+
+        if isinstance(obj, dsl.APITool):
+            # API tools have inputs and outputs
+            _update_map_with_unique_check(lookup_map, [obj.auth])
+
+        if isinstance(obj, dsl.LLMInference):
+            # LLM Inference steps have inputs and outputs
+            _update_map_with_unique_check(lookup_map, [obj.model])
+            _update_map_with_unique_check(lookup_map, [obj.memory])
+
+        if isinstance(obj, dsl.Agent):
+            _update_map_with_unique_check(lookup_map, obj.tools or [])
+            _update_maps_with_embedded_objects(lookup_map, obj.tools or [])
+
+        if isinstance(obj, dsl.Flow):
+            _update_map_with_unique_check(lookup_map, [obj])
+            _update_map_with_unique_check(lookup_map, obj.steps or [])
+            _update_maps_with_embedded_objects(lookup_map, obj.steps or [])
+
+        if isinstance(obj, dsl.TelemetrySink):
+            # Telemetry sinks may have auth references
+            _update_map_with_unique_check(lookup_map, [obj.auth])
+
+        if isinstance(obj, dsl.Index):
+            # Indexes may have auth references
+            _update_map_with_unique_check(lookup_map, [obj.auth])
+
+        if isinstance(obj, dsl.VectorIndex):
+            if isinstance(obj.embedding_model, dsl.EmbeddingModel):
+                _update_map_with_unique_check(
+                    lookup_map, [obj.embedding_model]
+                )
+                _update_maps_with_embedded_objects(
+                    lookup_map, [obj.embedding_model]
+                )
+
+        if isinstance(obj, dsl.Search):
+            if isinstance(obj.index, dsl.Index):
+                _update_map_with_unique_check(lookup_map, [obj.index])
+                _update_maps_with_embedded_objects(lookup_map, [obj.index])
+
+        if isinstance(obj, dsl.AuthorizationProviderList):
+            # AuthorizationProviderList is a list of AuthorizationProvider objects
+            _update_map_with_unique_check(lookup_map, obj.root)
+            _update_maps_with_embedded_objects(lookup_map, obj.root)
+
+        if isinstance(obj, dsl.IndexList):
+            # IndexList is a list of Index objects
+            _update_map_with_unique_check(lookup_map, obj.root)
+            _update_maps_with_embedded_objects(lookup_map, obj.root)
+
+        if isinstance(obj, dsl.ModelList):
+            # ModelList is a list of Model objects
+            _update_map_with_unique_check(lookup_map, obj.root)
+            _update_maps_with_embedded_objects(lookup_map, obj.root)
+
+        if isinstance(obj, dsl.ToolList):
+            # ToolList is a list of Tool objects
+            _update_map_with_unique_check(lookup_map, obj.root)
+            _update_maps_with_embedded_objects(lookup_map, obj.root)
+
+        if isinstance(obj, dsl.VariableList):
+            # VariableList is a list of Variable objects
+            _update_map_with_unique_check(lookup_map, obj.root)
+
+
+def _build_lookup_maps(
+    dsl_application: dsl.Application,
+    lookup_map: Dict[str, dsl.StrictBaseModel] | None = None,
+) -> Dict[str, dsl.StrictBaseModel]:
+    """
+    Build lookup map for all objects in the DSL Application.
+    This function creates a dictionary of id -> component, where each key is a
+    component id and the value is the component.
+    Args:
+        dsl_application: The DSL Application to build lookup maps for.
+    Returns:
+        Dict[str, dsl.StrictBaseModel]: A dictionary of lookup maps
+    Throws:
+        SemanticResolutionError: If there are duplicate components with the same ID.
+    """
+    component_names = {
+        f
+        for f in dsl.Application.model_fields.keys()
+        if f not in set(["id", "references"])
+    }
+
+    if lookup_map is None:
+        lookup_map = {}
+
+    for component_name in component_names:
+        if not hasattr(dsl_application, component_name):
+            raise SemanticResolutionError(
+                f"Component '{component_name}' not found in the DSL Application."
+            )
+        components = getattr(dsl_application, component_name) or []
+        if not isinstance(components, list):
+            components = [components]  # Ensure we have a list
+        _update_map_with_unique_check(lookup_map, components)
+        _update_maps_with_embedded_objects(lookup_map, components)
+
+    # now deal with the references.
+    for ref in dsl_application.references or []:
+        if isinstance(ref, dsl.Application):
+            _build_lookup_maps(ref, lookup_map)
+
+    # Anything in the reference list that is not an Application is handled by the embedded object resolver.
+    _update_maps_with_embedded_objects(
+        lookup_map,
+        [
+            ref
+            for ref in dsl_application.references or []
+            if not isinstance(ref, dsl.Application)
+        ],
+    )
+
+    return lookup_map
+
+
+def _is_dsl_type(type_obj: Any) -> bool:
+    """Check if a type is a DSL type that should be converted to semantic."""
+    if not hasattr(type_obj, "__name__"):
+        return False
+
+    # Check if it's defined in the DSL module
+    return (
+        hasattr(type_obj, "__module__")
+        and type_obj.__module__ == dsl.__name__
+        and not type_obj.__name__.startswith("_")
+    )
+
+
+def validate(
+    dsl_application: dsl.Application,
+) -> Dict[str, dsl.StrictBaseModel]:
+    """
+    Validate the semantics of a DSL Application and return its IR representation.
+
+    Args:
+        dsl_application: The DSL Application to validate.
+
+    Returns:
+        Dict[str, dsl.StrictBaseModel]: A dictionary of lookup maps for the DSL Application.
+    Throws:
+        SemanticResolutionError: If there are semantic errors in the DSL Application.
+    """
+    return _build_lookup_maps(dsl_application)
+
+
+# These types are used only for the DSL and should not be converted to semantic types
+# They are used for JSON schema generation
+# They will be switched to their semantic abstract class in the generation.
+# i.e., `ToolType` will be switched to `Tool`
+DSL_ONLY_UNION_TYPES = {
+    get_args(dsl.ToolType): "Tool",
+    get_args(dsl.StepType): "Step",
+    get_args(dsl.IndexType): "Index",
+    get_args(dsl.ModelType): "Model",
+}
+
+
+def _transform_union_type(args: tuple) -> str:
+    """Transform Union types, handling string ID references."""
+
+    args_without_str_none = tuple(
+        arg for arg in args if arg is not str and arg is not type(None)
+    )
+    has_none = any(arg is type(None) for arg in args)
+    has_str = any(arg is str for arg in args)
+
+    # First see if this is a DSL-only union type
+    # If so, just return the corresponding semantic type
+    if args_without_str_none in DSL_ONLY_UNION_TYPES:
+        if has_none:
+            # If we have a DSL type and None, we return the DSL type with None
+            return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
+        else:
+            # Note we don't handle the case where we have a DSL type and str,
+            # because that would indicate a reference to an ID, which we handle separately.
+            return DSL_ONLY_UNION_TYPES[args_without_str_none]
+
+    # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
+    if len(args) == 2:
+        list_elems = [
+            arg for arg in args if get_origin(arg) in set([list, dict])
+        ]
+        if len(list_elems) > 0 and has_none:
+            # If we have a list and None, we return the list type
+            # This is to handle cases like List[SomeType] | None
+            # which in the DSL is needed, but here we will just have an empty list.
+            return dsl_to_semantic_type_name(list_elems[0])
+
+    # If the union contains a DSL type and a str, we need to drop the str
+    if any(_is_dsl_type(arg) for arg in args) and has_str:
+        # There is a DSL type and a str, which indicates something that can reference an ID.
+        # drop the str
+        args = tuple(arg for arg in args if arg is not str)
+
+    return " | ".join(dsl_to_semantic_type_name(a) for a in args)
+
+
+TYPES_TO_IGNORE = {
+    "Document",
+    "StrictBaseModel",
+    "VariableTypeEnum",
+    "DecoderFormat",
+    "VariableTypeEnum",
+    "VariableType",
+    "DecoderFormat",
+}
+
+
+def dsl_to_semantic_type_name(field_type: Any) -> str:
+    """Transform a DSL field type to a semantic field type."""
+
+    # Handle ForwardRef objects
+    if hasattr(field_type, "__forward_arg__"):
+        # Extract the string from ForwardRef and process it
+        forward_ref_str = field_type.__forward_arg__
+        actual_type = eval(forward_ref_str, dict(vars(dsl)))
+        return dsl_to_semantic_type_name(actual_type)
+
+    # Handle Union types (including | syntax)
+    origin = get_origin(field_type)
+    args = get_args(field_type)
+
+    if origin is Union or (
+        hasattr(field_type, "__class__")
+        and field_type.__class__.__name__ == "UnionType"
+    ):
+        return _transform_union_type(args)
+
+    # Handle list types
+    if origin is list:
+        if args:
+            inner_type = dsl_to_semantic_type_name(args[0])
+            return f"list[{inner_type}]"
+        return "list"
+
+    # Handle dict types
+    if origin is dict:
+        if len(args) == 2:
+            key_type = dsl_to_semantic_type_name(args[0])
+            value_type = dsl_to_semantic_type_name(args[1])
+            return f"dict[{key_type}, {value_type}]"
+        return "dict"
+
+    # Handle basic types
+    if hasattr(field_type, "__name__"):
+        type_name = field_type.__name__
+        if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
+            return type_name
+        if type_name == "NoneType":
+            return "None"
+        return type_name
+
+    return str(field_type)
