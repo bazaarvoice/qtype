@@ -7,10 +7,10 @@ import subprocess
 import qtype.dsl.model as dsl
 import networkx as nx
 
-from qtype.semantic.validator import (
+from qtype.semantic.resolver import (
     TYPES_TO_IGNORE,
 )
-from qtype.semantic.validator import dsl_to_semantic_type_name  # Add this dependency for topological sorting
+from qtype.semantic.resolver import dsl_to_semantic_type_name  # Add this dependency for topological sorting
 
 FIELDS_TO_IGNORE = {"Application.references"}
 

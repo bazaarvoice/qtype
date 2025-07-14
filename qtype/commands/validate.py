@@ -13,6 +13,7 @@ from qtype import dsl
 from qtype.dsl.loader import load
 from qtype.semantic.errors import SemanticResolutionError
 from qtype.semantic.resolver import resolve
+from qtype.dsl.validator import QTypeValidationError, validate
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +31,15 @@ def main(args: Any) -> None:
     try:
         spec = load(args.spec)
         if isinstance(spec, dsl.Application):
-            spec = resolve(spec)
+            spec = validate(spec)
+            # spec = resolve(spec)
         else:
             logger.info(f"Spec is a {spec.__class__.__name__}, skipping semantic resolution.")
         logger.info("✅ Schema validation successful")
         if args.print:
 
             def print_model(s: BaseModel) -> None:
-                logger.info(s.model_dump_json(indent=2))
+                logger.info(s.model_dump_json(indent=2, exclude_none=True, ))
 
             if isinstance(spec, list):
                 for s in spec:
@@ -46,6 +48,9 @@ def main(args: Any) -> None:
                 print_model(spec)
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
+        sys.exit(1)
+    except QTypeValidationError as exc:
+        logger.error("❌ DSL validation failed:\n%s", exc)
         sys.exit(1)
     except SemanticResolutionError as exc:
         logger.error("❌ Semantic resolution failed:\n%s", exc)
