@@ -5,6 +5,7 @@ from typing import Optional
 
 from qtype.commons.generate import dump_commons_library
 from qtype.dsl.model import Document
+from qtype.semantic.generate import generate_semantic_model
 
 logger = logging.getLogger(__name__)
 
@@ -60,3 +61,17 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         help="Output file for the schema (default: stdout)",
     )
     schema_parser.set_defaults(func=generate_schema)
+
+    # Parser for generating the semantic model
+    semantic_parser = generate_subparsers.add_parser(
+        "semantic-model", help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL."
+    )
+    semantic_parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="qtype/semantic/model.py",
+        help="Output file for the semantic model (default: stdout)",
+    )
+    semantic_parser.set_defaults(func=generate_semantic_model)
+
