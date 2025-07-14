@@ -63,15 +63,24 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     schema_parser.set_defaults(func=generate_schema)
 
     # Parser for generating the semantic model
-    semantic_parser = generate_subparsers.add_parser(
-        "semantic-model", help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL."
-    )
-    semantic_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="qtype/semantic/model.py",
-        help="Output file for the semantic model (default: stdout)",
-    )
-    semantic_parser.set_defaults(func=generate_semantic_model)
+    # only add this if networkx and ruff are installed
+    try:
+        import networkx  # noqa: F401
+        import ruff  # noqa: F401
+        semantic_parser = generate_subparsers.add_parser(
+            "semantic-model", help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL."
+        )
+        semantic_parser.add_argument(
+            "-o",
+            "--output",
+            type=str,
+            default="qtype/semantic/model.py",
+            help="Output file for the semantic model (default: stdout)",
+        )
+        semantic_parser.set_defaults(func=generate_semantic_model)
+    except ImportError:
+        logger.debug(
+            "NetworkX or Ruff is not installed. Skipping semantic model generation."
+        )
+
 

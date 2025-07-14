@@ -12,8 +12,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "openai>=1.93.0",
     "fsspec>=2025.5.1",
-    "pydantic-yaml>=1.5.1",
-    "networkx>=3.4.2",
+    "pydantic-yaml>=1.5.1"
 ]
 
 [dependency-groups]
@@ -28,6 +27,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "ipython>=8.37.0",
     "boto3>=1.39.4",
+    "networkx>=3.4.2",
 ]
 docs = [
     "mkdocs>=1.5.0",
