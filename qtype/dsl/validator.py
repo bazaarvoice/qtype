@@ -229,6 +229,7 @@ def _build_lookup_maps(
 
     # now deal with the references.
     for ref in dsl_application.references or []:
+        ref = ref.root
         if isinstance(ref, dsl.Application):
             _build_lookup_maps(ref, lookup_map)
 
@@ -236,9 +237,9 @@ def _build_lookup_maps(
     _update_maps_with_embedded_objects(
         lookup_map,
         [
-            ref
+            ref.root
             for ref in dsl_application.references or []
-            if not isinstance(ref, dsl.Application)
+            if not isinstance(ref.root, dsl.Application)
         ],
     )
 

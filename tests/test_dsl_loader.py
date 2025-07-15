@@ -12,13 +12,10 @@ from unittest.mock import patch
 
 import pytest
 
-from qtype.dsl.loader import (
+from qtype.loader import (
     _resolve_path,
     _StringStream,
-    load,
-    load_documents,
-    load_from_string,
-    load_yaml,
+    load_yaml_from_string,
 )
 from qtype.dsl.model import Document
 
@@ -68,7 +65,7 @@ class TestHelpers:
     @staticmethod
     def load_and_assert_single_result(file_path: Path | str) -> dict[str, Any]:
         """Load YAML file and assert it returns a single result."""
-        result_list = load_yaml(str(file_path))
+        result_list = _load_yaml(str(file_path))
         assert len(result_list) == 1
         return result_list[0]
 
@@ -78,7 +75,7 @@ class TestHelpers:
     ) -> None:
         """Assert that loading a YAML file raises the expected error."""
         with pytest.raises(error_type, match=error_message):
-            load_yaml(str(file_path))
+            _load_yaml(str(file_path))
 
     @staticmethod
     def create_qtype_document(tmp_path: Path, filename: str, doc_id: str) -> Path:
@@ -139,7 +136,7 @@ class TestBasicLoaderFunctions:
 
     def test_load_from_string_basic(self, temp_dir: Path) -> None:
         """Test loading YAML from a string."""
-        result_list = load_from_string(TestFileFixtures.SIMPLE_YAML)
+        result_list = load_yaml_from_string(TestFileFixtures.SIMPLE_YAML)
         assert len(result_list) == 1
         result = result_list[0]
         assert result["name"] == "Test App"
@@ -153,7 +150,7 @@ app:
   name: ${APP_NAME}
   version: "1.0.0"
 """
-            result_list = load_from_string(yaml_content)
+            result_list = load_yaml_from_string(yaml_content)
             assert len(result_list) == 1
             result = result_list[0]
             assert result["app"]["name"] == "TestApp"
@@ -165,7 +162,7 @@ name: "First Doc"
 ---
 name: "Second Doc"
 """
-        result_list = load_from_string(yaml_content)
+        result_list = load_yaml_from_string(yaml_content)
         assert len(result_list) == 2
         assert result_list[0]["name"] == "First Doc"
         assert result_list[1]["name"] == "Second Doc"
@@ -182,7 +179,7 @@ name: "Second Doc"
         self, yaml_content: str, expected_result: list | int
     ) -> None:
         """Test edge cases in load_from_string."""
-        result = load_from_string(yaml_content)
+        result = load_yaml_from_string(yaml_content)
 
         if isinstance(expected_result, list):
             assert result == expected_result
@@ -200,7 +197,7 @@ class TestDocumentLoading:
         """Test loading a single QType document."""
         test_file = TestHelpers.create_qtype_document(temp_dir, "test.yaml", "test_app")
 
-        documents = load_documents(str(test_file))
+        documents = load_dsl_documents(str(test_file))
         assert len(documents) == 1
         assert isinstance(documents[0], Document)
         assert documents[0].root is not None
@@ -209,7 +206,7 @@ class TestDocumentLoading:
         """Test loading multiple QType documents."""
         test_file = TestHelpers.create_multiple_documents(temp_dir, "test.yaml", 3)
 
-        documents = load_documents(str(test_file))
+        documents = load_dsl_documents(str(test_file))
         assert len(documents) == 3
         assert all(isinstance(doc, Document) for doc in documents)
         assert all(doc.root is not None for doc in documents)
@@ -218,14 +215,14 @@ class TestDocumentLoading:
         """Test load function with single document."""
         test_file = TestHelpers.create_qtype_document(temp_dir, "test.yaml", "test_app")
 
-        result = load(str(test_file))
+        result = load_dsl(str(test_file))
         assert not isinstance(result, list)
 
     def test_load_function_multiple_documents(self, temp_dir: Path) -> None:
         """Test load function with multiple documents."""
         test_file = TestHelpers.create_multiple_documents(temp_dir, "test.yaml", 2)
 
-        result = load(str(test_file))
+        result = load_dsl(str(test_file))
         assert isinstance(result, list)
         assert len(result) == 2
 
@@ -588,7 +585,7 @@ class TestLoaderEdgeCases:
         yaml_content = "name: Test App\nversion: 1.0.0"
 
         # This should trigger the is_uri = False path
-        result = load_yaml(yaml_content)
+        result = _load_yaml(yaml_content)
         assert len(result) == 1
         assert result[0]["name"] == "Test App"
         assert result[0]["version"] == "1.0.0"
@@ -603,7 +600,7 @@ class TestLoaderEdgeCases:
             mock_urlparse.side_effect = Exception("Parsing error")
 
             # Should still work despite the exception
-            result = load_yaml(str(test_file))
+            result = _load_yaml(str(test_file))
             assert len(result) == 1
             assert result[0]["name"] == "Test"
 
@@ -617,7 +614,7 @@ class TestLoaderEdgeCases:
     def test_load_yaml_file_not_found(self, content: str, expected_error: type) -> None:
         """Test load_yaml with non-existent files."""
         with pytest.raises(expected_error):
-            load_yaml(content)
+            _load_yaml(content)
 
     def test_load_from_string_yaml_load_all_returns_none(self, temp_dir: Path) -> None:
         """Test load_from_string when yaml.load_all returns None."""
@@ -625,7 +622,7 @@ class TestLoaderEdgeCases:
         with patch("yaml.load_all") as mock_load_all:
             mock_load_all.return_value = None
 
-            result = load_from_string("test: value")
+            result = load_yaml_from_string("test: value")
             assert result == []
 
 
@@ -652,4 +649,4 @@ remote_data: !include https://raw.githubusercontent.com/example/repo/main/config
         # This would normally test against a real URL
         # For now, we'll just test that the function tries to load it
         with pytest.raises((FileNotFoundError, Exception)):
-            load_yaml(str(main_file))
+            _load_yaml(str(main_file))

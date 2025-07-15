@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from qtype import dsl
-from qtype.dsl.loader import load
+from qtype.loader import load_dsl
 from qtype.semantic.errors import SemanticResolutionError
 from qtype.semantic.resolver import resolve
 from qtype.dsl.validator import QTypeValidationError, validate
@@ -29,7 +29,7 @@ def main(args: Any) -> None:
         Exits with code 1 if validation fails.
     """
     try:
-        spec = load(args.spec)
+        spec = load_dsl(args.spec)
         if isinstance(spec, dsl.Application):
             spec = validate(spec)
             spec = resolve(spec)

@@ -15,18 +15,10 @@ import yaml
 from dotenv import load_dotenv
 from fsspec.core import url_to_fs
 
-from qtype.dsl.model import (
-    Agent,
-    Application,
-    AuthorizationProviderList,
-    Document,
-    Flow,
-    IndexList,
-    ModelList,
-    ToolList,
-    VariableList,
-)
-
+from qtype.dsl import model as dsl
+from qtype.dsl.validator import validate
+from qtype.semantic.resolver import resolve
+from qtype.semantic.model import Application
 
 class _StringStream:
     """
@@ -234,7 +226,7 @@ YamlLoader.add_constructor("!include", _include_file_constructor)
 YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_from_string(content: str, original_uri: str | None = None) -> list[dict[str, Any]]:
+def load_yaml_from_string(content: str, original_uri: str | None = None) -> dict[str, Any]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
@@ -254,15 +246,12 @@ def load_from_string(content: str, original_uri: str | None = None) -> list[dict
     # Note: When loading from string, relative paths will be resolved relative to cwd
     stream = _StringStream(content, original_uri)
     # Use the string stream directly with the loader
-    results = yaml.load_all(stream, Loader=YamlLoader)
-    # Unsure if these checks are necessary, but they ensure we don't return None
-    if results is None:
-        return []
-    else:
-        return [result for result in results if result is not None]
+    result = yaml.load(stream, Loader=YamlLoader)
+
+    return result
 
 
-def load_yaml(content: str) -> list[dict[str, Any]]:
+def load_yaml(content: str) -> dict[str, Any]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
@@ -311,43 +300,35 @@ def load_yaml(content: str) -> list[dict[str, Any]]:
         original_uri = content
         with fsspec.open(content, "r", encoding="utf-8") as f:
             content = f.read()  # type: ignore[misc]
-        return load_from_string(content, original_uri)
+        return load_yaml_from_string(content, original_uri)
     else:
-        return load_from_string(content)
+        return load_yaml_from_string(content)
+
+ResolveableType = dsl.Agent | dsl.Application | dsl.Flow | list
 
 
-def load_documents(content: str) -> list[Document]:
-    """Validate a QType YAML file against the Document schema."""
-    # there may be many documents in a single spec file. Load them all
-
-    data = load_yaml(content)
-    return [Document.model_validate(doc) for doc in data]
-
-
-ResolveableType = Agent | Application | Flow | list
-
-
-def _resolve_root(doc: Document) -> ResolveableType:
+def _resolve_root(doc: dsl.Document) -> ResolveableType:
     root = doc.root
     # If the docroot is a type that ends in the name `List`, resolve it again
     types_to_resolve = set(
         [
-            AuthorizationProviderList,
-            IndexList,
-            ModelList,
-            ToolList,
-            VariableList,
+            dsl.AuthorizationProviderList,
+            dsl.IndexList,
+            dsl.ModelList,
+            dsl.ToolList,
+            dsl.VariableList,
         ]
     )
     if root is not None and type(root) in types_to_resolve:
         root = root.root  # type: ignore
     return root  # type: ignore[return-value]
 
+def load(content: str) -> Application:
+    """Load a QType YAML file, validate it, and return the resolved root."""
+    yaml_data = load_yaml(content)
+    document = dsl.Document.model_validate(yaml_data)
+    document = _resolve_root(document)
+    if not isinstance(document, dsl.Application):
+        raise ValueError(f"Root document is not an Application, found {type(document)}.")
 
-def load(content: str) -> ResolveableType:
-    """Load a QType YAML file and resolve the root document."""
-    documents = load_documents(content)
-    resolved = [_resolve_root(doc) for doc in documents]
-    if len(resolved) == 1:
-        resolved = resolved[0]
-    return resolved
+    return resolve(document)

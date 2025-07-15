@@ -3,30 +3,26 @@ from __future__ import annotations
 import glob
 import pytest
 from pathlib import Path
-from typing import Any, Callable
-from qtype import dsl
-from qtype.dsl import loader, validator
+from typing import Callable
+from qtype import dsl, loader
+from qtype.dsl import validator
 
 TEST_DIR = Path(__file__).parent / "specs" / "dsl_validate"
 
 
-def load_application_from_yaml(yaml_path: Path) -> Any:
-    """Load a DSL Application from a YAML file."""
-    content = yaml_path.read_text(encoding="utf-8")
-    return loader.load(content)
-
-
 def run_validation(yaml_path: Path) -> dsl.Application:
     """Load and validate a DSL Application from a YAML file."""
-    app = load_application_from_yaml(yaml_path)
-    return validator.validate(app)
+    content = yaml_path.read_text(encoding="utf-8")
+    yaml_data = loader.load_yaml(content)
+    model = dsl.Document.model_validate(yaml_data).root
+    if not isinstance(model, dsl.Application):
+        raise TypeError(f"Expected Application, got {type(model)}")
+    return validator.validate(model)
 
 
 @pytest.mark.parametrize(
     "yaml_file",
-    [
-        Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))
-    ],
+    [Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))],
 )
 def test_valid_dsl_files(yaml_file: str) -> None:
     """Test that valid DSL YAML files pass validation."""
@@ -121,6 +117,15 @@ def test_invalid_dsl_files(
         (
             "valid_flow_steps_reference.qtype.yaml",
             lambda x: x.flows[0].steps[0],
+        ),
+        (
+            "valid_flow_steps_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[0],
+        ),
+        ("full_application_test.qtype.yaml", lambda x: x.models[0].auth),
+        (
+            "full_application_test.qtype.yaml",
+            lambda x: x.indexes[0].embedding_model,
         ),
     ],
 )
