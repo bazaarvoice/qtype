@@ -10,6 +10,40 @@ class QTypeValidationError(Exception):
     pass
 
 
+class DuplicateComponentError(QTypeValidationError):
+    """Raised when there are duplicate components with the same ID."""
+
+    def __init__(
+        self,
+        obj_id: str,
+        found_obj: dsl.StrictBaseModel,
+        existing_obj: dsl.StrictBaseModel,
+    ):
+        super().__init__(
+            f"Duplicate component with ID '{obj_id}' found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
+        )
+
+class ComponentNotFoundError(QTypeValidationError):
+    """Raised when a component is not found in the DSL Application."""
+
+    def __init__(self, component_id: str):
+        super().__init__(f"Component with ID '{component_id}' not found in the DSL Application.")
+
+class ReferenceNotFoundError(QTypeValidationError):
+    """Raised when a reference is not found in the lookup map."""
+    def __init__(self, reference: str, type_hint: str | None = None):
+        msg = (
+            f"Reference '{reference}' not found in lookup map."
+            if type_hint is None
+            else f"Reference '{reference}' not found in lookup map for type '{type_hint}'."
+        )
+        super().__init__(msg)
+
+class FlowHasNoStepsError(QTypeValidationError):
+    """Raised when a flow has no steps defined."""
+    def __init__(self, flow_id: str):
+        super().__init__(f"Flow {flow_id} has no steps defined.")
+
 # These types are used only for the DSL and should not be converted to semantic types
 # They are used for JSON schema generation
 # They will be switched to their semantic abstract class in the generation.
@@ -42,9 +76,7 @@ def _update_map_with_unique_check(
         # If it is not the same object, we raise an error.
         # This ensures that we do not have duplicate components with the same ID.
         if obj_id in current_map and id(current_map[obj_id]) != id(obj):
-            raise QTypeValidationError(
-                f"Duplicate components with '{obj_id}' found:\n{obj.model_dump_json()}\nAlready exists:\n{current_map[obj_id].model_dump_json()}"
-            )
+            raise DuplicateComponentError(obj_id, obj, current_map[obj_id])
         else:
             current_map[obj_id] = obj
 
@@ -188,9 +220,7 @@ def _build_lookup_maps(
 
     for component_name in component_names:
         if not hasattr(dsl_application, component_name):
-            raise QTypeValidationError(
-                f"Component '{component_name}' not found in the DSL Application."
-            )
+            raise ComponentNotFoundError(component_name)
         components = getattr(dsl_application, component_name) or []
         if not isinstance(components, list):
             components = [components]  # Ensure we have a list
@@ -280,9 +310,7 @@ def _resolve_id_references(
         if dslobj in lookup_map:
             return lookup_map[dslobj]
         else:
-            raise QTypeValidationError(
-                f"Reference '{dslobj}' not found in lookup map."
-            )
+            raise ReferenceNotFoundError(dslobj)
 
     # iterate over all fields in the object
     def lookup_reference(val: str, typ: Any) -> Any:
@@ -290,9 +318,7 @@ def _resolve_id_references(
             if val in lookup_map:
                 return lookup_map[val]
             else:
-                raise QTypeValidationError(
-                    f"Reference '{val}' not found in lookup map for type '{typ}'."
-                )
+                raise ReferenceNotFoundError(val, str(typ))
         return val
 
     for field_name, field_value in dslobj:
@@ -363,7 +389,7 @@ def validate(
     # If any flows have no steps, we raise an error.
     for flow in dsl_application.flows or []:
         if not flow.steps:
-            raise QTypeValidationError(f"Flow {flow.id} has no steps defined.")
+            raise FlowHasNoStepsError(flow.id)
         # If any flow doesn't have inputs, copy the inputs from the first step.
         if not flow.inputs:
             first_step = (

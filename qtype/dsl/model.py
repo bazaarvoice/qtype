@@ -104,7 +104,7 @@ class Memory(StrictBaseModel):
 #
 
 
-class Step(StrictBaseModel):
+class Step(StrictBaseModel, ABC):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")

@@ -1,0 +1,8 @@
+id: app_with_missing_reference
+flows:
+  - id: flow1
+    steps:
+      - id: step1
+        inputs:
+          - missing_var_id
+        template: "Hello"

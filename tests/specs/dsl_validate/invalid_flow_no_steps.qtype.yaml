@@ -1,0 +1,4 @@
+id: app_with_empty_flow
+flows:
+  - id: empty_flow
+    steps: []
