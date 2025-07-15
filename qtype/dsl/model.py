@@ -209,7 +209,7 @@ class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
-    memory: Memory | None = Field(
+    memory: Memory | str | None = Field(
         default=None,
         description="Memory object to retain context across interactions.",
     )

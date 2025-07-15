@@ -1,0 +1,18 @@
+id: app_vectorindex_embedding_ref
+models:
+  - id: emb1
+    provider: openai
+    model_id: text-embedding-ada-002
+    inference_params:
+      temperature: 0.0
+      max_tokens: 10
+    dimensions: 1536
+indexes:
+  - id: v1
+    name: "vecindex"
+    embedding_model: emb1
+flows:
+  - id: f1
+    steps:
+      - id: s1
+        template: "hi"

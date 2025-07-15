@@ -1,0 +1,19 @@
+id: app_llm_memory_ref
+models:
+  - id: m1
+    provider: openai
+    model_id: gpt-4
+    inference_params:
+      temperature: 0.5
+      max_tokens: 100
+memories:
+  - id: mem1
+flows:
+  - id: f1
+    steps:
+      - id: llm1
+        model: m1
+        memory: mem1
+        system_message: "hi"
+        inputs: []
+        outputs: []

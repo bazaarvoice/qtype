@@ -179,11 +179,15 @@
               "$ref": "#/$defs/Memory"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Memory object to retain context across interactions."
+          "description": "Memory object to retain context across interactions.",
+          "title": "Memory"
         },
         "model": {
           "anyOf": [
@@ -1115,11 +1119,15 @@
               "$ref": "#/$defs/Memory"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Memory object to retain context across interactions."
+          "description": "Memory object to retain context across interactions.",
+          "title": "Memory"
         },
         "model": {
           "anyOf": [

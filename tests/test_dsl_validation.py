@@ -60,6 +60,18 @@ def test_invalid_dsl_files(
             "valid_simple_flow_with_reference.qtype.yaml",
             lambda x: x.flows[0].steps[0].inputs[0],
         ),
+        (
+            "valid_model_auth_reference.qtype.yaml",
+            lambda x: x.models[0].auth,
+        ),
+        (
+            "valid_llm_memory_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[0].memory,
+        ),
+        (
+            "valid_vectorindex_embedding_reference.qtype.yaml",
+            lambda x: x.indexes[0].embedding_model,
+        ),
     ],
 )
 def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:
