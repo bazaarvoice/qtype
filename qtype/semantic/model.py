@@ -16,7 +16,16 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
-from qtype.dsl.model import VariableTypeEnum, DecoderFormat
+from qtype.dsl.model import DecoderFormat, Variable as DSLVariable
+
+
+class Variable(DSLVariable, BaseModel):
+    """Semantic version of DSL Variable with ID references resolved."""
+
+    value: Any | None = Field(None, description="The value of the variable")
+
+    def is_set(self) -> bool:
+        return self.value is not None
 
 
 class Application(BaseModel):
@@ -139,19 +148,6 @@ class TelemetrySink(BaseModel):
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
-    )
-
-
-class Variable(BaseModel):
-    """Schema for a variable that can serve as input, output, or parameter within the DSL."""
-
-    id: str = Field(
-        ...,
-        description="Unique ID of the variable. Referenced in prompts or steps.",
-    )
-    type: VariableTypeEnum | dict | list = Field(
-        ...,
-        description="Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax",
     )
 
 

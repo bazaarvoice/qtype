@@ -104,8 +104,8 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         )
         f.write("class Variable(DSLVariable, BaseModel):\n")
         f.write("    \"\"\"Semantic version of DSL Variable with ID references resolved.\"\"\"\n")
-        f.write("    value: Any | None = Field(..., description=\"The value of the variable\")\n")
-        f.write("    def is_set() -> bool:\n")
+        f.write("    value: Any | None = Field(None, description=\"The value of the variable\")\n")
+        f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
 
         # Write classes
