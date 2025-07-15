@@ -72,6 +72,30 @@ def test_invalid_dsl_files(
             "valid_vectorindex_embedding_reference.qtype.yaml",
             lambda x: x.indexes[0].embedding_model,
         ),
+        (
+            "valid_condition_else_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[2].else_,
+        ),
+        (
+            "valid_condition_then_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[2].then,
+        ),
+        (
+            "valid_apitool_auth_reference.qtype.yaml",
+            lambda x: x.tools[0].auth,
+        ),
+        (
+            "valid_step_inputs_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[0].inputs[0],
+        ),
+        (
+            "valid_step_outputs_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[0].outputs[0],
+        ),
+        (
+            "valid_telemetrysink_auth_reference.qtype.yaml",
+            lambda x: x.telemetry.auth,
+        ),
     ],
 )
 def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:

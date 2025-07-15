@@ -1,0 +1,10 @@
+id: app_flow_steps_ref
+flows:
+  - id: f1
+    steps:
+      - s1
+      - s2
+  - id: s1
+    template: "hi"
+  - id: s2
+    template: "bye"

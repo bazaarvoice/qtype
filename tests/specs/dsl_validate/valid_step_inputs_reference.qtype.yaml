@@ -1,0 +1,10 @@
+id: app_step_inputs_ref
+variables:
+  - id: var1
+    type: text
+flows:
+  - id: f1
+    steps:
+      - id: s1
+        template: "hi"
+        inputs: [var1]
