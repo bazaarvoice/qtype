@@ -32,14 +32,21 @@ def main(args: Any) -> None:
         spec = load(args.spec)
         if isinstance(spec, dsl.Application):
             spec = validate(spec)
-            # spec = resolve(spec)
+            spec = resolve(spec)
         else:
-            logger.info(f"Spec is a {spec.__class__.__name__}, skipping semantic resolution.")
+            logger.info(
+                f"Spec is a {spec.__class__.__name__}, skipping semantic resolution."
+            )
         logger.info("✅ Schema validation successful")
         if args.print:
 
             def print_model(s: BaseModel) -> None:
-                logger.info(s.model_dump_json(indent=2, exclude_none=True, ))
+                logger.info(
+                    s.model_dump_json(
+                        indent=2,
+                        exclude_none=True,
+                    )
+                )
 
             if isinstance(spec, list):
                 for s in spec:
@@ -55,20 +62,6 @@ def main(args: Any) -> None:
     except SemanticResolutionError as exc:
         logger.error("❌ Semantic resolution failed:\n%s", exc)
         sys.exit(1)
-
-    # try:
-    #     validate_semantics(spec)
-    #     logger.info("✅ Semantic validation successful.")
-    # except Exception as exc:
-    #     logger.error("❌ Semantic validation failed:\n%s", exc)
-    #     sys.exit(1)
-
-    # try:
-    #     _ir = resolve_semantic_ir(spec)
-    #     logger.info("✅ Semantic resolution successful.")
-    # except Exception as exc:
-    #     logger.error("❌ Semantic resolution failed:\n%s", exc, exc_info=True)
-    #     sys.exit(1)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

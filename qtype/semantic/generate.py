@@ -1,7 +1,7 @@
 import argparse
 import inspect
 from pathlib import Path
-from typing import Any, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 import subprocess
 
 import qtype.dsl.model as dsl
@@ -19,6 +19,7 @@ TYPES_TO_IGNORE = {
     "VariableTypeEnum",
     "VariableType",
     "DecoderFormat",
+    "Variable"
 }
 
 
@@ -99,8 +100,13 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write(
-            "from qtype.dsl.model import VariableTypeEnum, DecoderFormat\n\n"
+            "from qtype.dsl.model import VariableTypeEnum, DecoderFormat, Variable as DSLVariable\n\n"
         )
+        f.write("class Variable(DSLVariable, BaseModel):\n")
+        f.write("    \"\"\"Semantic version of DSL Variable with ID references resolved.\"\"\"\n")
+        f.write("    value: Any | None = Field(..., description=\"The value of the variable\")\n")
+        f.write("    def is_set() -> bool:\n")
+        f.write("        return self.value is not None\n")
 
         # Write classes
         f.write("\n\n".join(generated))
