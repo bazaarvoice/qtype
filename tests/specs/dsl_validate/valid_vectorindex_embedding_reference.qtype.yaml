@@ -16,3 +16,8 @@ flows:
     steps:
       - id: s1
         template: "hi"
+      - id: search
+        index: v1
+        default_top_k: 1000
+        inputs:
+          - s1.prompt
