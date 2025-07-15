@@ -1,18 +1,25 @@
 import argparse
 import inspect
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args, get_origin
 import subprocess
 
 import qtype.dsl.model as dsl
 import networkx as nx
 
-from qtype.semantic.resolver import (
-    TYPES_TO_IGNORE,
-)
-from qtype.semantic.resolver import dsl_to_semantic_type_name  # Add this dependency for topological sorting
+from qtype.dsl.validator import _is_dsl_type
+
 
 FIELDS_TO_IGNORE = {"Application.references"}
+TYPES_TO_IGNORE = {
+    "Document",
+    "StrictBaseModel",
+    "VariableTypeEnum",
+    "DecoderFormat",
+    "VariableTypeEnum",
+    "VariableType",
+    "DecoderFormat",
+}
 
 
 def sort_classes_by_inheritance(
@@ -110,6 +117,101 @@ def format_with_ruff(file_path: str) -> None:
         subprocess.run(["ruff", "format", file_path], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error while formatting with Ruff: {e}")
+
+
+DSL_ONLY_UNION_TYPES = {
+    get_args(dsl.ToolType): "Tool",
+    get_args(dsl.StepType): "Step",
+    get_args(dsl.IndexType): "Index",
+    get_args(dsl.ModelType): "Model",
+}
+
+
+def _transform_union_type(args: tuple) -> str:
+    """Transform Union types, handling string ID references."""
+
+    args_without_str_none = tuple(
+        arg for arg in args if arg is not str and arg is not type(None)
+    )
+    has_none = any(arg is type(None) for arg in args)
+    has_str = any(arg is str for arg in args)
+
+    # First see if this is a DSL-only union type
+    # If so, just return the corresponding semantic type
+    if args_without_str_none in DSL_ONLY_UNION_TYPES:
+        if has_none:
+            # If we have a DSL type and None, we return the DSL type with None
+            return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
+        else:
+            # Note we don't handle the case where we have a DSL type and str,
+            # because that would indicate a reference to an ID, which we handle separately.
+            return DSL_ONLY_UNION_TYPES[args_without_str_none]
+
+    # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
+    if len(args) == 2:
+        list_elems = [
+            arg for arg in args if get_origin(arg) in set([list, dict])
+        ]
+        if len(list_elems) > 0 and has_none:
+            # If we have a list and None, we return the list type
+            # This is to handle cases like List[SomeType] | None
+            # which in the DSL is needed, but here we will just have an empty list.
+            return dsl_to_semantic_type_name(list_elems[0])
+
+    # If the union contains a DSL type and a str, we need to drop the str
+    if any(_is_dsl_type(arg) for arg in args) and has_str:
+        # There is a DSL type and a str, which indicates something that can reference an ID.
+        # drop the str
+        args = tuple(arg for arg in args if arg is not str)
+
+    return " | ".join(dsl_to_semantic_type_name(a) for a in args)
+
+
+def dsl_to_semantic_type_name(field_type: Any) -> str:
+    """Transform a DSL field type to a semantic field type."""
+
+    # Handle ForwardRef objects
+    if hasattr(field_type, "__forward_arg__"):
+        # Extract the string from ForwardRef and process it
+        forward_ref_str = field_type.__forward_arg__
+        actual_type = eval(forward_ref_str, dict(vars(dsl)))
+        return dsl_to_semantic_type_name(actual_type)
+
+    # Handle Union types (including | syntax)
+    origin = get_origin(field_type)
+    args = get_args(field_type)
+
+    if origin is Union or (
+        hasattr(field_type, "__class__")
+        and field_type.__class__.__name__ == "UnionType"
+    ):
+        return _transform_union_type(args)
+
+    # Handle list types
+    if origin is list:
+        if args:
+            inner_type = dsl_to_semantic_type_name(args[0])
+            return f"list[{inner_type}]"
+        return "list"
+
+    # Handle dict types
+    if origin is dict:
+        if len(args) == 2:
+            key_type = dsl_to_semantic_type_name(args[0])
+            value_type = dsl_to_semantic_type_name(args[1])
+            return f"dict[{key_type}, {value_type}]"
+        return "dict"
+
+    # Handle basic types
+    if hasattr(field_type, "__name__"):
+        type_name = field_type.__name__
+        if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
+            return type_name
+        if type_name == "NoneType":
+            return "None"
+        return type_name
+
+    return str(field_type)
 
 
 def generate_semantic_class(class_name: str, cls: type) -> str:
