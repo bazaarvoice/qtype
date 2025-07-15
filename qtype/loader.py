@@ -330,5 +330,5 @@ def load(content: str) -> Application:
     document = _resolve_root(document)
     if not isinstance(document, dsl.Application):
         raise ValueError(f"Root document is not an Application, found {type(document)}.")
-
+    document = validate(document)
     return resolve(document)
