@@ -96,6 +96,10 @@ def test_invalid_dsl_files(
             "valid_telemetrysink_auth_reference.qtype.yaml",
             lambda x: x.telemetry.auth,
         ),
+        (
+            "valid_agent_tools_reference.qtype.yaml",
+            lambda x: x.tools[0],
+        ),
     ],
 )
 def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:

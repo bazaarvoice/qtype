@@ -234,7 +234,7 @@ class LLMInference(Step):
 class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
-    tools: list[ToolType] = Field(
+    tools: list[ToolType | str] = Field(
         ..., description="List of tools available to the agent."
     )
 
