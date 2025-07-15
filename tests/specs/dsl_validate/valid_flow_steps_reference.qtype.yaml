@@ -4,7 +4,9 @@ flows:
     steps:
       - s1
       - s2
-  - id: s1
-    template: "hi"
-  - id: s2
-    template: "bye"
+  - id: f2
+    steps:
+      - id: s1
+        template: "hi"
+      - id: s2
+        template: "bye"

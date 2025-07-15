@@ -100,6 +100,10 @@ def test_invalid_dsl_files(
             "valid_agent_tools_reference.qtype.yaml",
             lambda x: x.tools[0],
         ),
+        (
+            "valid_flow_steps_reference.qtype.yaml",
+            lambda x: x.flows[0].steps[0],
+        ),
     ],
 )
 def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:
