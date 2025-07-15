@@ -356,9 +356,9 @@ def _resolve_id_references(
             field_type = _resolve_forward_ref(field_type)
             if _is_union(field_type):
                 args = field_type.__args__
-                if any(arg is list for arg in args):
+                if any(str(arg).startswith("list") for arg in args):
                     setattr(dslobj, field_name, [])
-                elif any(arg is dict for arg in args):
+                elif any(str(arg).startswith("dict") for arg in args):
                     setattr(dslobj, field_name, {})
         else:
             setattr(

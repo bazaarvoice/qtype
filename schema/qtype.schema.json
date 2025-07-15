@@ -612,6 +612,9 @@
               "$ref": "#/$defs/Condition"
             },
             {
+              "$ref": "#/$defs/Decoder"
+            },
+            {
               "$ref": "#/$defs/DocumentSearch"
             },
             {
@@ -668,6 +671,9 @@
               "$ref": "#/$defs/Condition"
             },
             {
+              "$ref": "#/$defs/Decoder"
+            },
+            {
               "$ref": "#/$defs/DocumentSearch"
             },
             {
@@ -699,6 +705,82 @@
       ],
       "title": "Condition",
       "type": "object"
+    },
+    "Decoder": {
+      "additionalProperties": false,
+      "description": "Defines a step that decodes string data into structured outputs.\n\nIf parsing fails, the step will raise an error and halt execution.\nUse conditional logic in your flow to handle potential parsing errors.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "format": {
+          "$ref": "#/$defs/DecoderFormat",
+          "default": "json",
+          "description": "Format in which the decoder processes data. Defaults to JSON."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Decoder",
+      "type": "object"
+    },
+    "DecoderFormat": {
+      "description": "Defines the format in which the decoder step processes data.",
+      "enum": [
+        "json",
+        "xml"
+      ],
+      "title": "DecoderFormat",
+      "type": "string"
     },
     "Document": {
       "anyOf": [
@@ -1012,6 +1094,9 @@
               },
               {
                 "$ref": "#/$defs/Condition"
+              },
+              {
+                "$ref": "#/$defs/Decoder"
               },
               {
                 "$ref": "#/$defs/DocumentSearch"

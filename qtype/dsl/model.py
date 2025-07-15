@@ -488,6 +488,7 @@ StepType = Union[
     Agent,
     APITool,
     Condition,
+    Decoder,
     DocumentSearch,
     Flow,
     LLMInference,

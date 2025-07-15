@@ -30,7 +30,24 @@ def run_validation(yaml_path: Path) -> dsl.Application:
 def test_valid_dsl_files(yaml_file: str) -> None:
     """Test that valid DSL YAML files pass validation."""
     yaml_path = TEST_DIR / yaml_file
-    run_validation(yaml_path)
+    # should not throw an exception
+    app = run_validation(yaml_path)
+
+    # verify that all Nonable components are empty lists
+    if not app.auths:
+        assert app.auths == []
+    if not app.models:
+        assert app.models == []
+    if not app.indexes:
+        assert app.indexes == []
+    if not app.tools:
+        assert app.tools == []
+    if not app.flows:
+        assert app.flows == []
+    if not app.variables:
+        assert app.variables == []
+    if not app.references:
+        assert app.references == []
 
 
 @pytest.mark.parametrize(
@@ -113,4 +130,16 @@ def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:
     component = getter(app)
     assert not isinstance(component, str), (
         "Component should be resolved to an object"
+    )
+
+
+def test_embedding_model() -> None:
+    """Test that the embedding model is correctly defined in the DSL."""
+    yaml_path = TEST_DIR / "valid_vectorindex_embedding_reference.qtype.yaml"
+    app = run_validation(yaml_path)
+    assert app.indexes[0].embedding_model is not None, (  # type: ignore
+        "Embedding model should not be None"
+    )
+    assert isinstance(app.indexes[0].embedding_model, dsl.EmbeddingModel), (  # type: ignore
+        "Embedding model should be an instance of EmbeddingModel"
     )

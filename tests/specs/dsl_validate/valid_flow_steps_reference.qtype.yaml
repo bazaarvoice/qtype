@@ -8,5 +8,10 @@ flows:
     steps:
       - id: s1
         template: "hi"
+      # decoder step
       - id: s2
-        template: "bye"
+        format: json
+        inputs: [s1.prompt]
+        outputs:
+          - id: o1
+            type: text
