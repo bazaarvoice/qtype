@@ -10,17 +10,13 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import BaseModel
 
-from qtype.dsl.model import (
-    PythonFunctionTool,
-    Variable,
-    VariableTypeEnum,
-)
 from qtype.converters.tools_from_module import (
     _create_tool_from_function,
     _get_module_functions,
     _map_python_type_to_variable_type,
-    tools_from_module
+    tools_from_module,
 )
+from qtype.dsl.model import PythonFunctionTool, Variable, VariableTypeEnum
 
 
 class SamplePydanticModel(BaseModel):
@@ -97,7 +93,7 @@ class TestLoadPythonModuleTools:
 
     def test_no_functions_found_error(self) -> None:
         """Test handling when no public functions are found in module."""
-        module_path="tests.empty_module"
+        module_path = "tests.empty_module"
 
         with patch(
             "qtype.converters.tools_from_module.importlib.import_module"
@@ -118,7 +114,7 @@ class TestLoadPythonModuleTools:
 
     def test_multiple_functions_loaded(self) -> None:
         """Test loading multiple functions from a module."""
-        module_path="tests.multi_function_module"
+        module_path = "tests.multi_function_module"
 
         with patch(
             "qtype.converters.tools_from_module.importlib.import_module"

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
+
 #
 # ---------------- Base Components ----------------
 #
@@ -34,11 +35,8 @@ class VariableTypeEnum(str, Enum):
     time = "time"
     video = "video"
 
-VariableType = Union[
-    VariableTypeEnum,
-    dict,
-    list
-]
+
+VariableType = Union[VariableTypeEnum, dict, list]
 
 
 class Variable(StrictBaseModel):
@@ -194,14 +192,16 @@ class APITool(Tool):
 
     endpoint: str = Field(..., description="API endpoint URL to call.")
     method: str = Field(
-        default="GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
+        default="GET",
+        description="HTTP method to use (GET, POST, PUT, DELETE, etc.).",
     )
     auth: AuthorizationProvider | str | None = Field(
         default=None,
         description="Optional AuthorizationProvider for API authentication.",
     )
     headers: dict[str, str] | None = Field(
-        default=None, description="Optional HTTP headers to include in the request."
+        default=None,
+        description="Optional HTTP headers to include in the request.",
     )
 
 
@@ -250,10 +250,13 @@ class Flow(Step):
         default_factory=list, description="List of steps or step IDs."
     )
 
+
 class DecoderFormat(str, Enum):
     """Defines the format in which the decoder step processes data."""
+
     json = "json"
     xml = "xml"
+
 
 class Decoder(Step):
     """Defines a step that decodes string data into structured outputs.
@@ -271,8 +274,14 @@ class Decoder(Step):
     def set_default_outputs(self) -> "Decoder":
         """Set default output variable if none provided."""
 
-        if self.inputs is None or len(self.inputs) != 1 or \
-           (isinstance(self.inputs[0], Variable) and self.inputs[0].type != VariableTypeEnum.text):
+        if (
+            self.inputs is None
+            or len(self.inputs) != 1
+            or (
+                isinstance(self.inputs[0], Variable)
+                and self.inputs[0].type != VariableTypeEnum.text
+            )
+        ):
             raise ValueError(
                 f"Decoder steps must have exactly one input variable of type 'text'. Found: {self.inputs}"
             )
@@ -539,7 +548,6 @@ class ToolList(RootModel[list[ToolType]]):
     root: list[ToolType]
 
 
-
 class VariableList(RootModel[list[Variable]]):
     """Schema for a standalone list of variables."""
 
@@ -606,4 +614,3 @@ class Document(
 #         default=None,
 #         description="ID of prompt used to generate a follow-up based on feedback.",
 #     )
-

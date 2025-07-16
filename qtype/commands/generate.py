@@ -8,6 +8,7 @@ from qtype.dsl.model import Document
 
 logger = logging.getLogger(__name__)
 
+
 def generate_schema(args: argparse.Namespace) -> None:
     """Generate and output the JSON schema for Document.
 
@@ -26,6 +27,7 @@ def generate_schema(args: argparse.Namespace) -> None:
         logger.info(f"Schema written to {output_path}")
     else:
         logger.info("Schema is:\n%s", output)
+
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
     """Set up the generate subcommand parser."""
@@ -66,10 +68,12 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     try:
         import networkx  # noqa: F401
         import ruff  # noqa: F401
+
         from qtype.semantic.generate import generate_semantic_model
 
         semantic_parser = generate_subparsers.add_parser(
-            "semantic-model", help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL."
+            "semantic-model",
+            help="Generates the semantic model (i.e., qtype/semantic/model.py) from QType DSL.",
         )
         semantic_parser.add_argument(
             "-o",
@@ -83,5 +87,3 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         logger.debug(
             "NetworkX or Ruff is not installed. Skipping semantic model generation."
         )
-
-

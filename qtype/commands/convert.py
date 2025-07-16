@@ -1,8 +1,9 @@
 import argparse
 import logging
 
-from pydantic import BaseModel
 from pydantic_yaml import to_yaml_str
+
+from qtype.commands.generate import _write_yaml_file
 from qtype.converters.tools_from_module import tools_from_module
 from qtype.dsl.model import ToolList
 

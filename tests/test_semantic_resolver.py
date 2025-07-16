@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
+
 from qtype import loader
-from qtype.semantic import resolver
 from qtype.semantic import model as ir
 
 TEST_DIR = Path(__file__).parent / "specs" / "dsl_validate"
@@ -16,7 +15,9 @@ def test_resolver_full_application() -> None:
     # Application level
     assert isinstance(ir_app, ir.Application)
     assert ir_app.id == "test_app"
-    assert ir_app.description == "A test application with all fields populated."
+    assert (
+        ir_app.description == "A test application with all fields populated."
+    )
     # Memories
     assert len(ir_app.memories) == 1
     assert ir_app.memories[0].id == "mem1"

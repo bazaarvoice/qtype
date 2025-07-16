@@ -3,11 +3,13 @@ Tests for YAML loader file inclusion functionality.
 """
 
 from __future__ import annotations
+
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
-import os
-import tempfile
+
 import pytest
 
 from qtype.loader import (
@@ -81,18 +83,24 @@ class TestHelpers:
             load_yaml(str(file_path))
 
     @staticmethod
-    def create_qtype_document(tmp_path: Path, filename: str, doc_id: str) -> Path:
+    def create_qtype_document(
+        tmp_path: Path, filename: str, doc_id: str
+    ) -> Path:
         """Create a QType document with the given ID."""
         content = TestFileFixtures.QTYPE_DOCUMENT.replace("test_app", doc_id)
         return TestHelpers.create_temp_file(tmp_path, filename, content)
 
     @staticmethod
-    def create_multiple_documents(tmp_path: Path, filename: str, count: int = 2) -> Path:
+    def create_multiple_documents(
+        tmp_path: Path, filename: str, count: int = 2
+    ) -> Path:
         """Create a file with multiple QType documents."""
         documents = []
         for i in range(count):
             doc_id = f"doc_{i}"
-            documents.append(TestFileFixtures.QTYPE_DOCUMENT.replace("test_app", doc_id))
+            documents.append(
+                TestFileFixtures.QTYPE_DOCUMENT.replace("test_app", doc_id)
+            )
         content = "\n---\n".join(documents)
         return TestHelpers.create_temp_file(tmp_path, filename, content)
 
@@ -167,6 +175,7 @@ app:
     def test_load_from_string_multiple_documents(self, temp_dir: Path) -> None:
         """Test loading multiple YAML documents from a string."""
         from yaml.composer import ComposerError
+
         try:
             _ = load_yaml_from_string("""
 name: "First Doc"
@@ -189,6 +198,7 @@ name: "Second Doc"
         self, yaml_content: str, expected_result: list | int
     ) -> None:
         from yaml.composer import ComposerError
+
         if expected_result == 2:
             try:
                 _ = load_yaml_from_string(yaml_content)
@@ -205,7 +215,9 @@ class TestDocumentLoading:
 
     def test_load_documents_single(self, temp_dir: Path) -> None:
         """Test loading a single QType document."""
-        test_file = TestHelpers.create_qtype_document(temp_dir, "test.yaml", "test_app")
+        test_file = TestHelpers.create_qtype_document(
+            temp_dir, "test.yaml", "test_app"
+        )
         result = load_yaml(str(test_file))
         if isinstance(result, list):
             assert len(result) == 1
@@ -218,7 +230,10 @@ class TestDocumentLoading:
     def test_load_documents_multiple(self, temp_dir: Path) -> None:
         """Test loading multiple QType documents."""
         from yaml.composer import ComposerError
-        test_file = TestHelpers.create_multiple_documents(temp_dir, "test.yaml", 3)
+
+        test_file = TestHelpers.create_multiple_documents(
+            temp_dir, "test.yaml", 3
+        )
         try:
             _ = load_yaml(str(test_file))
             assert False, "Expected ComposerError for multiple documents"
@@ -227,14 +242,19 @@ class TestDocumentLoading:
 
     def test_load_function_single_document(self, temp_dir: Path) -> None:
         """Test load function with single document."""
-        test_file = TestHelpers.create_qtype_document(temp_dir, "test.yaml", "test_app")
+        test_file = TestHelpers.create_qtype_document(
+            temp_dir, "test.yaml", "test_app"
+        )
         result = load_yaml(str(test_file))
         assert not isinstance(result, list) or len(result) == 1
 
     def test_load_function_multiple_documents(self, temp_dir: Path) -> None:
         """Test load function with multiple documents."""
         from yaml.composer import ComposerError
-        test_file = TestHelpers.create_multiple_documents(temp_dir, "test.yaml", 2)
+
+        test_file = TestHelpers.create_multiple_documents(
+            temp_dir, "test.yaml", 2
+        )
         try:
             _ = load_yaml(str(test_file))
             assert False, "Expected ComposerError for multiple documents"
@@ -380,14 +400,26 @@ welcome_message: !include_raw message.txt
     @pytest.mark.parametrize(
         "file_content,expected_error",
         [
-            ("data: !include nonexistent.yaml", "Failed to load included file"),
-            ("data: !include_raw nonexistent.txt", "Failed to load included file"),
+            (
+                "data: !include nonexistent.yaml",
+                "Failed to load included file",
+            ),
+            (
+                "data: !include_raw nonexistent.txt",
+                "Failed to load included file",
+            ),
         ],
     )
-    def test_include_errors(self, temp_dir: Path, file_content: str, expected_error: str) -> None:
+    def test_include_errors(
+        self, temp_dir: Path, file_content: str, expected_error: str
+    ) -> None:
         """Test error handling for file inclusion."""
-        main_file = TestHelpers.create_temp_file(temp_dir, "main.yaml", file_content)
-        TestHelpers.assert_yaml_error(main_file, FileNotFoundError, expected_error)
+        main_file = TestHelpers.create_temp_file(
+            temp_dir, "main.yaml", file_content
+        )
+        TestHelpers.assert_yaml_error(
+            main_file, FileNotFoundError, expected_error
+        )
 
     def test_include_empty_file(self, temp_dir: Path) -> None:
         """Test including an empty file."""
@@ -409,7 +441,9 @@ data: !include empty.yaml
 
     def test_malformed_yaml_in_included_file(self, temp_dir: Path) -> None:
         """Test error handling when included file contains malformed YAML."""
-        TestHelpers.create_temp_file(temp_dir, "malformed.yaml", TestFileFixtures.MALFORMED_YAML)
+        TestHelpers.create_temp_file(
+            temp_dir, "malformed.yaml", TestFileFixtures.MALFORMED_YAML
+        )
         main_file = TestHelpers.create_temp_file(
             temp_dir,
             "main.yaml",
@@ -465,10 +499,14 @@ app:
             result = TestHelpers.load_and_assert_single_result(main_file)
             assert result["app"]["name"] == "TestApp"
 
-    def test_env_var_with_default_in_included_file(self, temp_dir: Path) -> None:
+    def test_env_var_with_default_in_included_file(
+        self, temp_dir: Path
+    ) -> None:
         """Test environment variables with defaults in included files."""
         # Create included file with env var and default
-        TestHelpers.create_temp_file(temp_dir, "config.yaml", TestFileFixtures.CONFIG_WITH_ENV)
+        TestHelpers.create_temp_file(
+            temp_dir, "config.yaml", TestFileFixtures.CONFIG_WITH_ENV
+        )
 
         # Create main file
         main_file = TestHelpers.create_temp_file(
@@ -512,7 +550,9 @@ database: !include config.yaml
             assert result["database"]["host"] == "production.example.com"
             assert result["database"]["port"] == 443
 
-    def test_required_env_var_missing_in_included_file(self, temp_dir: Path) -> None:
+    def test_required_env_var_missing_in_included_file(
+        self, temp_dir: Path
+    ) -> None:
         """Test error when required env var is missing in included file."""
         # Create included file with required env var
         TestHelpers.create_temp_file(
@@ -603,7 +643,9 @@ class TestLoaderEdgeCases:
 
     def test_load_yaml_uri_parsing_exception(self, temp_dir: Path) -> None:
         """Test load_yaml when URI parsing raises an exception."""
-        test_file = TestHelpers.create_temp_file(temp_dir, "test.yaml", "name: Test")
+        test_file = TestHelpers.create_temp_file(
+            temp_dir, "test.yaml", "name: Test"
+        )
         with patch("qtype.loader.url_to_fs", side_effect=ValueError):
             result = load_yaml(str(test_file))
             if isinstance(result, dict):
@@ -621,11 +663,15 @@ class TestLoaderEdgeCases:
             ("simple_filename_no_extension", FileNotFoundError),
         ],
     )
-    def test_load_yaml_file_not_found(self, content: str, expected_error: type) -> None:
+    def test_load_yaml_file_not_found(
+        self, content: str, expected_error: type
+    ) -> None:
         with pytest.raises(expected_error):
             load_yaml(content)
 
-    def test_load_from_string_yaml_load_all_returns_none(self, temp_dir: Path) -> None:
+    def test_load_from_string_yaml_load_all_returns_none(
+        self, temp_dir: Path
+    ) -> None:
         """Test load_from_string when yaml.load_all returns None."""
         with patch("yaml.load", return_value=None):
             result = load_yaml_from_string("name: Test")

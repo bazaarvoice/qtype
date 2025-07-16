@@ -17,8 +17,9 @@ from fsspec.core import url_to_fs
 
 from qtype.dsl import model as dsl
 from qtype.dsl.validator import validate
-from qtype.semantic.resolver import resolve
 from qtype.semantic.model import Application
+from qtype.semantic.resolver import resolve
+
 
 class _StringStream:
     """
@@ -226,7 +227,9 @@ YamlLoader.add_constructor("!include", _include_file_constructor)
 YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_yaml_from_string(content: str, original_uri: str | None = None) -> dict[str, Any]:
+def load_yaml_from_string(
+    content: str, original_uri: str | None = None
+) -> dict[str, Any]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
@@ -268,7 +271,7 @@ def load_yaml(content: str) -> dict[str, Any]:
     """
     try:
         # First check if content looks like a file path or URI
-        if '\n' in content:
+        if "\n" in content:
             # If it contains newlines, treat as raw YAML content
             is_uri = False
         else:
@@ -304,6 +307,7 @@ def load_yaml(content: str) -> dict[str, Any]:
     else:
         return load_yaml_from_string(content)
 
+
 ResolveableType = dsl.Agent | dsl.Application | dsl.Flow | list
 
 
@@ -323,12 +327,15 @@ def _resolve_root(doc: dsl.Document) -> ResolveableType:
         root = root.root  # type: ignore
     return root  # type: ignore[return-value]
 
+
 def load(content: str) -> Application:
     """Load a QType YAML file, validate it, and return the resolved root."""
     yaml_data = load_yaml(content)
     document = dsl.Document.model_validate(yaml_data)
     document = _resolve_root(document)
     if not isinstance(document, dsl.Application):
-        raise ValueError(f"Root document is not an Application, found {type(document)}.")
+        raise ValueError(
+            f"Root document is not an Application, found {type(document)}."
+        )
     document = validate(document)
     return resolve(document)

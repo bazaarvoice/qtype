@@ -1,6 +1,6 @@
-from qtype.dsl.model import VariableTypeEnum
 from datetime import date, datetime, time
 
+from qtype.dsl.model import VariableTypeEnum
 
 VARIABLE_TO_TYPE = {
     # VariableTypeEnum.audio: bytes, # TODO: Define a proper audio type

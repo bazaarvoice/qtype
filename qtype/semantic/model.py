@@ -16,7 +16,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
-from qtype.dsl.model import DecoderFormat, Variable as DSLVariable
+from qtype.dsl.model import DecoderFormat
+from qtype.dsl.model import Variable as DSLVariable
 
 
 class Variable(DSLVariable, BaseModel):

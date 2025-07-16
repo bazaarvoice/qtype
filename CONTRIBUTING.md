@@ -168,37 +168,68 @@ Settings are in `.pre-commit-config.yaml`:
 
 ```
 qtype/
-├── pyproject.toml          # Project configuration and dependencies
-├── uv.lock                 # Locked dependency versions
-├── README.md               # Project overview
-├── CONTRIBUTING.md         # This file
-├── LICENSE                 # Project license
-├── qtype/                  # Main package
+├── pyproject.toml           # Project configuration and dependencies
+├── uv.lock                  # Locked dependency versions
+├── README.md                # Project overview
+├── CONTRIBUTING.md          # Contribution guide
+├── LICENSE                  # Project license
+├── common/                  # Shared YAML models and tool definitions
+│   ├── aws.bedrock.models.qtype.yaml
+│   └── tools.qtype.yaml
+├── docs/                    # Documentation
+│   ├── index.md
+│   ├── guides/
+│   │   └── getting-started.md
+│   └── reference/
+│       ├── dsl-spec.md
+│       └── semantic_ir.md
+├── examples/                # Example QType specifications
+│   └── hello_world.qtype.yaml
+├── ignored/                 # Experimental and legacy files
+│   ├── FUTURE_WORK.md
+│   └── tests_old_reference_only/
+├── qtype/                   # Main Python package
 │   ├── __init__.py
-│   ├── cli.py              # Command-line interface
-│   ├── commands/           # CLI command implementations
-│   │   ├── generate_schema.py
+│   ├── cli.py
+│   ├── loader.py
+│   ├── util.py
+│   ├── commands/
+│   │   ├── __init__.py
+│   │   ├── convert.py
+│   │   ├── generate.py
+│   │   ├── run.py
 │   │   └── validate.py
-│   ├── dsl/                # Domain-specific language models
-│   │   ├── models.py       # Pydantic models for DSL
-│   │   └── validator.py    # DSL validation logic
-│   ├── ir/                 # Intermediate representation
-│   │   ├── models.py       # IR models
-│   │   ├── resolver.py     # IR resolution logic
-│   │   └── validator.py    # IR validation logic
-│   ├── parser/             # YAML parsing
-│   │   └── loader.py
-│   ├── generator/          # Code generation
-│   │   └── llama_index_gen.py
-│   └── utils/              # Utilities
-│       └── telemetry.py
-├── tests/                  # Test suite
+│   ├── commons/
+│   │   ├── __init__.py
+│   │   ├── generate.py
+│   │   └── tools.py
+│   ├── converters/
+│   │   ├── __init__.py
+│   │   ├── tools_from_api.py
+│   │   └── tools_from_module.py
+│   ├── dsl/
+│   │   ├── __init__.py
+│   │   ├── model.py
+│   │   └── validator.py
+│   ├── runner/
+│   │   ├── __init__.py
+│   │   └── executor.py
+│   ├── semantic/
+│   │   ├── __init__.py
+│   │   ├── errors.py
+│   │   ├── generate.py
+│   │   ├── model.py
+│   │   └── resolver.py
+├── schema/                  # JSON schemas
+│   └── qtype.schema.json
+├── tests/                   # Test suite
 │   ├── __init__.py
-│   ├── test_loader.py
-│   └── test_ir_resolution.py
-├── docs/                   # Documentation
-├── examples/               # Example QType specifications
-└── schema/                 # Generated JSON schemas
+│   ├── test_dsl_loader.py
+│   ├── test_dsl_validation.py
+│   ├── test_semantic_resolver.py
+│   └── test_tool_provider_python_module.py
+│   └── specs/
+└── __pycache__/             # Python bytecode cache
 ```
 
 ## Making Changes
@@ -230,10 +261,10 @@ qtype/
 6. **Test CLI functionality:**
    ```bash
    # Generate schema
-   qtype generate-schema -o schema/test.json
+   ptython -m qtype.cli generate-schema -o schema/test.json
    
    # Validate example spec
-   qtype validate examples/hello_world.qtype.yaml
+   ptython -m qtype.cli validate examples/hello_world.qtype.yaml
    ```
 
 7. **Update documentation** if needed
@@ -246,16 +277,10 @@ qtype/
 
 ### Adding New Dependencies
 
-When adding new dependencies, update `pyproject.toml`:
+When adding new dependencies, use uv to add to `pyproject.toml`:
 
-```toml
-[project]
-dependencies = [
-    "jsonschema>=4.24.0",
-    "pydantic>=2.11.5",
-    "pyyaml>=6.0.2",
-    "your-new-dependency>=1.0.0",
-]
+```bash
+uv add <dependency>
 ```
 
 Then update the lock file:

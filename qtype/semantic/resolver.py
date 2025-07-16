@@ -6,12 +6,13 @@ semantic intermediate representation equivalents, where all ID references
 are resolved to actual object references.
 """
 
+import logging
 from typing import Any
+
 import qtype.dsl.model as dsl
 from qtype.dsl.validator import _is_dsl_type, _resolve_forward_ref
 from qtype.semantic import model as ir
 from qtype.semantic.errors import SemanticResolutionError
-import logging
 
 logger = logging.getLogger(__name__)
 

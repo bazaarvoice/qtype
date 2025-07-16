@@ -13,11 +13,11 @@ from qtype.semantic.model import (
     AuthorizationProvider,
     EmbeddingModel,
     Flow,
-    Variable,
     Model,
     Prompt,
     QTypeSpec,
     Step,
+    Variable,
 )
 
 logger = logging.getLogger(__name__)

@@ -1,4 +1,3 @@
-
 from qtype.dsl.model import APITool, AuthorizationProvider
 
 

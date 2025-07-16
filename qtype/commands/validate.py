@@ -10,10 +10,10 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from qtype import dsl
+from qtype.dsl.validator import QTypeValidationError, validate
 from qtype.loader import load_dsl
 from qtype.semantic.errors import SemanticResolutionError
 from qtype.semantic.resolver import resolve
-from qtype.dsl.validator import QTypeValidationError, validate
 
 logger = logging.getLogger(__name__)
 

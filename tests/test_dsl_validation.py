@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import glob
-import pytest
 from pathlib import Path
 from typing import Callable
+
+import pytest
+
 from qtype import dsl, loader
 from qtype.dsl import validator
 

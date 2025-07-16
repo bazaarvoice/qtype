@@ -1,7 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union, get_args, get_origin
 
 import qtype.dsl.model as dsl
-from typing import Union, get_args, get_origin
 
 
 class QTypeValidationError(Exception):
@@ -23,14 +22,19 @@ class DuplicateComponentError(QTypeValidationError):
             f"Duplicate component with ID '{obj_id}' found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
         )
 
+
 class ComponentNotFoundError(QTypeValidationError):
     """Raised when a component is not found in the DSL Application."""
 
     def __init__(self, component_id: str):
-        super().__init__(f"Component with ID '{component_id}' not found in the DSL Application.")
+        super().__init__(
+            f"Component with ID '{component_id}' not found in the DSL Application."
+        )
+
 
 class ReferenceNotFoundError(QTypeValidationError):
     """Raised when a reference is not found in the lookup map."""
+
     def __init__(self, reference: str, type_hint: str | None = None):
         msg = (
             f"Reference '{reference}' not found in lookup map."
@@ -39,10 +43,13 @@ class ReferenceNotFoundError(QTypeValidationError):
         )
         super().__init__(msg)
 
+
 class FlowHasNoStepsError(QTypeValidationError):
     """Raised when a flow has no steps defined."""
+
     def __init__(self, flow_id: str):
         super().__init__(f"Flow {flow_id} has no steps defined.")
+
 
 # These types are used only for the DSL and should not be converted to semantic types
 # They are used for JSON schema generation

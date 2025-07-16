@@ -2,13 +2,7 @@ import importlib
 import inspect
 from typing import Any
 
-from qtype.dsl.model import (
-    PythonFunctionTool,
-    Variable,
-    VariableType,
-)
-
-
+from qtype.dsl.model import PythonFunctionTool, Variable, VariableType
 from qtype.util import TYPE_TO_VARIABLE
 
 

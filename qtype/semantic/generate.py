@@ -1,14 +1,13 @@
 import argparse
 import inspect
+import subprocess
 from pathlib import Path
 from typing import Any, Union, get_args, get_origin
-import subprocess
 
-import qtype.dsl.model as dsl
 import networkx as nx
 
+import qtype.dsl.model as dsl
 from qtype.dsl.validator import _is_dsl_type
-
 
 FIELDS_TO_IGNORE = {"Application.references"}
 TYPES_TO_IGNORE = {
@@ -19,7 +18,7 @@ TYPES_TO_IGNORE = {
     "VariableTypeEnum",
     "VariableType",
     "DecoderFormat",
-    "Variable"
+    "Variable",
 }
 
 
@@ -103,8 +102,12 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             "from qtype.dsl.model import VariableTypeEnum, DecoderFormat, Variable as DSLVariable\n\n"
         )
         f.write("class Variable(DSLVariable, BaseModel):\n")
-        f.write("    \"\"\"Semantic version of DSL Variable with ID references resolved.\"\"\"\n")
-        f.write("    value: Any | None = Field(None, description=\"The value of the variable\")\n")
+        f.write(
+            '    """Semantic version of DSL Variable with ID references resolved."""\n'
+        )
+        f.write(
+            '    value: Any | None = Field(None, description="The value of the variable")\n'
+        )
         f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
 
@@ -316,8 +319,9 @@ def create_field_definition(
 
     # Handle default values
     # Check for PydanticUndefined (required field)
-    from pydantic_core import PydanticUndefined
     from enum import Enum
+
+    from pydantic_core import PydanticUndefined
 
     if field_default is PydanticUndefined or field_default is ...:
         default_part = "..."

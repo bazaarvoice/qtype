@@ -8,7 +8,6 @@ import argparse
 import logging
 from typing import Any
 
-
 # from qtype.dsl.loader import load
 # from qtype.ir.resolver import resolve_semantic_ir
 # from qtype.ir.validator import validate_semantics
