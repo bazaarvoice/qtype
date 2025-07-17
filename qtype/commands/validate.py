@@ -7,11 +7,11 @@ import logging
 import sys
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from qtype import dsl
 from qtype.dsl.validator import QTypeValidationError, validate
-from qtype.loader import load_dsl
+from qtype.loader import _resolve_root, load_yaml
 from qtype.semantic.errors import SemanticResolutionError
 from qtype.semantic.resolver import resolve
 
@@ -29,30 +29,28 @@ def main(args: Any) -> None:
         Exits with code 1 if validation fails.
     """
     try:
-        spec = load_dsl(args.spec)
-        if isinstance(spec, dsl.Application):
-            spec = validate(spec)
-            spec = resolve(spec)
-        else:
-            logger.info(
-                f"Spec is a {spec.__class__.__name__}, skipping semantic resolution."
+        yaml_data = load_yaml(args.spec)
+        logging.info("✅ Schema validation successful.")
+        document = dsl.Document.model_validate(yaml_data)
+        logging.info("✅ Model validation successful.")
+        document = _resolve_root(document)
+        if not isinstance(document, dsl.Application):
+            logging.warning(
+                "🟨 Spec is not an Application, skipping semantic resolution."
             )
-        logger.info("✅ Schema validation successful")
+        else:
+            document = validate(document)
+            logger.info("✅ Language validation successful")
+            document = resolve(document)
+            logger.info("✅ Semantic validation successful")
         if args.print:
-
-            def print_model(s: BaseModel) -> None:
-                logger.info(
-                    s.model_dump_json(
-                        indent=2,
-                        exclude_none=True,
-                    )
+            logger.info(
+                document.model_dump_json(  # type: ignore
+                    indent=2,
+                    exclude_none=True,
                 )
+            )
 
-            if isinstance(spec, list):
-                for s in spec:
-                    print_model(s)
-            else:
-                print_model(spec)
     except ValidationError as exc:
         logger.error("❌ Schema validation failed:\n%s", exc)
         sys.exit(1)

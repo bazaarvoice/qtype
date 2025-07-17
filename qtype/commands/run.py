@@ -8,7 +8,9 @@ import argparse
 import logging
 from typing import Any
 
-# from qtype.dsl.loader import load
+from qtype.loader import load
+from qtype.semantic.model import Application, Flow
+
 # from qtype.ir.resolver import resolve_semantic_ir
 # from qtype.ir.validator import validate_semantics
 # from qtype.runner.executor import FlowExecutor
@@ -16,79 +18,52 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def main(args: Any) -> None:
-    return None
-    # """
-    # Run a QType YAML spec file by validating, resolving, and executing it.
+def _get_flow(app: Application, flow_id: str | None) -> Flow:
+    if len(app.flows) == 0:
+        raise ValueError(
+            "No flows found in the application."
+            " Please ensure the spec contains at least one flow."
+        )
 
-    # Args:
-    #     args: Arguments passed from the command line or calling context.
+    if flow_id is not None:
+        # find the first flow in the list with the given flow_id
+        flow = next((f for f in app.flows if f.id == flow_id), None)
+        if flow is None:
+            raise ValueError(f"Flow not found: {flow_id}")
 
-    # Exits:
-    #     Exits with code 1 if validation fails or no executable flows found.
-    # """
-    # # Step 1: Validate the spec
-    # try:
-    #     spec = load(args.spec)
-    # except ValidationError as exc:
-    #     logger.error("❌ Schema validation failed:\n%s", exc)
-    #     sys.exit(1)
+    else:
+        flow = app.flows[0]
+        logger.warning(
+            f"No flow_id specified, running flow {flow.id} by default."
+        )
 
-    # # Step 2: Validate semantics
-    # try:
-    #     validate_semantics(spec)
-    # except Exception as exc:
-    #     logger.error("❌ Semantic validation failed:\n%s", exc)
-    #     sys.exit(1)
+    return flow
 
-    # # Step 3: Resolve semantic IR
-    # try:
-    #     ir_spec = resolve_semantic_ir(spec)
-    # except Exception as exc:
-    #     logger.error("❌ Semantic resolution failed:\n%s", exc)
-    #     sys.exit(1)
 
-    # # Step 4: Find and execute flows
-    # if not ir_spec.flows:
-    #     logger.error("❌ No flows found in specification.")
-    #     sys.exit(1)
+def run_api(args: Any) -> None:
+    pass
 
-    # # For now, only support 'complete' mode flows
-    # complete_flows = [
-    #     flow for flow in ir_spec.flows if flow.mode.value == "complete"
-    # ]
 
-    # if not complete_flows:
-    #     logger.error(
-    #         "❌ No 'complete' mode flows found. Only 'complete' mode is currently supported."
-    #     )
-    #     sys.exit(1)
+def run_flow(args: Any) -> None:
+    """Run a QType YAML spec file by executing its flows.
 
-    # # Use the first complete flow
-    # flow = complete_flows[0]
-    # if len(complete_flows) > 1:
-    #     logger.warning(
-    #         f"⚠️  Multiple complete flows found. Using flow '{flow.id}'."
-    #     )
+    Args:
+        args: Arguments passed from the command line or calling context.
+    """
+    spec = load(args.spec)
+    logger.info(f"Running flow from spec: {spec}")
+    # Here you would implement the logic to run the flow based on the spec
 
-    # logger.info(f"🚀 Running flow '{flow.id}'...")
 
-    # # Step 5: Execute the flow
-    # try:
-    #     executor = FlowExecutor(ir_spec)
-    #     result = executor.execute_flow(flow)
+def run_ui(args: Any) -> None:
+    """Run a QType YAML spec file by executing its flows in a UI.
 
-    #     logger.info("✅ Flow execution completed successfully.")
-    #     if result:
-    #         print("\n" + "=" * 50)
-    #         print("RESULT:")
-    #         print("=" * 50)
-    #         print(result)
-    #         print("=" * 50)
-
-    # except Exception as exc:
-    #     logger.error("❌ Flow execution failed:\n%s", exc)
-    #     sys.exit(1)
+    Args:
+        args: Arguments passed from the command line or calling context.
+    """
+    # Placeholder for actual implementation
+    logger.info(f"Running UI for spec: {args.spec}")
+    # Here you would implement the logic to run the flow in a UI context
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
@@ -100,7 +75,47 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     cmd_parser = subparsers.add_parser(
         "run", help="Run a QType YAML spec by executing its flows."
     )
+
+    run_subparsers = cmd_parser.add_subparsers(
+        dest="run_method", required=True
+    )
+
+    # Parse for generating API runner
+    api_runner_parser = run_subparsers.add_parser(
+        "api", help="Serves the qtype file as an API."
+    )
+    api_runner_parser.add_argument(
+        "-H", "--host", type=str, default="localhost"
+    )
+    api_runner_parser.add_argument("-p", "--port", type=int, default=8000)
+    api_runner_parser.set_defaults(func=run_api)
+
+    # Parse for running a flow
+    flow_parser = run_subparsers.add_parser(
+        "flow", help="Runs a QType YAML spec file by executing its flows."
+    )
+    flow_parser.add_argument(
+        "-f",
+        "--flow",
+        type=str,
+        default=None,
+        help="The name of the flow to run. If not specified, runs the first flow found.",
+    )
+    flow_parser.set_defaults(func=run_flow)
+
+    # Run a user interface for the spec
+    ui_parser = run_subparsers.add_parser(
+        "ui",
+        help="Runs a QType YAML spec file by executing its flows in a UI.",
+    )
+    ui_parser.add_argument(
+        "-f",
+        "--flow",
+        type=str,
+        default=None,
+        help="The name of the flow to run in the UI. If not specified, runs the first flow found.",
+    )
+    ui_parser.set_defaults(func=run_ui)
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
     )
-    cmd_parser.set_defaults(func=main)

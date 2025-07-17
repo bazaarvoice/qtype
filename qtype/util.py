@@ -22,6 +22,6 @@ VARIABLE_TO_TYPE = {
 
 TYPE_TO_VARIABLE = {v: k for k, v in VARIABLE_TO_TYPE.items()}
 
-assert len(VARIABLE_TO_TYPE) == len(TYPE_TO_VARIABLE), (
-    "Variable to type mapping is not one-to-one"
-)
+assert len(VARIABLE_TO_TYPE) == len(
+    TYPE_TO_VARIABLE
+), "Variable to type mapping is not one-to-one"

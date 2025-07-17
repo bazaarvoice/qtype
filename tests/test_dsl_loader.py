@@ -177,11 +177,13 @@ app:
         from yaml.composer import ComposerError
 
         try:
-            _ = load_yaml_from_string("""
+            _ = load_yaml_from_string(
+                """
 name: "First Doc"
 ---
 name: "Second Doc"
-""")
+"""
+            )
             assert False, "Expected ComposerError for multiple documents"
         except ComposerError:
             pass

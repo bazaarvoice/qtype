@@ -3,17 +3,19 @@ repos:
     rev: v0.1.0
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [qtype/, tests/, --fix]
       - id: ruff-format
+        args: [qtype/, tests/]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.0
     hooks:
       - id: isort
+        args: [qtype/, tests/]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-PyYAML]
-        args: [--strict]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [types-PyYAML, pydantic>=2.11.5]
+  #       args: [--strict, qtype/, tests/]

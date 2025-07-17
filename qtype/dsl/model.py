@@ -584,33 +584,3 @@ class Document(
         ToolList,
         VariableList,
     ]
-
-
-#
-# ---------------- Shapes we've disabled for now but will need soon ----------------
-#
-
-# class FeedbackType(str, Enum):
-#     """Enum of supported feedback mechanisms such as thumbs, stars, or text responses."""
-
-#     THUMBS = "thumbs"
-#     STAR = "star"
-#     TEXT = "text"
-#     RATING = "rating"
-#     CHOICE = "choice"
-#     BOOLEAN = "boolean"
-
-
-# class Feedback(StrictBaseModel):
-#     """Schema to define how user feedback is collected, structured, and optionally used to guide future prompts."""
-
-#     id: str = Field(..., description="Unique ID of the feedback config.")
-#     type: FeedbackType = Field(..., description="Feedback mechanism type.")
-#     question: str | None = Field(
-#         default=None,
-#         description="Question to show user for qualitative feedback.",
-#     )
-#     prompt: str | None = Field(
-#         default=None,
-#         description="ID of prompt used to generate a follow-up based on feedback.",
-#     )

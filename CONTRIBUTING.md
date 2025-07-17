@@ -38,7 +38,7 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install all dependencies including development tools
-uv sync --group dev
+uv sync --group dev --group interpreter
 ```
 
 ## Installing QType for Development
