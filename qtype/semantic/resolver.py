@@ -44,6 +44,7 @@ def to_semantic_ir(
     if isinstance(dslobj, dsl.Enum):
         # if the variable is an enum, just return it. The semantic classes use the same class
         return dslobj
+
     if _is_dsl_type(_resolve_forward_ref(type(dslobj))):
         # If the object is a DSL type, we will resolve it to its semantic IR.
         # First get the constructor with the same class name. i.e., dsl.Application -> ir.Application
@@ -81,7 +82,6 @@ def resolve(application: dsl.Application) -> ir.Application:
     Returns:
         dsl.Application: The resolved IR application
     """
-
     # Next, we'll build up the semantic representation.
     # This will create a map of all objects by their ID, ensuring that we can resolve
     # references to actual objects.

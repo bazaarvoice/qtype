@@ -17,7 +17,7 @@ class StrictBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class VariableTypeEnum(str, Enum):
+class PrimitiveTypeEnum(str, Enum):
     """Represents the type of data a user or system input can accept within the DSL."""
 
     audio = "audio"
@@ -36,7 +36,19 @@ class VariableTypeEnum(str, Enum):
     video = "video"
 
 
-VariableType = Union[VariableTypeEnum, dict, list]
+class StructuralTypeEnum(str, Enum):
+    """Represents a structured type that can be used in the DSL."""
+
+    object = "object"
+    array = "array"
+
+
+def _resolve_type(type_str: str) -> PrimitiveTypeEnum | str:
+    """Resolve a type string to its corresponding PrimitiveTypeEnum or return as is."""
+    try:
+        return PrimitiveTypeEnum(type_str)
+    except ValueError:
+        return type_str
 
 
 class Variable(StrictBaseModel):
@@ -46,17 +58,67 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType = Field(
+    type: (
+        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | str
+    ) = Field(
         ...,
-        description=(
-            "Type of data expected or produced. Can be:\n"
-            + "- A simple type from VariableType enum (e.g., 'text', 'number')\n"
-            + "- A dict defining object structure with property names as keys\n"
-            + "- For arrays: use [type] syntax (e.g., [text] for array of strings)\n"
-            + "- For nested objects: use nested dict structure\n"
-            + "- For tuples: use [type1, type2] syntax"
-        ),
+        description=("Type of data expected or produced."),
     )
+
+    @model_validator(mode="after")
+    def resolve_type(self) -> "Variable":
+        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
+        # Pydantic doesn't properly handle enums as strings in model validation,
+        if isinstance(self.type, str):
+            self.type = _resolve_type(self.type)
+        return self
+
+
+class TypeDefinitionBase(StrictBaseModel, ABC):
+    id: str = Field(description="The unique identifier for this custom type.")
+    kind: StructuralTypeEnum = Field(
+        ...,
+        description="The kind of structure this type represents (object/array).",
+    )
+    description: str | None = Field(
+        None, description="A description of what this type represents."
+    )
+
+
+class ObjectTypeDefinition(TypeDefinitionBase):
+    kind: StructuralTypeEnum = StructuralTypeEnum.object
+    properties: dict[str, VariableType | str] | None = Field(
+        None, description="Defines the nested properties."
+    )
+
+    @model_validator(mode="after")
+    def resolve_type(self) -> "ObjectTypeDefinition":
+        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
+        # Pydantic doesn't properly handle enums as strings in model validation,
+        if self.properties:
+            for key, value in self.properties.items():
+                if isinstance(value, str):
+                    self.properties[key] = _resolve_type(value)
+        return self
+
+
+class ArrayTypeDefinition(TypeDefinitionBase):
+    kind: StructuralTypeEnum = StructuralTypeEnum.array
+    type: VariableType | str = Field(
+        ..., description="The type of items in the array."
+    )
+
+    @model_validator(mode="after")
+    def resolve_type(self) -> "ArrayTypeDefinition":
+        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
+        # Pydantic doesn't properly handle enums as strings in model validation,
+        if isinstance(self.type, str):
+            self.type = _resolve_type(self.type)
+        return self
+
+
+TypeDefinition = ObjectTypeDefinition | ArrayTypeDefinition
+VariableType = PrimitiveTypeEnum | TypeDefinition
 
 
 class Model(StrictBaseModel):
@@ -129,7 +191,7 @@ class PromptTemplate(Step):
         """Set default output variable if none provided."""
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.prompt", type=VariableTypeEnum.text)
+                Variable(id=f"{self.id}.prompt", type=PrimitiveTypeEnum.text)
             ]
         if len(self.outputs) != 1:
             raise ValueError(
@@ -226,7 +288,7 @@ class LLMInference(Step):
         """Set default output variable if none provided."""
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.response", type=VariableTypeEnum.text)
+                Variable(id=f"{self.id}.response", type=PrimitiveTypeEnum.text)
             ]
         return self
 
@@ -279,7 +341,7 @@ class Decoder(Step):
             or len(self.inputs) != 1
             or (
                 isinstance(self.inputs[0], Variable)
-                and self.inputs[0].type != VariableTypeEnum.text
+                and self.inputs[0].type != PrimitiveTypeEnum.text
             )
         ):
             raise ValueError(
@@ -363,6 +425,10 @@ class Application(StrictBaseModel):
     )
     models: list[ModelType] | None = Field(
         default=None, description="List of models used in this application."
+    )
+    types: list[TypeDefinition] | None = Field(
+        default=None,
+        description="List of custom types defined in this application.",
     )
     variables: list[Variable] | None = Field(
         default=None, description="List of variables used in this application."
@@ -458,13 +524,28 @@ class VectorSearch(Search):
         """Set default input and output variables if none provided."""
         if self.inputs is None:
             self.inputs = [
-                Variable(id="top_k", type=VariableTypeEnum.number),
-                Variable(id="query", type=VariableTypeEnum.text),
+                Variable(id="top_k", type=PrimitiveTypeEnum.number),
+                Variable(id="query", type=PrimitiveTypeEnum.text),
             ]
 
         if self.outputs is None:
             self.outputs = [
-                Variable(id=f"{self.id}.results", type={"results": ["dict"]})
+                Variable(
+                    id=f"{self.id}.results",
+                    type=ArrayTypeDefinition(
+                        id=f"{self.id}.SearchResult",
+                        type=ObjectTypeDefinition(
+                            id="SearchResult",
+                            description="Result of a search operation.",
+                            properties={
+                                "score": PrimitiveTypeEnum.number,
+                                "id": PrimitiveTypeEnum.text,
+                                "document": PrimitiveTypeEnum.text,
+                            },
+                        ),
+                        description=None,
+                    ),
+                )
             ]
         return self
 
@@ -476,7 +557,7 @@ class DocumentSearch(Search):
     def set_default_inputs_outputs(self) -> "DocumentSearch":
         """Set default input and output variables if none provided."""
         if self.inputs is None:
-            self.inputs = [Variable(id="query", type=VariableTypeEnum.text)]
+            self.inputs = [Variable(id="query", type=PrimitiveTypeEnum.text)]
 
         if self.outputs is None:
             self.outputs = [
@@ -548,6 +629,12 @@ class ToolList(RootModel[list[ToolType]]):
     root: list[ToolType]
 
 
+class TypeList(RootModel[list[TypeDefinition]]):
+    """Schema for a standalone list of type definitions."""
+
+    root: list[TypeDefinition]
+
+
 class VariableList(RootModel[list[Variable]]):
     """Schema for a standalone list of variables."""
 
@@ -564,6 +651,7 @@ class Document(
             IndexList,
             ModelList,
             ToolList,
+            TypeList,
             VariableList,
         ]
     ]
@@ -582,5 +670,6 @@ class Document(
         IndexList,
         ModelList,
         ToolList,
+        TypeList,
         VariableList,
     ]

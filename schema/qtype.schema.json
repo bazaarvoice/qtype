@@ -305,6 +305,29 @@
           "description": "List of models used in this application.",
           "title": "Models"
         },
+        "types": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/ObjectTypeDefinition"
+                  },
+                  {
+                    "$ref": "#/$defs/ArrayTypeDefinition"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of custom types defined in this application.",
+          "title": "Types"
+        },
         "variables": {
           "anyOf": [
             {
@@ -432,6 +455,57 @@
         "id"
       ],
       "title": "Application",
+      "type": "object"
+    },
+    "ArrayTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The unique identifier for this custom type.",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/StructuralTypeEnum",
+          "default": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A description of what this type represents.",
+          "title": "Description"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrimitiveTypeEnum"
+            },
+            {
+              "$ref": "#/$defs/ObjectTypeDefinition"
+            },
+            {
+              "$ref": "#/$defs/ArrayTypeDefinition"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The type of items in the array.",
+          "title": "Type"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "ArrayTypeDefinition",
       "type": "object"
     },
     "AuthorizationProvider": {
@@ -804,6 +878,9 @@
         },
         {
           "$ref": "#/$defs/ToolList"
+        },
+        {
+          "$ref": "#/$defs/TypeList"
         },
         {
           "$ref": "#/$defs/VariableList"
@@ -1349,6 +1426,88 @@
       "title": "ModelList",
       "type": "array"
     },
+    "ObjectTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The unique identifier for this custom type.",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/StructuralTypeEnum",
+          "default": "object"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A description of what this type represents.",
+          "title": "Description"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/PrimitiveTypeEnum"
+                  },
+                  {
+                    "$ref": "#/$defs/ObjectTypeDefinition"
+                  },
+                  {
+                    "$ref": "#/$defs/ArrayTypeDefinition"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Defines the nested properties.",
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ObjectTypeDefinition",
+      "type": "object"
+    },
+    "PrimitiveTypeEnum": {
+      "description": "Represents the type of data a user or system input can accept within the DSL.",
+      "enum": [
+        "audio",
+        "boolean",
+        "bytes",
+        "date",
+        "datetime",
+        "embedding",
+        "int",
+        "file",
+        "float",
+        "image",
+        "number",
+        "text",
+        "time",
+        "video"
+      ],
+      "title": "PrimitiveTypeEnum",
+      "type": "string"
+    },
     "PromptTemplate": {
       "additionalProperties": false,
       "description": "Defines a prompt template with a string format and variable bindings.\nThis is used to generate prompts dynamically based on input variables.",
@@ -1503,6 +1662,15 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "StructuralTypeEnum": {
+      "description": "Represents a structured type that can be used in the DSL.",
+      "enum": [
+        "object",
+        "array"
+      ],
+      "title": "StructuralTypeEnum",
+      "type": "string"
+    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -1556,6 +1724,21 @@
       "title": "ToolList",
       "type": "array"
     },
+    "TypeList": {
+      "description": "Schema for a standalone list of type definitions.",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ObjectTypeDefinition"
+          },
+          {
+            "$ref": "#/$defs/ArrayTypeDefinition"
+          }
+        ]
+      },
+      "title": "TypeList",
+      "type": "array"
+    },
     "Variable": {
       "additionalProperties": false,
       "description": "Schema for a variable that can serve as input, output, or parameter within the DSL.",
@@ -1568,18 +1751,19 @@
         "type": {
           "anyOf": [
             {
-              "$ref": "#/$defs/VariableTypeEnum"
+              "$ref": "#/$defs/PrimitiveTypeEnum"
             },
             {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/$defs/ObjectTypeDefinition"
             },
             {
-              "items": {},
-              "type": "array"
+              "$ref": "#/$defs/ArrayTypeDefinition"
+            },
+            {
+              "type": "string"
             }
           ],
-          "description": "Type of data expected or produced. Can be:\n- A simple type from VariableType enum (e.g., 'text', 'number')\n- A dict defining object structure with property names as keys\n- For arrays: use [type] syntax (e.g., [text] for array of strings)\n- For nested objects: use nested dict structure\n- For tuples: use [type1, type2] syntax",
+          "description": "Type of data expected or produced.",
           "title": "Type"
         }
       },
@@ -1597,27 +1781,6 @@
       },
       "title": "VariableList",
       "type": "array"
-    },
-    "VariableTypeEnum": {
-      "description": "Represents the type of data a user or system input can accept within the DSL.",
-      "enum": [
-        "audio",
-        "boolean",
-        "bytes",
-        "date",
-        "datetime",
-        "embedding",
-        "int",
-        "file",
-        "float",
-        "image",
-        "number",
-        "text",
-        "time",
-        "video"
-      ],
-      "title": "VariableTypeEnum",
-      "type": "string"
     },
     "VectorIndex": {
       "additionalProperties": false,

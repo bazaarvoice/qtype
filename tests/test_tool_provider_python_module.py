@@ -4,7 +4,6 @@ Tests for tool provider Python module functionality.
 
 import inspect
 from datetime import date, datetime, time
-from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -16,7 +15,12 @@ from qtype.converters.tools_from_module import (
     _map_python_type_to_variable_type,
     tools_from_module,
 )
-from qtype.dsl.model import PythonFunctionTool, Variable, VariableTypeEnum
+from qtype.dsl.model import (
+    ObjectTypeDefinition,
+    PrimitiveTypeEnum,
+    PythonFunctionTool,
+    Variable,
+)
 
 
 class SamplePydanticModel(BaseModel):
@@ -339,9 +343,9 @@ class TestCreateToolFromFunction:
             "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
             mock_map_type.side_effect = [
-                VariableTypeEnum.int,
-                VariableTypeEnum.text,
-                VariableTypeEnum.boolean,
+                PrimitiveTypeEnum.int,
+                PrimitiveTypeEnum.text,
+                PrimitiveTypeEnum.boolean,
             ]
 
             tool = _create_tool_from_function("test_func", func_info)
@@ -359,16 +363,16 @@ class TestCreateToolFromFunction:
             assert isinstance(tool.inputs[0], Variable)
             assert isinstance(tool.inputs[1], Variable)
             assert tool.inputs[0].id == "x"
-            assert tool.inputs[0].type == VariableTypeEnum.int
+            assert tool.inputs[0].type == PrimitiveTypeEnum.int
             assert tool.inputs[1].id == "y"
-            assert tool.inputs[1].type == VariableTypeEnum.text
+            assert tool.inputs[1].type == PrimitiveTypeEnum.text
 
             # Check outputs
             assert tool.outputs is not None
             assert len(tool.outputs) == 1
             assert isinstance(tool.outputs[0], Variable)
             assert tool.outputs[0].id == "test.module.test_func.result"
-            assert tool.outputs[0].type == VariableTypeEnum.boolean
+            assert tool.outputs[0].type == PrimitiveTypeEnum.boolean
 
     def test_no_parameters_function(self) -> None:
         """Test tool creation for function with no parameters."""
@@ -384,7 +388,7 @@ class TestCreateToolFromFunction:
         with patch(
             "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
-            mock_map_type.return_value = VariableTypeEnum.text
+            mock_map_type.return_value = PrimitiveTypeEnum.text
 
             tool = _create_tool_from_function("no_params_func", func_info)
 
@@ -406,7 +410,7 @@ class TestCreateToolFromFunction:
         with patch(
             "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
-            mock_map_type.return_value = VariableTypeEnum.text
+            mock_map_type.return_value = PrimitiveTypeEnum.text
 
             tool = _create_tool_from_function("multiline_func", func_info)
 
@@ -426,7 +430,7 @@ class TestCreateToolFromFunction:
         with patch(
             "qtype.converters.tools_from_module._map_python_type_to_variable_type"
         ) as mock_map_type:
-            mock_map_type.return_value = VariableTypeEnum.text
+            mock_map_type.return_value = PrimitiveTypeEnum.text
 
             tool = _create_tool_from_function("empty_doc_func", func_info)
 
@@ -439,14 +443,14 @@ class TestMapPythonTypeToVariableType:
     def test_basic_type_mapping(self) -> None:
         """Test mapping of basic Python types to VariableType."""
         test_cases = [
-            (str, VariableTypeEnum.text),
-            (int, VariableTypeEnum.int),
-            (float, VariableTypeEnum.float),
-            (bool, VariableTypeEnum.boolean),
-            (bytes, VariableTypeEnum.bytes),
-            (date, VariableTypeEnum.date),
-            (datetime, VariableTypeEnum.datetime),
-            (time, VariableTypeEnum.time),
+            (str, PrimitiveTypeEnum.text),
+            (int, PrimitiveTypeEnum.int),
+            (float, PrimitiveTypeEnum.float),
+            (bool, PrimitiveTypeEnum.boolean),
+            (bytes, PrimitiveTypeEnum.bytes),
+            (date, PrimitiveTypeEnum.date),
+            (datetime, PrimitiveTypeEnum.datetime),
+            (time, PrimitiveTypeEnum.time),
         ]
 
         for python_type, expected_variable_type in test_cases:
@@ -477,13 +481,13 @@ class TestMapPythonTypeToVariableType:
         """Test mapping of Pydantic model to dictionary structure."""
         result = _map_python_type_to_variable_type(SamplePydanticModel)
 
-        assert isinstance(result, dict)
-        assert "name" in result
-        assert "age" in result
-        assert "active" in result
-        assert result["name"] == "string"
-        assert result["age"] == "integer"
-        assert result["active"] == "boolean"
+        assert isinstance(result, ObjectTypeDefinition)
+        assert "name" in result.properties
+        assert "age" in result.properties
+        assert "active" in result.properties
+        assert result.properties["name"] == PrimitiveTypeEnum.text
+        assert result.properties["age"] == PrimitiveTypeEnum.int
+        assert result.properties["active"] == PrimitiveTypeEnum.boolean
 
     def test_pydantic_model_without_schema_method(self) -> None:
         """Test handling of classes that don't have model_json_schema method."""
@@ -500,7 +504,7 @@ class TestMapPythonTypeToVariableType:
     def test_list_type_mapping(self) -> None:
         """Test mapping of list type (embedding)."""
         result = _map_python_type_to_variable_type(list[float])
-        assert result == VariableTypeEnum.embedding
+        assert result == PrimitiveTypeEnum.embedding
 
 
 class TestIntegration:
@@ -564,9 +568,9 @@ class TestIntegration:
                 assert isinstance(tool.inputs[0], Variable)
                 assert isinstance(tool.inputs[1], Variable)
                 assert tool.inputs[0].id == "text"
-                assert tool.inputs[0].type == VariableTypeEnum.text
+                assert tool.inputs[0].type == PrimitiveTypeEnum.text
                 assert tool.inputs[1].id == "count"
-                assert tool.inputs[1].type == VariableTypeEnum.int
+                assert tool.inputs[1].type == PrimitiveTypeEnum.int
 
                 # Check outputs
                 assert tool.outputs is not None
@@ -576,15 +580,19 @@ class TestIntegration:
                     tool.outputs[0].id
                     == "test.integration.module.sample_function.result"
                 )
-                assert tool.outputs[0].type == VariableTypeEnum.text
+                assert tool.outputs[0].type == PrimitiveTypeEnum.text
 
     def test_complex_pydantic_model_integration(self) -> None:
         """Test integration with complex Pydantic models."""
 
+        class Metadata(BaseModel):
+            created_at: datetime
+            tags: list[str]
+
         class ComplexModel(BaseModel):
             name: str
             scores: list[float]
-            metadata: dict[str, Any]
+            metadata: Metadata
 
         module_path = "test.complex.module"
 
@@ -628,13 +636,13 @@ class TestIntegration:
                 assert len(tool.inputs) == 1
                 assert isinstance(tool.inputs[0], Variable)
                 assert tool.inputs[0].id == "data"
-                assert isinstance(tool.inputs[0].type, dict)
+                assert isinstance(tool.inputs[0].type, ObjectTypeDefinition)
 
                 # Check that the boolean output type is handled
                 assert tool.outputs is not None
                 assert len(tool.outputs) == 1
                 assert isinstance(tool.outputs[0], Variable)
-                assert tool.outputs[0].type == VariableTypeEnum.boolean
+                assert tool.outputs[0].type == PrimitiveTypeEnum.boolean
 
 
 # Test fixtures for edge cases

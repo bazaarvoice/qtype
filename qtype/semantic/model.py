@@ -16,7 +16,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
-from qtype.dsl.model import DecoderFormat
+from qtype.dsl.model import (
+    DecoderFormat,
+    PrimitiveTypeEnum,
+    StructuralTypeEnum,
+)
 from qtype.dsl.model import Variable as DSLVariable
 
 
@@ -42,6 +46,9 @@ class Application(BaseModel):
     models: list[Model] = Field(
         [], description="List of models used in this application."
     )
+    types: list[ObjectTypeDefinition | ArrayTypeDefinition] = Field(
+        [], description="List of custom types defined in this application."
+    )
     variables: list[Variable] = Field(
         [], description="List of variables used in this application."
     )
@@ -59,6 +66,21 @@ class Application(BaseModel):
     )
     telemetry: TelemetrySink | None = Field(
         None, description="Optional telemetry sink for observability."
+    )
+
+
+class TypeDefinitionBase(BaseModel):
+    """Semantic version of TypeDefinitionBase."""
+
+    id: str = Field(
+        ..., description="The unique identifier for this custom type."
+    )
+    kind: StructuralTypeEnum = Field(
+        ...,
+        description="The kind of structure this type represents (object/array).",
+    )
+    description: str | None = Field(
+        None, description="A description of what this type represents."
     )
 
 
@@ -150,6 +172,24 @@ class TelemetrySink(BaseModel):
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
+
+
+class ArrayTypeDefinition(TypeDefinitionBase):
+    """Semantic version of ArrayTypeDefinition."""
+
+    kind: StructuralTypeEnum = Field(StructuralTypeEnum.array)
+    type: (
+        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition
+    ) = Field(..., description="The type of items in the array.")
+
+
+class ObjectTypeDefinition(TypeDefinitionBase):
+    """Semantic version of ObjectTypeDefinition."""
+
+    kind: StructuralTypeEnum = Field(StructuralTypeEnum.object)
+    properties: dict[
+        str, PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition
+    ] = Field({}, description="Defines the nested properties.")
 
 
 class Condition(Step):

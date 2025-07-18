@@ -2,6 +2,14 @@ id: test_app
 description: "A test application with all fields populated."
 memories:
   - id: mem1
+types:
+  - id: ChatMessage
+    description: "A type for testing purposes."
+    properties:
+      role: text
+      # content: 
+      #   id: ChatBlockArray
+      #   type: text
 models:
   - id: model1
     provider: openai

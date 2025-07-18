@@ -3,7 +3,7 @@ import inspect
 from typing import Any
 
 from qtype.dsl.model import PythonFunctionTool, Variable, VariableType
-from qtype.util import TYPE_TO_VARIABLE
+from qtype.util import TYPE_TO_VARIABLE, pydantic_to_object_definition
 
 
 def tools_from_module(
@@ -131,9 +131,10 @@ def _create_tool_from_function(
     ]
 
     # Create output variable based on return type
+    tool_id = func_info["module"] + "." + func_name
+
     output_type = _map_python_type_to_variable_type(func_info["return_type"])
 
-    tool_id = func_info["module"] + "." + func_name
     output_variable = Variable(
         id=f"{tool_id}.result",
         type=output_type,
@@ -170,8 +171,7 @@ def _map_python_type_to_variable_type(
             # If the type is a Pydantic model, use its model_dump method
             # to convert it to a dictionary representation
             try:
-                schema = python_type.model_json_schema()  # type: ignore
-                return {n: p["type"] for n, p in schema["properties"].items()}
+                return pydantic_to_object_definition(python_type)
             except AttributeError:
                 pass
     raise ValueError(

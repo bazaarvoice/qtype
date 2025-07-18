@@ -57,7 +57,7 @@ class FlowHasNoStepsError(QTypeValidationError):
 # i.e., `ToolType` will be switched to `Tool`
 def _update_map_with_unique_check(
     current_map: Dict[str, dsl.StrictBaseModel],
-    new_objects,
+    new_objects: list[dsl.StrictBaseModel],
 ) -> None:
     """
     Update a map with new objects, ensuring unique IDs.
@@ -90,7 +90,7 @@ def _update_map_with_unique_check(
 
 def _update_maps_with_embedded_objects(
     lookup_map: Dict[str, dsl.StrictBaseModel],
-    embedded_objects,
+    embedded_objects: list[dsl.StrictBaseModel],
 ) -> None:
     """
     Update lookup maps with embedded objects.
@@ -120,12 +120,12 @@ def _update_maps_with_embedded_objects(
 
         if isinstance(obj, dsl.Model):
             # note inputs
-            _update_map_with_unique_check(lookup_map, [obj.auth])
+            _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
         if isinstance(obj, dsl.Condition):
             # Conditions have inputs and outputs
-            _update_map_with_unique_check(lookup_map, [obj.then, obj.else_])
-            _update_map_with_unique_check(lookup_map, [obj.equals])
+            _update_map_with_unique_check(lookup_map, [obj.then, obj.else_])  # type: ignore
+            _update_map_with_unique_check(lookup_map, [obj.equals])  # type: ignore
             if obj.then and isinstance(obj.then, dsl.Step):
                 _update_maps_with_embedded_objects(lookup_map, [obj.then])
             if obj.else_ and isinstance(obj.else_, dsl.Step):
@@ -133,30 +133,30 @@ def _update_maps_with_embedded_objects(
 
         if isinstance(obj, dsl.APITool):
             # API tools have inputs and outputs
-            _update_map_with_unique_check(lookup_map, [obj.auth])
+            _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
         if isinstance(obj, dsl.LLMInference):
             # LLM Inference steps have inputs and outputs
-            _update_map_with_unique_check(lookup_map, [obj.model])
-            _update_maps_with_embedded_objects(lookup_map, [obj.model])
-            _update_map_with_unique_check(lookup_map, [obj.memory])
+            _update_map_with_unique_check(lookup_map, [obj.model])  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, [obj.model])  # type: ignore
+            _update_map_with_unique_check(lookup_map, [obj.memory])  # type: ignore
 
         if isinstance(obj, dsl.Agent):
-            _update_map_with_unique_check(lookup_map, obj.tools or [])
-            _update_maps_with_embedded_objects(lookup_map, obj.tools or [])
+            _update_map_with_unique_check(lookup_map, obj.tools or [])  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.tools or [])  # type: ignore
 
         if isinstance(obj, dsl.Flow):
             _update_map_with_unique_check(lookup_map, [obj])
-            _update_map_with_unique_check(lookup_map, obj.steps or [])
-            _update_maps_with_embedded_objects(lookup_map, obj.steps or [])
+            _update_map_with_unique_check(lookup_map, obj.steps or [])  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.steps or [])  # type: ignore
 
         if isinstance(obj, dsl.TelemetrySink):
             # Telemetry sinks may have auth references
-            _update_map_with_unique_check(lookup_map, [obj.auth])
+            _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
         if isinstance(obj, dsl.Index):
             # Indexes may have auth references
-            _update_map_with_unique_check(lookup_map, [obj.auth])
+            _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
         if isinstance(obj, dsl.VectorIndex):
             if isinstance(obj.embedding_model, dsl.EmbeddingModel):
@@ -174,31 +174,35 @@ def _update_maps_with_embedded_objects(
 
         if isinstance(obj, dsl.AuthorizationProviderList):
             # AuthorizationProviderList is a list of AuthorizationProvider objects
-            _update_map_with_unique_check(lookup_map, obj.root)
-            _update_maps_with_embedded_objects(lookup_map, obj.root)
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.root)  # type: ignore
 
         if isinstance(obj, dsl.IndexList):
             # IndexList is a list of Index objects
-            _update_map_with_unique_check(lookup_map, obj.root)
-            _update_maps_with_embedded_objects(lookup_map, obj.root)
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.root)  # type: ignore
 
         if isinstance(obj, dsl.ModelList):
             # ModelList is a list of Model objects
-            _update_map_with_unique_check(lookup_map, obj.root)
-            _update_maps_with_embedded_objects(lookup_map, obj.root)
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.root)  # type: ignore
 
         if isinstance(obj, dsl.ToolList):
             # ToolList is a list of Tool objects
-            _update_map_with_unique_check(lookup_map, obj.root)
-            _update_maps_with_embedded_objects(lookup_map, obj.root)
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, obj.root)  # type: ignore
+
+        if isinstance(obj, dsl.TypeList):
+            # TypeList is a list of Type objects
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
 
         if isinstance(obj, dsl.VariableList):
             # VariableList is a list of Variable objects
-            _update_map_with_unique_check(lookup_map, obj.root)
+            _update_map_with_unique_check(lookup_map, obj.root)  # type: ignore
 
         if isinstance(obj, dsl.TelemetrySink):
             # TelemetrySink is a list of TelemetrySink objects
-            _update_map_with_unique_check(lookup_map, [obj.auth])
+            _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
 
 def _build_lookup_maps(
@@ -236,7 +240,7 @@ def _build_lookup_maps(
 
     # now deal with the references.
     for ref in dsl_application.references or []:
-        ref = ref.root
+        ref = ref.root  # type: ignore
         if isinstance(ref, dsl.Application):
             _build_lookup_maps(ref, lookup_map)
 
@@ -244,10 +248,10 @@ def _build_lookup_maps(
     _update_maps_with_embedded_objects(
         lookup_map,
         [
-            ref.root
+            ref.root  # type: ignore
             for ref in dsl_application.references or []
             if not isinstance(ref.root, dsl.Application)
-        ],
+        ],  # type: ignore
     )
 
     lookup_map[dsl_application.id] = dsl_application
@@ -313,6 +317,7 @@ def _resolve_id_references(
     """
     Resolves ID references in a DSL object such that all references are replaced with the actual object.
     """
+
     if isinstance(dslobj, str):
         # If the object is a string, we assume it is an ID and look it up in the map.
         if dslobj in lookup_map:
@@ -322,7 +327,11 @@ def _resolve_id_references(
 
     # iterate over all fields in the object
     def lookup_reference(val: str, typ: Any) -> Any:
-        if isinstance(val, str) and _is_reference_type(typ):
+        if (
+            isinstance(val, str)
+            and _is_reference_type(typ)
+            and not _is_dsl_type(type(val))
+        ):
             if val in lookup_map:
                 return lookup_map[val]
             else:
@@ -363,7 +372,7 @@ def _resolve_id_references(
             # and dict | None to an empty dict
             field_type = _resolve_forward_ref(field_type)
             if _is_union(field_type):
-                args = field_type.__args__
+                args = field_type.__args__  # type: ignore
                 if any(str(arg).startswith("list") for arg in args):
                     setattr(dslobj, field_name, [])
                 elif any(str(arg).startswith("dict") for arg in args):
