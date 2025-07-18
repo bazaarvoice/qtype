@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from qtype.interpreter.step import execute_step
 from qtype.semantic.model import Condition, Variable
 
 
@@ -15,6 +14,8 @@ def execute(condition: Condition, **kwargs: dict[str, Any]) -> list[Variable]:
     Returns:
         A list of variables that are set based on the condition evaluation.
     """
+    from qtype.interpreter.step import execute_step
+
     if not condition.inputs:
         raise ValueError(
             "Condition step requires at least one input variable."

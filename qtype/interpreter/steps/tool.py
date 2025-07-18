@@ -1,9 +1,8 @@
 import importlib
 import logging
 
-from qtype.dsl.model import PythonFunctionTool, Variable
 from qtype.interpreter.exceptions import InterpreterError
-from qtype.semantic.model import Tool
+from qtype.semantic.model import PythonFunctionTool, Tool, Variable
 
 logger = logging.getLogger(__name__)
 

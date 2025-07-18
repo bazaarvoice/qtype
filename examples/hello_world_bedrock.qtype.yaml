@@ -1,0 +1,27 @@
+id: hello_world_app
+description: "A simple hello world application that answers user questions using GPT-4"
+
+variables:
+  - id: user_question
+    type: text
+flows:
+  - id: simple_qa_flow
+    steps:
+      - id: question_prompt_template
+        template: |
+          You are a helpful assistant.
+          Answer the following question:
+          {{ user_question }}
+        inputs:
+          - user_question
+      - id: llm_inference_step
+        model: amazon.nova-lite-v1:0:24k
+        system_message: "You are a helpful assistant."
+        inputs:
+          # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
+          - question_prompt_template.prompt
+references:
+  - !include '../common/aws.bedrock.models.qtype.yaml'
+telemetry: 
+  id: telemetry_sink
+  endpoint: "https://localhost:6666/telemetry"

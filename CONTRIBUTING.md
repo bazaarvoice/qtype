@@ -47,10 +47,10 @@ Install QType in editable mode so changes to the source code are immediately ref
 
 ```bash
 # Install in development mode
-uv pip install -e .
+uv pip install -e . --group interpreter
 
 # Or if you want to install with specific development dependencies
-uv pip install -e ".[dev]"  # If dev extras are defined in pyproject.toml
+uv pip install -e . --group interpreter --group dev
 ```
 
 After installation, you should be able to run the `qtype` command from anywhere:

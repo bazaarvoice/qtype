@@ -26,8 +26,6 @@ from qtype.semantic.model import (
     Variable,
 )
 
-from .flow import execute_flow
-
 logger = logging.getLogger(__name__)
 
 
@@ -53,16 +51,17 @@ def execute_step(step: Step, **kwargs: dict[str, Any]) -> list[Variable]:
     elif isinstance(step, Decoder):
         return decoder.execute(step=step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, Flow):
-        # Explicitly cast step to Flow for type checking
+        from .flow import execute_flow
+
         return execute_flow(step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, LLMInference):
-        return llm_inference.execute(step=step, **kwargs)  # type: ignore[arg-type]
+        return llm_inference.execute(step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, PromptTemplate):
-        return prompt_template.execute(step=step, **kwargs)  # type: ignore[arg-type]
+        return prompt_template.execute(step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, Search):
-        return search.execute(step=step, **kwargs)  # type: ignore[arg-type]
+        return search.execute(step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, Tool):
-        return tool.execute(step=step, **kwargs)  # type: ignore[arg-type]
+        return tool.execute(step, **kwargs)  # type: ignore[arg-type]
     else:
         # Handle other step types if necessary
         raise InterpreterError(f"Unsupported step type: {type(step).__name__}")

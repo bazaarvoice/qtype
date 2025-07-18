@@ -1,12 +1,14 @@
+import logging
 import string
 from typing import Any
 
 from qtype.interpreter.exceptions import InterpreterError
-from qtype.interpreter.step import logger
 from qtype.semantic.model import PromptTemplate, Variable
 
+logger = logging.getLogger(__name__)
 
-def get_format_arguments(format_string) -> set[str]:
+
+def get_format_arguments(format_string: str) -> set[str]:
     formatter = string.Formatter()
     arguments = []
     for literal_text, field_name, format_spec, conversion in formatter.parse(

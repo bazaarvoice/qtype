@@ -32,7 +32,10 @@ def _discover_commands(subparsers: argparse._SubParsersAction) -> None:
                     f"Command module {module_name} does not have a 'parser' function"
                 )
         except Exception as e:
-            logging.error(f"Failed to load command module {module_name}: {e}")
+            logging.error(
+                f"Failed to load command module {module_name}: {e}",
+                exc_info=True,
+            )
 
 
 def main() -> None:

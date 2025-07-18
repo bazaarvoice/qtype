@@ -5,9 +5,11 @@ Command-line interface for running QType YAML spec files.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from typing import Any
 
+from qtype.interpreter.flow import execute_flow
 from qtype.loader import load
 from qtype.semantic.model import Application, Flow
 
@@ -52,7 +54,21 @@ def run_flow(args: Any) -> None:
     """
     spec = load(args.spec)
     logger.info(f"Running flow from spec: {spec}")
-    # Here you would implement the logic to run the flow based on the spec
+
+    flow = _get_flow(spec, args.flow)
+    logger.info(f"Executing flow: {flow.id}")
+    inputs = json.loads(args.input)
+    for var in flow.inputs:
+        if var.id in inputs:
+            var.value = inputs[var.id]
+        else:
+            raise ValueError(
+                f"Input variable {var.id} not found in provided input JSON."
+            )
+    result = execute_flow(flow)
+    logger.info(
+        f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
+    )
 
 
 def run_ui(args: Any) -> None:
@@ -101,6 +117,12 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         help="The name of the flow to run. If not specified, runs the first flow found.",
     )
+    flow_parser.add_argument(
+        "input",
+        type=str,
+        help="JSON blob of input values for the flow.",
+    )
+
     flow_parser.set_defaults(func=run_flow)
 
     # Run a user interface for the spec
