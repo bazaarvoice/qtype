@@ -97,8 +97,12 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("from typing import Any, Type\n\n")
         f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
+        f.write("from qtype.dsl.model import VariableType # noqa: F401\n")
         f.write(
-            "from qtype.dsl.model import PrimitiveTypeEnum, StructuralTypeEnum, DecoderFormat, Variable as DSLVariable, VariableType  # noqa: F401\n\n"
+            "from qtype.dsl.model import DecoderFormat, PrimitiveTypeEnum, StructuralTypeEnum\n"
+        )
+        f.write(
+            "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"
         )
         f.write("class Variable(DSLVariable, BaseModel):\n")
         f.write(

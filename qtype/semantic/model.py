@@ -16,6 +16,7 @@ from typing import Any, Type
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
+from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (
     DecoderFormat,
     PrimitiveTypeEnum,

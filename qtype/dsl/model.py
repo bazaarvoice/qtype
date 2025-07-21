@@ -73,7 +73,7 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: VariableType = Field(
+    type: VariableType | str = Field(
         ...,
         description=("Type of data expected or produced."),
     )
