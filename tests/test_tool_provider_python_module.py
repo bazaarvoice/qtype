@@ -4,22 +4,27 @@ Tests for tool provider Python module functionality.
 
 import inspect
 from datetime import date, datetime, time
+from typing import Any, Type, Union, get_args, get_origin
 from unittest.mock import Mock, patch
 
 import pytest
 from pydantic import BaseModel
 
 from qtype.converters.tools_from_module import (
+    TYPE_TO_VARIABLE,
     _create_tool_from_function,
     _get_module_functions,
     _map_python_type_to_variable_type,
+    pydantic_to_object_definition,
     tools_from_module,
 )
 from qtype.dsl.model import (
+    ArrayTypeDefinition,
     ObjectTypeDefinition,
     PrimitiveTypeEnum,
     PythonFunctionTool,
     Variable,
+    VariableType,
 )
 
 
@@ -696,3 +701,69 @@ class TestEdgeCases:
                 ValueError, match="must have a return type annotation"
             ):
                 _get_module_functions("test.edge.module", Mock())
+
+
+def _map_type_to_dsl(
+    pydantic_type: Type[Any], model_name: str
+) -> VariableType | str:
+    """
+    Recursively maps a Python/Pydantic type to a DSL Type Definition.
+
+    Args:
+        pydantic_type: The type hint to map (e.g., str, list[int], MyPydanticModel).
+        model_name: The name of the model being processed, for generating unique IDs.
+
+    Returns:
+        A PrimitiveTypeEnum member, an ObjectTypeDefinition, an ArrayTypeDefinition,
+        or a string reference to another type.
+    """
+    origin = get_origin(pydantic_type)
+    args = get_args(pydantic_type)
+
+    # --- Handle Lists ---
+    if origin in (list, list):
+        if not args:
+            raise TypeError(
+                "List types must be parameterized, e.g., list[str]."
+            )
+
+        # Recursively map the inner type of the list
+        inner_type = _map_type_to_dsl(args[0], model_name)
+
+        # Create a unique ID for this specific array definition
+        array_id = (
+            f"{model_name}.{getattr(inner_type, 'id', str(inner_type))}_Array"
+        )
+
+        return ArrayTypeDefinition(
+            id=array_id,
+            type=inner_type,
+            description=f"An array of {getattr(inner_type, 'id', inner_type)}.",
+        )
+
+    # --- Handle Unions (specifically for Optional[T]) ---
+    if origin is Union:
+        # Filter out NoneType to handle Optional[T]
+        non_none_args = [arg for arg in args if arg is not type(None)]
+        if len(non_none_args) == 1:
+            return _map_type_to_dsl(non_none_args[0], model_name)
+        else:
+            # For more complex unions, you might decide on a specific handling strategy.
+            # For now, we'll raise an error as it's ambiguous.
+            raise TypeError(
+                "Complex Union types are not supported for automatic conversion."
+            )
+
+    # --- Handle Nested Pydantic Models ---
+    if inspect.isclass(pydantic_type) and issubclass(pydantic_type, BaseModel):
+        # If it's a nested model, recursively call the main function.
+        # This returns a full definition for the nested object.
+        return pydantic_to_object_definition(pydantic_type)
+
+    # --- Handle Primitive Types ---
+    # This could be expanded with more sophisticated mapping.
+
+    if pydantic_type in TYPE_TO_VARIABLE:
+        return TYPE_TO_VARIABLE[pydantic_type]
+
+    raise TypeError(f"Unsupported type for DSL conversion: {pydantic_type}")

@@ -11,11 +11,11 @@ flows:
         template: |
           You are a helpful assistant.
           Answer the following question:
-          {{ user_question }}
+          {user_question}
         inputs:
           - user_question
       - id: llm_inference_step
-        model: amazon.nova-lite-v1:0:24k
+        model: amazon.nova-lite-v1:0
         system_message: "You are a helpful assistant."
         inputs:
           # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
@@ -24,4 +24,4 @@ references:
   - !include '../common/aws.bedrock.models.qtype.yaml'
 telemetry: 
   id: telemetry_sink
-  endpoint: "https://localhost:6666/telemetry"
+  endpoint: "http://localhost:6006//v1/traces"

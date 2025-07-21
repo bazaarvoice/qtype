@@ -340,37 +340,36 @@ def _resolve_id_references(
 
     for field_name, field_value in dslobj:
         field_info = dslobj.__class__.model_fields[field_name]
-        field_type = field_info.annotation
+        field_type = _resolve_forward_ref(field_info.annotation)
 
         if isinstance(field_value, list):
             # If the field value is a list, resolve each item in the list
             # Get the type of the items of the list
-            item_type = _resolve_forward_ref(field_type).__args__[0]  # type: ignore
+            field_type = field_type.__args__[0]  # type: ignore
             if (
-                get_origin(item_type) is list
+                get_origin(field_type) is list
             ):  # handles case where we have list[Class] | None -- in this case field_type is Union and item_type is now the list...
-                item_type = item_type.__args__[0]
+                field_type = field_type.__args__[0]
             resolved_list = [
-                lookup_reference(item, item_type)  # type: ignore
+                lookup_reference(item, field_type)  # type: ignore
                 for item in field_value
             ]
             setattr(dslobj, field_name, resolved_list)
         elif isinstance(field_value, dict):
-            item_type = _resolve_forward_ref(field_type).__args__[0]
+            field_type = field_type.__args__[0]
             if (
-                get_origin(item_type) is dict
+                get_origin(field_type) is dict
             ):  # handles case where we have dict[Class] | None -- in this case field_type is Union and item_type is now the dict...
-                item_type = item_type.__args__[1]
+                field_type = field_type.__args__[1]
             # If the field value is a dict, resolve each value in the dict
             resolved_dict = {
-                k: lookup_reference(v, item_type)  # type: ignore
+                k: lookup_reference(v, field_type)  # type: ignore
                 for k, v in field_value.items()
             }
             setattr(dslobj, field_name, resolved_dict)
         elif field_value is None:
             # Convert lst | None to an empty list
             # and dict | None to an empty dict
-            field_type = _resolve_forward_ref(field_type)
             if _is_union(field_type):
                 args = field_type.__args__  # type: ignore
                 if any(str(arg).startswith("list") for arg in args):

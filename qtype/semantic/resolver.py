@@ -85,5 +85,10 @@ def resolve(application: dsl.Application) -> ir.Application:
     # Next, we'll build up the semantic representation.
     # This will create a map of all objects by their ID, ensuring that we can resolve
     # references to actual objects.
-    symbol_table = {}
-    return to_semantic_ir(application, symbol_table)
+    result = to_semantic_ir(application, {})
+    if not isinstance(result, ir.Application):
+        raise SemanticResolutionError(
+            "The root object must be an Application, but got: "
+            f"{type(result).__name__}"
+        )
+    return result

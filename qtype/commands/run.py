@@ -65,6 +65,14 @@ def run_flow(args: Any) -> None:
             raise ValueError(
                 f"Input variable {var.id} not found in provided input JSON."
             )
+    if spec.telemetry:
+        logger.info(
+            f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
+        )
+        # Register telemetry if needed
+        from qtype.interpreter.telemetry import register
+
+        register(spec.telemetry, spec.id)
     result = execute_flow(flow)
     logger.info(
         f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
