@@ -493,6 +493,7 @@
             {
               "$ref": "#/$defs/ArrayTypeDefinition"
             },
+            {},
             {
               "type": "string"
             }
@@ -1465,6 +1466,7 @@
                   {
                     "$ref": "#/$defs/ArrayTypeDefinition"
                   },
+                  {},
                   {
                     "type": "string"
                   }
@@ -1495,7 +1497,6 @@
         "bytes",
         "date",
         "datetime",
-        "embedding",
         "int",
         "file",
         "float",
