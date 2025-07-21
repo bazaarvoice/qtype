@@ -1,20 +1,14 @@
 from __future__ import annotations
 
+import inspect
 from abc import ABC
 from enum import Enum
-from typing import Any, Union
+from typing import Any, Type, Union
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
+from pydantic import Field, RootModel, model_validator
 
-#
-# ---------------- Base Components ----------------
-#
-
-
-class StrictBaseModel(BaseModel):
-    """Base model with extra fields forbidden."""
-
-    model_config = ConfigDict(extra="forbid")
+from qtype.dsl import domain_types
+from qtype.dsl.domain_types import Embedding, StrictBaseModel
 
 
 class PrimitiveTypeEnum(str, Enum):
@@ -43,12 +37,32 @@ class StructuralTypeEnum(str, Enum):
     array = "array"
 
 
-def _resolve_type(type_str: str) -> PrimitiveTypeEnum | str:
+def _resolve_variable_type(parsed_type: Any) -> Any:
     """Resolve a type string to its corresponding PrimitiveTypeEnum or return as is."""
+    # If the type is already resolved or is a structured definition, pass it through.
+    if not isinstance(parsed_type, str):
+        return parsed_type
+
+    # --- Case 1: The type is a string ---
+    # Try to resolve it as a primitive type first.
     try:
-        return PrimitiveTypeEnum(type_str)
+        return PrimitiveTypeEnum(parsed_type)
     except ValueError:
-        return type_str
+        pass  # Not a primitive, continue to the next check.
+
+    # Try to resolve it as a built-in Domain Entity class.
+    # (Assuming domain_types and inspect are defined elsewhere)
+    classes_in_domain_types = {
+        name: obj
+        for name, obj in inspect.getmembers(domain_types)
+        if inspect.isclass(obj) and obj.__module__ == domain_types.__name__
+    }
+    if parsed_type in classes_in_domain_types:
+        return classes_in_domain_types[parsed_type]
+
+    # If it's not a primitive or a known domain entity, return it as a string.
+    # This assumes it might be a reference ID to another custom type.
+    return parsed_type
 
 
 class Variable(StrictBaseModel):
@@ -58,20 +72,16 @@ class Variable(StrictBaseModel):
         ...,
         description="Unique ID of the variable. Referenced in prompts or steps.",
     )
-    type: (
-        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | str
-    ) = Field(
+    type: VariableType = Field(
         ...,
         description=("Type of data expected or produced."),
     )
 
-    @model_validator(mode="after")
-    def resolve_type(self) -> "Variable":
-        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
-        # Pydantic doesn't properly handle enums as strings in model validation,
-        if isinstance(self.type, str):
-            self.type = _resolve_type(self.type)
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_type(cls, data: Any) -> Any:
+        data["type"] = _resolve_variable_type(data["type"])  # type: ignore
+        return data
 
 
 class TypeDefinitionBase(StrictBaseModel, ABC):
@@ -98,27 +108,27 @@ class ObjectTypeDefinition(TypeDefinitionBase):
         if self.properties:
             for key, value in self.properties.items():
                 if isinstance(value, str):
-                    self.properties[key] = _resolve_type(value)
+                    self.properties[key] = _resolve_variable_type(value)
         return self
 
 
 class ArrayTypeDefinition(TypeDefinitionBase):
     kind: StructuralTypeEnum = StructuralTypeEnum.array
-    type: VariableType | str = Field(
+    type: VariableType = Field(
         ..., description="The type of items in the array."
     )
 
-    @model_validator(mode="after")
-    def resolve_type(self) -> "ArrayTypeDefinition":
-        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
-        # Pydantic doesn't properly handle enums as strings in model validation,
-        if isinstance(self.type, str):
-            self.type = _resolve_type(self.type)
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_type(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "type" in data:
+            # If the type is a string, resolve it to PrimitiveTypeEnum or Domain Entity class.
+            data["type"] = _resolve_variable_type(data["type"])  # type: ignore
+        return data
 
 
 TypeDefinition = ObjectTypeDefinition | ArrayTypeDefinition
-VariableType = PrimitiveTypeEnum | TypeDefinition
+VariableType = PrimitiveTypeEnum | TypeDefinition | Type[Embedding]
 
 
 class Model(StrictBaseModel):

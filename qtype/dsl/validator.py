@@ -1,5 +1,6 @@
 from typing import Any, Dict, Union, get_args, get_origin
 
+import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 
 
@@ -15,8 +16,8 @@ class DuplicateComponentError(QTypeValidationError):
     def __init__(
         self,
         obj_id: str,
-        found_obj: dsl.StrictBaseModel,
-        existing_obj: dsl.StrictBaseModel,
+        found_obj: qtype.dsl.domain_types.StrictBaseModel,
+        existing_obj: qtype.dsl.domain_types.StrictBaseModel,
     ):
         super().__init__(
             f"Duplicate component with ID '{obj_id}' found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
@@ -56,8 +57,8 @@ class FlowHasNoStepsError(QTypeValidationError):
 # They will be switched to their semantic abstract class in the generation.
 # i.e., `ToolType` will be switched to `Tool`
 def _update_map_with_unique_check(
-    current_map: Dict[str, dsl.StrictBaseModel],
-    new_objects: list[dsl.StrictBaseModel],
+    current_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
+    new_objects: list[qtype.dsl.domain_types.StrictBaseModel],
 ) -> None:
     """
     Update a map with new objects, ensuring unique IDs.
@@ -89,8 +90,8 @@ def _update_map_with_unique_check(
 
 
 def _update_maps_with_embedded_objects(
-    lookup_map: Dict[str, dsl.StrictBaseModel],
-    embedded_objects: list[dsl.StrictBaseModel],
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
+    embedded_objects: list[qtype.dsl.domain_types.StrictBaseModel],
 ) -> None:
     """
     Update lookup maps with embedded objects.
@@ -207,8 +208,9 @@ def _update_maps_with_embedded_objects(
 
 def _build_lookup_maps(
     dsl_application: dsl.Application,
-    lookup_map: Dict[str, dsl.StrictBaseModel] | None = None,
-) -> Dict[str, dsl.StrictBaseModel]:
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel]
+    | None = None,
+) -> Dict[str, qtype.dsl.domain_types.StrictBaseModel]:
     """
     Build lookup map for all objects in the DSL Application.
     This function creates a dictionary of id -> component, where each key is a
@@ -311,8 +313,8 @@ def _is_reference_type(field_type: Any) -> bool:
 
 
 def _resolve_id_references(
-    dslobj: dsl.StrictBaseModel | str,
-    lookup_map: Dict[str, dsl.StrictBaseModel],
+    dslobj: qtype.dsl.domain_types.StrictBaseModel | str,
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
 ) -> Any:
     """
     Resolves ID references in a DSL object such that all references are replaced with the actual object.

@@ -11,7 +11,7 @@ qtype generate semantic-model
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -179,7 +179,7 @@ class ArrayTypeDefinition(TypeDefinitionBase):
 
     kind: StructuralTypeEnum = Field(StructuralTypeEnum.array)
     type: (
-        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition
+        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | Type
     ) = Field(..., description="The type of items in the array.")
 
 
@@ -188,7 +188,8 @@ class ObjectTypeDefinition(TypeDefinitionBase):
 
     kind: StructuralTypeEnum = Field(StructuralTypeEnum.object)
     properties: dict[
-        str, PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition
+        str,
+        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | Type,
     ] = Field({}, description="Defines the nested properties.")
 
 

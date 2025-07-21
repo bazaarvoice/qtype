@@ -9,6 +9,7 @@ are resolved to actual object references.
 import logging
 from typing import Any
 
+import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 from qtype.dsl.validator import _is_dsl_type, _resolve_forward_ref
 from qtype.semantic import model as ir
@@ -20,7 +21,8 @@ FIELDS_TO_IGNORE = {"Application.references"}
 
 
 def to_semantic_ir(
-    dslobj: dsl.StrictBaseModel, symbol_table: dict[str, Any]
+    dslobj: qtype.dsl.domain_types.StrictBaseModel,
+    symbol_table: dict[str, Any],
 ) -> Any:
     """
     Convert a DSL QTypeSpec object to its semantic intermediate representation (IR).

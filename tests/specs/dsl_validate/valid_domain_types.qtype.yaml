@@ -1,0 +1,4 @@
+id: example_app
+variables:
+  - id: variable_embedding
+    type: Embedding
