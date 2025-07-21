@@ -9,7 +9,7 @@ from pydantic import Field, RootModel, model_validator
 
 import qtype.dsl.domain_types as domain_types
 from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
-from qtype.dsl.domain_types import Embedding
+from qtype.dsl.domain_types import ChatContent, ChatMessage, Embedding
 
 
 class StructuralTypeEnum(str, Enum):
@@ -113,7 +113,13 @@ class ArrayTypeDefinition(TypeDefinitionBase):
 
 
 TypeDefinition = ObjectTypeDefinition | ArrayTypeDefinition
-VariableType = PrimitiveTypeEnum | TypeDefinition | Type[Embedding]
+VariableType = (
+    PrimitiveTypeEnum
+    | TypeDefinition
+    | Type[Embedding]
+    | Type[ChatMessage]
+    | Type[ChatContent]
+)
 
 
 class Model(StrictBaseModel):

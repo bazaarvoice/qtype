@@ -11,11 +11,14 @@ from qtype.dsl.validator import _is_dsl_type
 
 FIELDS_TO_IGNORE = {"Application.references"}
 TYPES_TO_IGNORE = {
+    "ArrayTypeDefinition",
     "DecoderFormat",
     "Document",
+    "ObjectTypeDefinition",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
     "StructuralTypeEnum",
+    "TypeDefinition",
     "Variable",
     "VariableType",
 }
@@ -99,7 +102,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("# Import enums and type aliases from DSL\n")
         f.write("from qtype.dsl.model import VariableType # noqa: F401\n")
         f.write(
-            "from qtype.dsl.model import DecoderFormat, PrimitiveTypeEnum, StructuralTypeEnum\n"
+            "from qtype.dsl.model import ArrayTypeDefinition, DecoderFormat, PrimitiveTypeEnum, ObjectTypeDefinition, StructuralTypeEnum\n"
         )
         f.write(
             "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"

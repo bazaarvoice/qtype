@@ -11,15 +11,16 @@ qtype generate semantic-model
 
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (
+    ArrayTypeDefinition,
     DecoderFormat,
-    PrimitiveTypeEnum,
+    ObjectTypeDefinition,
     StructuralTypeEnum,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
@@ -67,21 +68,6 @@ class Application(BaseModel):
     )
     telemetry: TelemetrySink | None = Field(
         None, description="Optional telemetry sink for observability."
-    )
-
-
-class TypeDefinitionBase(BaseModel):
-    """Semantic version of TypeDefinitionBase."""
-
-    id: str = Field(
-        ..., description="The unique identifier for this custom type."
-    )
-    kind: StructuralTypeEnum = Field(
-        ...,
-        description="The kind of structure this type represents (object/array).",
-    )
-    description: str | None = Field(
-        None, description="A description of what this type represents."
     )
 
 
@@ -175,23 +161,19 @@ class TelemetrySink(BaseModel):
     )
 
 
-class ArrayTypeDefinition(TypeDefinitionBase):
-    """Semantic version of ArrayTypeDefinition."""
+class TypeDefinitionBase(BaseModel):
+    """Semantic version of TypeDefinitionBase."""
 
-    kind: StructuralTypeEnum = Field(StructuralTypeEnum.array)
-    type: (
-        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | Type
-    ) = Field(..., description="The type of items in the array.")
-
-
-class ObjectTypeDefinition(TypeDefinitionBase):
-    """Semantic version of ObjectTypeDefinition."""
-
-    kind: StructuralTypeEnum = Field(StructuralTypeEnum.object)
-    properties: dict[
-        str,
-        PrimitiveTypeEnum | ObjectTypeDefinition | ArrayTypeDefinition | Type,
-    ] = Field({}, description="Defines the nested properties.")
+    id: str = Field(
+        ..., description="The unique identifier for this custom type."
+    )
+    kind: StructuralTypeEnum = Field(
+        ...,
+        description="The kind of structure this type represents (object/array).",
+    )
+    description: str | None = Field(
+        None, description="A description of what this type represents."
+    )
 
 
 class Condition(Step):
