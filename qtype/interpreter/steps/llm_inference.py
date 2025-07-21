@@ -16,7 +16,11 @@ from qtype.semantic.model import EmbeddingModel, LLMInference, Variable
 logger = logging.getLogger(__name__)
 
 
-def execute(li: LLMInference, **kwargs: dict[Any, Any]) -> list[Variable]:
+def execute(
+    li: LLMInference,
+    stream_fn: Callable | None = None,
+    **kwargs: dict[Any, Any],
+) -> list[Variable]:
     """Execute a LLM inference step.
 
     Args:
@@ -30,8 +34,6 @@ def execute(li: LLMInference, **kwargs: dict[Any, Any]) -> list[Variable]:
             "LLMInference step must have exactly one output variable."
         )
     output_variable = li.outputs[0]
-
-    stream_fn: Callable | None = kwargs.get("stream_fn", None)  # type: ignore
 
     if output_variable.type == Embedding:
         if not isinstance(li.model, EmbeddingModel):
@@ -54,7 +56,9 @@ def execute(li: LLMInference, **kwargs: dict[Any, Any]) -> list[Variable]:
     elif output_variable.type == ChatMessage:
         model = to_llm(li.model, li.system_message)
 
-        if not all(isinstance(input, ChatMessage) for input in li.inputs):
+        if not all(
+            isinstance(input.value, ChatMessage) for input in li.inputs
+        ):
             raise InterpreterError(
                 f"LLMInference step with ChatMessage output must have ChatMessage inputs. Got {li.inputs}"
             )

@@ -14,8 +14,8 @@ from qtype.semantic.model import Application, Flow, Variable
 def _get_variable_type(var: Variable) -> Type:
     if isinstance(var.type, PrimitiveTypeEnum):
         return PRIMITIVE_TO_PYTHON_TYPE.get(var.type, str)
-    elif str(var.type) in DOMAIN_CLASSES:
-        return DOMAIN_CLASSES[str(var.type)]
+    elif var.type.__name__ in DOMAIN_CLASSES:
+        return DOMAIN_CLASSES[var.type.__name__]
     else:
         # TODO: handle custom TypeDefinition...
         raise ValueError(f"Unsupported variable type: {var.type}")
@@ -131,7 +131,7 @@ class APIExecutor:
                         # Get the value from the request using the variable ID
                         request_dict = request.model_dump()  # type: ignore
                         if var.id in request_dict:
-                            var.value = request_dict[var.id]
+                            var.value = getattr(request, var.id)
                         elif not var.is_set():
                             raise HTTPException(
                                 status_code=400,

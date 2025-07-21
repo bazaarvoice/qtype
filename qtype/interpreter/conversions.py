@@ -8,12 +8,23 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.llms import LLM
+from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.llms.bedrock_converse import BedrockConverse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage
+from qtype.dsl.model import Memory
 from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import Model
+
+
+def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
+    return LlamaMemory.from_defaults(
+        session_id=session_id,
+        token_limit=memory.token_limit,
+        chat_history_token_ratio=memory.chat_history_token_ratio,
+        token_flush_size=memory.token_flush_size,
+    )
 
 
 def to_llm(model: Model, system_prompt: str | None) -> LLM:

@@ -1339,6 +1339,24 @@
           "description": "Unique ID of the memory block.",
           "title": "Id",
           "type": "string"
+        },
+        "token_limit": {
+          "default": 100000,
+          "description": "Maximum number of tokens to store in memory.",
+          "title": "Token Limit",
+          "type": "integer"
+        },
+        "chat_history_token_ratio": {
+          "default": 0.7,
+          "description": "Ratio of chat history tokens to total memory tokens.",
+          "title": "Chat History Token Ratio",
+          "type": "number"
+        },
+        "token_flush_size": {
+          "default": 3000,
+          "description": "Size of memory to flush when it exceeds the token limit.",
+          "title": "Token Flush Size",
+          "type": "integer"
         }
       },
       "required": [

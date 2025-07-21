@@ -144,6 +144,16 @@ class Memory(BaseModel):
     """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
+    token_limit: int = Field(
+        100000, description="Maximum number of tokens to store in memory."
+    )
+    chat_history_token_ratio: float = Field(
+        0.7, description="Ratio of chat history tokens to total memory tokens."
+    )
+    token_flush_size: int = Field(
+        3000,
+        description="Size of memory to flush when it exceeds the token limit.",
+    )
 
 
 class TelemetrySink(BaseModel):

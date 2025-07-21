@@ -157,7 +157,20 @@ class Memory(StrictBaseModel):
     """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")
-    # TODO: flush this out with options for vector memory, etc.
+
+    token_limit: int = Field(
+        default=100000,
+        description="Maximum number of tokens to store in memory.",
+    )
+    chat_history_token_ratio: float = Field(
+        default=0.7,
+        description="Ratio of chat history tokens to total memory tokens.",
+    )
+    token_flush_size: int = Field(
+        default=3000,
+        description="Size of memory to flush when it exceeds the token limit.",
+    )
+    # TODO: Add support for vectorstores and sql chat stores
 
 
 #
