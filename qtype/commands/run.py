@@ -11,7 +11,7 @@ from typing import Any
 
 from qtype.interpreter.flow import execute_flow
 from qtype.loader import load
-from qtype.semantic.model import Application, Flow
+from qtype.semantic.model import Application, Flow, Step
 
 # from qtype.ir.resolver import resolve_semantic_ir
 # from qtype.ir.validator import validate_semantics
@@ -42,6 +42,17 @@ def _get_flow(app: Application, flow_id: str | None) -> Flow:
     return flow
 
 
+def _telemetry(spec: Application) -> None:
+    if spec.telemetry:
+        logger.info(
+            f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
+        )
+        # Register telemetry if needed
+        from qtype.interpreter.telemetry import register
+
+        register(spec.telemetry, spec.id)
+
+
 def run_api(args: Any) -> None:
     """Run a QType YAML spec file as an API.
 
@@ -61,6 +72,7 @@ def run_api(args: Any) -> None:
         .title()
     )
 
+    _telemetry(spec)
     api_executor = APIExecutor(spec)
     fastapi_app = api_executor.create_app(name=name)
 
@@ -93,18 +105,24 @@ def run_flow(args: Any) -> None:
             raise ValueError(
                 f"Input variable {var.id} not found in provided input JSON."
             )
-    if spec.telemetry:
-        logger.info(
-            f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
-        )
-        # Register telemetry if needed
-        from qtype.interpreter.telemetry import register
+    _telemetry(spec)
 
-        register(spec.telemetry, spec.id)
-    result = execute_flow(flow)
-    logger.info(
-        f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
-    )
+    was_streamed = False
+
+    def stream_fn(step: Step, text: str) -> None:
+        """Stream function to handle step outputs."""
+        nonlocal was_streamed
+        if step == flow.steps[-1]:
+            was_streamed = True
+            print(text, end="", flush=True)
+
+    result = execute_flow(flow, stream_fn=stream_fn)  # type: ignore
+    if not was_streamed:
+        logger.info(
+            f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
+        )
+    else:
+        print("\n\n")
 
 
 def run_ui(args: Any) -> None:

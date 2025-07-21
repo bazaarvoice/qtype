@@ -38,6 +38,7 @@ interpreter = [
     "arize-phoenix-otel>=0.12.1",
     "boto3>=1.34.0",
     "fastapi>=0.116.1",
+    "llama-index-embeddings-bedrock>=0.5.2",
     "llama-index-llms-bedrock-converse>=0.7.4",
     "llama-index-llms-bedrock>=0.3.8",
     "llama-index>=0.12.45",

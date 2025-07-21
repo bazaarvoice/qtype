@@ -10,7 +10,7 @@ from qtype.semantic.model import Flow, Variable
 logger = logging.getLogger(__name__)
 
 
-def execute_flow(flow: Flow, **kwargs: dict[str, Any]) -> list[Variable]:
+def execute_flow(flow: Flow, **kwargs: dict[Any, Any]) -> list[Variable]:
     """Execute a flow based on the provided arguments.
 
     Args:

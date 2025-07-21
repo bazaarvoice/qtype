@@ -8,8 +8,8 @@ from llama_index.core.tools import AsyncBaseTool, FunctionTool
 from llama_index.core.workflow import Context
 from llama_index.core.workflow.handler import WorkflowHandler  # type: ignore
 
+from qtype.interpreter.conversions import to_llm
 from qtype.interpreter.exceptions import InterpreterError
-from qtype.interpreter.steps.llm_inference import to_llm
 from qtype.semantic.model import Agent, APITool, PythonFunctionTool, Variable
 
 logger = logging.getLogger(__name__)

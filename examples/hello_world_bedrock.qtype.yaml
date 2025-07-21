@@ -24,4 +24,4 @@ references:
   - !include '../common/aws.bedrock.models.qtype.yaml'
 telemetry: 
   id: telemetry_sink
-  endpoint: "http://localhost:6006//v1/traces"
+  endpoint: "http://localhost:6006/v1/traces"
