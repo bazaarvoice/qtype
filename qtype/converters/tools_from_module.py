@@ -20,9 +20,6 @@ VARIABLE_TO_TYPE = {
     PrimitiveTypeEnum.bytes: bytes,
     PrimitiveTypeEnum.date: date,
     PrimitiveTypeEnum.datetime: datetime,
-    PrimitiveTypeEnum.embedding: list[
-        float
-    ],  # Assuming embeddings are lists of floats
     PrimitiveTypeEnum.int: int,
     # VariableTypeEnum.file: bytes,  # TODO: Define a proper file type
     # VariableTypeEnum.image: bytes,  # TODO: Define a proper image type
@@ -319,9 +316,6 @@ VARIABLE_TO_TYPE = {
     PrimitiveTypeEnum.bytes: bytes,
     PrimitiveTypeEnum.date: date,
     PrimitiveTypeEnum.datetime: datetime,
-    PrimitiveTypeEnum.embedding: list[
-        float
-    ],  # Assuming embeddings are lists of floats
     PrimitiveTypeEnum.int: int,
     # VariableTypeEnum.file: bytes,  # TODO: Define a proper file type
     # VariableTypeEnum.image: bytes,  # TODO: Define a proper image type

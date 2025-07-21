@@ -62,6 +62,7 @@ def to_semantic_ir(
             for name, value in dslobj
             if f"{class_name}.{name}" not in FIELDS_TO_IGNORE
         }
+        ir.Variable.model_rebuild()
         result = ir_class(**params)
         symbol_table[obj_id] = result  # type: ignore
         return result

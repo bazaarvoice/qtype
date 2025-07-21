@@ -13,6 +13,7 @@ from qtype import dsl
 from qtype.dsl.validator import QTypeValidationError, validate
 from qtype.loader import _resolve_root, load_yaml
 from qtype.semantic.errors import SemanticResolutionError
+from qtype.semantic.resolver import resolve
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,8 @@ def main(args: Any) -> None:
         else:
             document = validate(document)
             logger.info("✅ Language validation successful")
-            # document = resolve(document)
-            # logger.info("✅ Semantic validation successful")
+            document = resolve(document)
+            logger.info("✅ Semantic validation successful")
         if args.print:
             logger.info(
                 document.model_dump_json(  # type: ignore

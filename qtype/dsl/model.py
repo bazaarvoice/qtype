@@ -19,7 +19,6 @@ class PrimitiveTypeEnum(str, Enum):
     bytes = "bytes"
     date = "date"
     datetime = "datetime"
-    embedding = "embedding"
     int = "int"
     file = "file"
     float = "float"
@@ -37,6 +36,13 @@ class StructuralTypeEnum(str, Enum):
     array = "array"
 
 
+DOMAIN_CLASSES = {
+    name: obj
+    for name, obj in inspect.getmembers(domain_types)
+    if inspect.isclass(obj) and obj.__module__ == domain_types.__name__
+}
+
+
 def _resolve_variable_type(parsed_type: Any) -> Any:
     """Resolve a type string to its corresponding PrimitiveTypeEnum or return as is."""
     # If the type is already resolved or is a structured definition, pass it through.
@@ -52,13 +58,8 @@ def _resolve_variable_type(parsed_type: Any) -> Any:
 
     # Try to resolve it as a built-in Domain Entity class.
     # (Assuming domain_types and inspect are defined elsewhere)
-    classes_in_domain_types = {
-        name: obj
-        for name, obj in inspect.getmembers(domain_types)
-        if inspect.isclass(obj) and obj.__module__ == domain_types.__name__
-    }
-    if parsed_type in classes_in_domain_types:
-        return classes_in_domain_types[parsed_type]
+    if parsed_type in DOMAIN_CLASSES:
+        return DOMAIN_CLASSES[parsed_type]
 
     # If it's not a primitive or a known domain entity, return it as a string.
     # This assumes it might be a reference ID to another custom type.
@@ -80,7 +81,8 @@ class Variable(StrictBaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_type(cls, data: Any) -> Any:
-        data["type"] = _resolve_variable_type(data["type"])  # type: ignore
+        if isinstance(data, dict) and "type" in data:
+            data["type"] = _resolve_variable_type(data["type"])  # type: ignore
         return data
 
 
@@ -114,7 +116,7 @@ class ObjectTypeDefinition(TypeDefinitionBase):
 
 class ArrayTypeDefinition(TypeDefinitionBase):
     kind: StructuralTypeEnum = StructuralTypeEnum.array
-    type: VariableType = Field(
+    type: VariableType | str = Field(
         ..., description="The type of items in the array."
     )
 

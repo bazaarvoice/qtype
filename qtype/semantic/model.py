@@ -21,7 +21,7 @@ from qtype.dsl.model import (
     PrimitiveTypeEnum,
     StructuralTypeEnum,
 )
-from qtype.dsl.model import Variable as DSLVariable
+from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 
 
 class Variable(DSLVariable, BaseModel):

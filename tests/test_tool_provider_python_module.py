@@ -507,9 +507,9 @@ class TestMapPythonTypeToVariableType:
             _map_python_type_to_variable_type(NonPydanticModel)
 
     def test_list_type_mapping(self) -> None:
-        """Test mapping of list type (embedding)."""
-        result = _map_python_type_to_variable_type(list[float])
-        assert result == PrimitiveTypeEnum.embedding
+        """Test mapping of list type (bytes)."""
+        result = _map_python_type_to_variable_type(bytes)
+        assert result == PrimitiveTypeEnum.bytes
 
 
 class TestIntegration:
