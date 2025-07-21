@@ -12,7 +12,8 @@
             "justMyCode": true,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
-            }
+            },
+            "envFile": "${workspaceFolder}/.env"
         }
     ],
     "inputs": [

@@ -43,7 +43,35 @@ def _get_flow(app: Application, flow_id: str | None) -> Flow:
 
 
 def run_api(args: Any) -> None:
-    pass
+    """Run a QType YAML spec file as an API.
+
+    Args:
+        args: Arguments passed from the command line or calling context.
+    """
+    spec = load(args.spec)
+    logger.info(f"Running API for spec: {args.spec}")
+    from qtype.interpreter.api import APIExecutor
+
+    # Get the name from the spec filename.
+    # so if filename is tests/specs/full_application_test.qtype.yaml, name should be "Full Application Test"
+    name = (
+        args.spec.split("/")[-1]
+        .replace(".qtype.yaml", "")
+        .replace("_", " ")
+        .title()
+    )
+
+    api_executor = APIExecutor(spec)
+    fastapi_app = api_executor.create_app(name=name)
+
+    import uvicorn
+
+    uvicorn.run(
+        fastapi_app,
+        host=args.host,
+        port=args.port,
+        log_level="info",
+    )
 
 
 def run_flow(args: Any) -> None:

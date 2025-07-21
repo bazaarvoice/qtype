@@ -60,6 +60,7 @@ def execute(
         )
         input = str(input)
 
-    output_variable.value = model.complete(prompt=input)
+    result = model.complete(prompt=input)
+    output_variable.value = result.text
 
     return li.outputs  # type: ignore[return-value]
