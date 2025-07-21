@@ -1,5 +1,6 @@
 from typing import Any, Dict, Union, get_args, get_origin
 
+import qtype.dsl.base_types as base_types
 import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 
@@ -269,7 +270,10 @@ def _is_dsl_type(type_obj: Any) -> bool:
     # Check if it's defined in the DSL module
     return (
         hasattr(type_obj, "__module__")
-        and type_obj.__module__ == dsl.__name__
+        and (
+            type_obj.__module__ == dsl.__name__
+            or type_obj.__module__ == base_types.__name__
+        )
         and not type_obj.__name__.startswith("_")
     )
 

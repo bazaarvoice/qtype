@@ -7,26 +7,9 @@ from typing import Any, Type, Union
 
 from pydantic import Field, RootModel, model_validator
 
-from qtype.dsl import domain_types
-from qtype.dsl.domain_types import Embedding, StrictBaseModel
-
-
-class PrimitiveTypeEnum(str, Enum):
-    """Represents the type of data a user or system input can accept within the DSL."""
-
-    audio = "audio"
-    boolean = "boolean"
-    bytes = "bytes"
-    date = "date"
-    datetime = "datetime"
-    int = "int"
-    file = "file"
-    float = "float"
-    image = "image"
-    number = "number"
-    text = "text"
-    time = "time"
-    video = "video"
+import qtype.dsl.domain_types as domain_types
+from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
+from qtype.dsl.domain_types import Embedding
 
 
 class StructuralTypeEnum(str, Enum):
@@ -573,8 +556,7 @@ class DocumentSearch(Search):
 
         if self.outputs is None:
             self.outputs = [
-                # If not specified, use a generic results variable and let the user normalize it later.
-                Variable(id=f"{self.id}.results", type={"results": [dict]})
+                Variable(id=f"{self.id}.results", type=PrimitiveTypeEnum.text)
             ]
         return self
 
