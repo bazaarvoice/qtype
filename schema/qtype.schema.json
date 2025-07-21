@@ -1760,7 +1760,10 @@
             {
               "$ref": "#/$defs/ArrayTypeDefinition"
             },
-            {}
+            {},
+            {
+              "type": "string"
+            }
           ],
           "description": "Type of data expected or produced.",
           "title": "Type"
