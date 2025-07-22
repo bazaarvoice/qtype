@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish-to-testpypi:
-    name: Publish Python 🐍 distribution 📦 to Test PyPI
+    name: Publish to PyPI
     runs-on: ubuntu-latest
     permissions:
       contents: read
