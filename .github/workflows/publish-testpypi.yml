@@ -6,14 +6,12 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-
 jobs:
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to Test PyPI
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write  # Required for trusted publishing
     environment:
       name: pypi
