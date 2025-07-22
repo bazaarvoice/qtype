@@ -23,6 +23,16 @@ TYPES_TO_IGNORE = {
     "VariableType",
 }
 
+FROZEN_TYPES = {
+    "AuthorizationProvider",
+    "DocumentIndex",
+    "EmbeddingModel",
+    "Index",
+    "Memory",
+    "Model",
+    "VectorIndex",
+}
+
 
 def sort_classes_by_inheritance(
     classes: list[tuple[str, type]],
@@ -98,7 +108,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write imports
         f.write("from __future__ import annotations\n\n")
         f.write("from typing import Any, Type\n\n")
-        f.write("from pydantic import BaseModel, Field\n\n")
+        f.write("from pydantic import BaseModel, ConfigDict, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write("from qtype.dsl.model import VariableType # noqa: F401\n")
         f.write(
@@ -107,6 +117,8 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write(
             "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"
         )
+
+        # Write the new variable class
         f.write("class Variable(DSLVariable, BaseModel):\n")
         f.write(
             '    """Semantic version of DSL Variable with ID references resolved."""\n'
@@ -116,6 +128,13 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         )
         f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
+
+        # Write the new ImmutableModel class
+        f.write("\n\nclass ImmutableModel(BaseModel):\n")
+        f.write(
+            '    """Base model that can\'t be mutated but can be cached."""\n'
+        )
+        f.write("    model_config = ConfigDict(frozen=True)\n\n")
 
         # Write classes
         f.write("\n\n".join(generated))
@@ -237,9 +256,13 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
     docstring = cls.__doc__ or f"Semantic version of {class_name}."
 
     # Determine inheritance
-    inheritance = "BaseModel"
+    if class_name in FROZEN_TYPES:
+        # If this is a frozen type, we use ImmutableModel instead of BaseModel
+        inheritance = "ImmutableModel"
+    else:
+        inheritance = "BaseModel"
     if inspect.isabstract(cls):
-        inheritance = "ABC, BaseModel"
+        inheritance += ", ABC"
 
     # Check if this class inherits from another DSL class
     for base in cls.__bases__:
@@ -292,15 +315,6 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
     lines = [f"class {semantic_name}({inheritance}):"]
     lines.append(f'    """{docstring}"""')
     lines.append("")
-
-    # Add config if it's a StrictBaseModel
-    if (
-        hasattr(cls, "model_config")
-        and hasattr(cls.model_config, "extra")
-        and cls.model_config.extra == "forbid"
-    ):
-        lines.append('    model_config = ConfigDict(extra="forbid")')
-        lines.append("")
 
     # Add fields
     if fields:

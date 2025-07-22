@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
@@ -33,6 +33,12 @@ class Variable(DSLVariable, BaseModel):
 
     def is_set(self) -> bool:
         return self.value is not None
+
+
+class ImmutableModel(BaseModel):
+    """Base model that can't be mutated but can be cached."""
+
+    model_config = ConfigDict(frozen=True)
 
 
 class Application(BaseModel):
@@ -71,7 +77,7 @@ class Application(BaseModel):
     )
 
 
-class AuthorizationProvider(BaseModel):
+class AuthorizationProvider(ImmutableModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
 
     id: str = Field(
@@ -106,7 +112,7 @@ class Step(BaseModel):
     )
 
 
-class Index(BaseModel):
+class Index(ImmutableModel):
     """Base class for searchable indexes that can be queried by search steps."""
 
     id: str = Field(..., description="Unique ID of the index.")
@@ -120,7 +126,7 @@ class Index(BaseModel):
     name: str = Field(..., description="Name of the index/collection/table.")
 
 
-class Model(BaseModel):
+class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
@@ -140,7 +146,7 @@ class Model(BaseModel):
     )
 
 
-class Memory(BaseModel):
+class Memory(ImmutableModel):
     """Session or persistent memory used to store relevant conversation or state data across steps or turns."""
 
     id: str = Field(..., description="Unique ID of the memory block.")

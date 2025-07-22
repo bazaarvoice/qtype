@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import AudioBlock
 from llama_index.core.base.llms.types import ChatMessage as LlamaChatMessage
 from llama_index.core.base.llms.types import (
@@ -7,9 +10,9 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     TextBlock,
 )
-from llama_index.core.llms import LLM
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.llms.bedrock_converse import BedrockConverse
+from resource_cache import cached_resource
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage
@@ -18,6 +21,7 @@ from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import Model
 
 
+@cached_resource
 def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
     return LlamaMemory.from_defaults(
         session_id=session_id,
@@ -27,15 +31,15 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
     )
 
 
-def to_llm(model: Model, system_prompt: str | None) -> LLM:
+@cached_resource
+def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     """Convert a qtype Model to a LlamaIndex Model."""
-    # TODO: implement a cache so we're not creating a new LLM instance every time?
     # Note only bedrock working for now. TODO: add support for other providers
     # Maybe support arbitrary LLMs llms that LLAmaIndex supports?
     if model.provider in {"bedrock", "amazon_bedrock", "aws", "aws-bedrock"}:
         # BedrockConverse requires a model_id and system_prompt
         # Inference params can be passed as additional kwargs
-        rv: LLM = BedrockConverse(
+        rv: BaseLLM = BedrockConverse(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
@@ -47,6 +51,7 @@ def to_llm(model: Model, system_prompt: str | None) -> LLM:
         )
 
 
+@cached_resource
 def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 

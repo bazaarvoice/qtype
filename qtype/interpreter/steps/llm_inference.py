@@ -9,6 +9,7 @@ from qtype.interpreter.conversions import (
     to_chat_message,
     to_embedding_model,
     to_llm,
+    to_memory,
 )
 from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import EmbeddingModel, LLMInference, Variable
@@ -29,12 +30,14 @@ def execute(
     """
     logger.debug(f"Executing LLM inference step: {li.id}")
 
+    # Ensure we only have one output variable set.
     if len(li.outputs) != 1:
         raise InterpreterError(
             "LLMInference step must have exactly one output variable."
         )
     output_variable = li.outputs[0]
 
+    # Determine if this is a chat session, completion, or embedding inference
     if output_variable.type == Embedding:
         if not isinstance(li.model, EmbeddingModel):
             raise InterpreterError(
@@ -62,7 +65,6 @@ def execute(
             raise InterpreterError(
                 f"LLMInference step with ChatMessage output must have ChatMessage inputs. Got {li.inputs}"
             )
-        # TODO: Add Memory
         if any(not input.is_set() for input in li.inputs):
             raise InterpreterError(
                 f"All inputs to LLMInference step must be set. Inputs were: {li.inputs}."
@@ -72,6 +74,14 @@ def execute(
             for input in li.inputs
             if input.is_set()
         ]  # type: ignore
+
+        # prepend the inputs with memory chat history if available
+        if li.memory:
+            # Note that the memory is cached in the resource cache, so this should persist for a while...
+            memory = to_memory(kwargs.get("session_id"), li.memory)
+            inputs = memory.get(inputs)
+        else:
+            memory = None
 
         if stream_fn:
             generator = model.stream_chat(
@@ -94,6 +104,8 @@ def execute(
                 ),
             )
         output_variable.value = from_chat_message(chatResult.message)
+        if memory:
+            memory.put([chatResult.message])
     else:
         model = to_llm(li.model, li.system_message)
 
