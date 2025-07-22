@@ -1107,7 +1107,7 @@
     },
     "Flow": {
       "additionalProperties": false,
-      "description": "Defines a flow of steps that can be executed in sequence or parallel.\nFlows can include conditions and memory for state management.\nIf input or output variables are not specified, they are inferred from\nthe first and last step, respectively.",
+      "description": "Defines a flow of steps that can be executed in sequence or parallel.\nIf input or output variables are not specified, they are inferred from\nthe first and last step, respectively.",
       "properties": {
         "id": {
           "description": "Unique ID of this component.",

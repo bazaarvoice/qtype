@@ -12,13 +12,14 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.llms.bedrock_converse import BedrockConverse
-from resource_cache import cached_resource
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage
 from qtype.dsl.model import Memory
 from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import Model
+
+from .resource_cache import cached_resource
 
 
 @cached_resource

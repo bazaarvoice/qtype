@@ -65,14 +65,9 @@ def execute(
             raise InterpreterError(
                 f"LLMInference step with ChatMessage output must have ChatMessage inputs. Got {li.inputs}"
             )
-        if any(not input.is_set() for input in li.inputs):
-            raise InterpreterError(
-                f"All inputs to LLMInference step must be set. Inputs were: {li.inputs}."
-            )
         inputs = [
             to_chat_message(input.value)  # type: ignore
             for input in li.inputs
-            if input.is_set()
         ]  # type: ignore
 
         # prepend the inputs with memory chat history if available

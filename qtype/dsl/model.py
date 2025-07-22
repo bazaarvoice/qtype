@@ -317,7 +317,6 @@ class Agent(LLMInference):
 
 class Flow(Step):
     """Defines a flow of steps that can be executed in sequence or parallel.
-    Flows can include conditions and memory for state management.
     If input or output variables are not specified, they are inferred from
     the first and last step, respectively.
     """

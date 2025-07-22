@@ -4,11 +4,18 @@ import logging
 from typing import Any
 
 from llama_index.core.agent.workflow import ReActAgent
+from llama_index.core.base.llms.types import ChatMessage as LlamaChatMessage
 from llama_index.core.tools import AsyncBaseTool, FunctionTool
 from llama_index.core.workflow import Context
 from llama_index.core.workflow.handler import WorkflowHandler  # type: ignore
 
-from qtype.interpreter.conversions import to_llm
+from qtype.dsl.domain_types import ChatMessage
+from qtype.interpreter.conversions import (
+    from_chat_message,
+    to_chat_message,
+    to_llm,
+    to_memory,
+)
 from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import Agent, APITool, PythonFunctionTool, Variable
 
@@ -44,26 +51,42 @@ def execute(agent: Agent, **kwargs: dict[str, Any]) -> list[Variable]:
             "LLMInference step must have exactly one output variable."
         )
     output_variable = agent.outputs[0]
+
+    # prepare the input for the agent
+    if len(agent.inputs) != 1:
+        # TODO: Support multiple inputs by shoving it into the chat history?
+        raise InterpreterError(
+            "Agent step must have exactly one input variable."
+        )
+
+    input_variable = agent.inputs[0]
+    if input_variable.type == ChatMessage:
+        input: LlamaChatMessage | str = to_chat_message(input_variable.value)  # type: ignore
+    else:
+        input: LlamaChatMessage | str = input_variable.value  # type: ignore
+
+    # Pepare the tools
     # TODO: support api tools
     if any(isinstance(tool, APITool) for tool in agent.tools):
         raise NotImplementedError(
             "APITool is not supported in the current implementation. Please use PythonFunctionTool."
         )
-
     tools = [
         to_llama_tool(tool)  # type: ignore
         for tool in (agent.tools if agent.tools else [])
     ]
-    # TODO: Add Memory
-    # TODO: Add Chat functionality?
-    if len(agent.inputs) != 1:
-        raise InterpreterError(
-            "LLMInference step must have exactly one input variable."
-        )
-    input = agent.inputs[0].value
 
+    # prep memory
+    # Note to_memory is a cached resource so this will get existing memory if available
+    memory = (
+        to_memory(kwargs.get("session_id"), agent.memory)
+        if agent.memory
+        else None
+    )
+
+    # Run the agent
     async def run_agent() -> WorkflowHandler:
-        logger.info(
+        logger.debug(
             f"Starting agent '{agent.id}' execution with input length: {len(str(input))} (ReAct mode)"
         )
         re_agent = ReActAgent(
@@ -73,7 +96,8 @@ def execute(agent: Agent, **kwargs: dict[str, Any]) -> list[Variable]:
             llm=to_llm(agent.model, agent.system_message),  # type: ignore
         )
         ctx = Context(re_agent)  # type: ignore
-        handler = re_agent.run(input, ctx=ctx)
+        # TODO: implement checkpoint_callback to call stream_fn?
+        handler = re_agent.run(input, chat_memory=memory, ctx=ctx)
         result = await handler
         logger.debug(
             f"Agent '{agent.id}' execution completed successfully (ReAct mode)"
@@ -81,6 +105,10 @@ def execute(agent: Agent, **kwargs: dict[str, Any]) -> list[Variable]:
         return result
 
     result = asyncio.run(run_agent())
-    output_variable.value = result.response.content
+
+    if output_variable.type == ChatMessage:
+        output_variable.value = from_chat_message(result.response)  # type: ignore
+    else:
+        output_variable.value = result.response.content  # type: ignore
 
     return agent.outputs
