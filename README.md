@@ -54,6 +54,16 @@ AWS_PROFILE=your_profile qtype run api hello_world_bedrock.qtype.yaml
 ```
 and visit [http://localhost:8000/docs](http://localhost:8000/docs) to interact with it.
 
+---
+
+## 📄 API Reference
+
+The core components are detailed in the [docs](./docs/components).
+
+
+## 🤝 Contributing
+
+Contributions welcome! Please follow the instructions in the [contribution guide](./docs/contributing.md).
 
 ## 📄 License
 
