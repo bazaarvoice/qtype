@@ -1,5 +1,5 @@
-# This workflow publishes the package to Test PyPI on merge to main
-name: Publish to Test PyPI
+# This workflow publishes the package to PyPI on merge to main
+name: Publish to PyPI
 
 on:
   release:
