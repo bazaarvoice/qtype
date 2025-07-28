@@ -87,4 +87,4 @@ Stay tuned for upcoming features like:
 Happy hacking with QType! 🛠️
 
 
-[![Generate JSON Schema](https://github.com/bazaarvoice/qtype/actions/workflows/github_workflows_generate-schema.yml/badge.svg)](https://github.com/bazaarvoice/qtype/actions/workflows/github_workflows_generate-schema.yml) | [![Publish to PyPI](https://github.com/bazaarvoice/qtype/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/bazaarvoice/qtype/actions/workflows/publish-pypi.yml)
+[![Generate JSON Schema](https://github.com/bazaarvoice/qtype/actions/workflows/github_workflows_generate-schema.yml/badge.svg)](https://github.com/bazaarvoice/qtype/actions/workflows/github_workflows_generate-schema.yml) [![Publish to PyPI](https://github.com/bazaarvoice/qtype/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/bazaarvoice/qtype/actions/workflows/publish-pypi.yml)
