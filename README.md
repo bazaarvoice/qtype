@@ -5,81 +5,60 @@ It is designed to help developers define modular, composable AI systems using a 
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 Install QType:
 
 ```bash
-pip install qtype
+pip install qtype[interpreter]
 ```
 
-Set your openai key and run the [hello world example](examples/hello_world.qtype.yaml) which simply asks a model a question:
-:
+Create a file `hello_world_bedrock.qtype.yaml` that uses AWS Bedrock for a simple chat session:
+```yaml
+id: hello_world
+description: "A simple hello world app using Bedrock, taking a ChatMessage as input."
 
-```bash
-OPENAI_KEY=<YOUR_OPENAI_KEY> qtype run examples/hello_world.qtype.yaml
+flows:
+  - id: simple_flow
+    steps:
+      - id: llm_inference_step
+        model: 
+          id: amazon.nova-lite-v1:0
+          provider: aws-bedrock
+        system_message: |
+          You are a helpful assistant.
+        inputs:
+          - id: user_message
+            type: ChatMessage
+        outputs:
+          - id: response_message
+            type: ChatMessage
 ```
 
-You'll see a prompt asking to enter the question. Type what you like and enter Ctrl+D:
-
-```shell
-INFO: 🚀 Running flow 'simple_qa'...
-INFO: Starting execution of flow: simple_qa
-
-==================================================
-INPUTS REQUIRED
-==================================================
-Your Question (press Ctrl+D when finished): 
-
-Hi! This is just a test of QType -- an ai dsl. What model are you?  
-
-INFO: Executing step: answer_step
-INFO: Rendered prompt template for 'answer_prompt'
-INFO: Calling OpenAI model 'gpt-4o' with params: {'model': 'gpt-4o', 'messages': [{'role': 'user', 'content': 'You are a helpful assistant.\nAnswer the following question:\n\nHi! This is just a test of QType -- an ai dsl. What model are you?\n\n'}], 'temperature': 0.7, 'max_tokens': 512}
-INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
-
-🤖 Generated Response:
-------------------------------
-Hello! I am an AI language model developed by OpenAI, known as ChatGPT. I'm designed to assist with a wide range of questions and tasks. How can I help you today?
-------------------------------
-INFO: ✅ Flow execution completed successfully.
-
-==================================================
-RESULT:
-==================================================
-Hello! I am an AI language model developed by OpenAI, known as ChatGPT. I'm designed to assist with a wide range of questions and tasks. How can I help you today?
-==================================================
+Validate that the file matches the spec:
+```
+qtype validate hello_world_bedrock.qtype.yaml
 ```
 
+You should see:
+```
+INFO: ✅ Schema validation successful.
+INFO: ✅ Model validation successful.
+INFO: ✅ Language validation successful
+INFO: ✅ Semantic validation successful
+```
 
-## 📁 Examples
+Finally, launch the prototype as an api:
+```
+AWS_PROFILE=your_profile qtype run api hello_world_bedrock.qtype.yaml 
+```
+and visit [http://localhost:8000/docs](http://localhost:8000/docs) to interact with it.
 
-See the [`examples/`](./examples/) folder for more usage examples, including:
-- `hello_world.qtype.yaml`: a minimal flow with a single prompt
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Please follow the instructions in the [contribution guide](./CONTRIBUTING.md).
-
----
 
 ## 📄 License
 
 This project is licensed under the **MIT License**.  
 See the [LICENSE](./LICENSE) file for details.
-
----
-
-## 🔧 Project Structure
-
-- `qtype/` – Python package for parsing, validating, and interpreting QType specs
-- `examples/` – Example `.qtype.yaml` specs
-- `schema/` – JSON Schema auto-generated from the DSL
-- `docs/` – Documentation (for GitHub Pages)
-- `scripts/` – Developer tools and schema generation
-- `tests/` – Unit and integration tests
 
 ---
 

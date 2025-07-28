@@ -43,7 +43,7 @@ def create_output_type_model(flow: Flow) -> Type[BaseModel]:
             f"{flow.id}Outputs",
             __base__=BaseModel,
             **output_fields,
-        )
+        )  # type: ignore
         fields["outputs"] = (
             outputs_model,
             Field(description="Flow execution outputs"),
@@ -52,9 +52,9 @@ def create_output_type_model(flow: Flow) -> Type[BaseModel]:
         fields["outputs"] = (
             dict[str, Any],
             Field(description="Flow execution outputs"),
-        )
+        )  # type: ignore
 
-    return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)
+    return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)  # type: ignore
 
 
 def create_input_type_model(flow: Flow) -> Type[BaseModel]:
@@ -75,4 +75,4 @@ def create_input_type_model(flow: Flow) -> Type[BaseModel]:
         )
         fields[var.id] = (python_type, field_info)
 
-    return create_model(f"{flow.id}Request", __base__=BaseModel, **fields)
+    return create_model(f"{flow.id}Request", __base__=BaseModel, **fields)  # type: ignore

@@ -14,6 +14,6 @@ markdown_extensions:
 
 plugins: 
   - search
-  - exclude:
-      glob:
-        - components/*
+  # - exclude:
+  #     glob:
+  #       - components/*

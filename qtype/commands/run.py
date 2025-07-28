@@ -5,17 +5,14 @@ Command-line interface for running QType YAML spec files.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from typing import Any
 
+from qtype.dsl.domain_types import ChatMessage
 from qtype.interpreter.flow import execute_flow
+from qtype.interpreter.typing import create_input_type_model
 from qtype.loader import load
 from qtype.semantic.model import Application, Flow, Step
-
-# from qtype.ir.resolver import resolve_semantic_ir
-# from qtype.ir.validator import validate_semantics
-# from qtype.runner.executor import FlowExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -93,28 +90,36 @@ def run_flow(args: Any) -> None:
         args: Arguments passed from the command line or calling context.
     """
     spec = load(args.spec)
-    logger.info(f"Running flow from spec: {spec}")
 
     flow = _get_flow(spec, args.flow)
     logger.info(f"Executing flow: {flow.id}")
-    inputs = json.loads(args.input)
+    input_type = create_input_type_model(flow)
+    inputs = input_type.model_validate_json(args.input)
     for var in flow.inputs:
-        if var.id in inputs:
-            var.value = inputs[var.id]
-        else:
-            raise ValueError(
-                f"Input variable {var.id} not found in provided input JSON."
-            )
+        # Get the value from the request using the variable ID
+        inputs_dict = inputs.model_dump()  # type: ignore
+        if var.id in inputs_dict:
+            var.value = getattr(inputs, var.id)
     _telemetry(spec)
 
     was_streamed = False
+    previous: str = ""
 
-    def stream_fn(step: Step, text: str) -> None:
+    def stream_fn(step: Step, msg: ChatMessage | str) -> None:
         """Stream function to handle step outputs."""
-        nonlocal was_streamed
+        nonlocal was_streamed, previous
         if step == flow.steps[-1]:
             was_streamed = True
-            print(text, end="", flush=True)
+            if isinstance(msg, ChatMessage):
+                content = " ".join(
+                    [m.content for m in msg.blocks if m.content]
+                )
+                # Note: streaming chat messages accumulate the content...
+                content = content.removeprefix(previous)
+                print(content, end="", flush=True)
+                previous += content
+            else:
+                print(msg, end="", flush=True)
 
     result = execute_flow(flow, stream_fn=stream_fn)  # type: ignore
     if not was_streamed:
