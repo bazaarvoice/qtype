@@ -375,8 +375,6 @@ class Decoder(Step):
 class AuthorizationProvider(StrictBaseModel):
     """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
 
-    # TODO: think through this more and decide if it's the right shape...
-
     id: str = Field(
         ..., description="Unique ID of the authorization configuration."
     )
