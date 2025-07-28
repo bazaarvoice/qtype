@@ -1,1 +1,2 @@
-# Welcome to QType Docs
+
+--8<-- "README.md"

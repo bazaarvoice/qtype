@@ -1,9 +1,11 @@
 import argparse
 import json
 import logging
+from pathlib import Path
 from typing import Optional
 
 from qtype.commons.generate import dump_commons_library
+from qtype.dsl.document import generate_documentation
 from qtype.dsl.model import Document
 
 logger = logging.getLogger(__name__)
@@ -62,6 +64,22 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         help="Output file for the schema (default: stdout)",
     )
     schema_parser.set_defaults(func=generate_schema)
+
+    # Parser for generating the DSL documentation
+    dsl_parser = generate_subparsers.add_parser(
+        "dsl-docs",
+        help="Generates markdown documentation for the QType DSL classes.",
+    )
+    dsl_parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="docs/components/",
+        help="Output directory for the DSL documentation (default: docs/components/)",
+    )
+    dsl_parser.set_defaults(
+        func=lambda args: generate_documentation(Path(args.output))
+    )
 
     # Parser for generating the semantic model
     # only add this if networkx and ruff are installed

@@ -1,0 +1,19 @@
+site_name: QType
+
+theme: material
+
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/bazaarvoice/qtype
+  
+
+markdown_extensions:
+  - pymdownx.snippets
+
+plugins: 
+  - search
+  - exclude:
+      glob:
+        - components/*
