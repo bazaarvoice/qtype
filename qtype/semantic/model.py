@@ -38,7 +38,12 @@ class Variable(DSLVariable, BaseModel):
 class ImmutableModel(BaseModel):
     """Base model that can't be mutated but can be cached."""
 
+    id: str = Field(..., description="Unique ID of this model.")
+
     model_config = ConfigDict(frozen=True)
+
+    def __hash__(self) -> int:
+        return hash(self.id)  # Hash based on a hashable field
 
 
 class Application(BaseModel):
@@ -221,7 +226,6 @@ class Decoder(Step):
 
 class Flow(Step):
     """Defines a flow of steps that can be executed in sequence or parallel.
-    Flows can include conditions and memory for state management.
     If input or output variables are not specified, they are inferred from
     the first and last step, respectively.
     """
