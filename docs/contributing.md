@@ -38,7 +38,7 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install all dependencies including development tools
-uv sync --group dev --group interpreter
+uv sync --group dev --extra interpreter
 ```
 
 ## Installing QType for Development
@@ -47,10 +47,7 @@ Install QType in editable mode so changes to the source code are immediately ref
 
 ```bash
 # Install in development mode
-uv pip install -e . --group interpreter
-
-# Or if you want to install with specific development dependencies
-uv pip install -e . --group interpreter --group dev
+uv pip install -e .[interpreter]
 ```
 
 After installation, you should be able to run the `qtype` command from anywhere:
