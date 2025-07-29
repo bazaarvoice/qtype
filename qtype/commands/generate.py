@@ -74,8 +74,8 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         "-o",
         "--output",
         type=str,
-        default="docs/components/",
-        help="Output directory for the DSL documentation (default: docs/components/)",
+        default="docs/DSL-Reference/",
+        help="Output directory for the DSL documentation (default: docs/DSL-Reference/)",
     )
     dsl_parser.set_defaults(
         func=lambda args: generate_documentation(Path(args.output))

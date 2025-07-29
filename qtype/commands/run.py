@@ -32,9 +32,6 @@ def _get_flow(app: Application, flow_id: str | None) -> Flow:
 
     else:
         flow = app.flows[0]
-        logger.warning(
-            f"No flow_id specified, running flow {flow.id} by default."
-        )
 
     return flow
 
@@ -127,7 +124,7 @@ def run_flow(args: Any) -> None:
             f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
         )
     else:
-        print("\n\n")
+        print("\n")
 
 
 def run_ui(args: Any) -> None:
@@ -197,6 +194,7 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         help="The name of the flow to run in the UI. If not specified, runs the first flow found.",
     )
     ui_parser.set_defaults(func=run_ui)
+
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
     )

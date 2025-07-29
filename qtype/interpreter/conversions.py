@@ -34,8 +34,7 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 @cached_resource
 def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     """Convert a qtype Model to a LlamaIndex Model."""
-    # Note only bedrock working for now. TODO: add support for other providers
-    # Maybe support arbitrary LLMs llms that LLAmaIndex supports?
+
     if model.provider in "aws-bedrock":
         # BedrockConverse requires a model_id and system_prompt
         # Inference params can be passed as additional kwargs
