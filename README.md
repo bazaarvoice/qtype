@@ -13,31 +13,38 @@ Install QType:
 pip install qtype[interpreter]
 ```
 
-Create a file `hello_world_bedrock.qtype.yaml` that uses AWS Bedrock for a simple chat session:
+Create a file `hello_world.qtype.yaml` that executes a single chat question:
 ```yaml
 id: hello_world
-description: "A simple hello world app using Bedrock, taking a ChatMessage as input."
-
 flows:
-  - id: simple_flow
+  - id: simple_qa_flow
     steps:
       - id: llm_inference_step
         model: 
-          id: amazon.nova-lite-v1:0
-          provider: aws-bedrock
+          id: gpt-4o
+          provider: openai
+          auth: 
+            id: openai_auth
+            type: api_key
+            api_key: ${OPENAI_KEY}
         system_message: |
           You are a helpful assistant.
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - id: prompt
+            type: text
         outputs:
           - id: response_message
-            type: ChatMessage
+            type: text
+```
+
+Put your openai api key into your `.env` file:
+```
+echo "OPENAI_KEY=sk...." >> .env
 ```
 
 Validate that the file matches the spec:
 ```
-qtype validate hello_world_bedrock.qtype.yaml
+qtype validate hello_world.qtype.yaml
 ```
 
 You should see:
@@ -48,22 +55,26 @@ INFO: ✅ Language validation successful
 INFO: ✅ Semantic validation successful
 ```
 
-Finally, launch the prototype as an api:
+Finally,execute the flow.
 ```
-AWS_PROFILE=your_profile qtype run api hello_world_bedrock.qtype.yaml 
+qtype run flow '{"prompt":"What is the airspeed of a laden swallow?"}' hello_world.qtype.yaml 
 ```
-and visit [http://localhost:8000/docs](http://localhost:8000/docs) to interact with it.
+
+You should see (something similar to):
+
+```
+INFO: Executing flow: simple_qa_flow
+
+The airspeed of a laden swallow is a humorous reference from the movie "Monty Python and the Holy Grail." In the film, the question is posed as "What is the airspeed velocity of an unladen swallow?" The joke revolves around the absurdity and specificity of the question, and it doesn't have a straightforward answer. However, if you're curious about the real-life airspeed of a swallow, the European Swallow (Hirundo rustica) typically flies at around 11 meters per second, or 24 miles per hour, when unladen. The concept of a "laden" swallow is part of the humor, as it would depend on what the swallow is carrying and is not a standard measurement.
+```
 
 ---
 
-## 📄 API Reference
-
-The core components are detailed in the [docs](./docs/components).
-
+See the [full docs](https://bazaarvoice.github.io/qtype/) for more examples and guides.
 
 ## 🤝 Contributing
 
-Contributions welcome! Please follow the instructions in the [contribution guide](./docs/contributing.md).
+Contributions welcome! Please follow the instructions in the [contribution guide](https://bazaarvoice.github.io/qtype/contributing/).
 
 ## 📄 License
 

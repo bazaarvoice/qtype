@@ -11,7 +11,6 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.memory import Memory as LlamaMemory
-from llama_index.llms.bedrock_converse import BedrockConverse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage
@@ -35,20 +34,36 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 @cached_resource
 def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     """Convert a qtype Model to a LlamaIndex Model."""
-    # Note only bedrock working for now. TODO: add support for other providers
-    # Maybe support arbitrary LLMs llms that LLAmaIndex supports?
-    if model.provider in {"bedrock", "amazon_bedrock", "aws", "aws-bedrock"}:
+
+    if model.provider in "aws-bedrock":
         # BedrockConverse requires a model_id and system_prompt
         # Inference params can be passed as additional kwargs
-        rv: BaseLLM = BedrockConverse(
+        from llama_index.llms.bedrock_converse import BedrockConverse
+        brv: BaseLLM = BedrockConverse(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
         )
-        return rv
+        return brv
+    elif model.provider == "openai":
+        from llama_index.llms.openai import OpenAI
+        return OpenAI(
+            model=model.model_id if model.model_id else model.id,
+            system_prompt=system_prompt,
+            **(model.inference_params if model.inference_params else {}),
+            api_key=model.auth.api_key if model.auth and model.auth.api_key else None,
+        )
+    elif model.provider == "anthropic":
+        from llama_index.llms.anthropic import Anthropic
+        arv: BaseLLM = Anthropic(
+            model=model.model_id if model.model_id else model.id,
+            system_prompt=system_prompt,
+            **(model.inference_params if model.inference_params else {}),
+        )
+        return arv
     else:
         raise InterpreterError(
-            f"Unsupported model provider: {model.provider}. Only 'bedrock' is currently supported."
+            f"Unsupported model provider: {model.provider}."
         )
 
 
@@ -56,14 +71,14 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
 def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
-    if model.provider in {"bedrock", "amazon_bedrock", "aws", "aws-bedrock"}:
+    if model.provider in {"bedrock","aws", "aws-bedrock"}:
         from llama_index.embeddings.bedrock import BedrockEmbedding
 
         embedding: BaseEmbedding = BedrockEmbedding(
             model_name=model.model_id if model.model_id else model.id
         )
         return embedding
-    elif model.provider in {"openai", "openai-embedding"}:
+    elif model.provider == "openai":
         from llama_index.embeddings.openai import OpenAIEmbedding
 
         embedding: BaseEmbedding = OpenAIEmbedding(
@@ -72,7 +87,7 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
         return embedding
     else:
         raise InterpreterError(
-            f"Unsupported embedding model provider: {model.provider}. Only 'bedrock' and 'openai' are currently supported."
+            f"Unsupported embedding model provider: {model.provider}."
         )
 
 
