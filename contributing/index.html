@@ -1,0 +1,1818 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../plugins/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Contributing - QType</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#contributing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="QType" class="md-header__button md-logo" aria-label="QType" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            QType
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Contributing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="QType" class="md-nav__button md-logo" aria-label="QType" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    QType
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-environment-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Environment Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development Environment Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Clone the Repository
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-set-up-python-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Set Up Python Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-qtype-for-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing QType for Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Tests
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      Coverage Reports
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-markers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Markers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-quality-and-standards" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Quality and Standards
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Quality and Standards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-style-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Style Requirements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Style Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format-code-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      Format code automatically:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-commit-hooks-optional-but-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pre-commit hooks (Optional but recommended):
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Project Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#making-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Making Changes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Making Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-expand-the-dsl" class="md-nav__link">
+    <span class="md-ellipsis">
+      How To: Expand The DSL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding New Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    QType CLI Plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    DSL Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            DSL Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/APITool/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    APITool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Application/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Application
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/ArrayTypeDefinition/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ArrayTypeDefinition
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/AuthorizationProvider/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AuthorizationProvider
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/AuthorizationProviderList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AuthorizationProviderList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Condition/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Condition
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/DecoderFormat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DecoderFormat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Document/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Document
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/DocumentIndex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DocumentIndex
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/DocumentSearch/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DocumentSearch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/EmbeddingModel/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EmbeddingModel
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Flow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Flow
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Index/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Index
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/IndexList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IndexList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/LLMInference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLMInference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Memory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Memory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/ModelList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ModelList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/ObjectTypeDefinition/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ObjectTypeDefinition
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/PromptTemplate/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PromptTemplate
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/PythonFunctionTool/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PythonFunctionTool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Search/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Search
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Step/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Step
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/StructuralTypeEnum/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    StructuralTypeEnum
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/TelemetrySink/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TelemetrySink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Tool/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/ToolList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ToolList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/TypeDefinitionBase/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TypeDefinitionBase
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/TypeList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TypeList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/Variable/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Variable
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/VariableList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    VariableList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/VectorIndex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    VectorIndex
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DSL-Reference/VectorSearch/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    VectorSearch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-environment-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Environment Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development Environment Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Clone the Repository
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-set-up-python-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Set Up Python Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-qtype-for-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing QType for Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Tests
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      Coverage Reports
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-markers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Markers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-quality-and-standards" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Quality and Standards
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Quality and Standards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-style-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Style Requirements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Style Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format-code-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      Format code automatically:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-commit-hooks-optional-but-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pre-commit hooks (Optional but recommended):
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Project Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#making-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Making Changes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Making Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-expand-the-dsl" class="md-nav__link">
+    <span class="md-ellipsis">
+      How To: Expand The DSL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding New Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="contributing">Contributing</h1>
+<p>Welcome to the QType development guide! This document provides comprehensive instructions for setting up your development environment and contributing to the project.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#development-environment-setup">Development Environment Setup</a></li>
+<li><a href="#installing-qtype-for-development">Installing QType for Development</a></li>
+<li><a href="#running-tests">Running Tests</a></li>
+<li><a href="#code-quality-and-standards">Code Quality and Standards</a></li>
+<li><a href="#project-structure">Project Structure</a></li>
+<li><a href="#making-changes">Making Changes</a></li>
+<li><a href="#cli-usage">CLI Usage</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Python 3.10 or higher</strong> (this project targets Python 3.10+)</li>
+<li><strong>uv</strong> package manager (recommended) or <strong>pip</strong></li>
+<li><strong>Git</strong> for version control</li>
+</ul>
+<h2 id="development-environment-setup">Development Environment Setup</h2>
+<h3 id="1-clone-the-repository">1. Clone the Repository</h3>
+<pre><code class="language-bash">git clone https://github.com/yourusername/qtype.git
+cd qtype
+</code></pre>
+<h3 id="2-set-up-python-environment">2. Set Up Python Environment</h3>
+<p>We recommend using <code>uv</code> for dependency management as it's faster and more reliable:</p>
+<pre><code class="language-bash"># Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install all dependencies including development tools
+uv sync --group dev --extra interpreter
+</code></pre>
+<h2 id="installing-qtype-for-development">Installing QType for Development</h2>
+<p>Install QType in editable mode so changes to the source code are immediately reflected:</p>
+<pre><code class="language-bash"># Install in development mode
+uv pip install -e .[interpreter]
+</code></pre>
+<p>After installation, you should be able to run the <code>qtype</code> command from anywhere:</p>
+<pre><code class="language-bash">qtype --help
+</code></pre>
+<h2 id="running-tests">Running Tests</h2>
+<p>The project uses pytest for testing with coverage measurement:</p>
+<pre><code class="language-bash"># Run all tests
+uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov=qtype
+
+# Run tests with coverage and generate HTML report
+uv run pytest --cov=qtype --cov-report=html
+
+# Run tests with verbose output
+uv run pytest -v
+
+# Run specific test file
+uv run pytest tests/test_loader_file_inclusion.py
+
+# Run specific test class
+uv run pytest tests/test_loader_file_inclusion.py::TestFileIncludeLoader
+
+# Run specific test method
+uv run pytest tests/test_loader_file_inclusion.py::TestFileIncludeLoader::test_include_yaml_file
+
+# Run tests matching a pattern
+uv run pytest -k &quot;test_include&quot;
+
+# Run tests with specific markers
+uv run pytest -m &quot;not network&quot;  # Skip network tests
+uv run pytest -m &quot;not slow&quot;     # Skip slow tests
+
+# Run tests in parallel (if pytest-xdist is installed)
+uv run pytest -n auto
+</code></pre>
+<h3 id="coverage-reports">Coverage Reports</h3>
+<p>Coverage reports show:
+- Which lines of code are executed during tests
+- Which lines are missing test coverage<br />
+- Overall coverage percentage for each module
+- HTML report with line-by-line coverage highlighting</p>
+<p>The HTML coverage report (<code>htmlcov/index.html</code>) provides the most detailed view, showing exactly which lines need more test coverage.</p>
+<h3 id="test-markers">Test Markers</h3>
+<p>The project uses pytest markers to categorize tests:
+- <code>@pytest.mark.slow</code>: Tests that take longer to run
+- <code>@pytest.mark.network</code>: Tests requiring network access</p>
+<p>Skip specific test categories:</p>
+<pre><code class="language-bash"># Skip slow tests
+uv run pytest -m &quot;not slow&quot;
+
+# Skip network tests
+uv run pytest -m &quot;not network&quot;
+
+# Run only network tests
+uv run pytest -m &quot;network&quot;
+</code></pre>
+<h2 id="code-quality-and-standards">Code Quality and Standards</h2>
+<p>This project follows strict Python coding standards:</p>
+<h3 id="code-style-requirements">Code Style Requirements</h3>
+<ul>
+<li><strong>PEP 8</strong> compliance for all Python code</li>
+<li><strong>Type hints</strong> for all function signatures and class attributes</li>
+<li><strong>Docstrings</strong> for all public functions, classes, and modules</li>
+<li><strong>Clear naming</strong> using snake_case for functions/variables, PascalCase for classes</li>
+<li><strong>Line length</strong> limit of 79 characters (as per PEP 8)</li>
+<li><strong>f-strings</strong> for string interpolation</li>
+<li><strong>Explicit over implicit</strong> code style</li>
+</ul>
+<h4 id="format-code-automatically">Format code automatically:</h4>
+<pre><code class="language-bash"># Format with ruff
+ruff format qtype/ tests/
+
+# Lint with ruff
+ruff check qtype/ tests/
+
+# Sort imports
+isort qtype/ tests/
+
+# Type checking with mypy
+mypy qtype/ tests/
+</code></pre>
+<h4 id="pre-commit-hooks-optional-but-recommended">Pre-commit hooks (Optional but recommended):</h4>
+<pre><code class="language-bash">uv pip install pre-commit
+pre-commit install
+</code></pre>
+<p>Settings are in <code>.pre-commit-config.yaml</code>:</p>
+<h2 id="project-structure">Project Structure</h2>
+<ul>
+<li><code>qtype/</code> – Python package for parsing, validating, and interpreting QType specs</li>
+<li><code>examples/</code> – Example <code>.qtype.yaml</code> specs</li>
+<li><code>schema/</code> – JSON Schema auto-generated from the DSL</li>
+<li><code>docs/</code> – Documentation </li>
+<li><code>tests/</code> – Unit and integration tests</li>
+</ul>
+<h2 id="making-changes">Making Changes</h2>
+<h3 id="development-workflow">Development Workflow</h3>
+<ol>
+<li>
+<p><strong>Create a feature branch:</strong>
+   <code>bash
+   git checkout -b feature/your-feature-name</code></p>
+</li>
+<li>
+<p><strong>Make your changes</strong> following the coding standards</p>
+</li>
+<li>
+<p><strong>Write or update tests</strong> for your changes</p>
+</li>
+<li>
+<p><strong>Run tests</strong> to ensure nothing is broken:
+   <code>bash
+   uv run pytest --cov=qtype</code></p>
+</li>
+<li>
+<p><strong>Check code quality:</strong>
+   <code>bash
+   ruff format qtype/ tests/
+   ruff check qtype/ tests/
+   isort qtype/ tests/
+   mypy qtype/</code></p>
+</li>
+<li>
+<p><strong>Test CLI functionality:</strong>
+   ```bash
+   # Generate schema
+   ptython -m qtype.cli generate-schema -o schema/test.json</p>
+</li>
+</ol>
+<p># Validate example spec
+   ptython -m qtype.cli validate examples/hello_world.qtype.yaml
+   ```</p>
+<ol>
+<li>
+<p><strong>Update documentation</strong> if needed</p>
+</li>
+<li>
+<p><strong>Commit your changes:</strong>
+   <code>bash
+   git add .
+   git commit -m "feat: add your feature description"</code></p>
+</li>
+</ol>
+<h3 id="how-to-expand-the-dsl">How To: Expand The DSL</h3>
+<p>The core of qtype is the DSL specified in <a href="model.py">qtype/dsl/model.py</a>. All functionality is rooted in the pydantic classes in that file. To expand the dsl with new classes, types, etc., edit this file.</p>
+<p>Once you have it to your liking, you can generate the new schema:</p>
+<pre><code>qtype generate schema -o schema/qtype.schema.json 
+</code></pre>
+<p>Next, make a canonical example of your new type in the <code>examples</code> folder (e.g., <code>examples/new_type_example.qtype.yaml</code>).</p>
+<p>You can make vscode validate it with your newly generated schema by adding it to your <code>settings.json</code>:</p>
+<pre><code>&quot;yaml.schemas&quot; : {
+   &quot;schema/qtype.schema.json&quot;: [&quot;qtype.config.yaml&quot;, &quot;*.qtype.yaml&quot;],
+},
+</code></pre>
+<p>The semantic model for your new class can be generated automatically as well:</p>
+<pre><code>qtype generate semantic-model
+</code></pre>
+<p>This command updates <code>qtype/semantic/model.py</code> with any new types in the <code>qtype/dsl/model.py</code> using the following rules:
+* Class names that end in <code>List</code> are ignored
+* Any member that has an <code>&lt;DSLClass&gt; | str</code> type are switched to <code>&lt;DSLClass&gt;</code> (as it assumes the <code>str</code> is a reference)
+* All <code>List | None</code> types are switched to <code>List</code> as omitted lists are replaced with empty lists in the semantic representation.</p>
+<p>Next, ensure your new types can be validated:</p>
+<pre><code>qtype validate examples/new_type_example.qtype.yaml
+</code></pre>
+<p>The docstrings in the types are used to update the documentation with:</p>
+<pre><code>qtype generate dsl-docs
+</code></pre>
+<p>Finally, if desired, you can update the interpreter to support your new type.</p>
+<h3 id="adding-new-dependencies">Adding New Dependencies</h3>
+<p>When adding new dependencies, use uv to add to <code>pyproject.toml</code>:</p>
+<pre><code class="language-bash">uv add &lt;dependency&gt;
+</code></pre>
+<p>Then update the lock file:</p>
+<pre><code class="language-bash">uv lock
+</code></pre>
+<h2 id="next-steps">Next Steps</h2>
+<p>After setting up your development environment:</p>
+<ol>
+<li>Explore the <code>examples/</code> directory to understand QType specifications</li>
+<li>Run the existing tests to ensure everything works</li>
+<li>Read the documentation in <code>docs/</code></li>
+<li>Look at open issues for contribution opportunities</li>
+<li>Start with small improvements or bug fixes</li>
+</ol>
+<p>Happy coding! 🚀</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/bazaarvoice/qtype" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>
