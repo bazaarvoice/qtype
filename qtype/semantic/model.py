@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
@@ -24,6 +24,7 @@ from qtype.dsl.model import (
     StructuralTypeEnum,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
+from qtype.semantic.base_types import ImmutableModel
 
 
 class Variable(DSLVariable, BaseModel):
@@ -33,17 +34,6 @@ class Variable(DSLVariable, BaseModel):
 
     def is_set(self) -> bool:
         return self.value is not None
-
-
-class ImmutableModel(BaseModel):
-    """Base model that can't be mutated but can be cached."""
-
-    id: str = Field(..., description="Unique ID of this model.")
-
-    model_config = ConfigDict(frozen=True)
-
-    def __hash__(self) -> int:
-        return hash(self.id)  # Hash based on a hashable field
 
 
 class Application(BaseModel):

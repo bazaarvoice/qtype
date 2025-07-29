@@ -108,7 +108,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write imports
         f.write("from __future__ import annotations\n\n")
         f.write("from typing import Any, Type\n\n")
-        f.write("from pydantic import BaseModel, ConfigDict, Field\n\n")
+        f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write("from qtype.dsl.model import VariableType # noqa: F401\n")
         f.write(
@@ -117,6 +117,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write(
             "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"
         )
+        f.write("from qtype.semantic.base_types import ImmutableModel\n")
 
         # Write the new variable class
         f.write("class Variable(DSLVariable, BaseModel):\n")
@@ -128,13 +129,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         )
         f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
-
-        # Write the new ImmutableModel class
-        f.write("\n\nclass ImmutableModel(BaseModel):\n")
-        f.write(
-            '    """Base model that can\'t be mutated but can be cached."""\n'
-        )
-        f.write("    model_config = ConfigDict(frozen=True)\n\n")
 
         # Write classes
         f.write("\n\n".join(generated))

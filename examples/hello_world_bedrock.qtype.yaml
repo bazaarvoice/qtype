@@ -11,8 +11,8 @@ flows:
         system_message: |
           You are a helpful assistant.
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - id: prompt
+            type: text
         outputs:
           - id: response_message
-            type: ChatMessage
+            type: text
