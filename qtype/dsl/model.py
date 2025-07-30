@@ -58,7 +58,9 @@ class Variable(StrictBaseModel):
     )
     type: VariableType | str = Field(
         ...,
-        description=("Type of data expected or produced."),
+        description=(
+            "Type of data expected or produced. Either a TypeDefinition or domain specific type."
+        ),
     )
 
     @model_validator(mode="before")
@@ -422,7 +424,15 @@ class TelemetrySink(StrictBaseModel):
 
 
 class Application(StrictBaseModel):
-    """Defines a QType application that can include models, variables, and other components."""
+    """Defines a complete QType application specification.
+
+    An Application is the top-level container of the entire
+    program in a QType YAML file. It serves as the blueprint for your
+    AI-powered application, containing all the models, flows, tools, data sources,
+    and configuration needed to run your program. Think of it as the main entry
+    point that ties together all components into a cohesive,
+    executable system.
+    """
 
     id: str = Field(..., description="Unique ID of the application.")
     description: str | None = Field(

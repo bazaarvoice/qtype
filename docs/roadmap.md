@@ -12,7 +12,7 @@ This document outlines the planned features, improvements, and milestones for th
 ## Upcoming Milestones
 
 
-### v0.0.1
+### v0.1.0
 #### Documentation
 - [ ] Documentation setup with mkdocs
 - [ ] Examples showroom illustrating use cases
@@ -21,9 +21,6 @@ This document outlines the planned features, improvements, and milestones for th
 - [ ] Document how to use DSL in visual studio code
 - [ ] Docunment how to use includes, anchors, and references.
 
-
-#### OpenAI Support
-- [ ] Examples etc for using OpeanAI models
 
 ## Future Work
 
