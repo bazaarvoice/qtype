@@ -195,5 +195,32 @@ cython_debug/
 .env
 
 
+# Node.js / npm / Astro
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/
+.yarn-integrity
+.pnpm-debug.log*
+.pnpm-store/
+
+# Astro build output
+ui/dist/
+qtype/qtype/interpreter/ui/
+
+# Astro cache
+ui/.astro/
+
+# Package manager lock files (uncomment if you want to ignore them)
+# ui/package-lock.json
+# ui/yarn.lock
+# ui/pnpm-lock.yaml
+
+# Astro environment variables
+ui/.env*
+!ui/.env.example
+
 # Stuff I don't want to see in my editor
 ignored
