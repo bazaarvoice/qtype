@@ -23,13 +23,16 @@ class APIExecutor:
         self.host = host
         self.port = port
 
-    def create_app(self, name: Optional[str]) -> FastAPI:
+    def create_app(
+        self,
+        name: Optional[str],
+        fast_api_args: dict = {
+            "docs_url": "/docs",
+            "redoc_url": "/redoc",
+        },
+    ) -> FastAPI:
         """Create FastAPI app with dynamic endpoints."""
-        app = FastAPI(
-            title=name or "QType API",
-            docs_url="/docs",  # Swagger UI
-            redoc_url="/redoc",
-        )
+        app = FastAPI(title=name or "QType API", **fast_api_args)
 
         flows = self.definition.flows if self.definition.flows else []
 
