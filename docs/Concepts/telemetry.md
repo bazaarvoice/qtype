@@ -17,24 +17,3 @@ Telemetry observes all QType components including [Steps](Steps/index.md), [Flow
 
 ## Example Usage
 
-### Basic Telemetry Setup
-
-```yaml
-telemetry:
-  id: basic_telemetry
-  endpoint: "http://otel-collector:4317/v1/traces"
-```
-
-### Telemetry with Authentication
-
-```yaml
-telemetry:
-  id: authenticated_telemetry
-  endpoint: "https://api.observability.com/telemetry"
-  auth: telemetry_auth
-
-auths:
-  - id: telemetry_auth
-    type: api_key
-    api_key: "${TELEMETRY_API_KEY}"
-```
