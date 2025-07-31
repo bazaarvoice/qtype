@@ -7,18 +7,14 @@
 'use client'
 
 import { Switch } from '@/components/ui/switch'
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
 
 interface BooleanInputProps {
   name: string
-  property: {
-    type: string
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: boolean
-  onChange?: (name: string, value: boolean) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function BooleanInput({ 
@@ -35,7 +31,7 @@ export default function BooleanInput({
   return (
     <div className="flex items-center space-x-3">
       <Switch
-        checked={value}
+        checked={Boolean(value)}
         onCheckedChange={handleChange}
         required={required}
       />

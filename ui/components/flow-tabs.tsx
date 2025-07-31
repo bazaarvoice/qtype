@@ -7,7 +7,7 @@
 'use client'
 
 import { useOpenApiSpec } from '@/lib/hooks/use-api'
-import { extractFlowsFromSpec, type FlowInfo } from '@/lib/api-client'
+import { extractFlowsFromSpec, type FlowInfo, type OpenAPISpec } from '@/lib/api-client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
@@ -17,7 +17,7 @@ export default function FlowTabs() {
     const { spec, isLoading, error } = useOpenApiSpec()
 
     // Extract flows from the OpenAPI spec (names are already formatted for display)
-    const flows = extractFlowsFromSpec(spec)
+    const flows = extractFlowsFromSpec(spec || {} as OpenAPISpec)
 
     if (isLoading) {
         return (

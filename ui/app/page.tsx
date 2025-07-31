@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useOpenApiSpec } from "@/lib/hooks/use-api";
-import ApiDemo from "@/components/api-demo";
 import FlowTabs from "@/components/flow-tabs";
 
 export default function Home() {

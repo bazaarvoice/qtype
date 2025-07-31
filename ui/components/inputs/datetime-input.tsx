@@ -14,18 +14,14 @@ import {
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
+
 interface DateTimeInputProps {
   name: string
-  property: {
-    type: string
-    format?: string
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: string
-  onChange?: (name: string, value: string) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function DateTimeInput({ name, property, value, onChange, required }: DateTimeInputProps) {
@@ -42,7 +38,7 @@ export default function DateTimeInput({ name, property, value, onChange, require
     }
   }
 
-  const { date: initialDate, time: initialTime } = parseInitialValue(value)
+  const { date: initialDate, time: initialTime } = parseInitialValue(typeof value === 'string' ? value : undefined)
   
   const [date, setDate] = React.useState<Date | undefined>(initialDate)
   const [timeValue, setTimeValue] = React.useState<string>(initialTime)

@@ -2,23 +2,18 @@
 
 import * as React from "react"
 import { Input } from "@/components/ui/input"
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
 
 interface TimeInputProps {
   name: string
-  property: {
-    type: string
-    format?: string
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: string
-  onChange?: (name: string, value: string) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function TimeInput({ name, property, value, onChange, required }: TimeInputProps) {
-  const [timeValue, setTimeValue] = React.useState<string>(value || '')
+  const [timeValue, setTimeValue] = React.useState<string>(String(value || ''))
 
   const handleTimeChange = (time: string) => {
     setTimeValue(time)

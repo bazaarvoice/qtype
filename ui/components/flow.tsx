@@ -8,7 +8,9 @@
 
 import { useState } from 'react'
 import { type FlowInfo, apiClient, ApiClientError } from '@/lib/api-client'
+import type { FlowInputValues, ResponseData } from '@/types/flow'
 import FlowInputs from './flow-inputs'
+import FlowResponse from './flow-response'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -17,23 +19,23 @@ interface FlowProps {
 }
 
 export default function Flow({ flow }: FlowProps) {
-  const [inputs, setInputs] = useState<Record<string, any>>({})
+  const [inputs, setInputs] = useState<FlowInputValues>({})
   const [isExecuting, setIsExecuting] = useState(false)
-  const [response, setResponse] = useState<string | null>(null)
+  const [responseData, setResponseData] = useState<ResponseData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const handleInputChange = (newInputs: Record<string, any>) => {
+  const handleInputChange = (newInputs: FlowInputValues) => {
     setInputs(newInputs)
   }
 
   const executeFlow = async () => {
     setIsExecuting(true)
     setError(null)
-    setResponse(null)
+    setResponseData(null)
 
     try {
       const responseData = await apiClient.executeFlow(flow.path, inputs)
-      setResponse(JSON.stringify(responseData, null, 2))
+      setResponseData(responseData)
     } catch (err) {
       if (err instanceof ApiClientError) {
         // Use the formatted error message from ApiClientError
@@ -64,7 +66,7 @@ export default function Flow({ flow }: FlowProps) {
 
     {/* Flow Inputs */}
     <FlowInputs 
-        requestSchema={flow.requestSchema}
+        requestSchema={flow.requestSchema || null}
         onInputChange={handleInputChange}
     />
     
@@ -79,11 +81,7 @@ export default function Flow({ flow }: FlowProps) {
     </div>
 
       {/* Response Section */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
-        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-          Response
-        </h4>
-        
+      <div>
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>
@@ -96,26 +94,12 @@ export default function Flow({ flow }: FlowProps) {
           </Alert>
         )}
         
-        {response ? (
-          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded">
-            <pre className="text-xs text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap">
-              {response}
-            </pre>
-          </div>
-        ) : (
-          <div className="text-gray-500 dark:text-gray-400 text-sm">
-            {isExecuting ? 'Executing request...' : 'Response will appear here after execution...'}
-          </div>
+        {responseData && (
+          <FlowResponse 
+            responseSchema={flow.responseSchema?.properties?.outputs}
+            responseData={responseData}
+          />
         )}
-        
-        {/* {flow.responseSchema && (
-          <div className="mt-4 bg-gray-50 dark:bg-gray-900 p-4 rounded">
-            <h5 className="font-medium text-gray-900 dark:text-white mb-2">Expected Response Schema</h5>
-            <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-x-auto">
-              {JSON.stringify(flow.responseSchema, null, 2)}
-            </pre>
-          </div>
-        )} */}
       </div>
     </div>
   )

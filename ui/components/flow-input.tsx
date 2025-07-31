@@ -13,19 +13,14 @@ import DatePickerInput from './inputs/date-picker-input'
 import TimeInput from './inputs/time-input'
 import DateTimeInput from './inputs/datetime-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import type { SchemaProperty, FlowInputValue } from '@/types/flow'
 
 interface FlowInputProps {
   name: string
-  property: {
-    type: string
-    qtype_type: string,
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: any
-  onChange?: (name: string, value: any) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function FlowInput({ 

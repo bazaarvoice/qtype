@@ -1,26 +1,20 @@
 /**
  * Number Input Component
  * 
- * Handles number/int/float input fields for flows
+ * Handles numeric input fields for flows
  */
 
 'use client'
 
 import { Input } from '@/components/ui/input'
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
 
 interface NumberInputProps {
   name: string
-  property: {
-    type: string
-    title?: string
-    description?: string
-    minimum?: number
-    maximum?: number
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: number
-  onChange?: (name: string, value: number) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function NumberInput({ 
@@ -41,7 +35,7 @@ export default function NumberInput({
 
     // Parse based on type
     let numericValue: number
-    if (property.type === 'int') {
+    if (property.type === 'integer' || property.format === 'int32' || property.format === 'int64') {
       numericValue = parseInt(stringValue, 10)
     } else {
       numericValue = parseFloat(stringValue)
@@ -54,13 +48,13 @@ export default function NumberInput({
   }
 
   // Determine step based on type
-  const step = property.type === 'int' ? 1 : 'any'
+  const step = (property.type === 'integer' || property.format === 'int32' || property.format === 'int64') ? 1 : 'any'
   
   return (
     <Input
       type="number"
       placeholder={property.description || `Enter ${property.title || name}`}
-      value={value || ''}
+      value={String(value || '')}
       onChange={handleChange}
       required={required}
       step={step}

@@ -13,23 +13,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
+
 interface DatePickerInputProps {
   name: string
-  property: {
-    type: string
-    format?: string
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: string
-  onChange?: (name: string, value: string) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function DatePickerInput({ name, property, value, onChange, required }: DatePickerInputProps) {
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined
+    value && typeof value === 'string' ? new Date(value) : undefined
   )
 
   const handleDateSelect = (selectedDate: Date | undefined) => {

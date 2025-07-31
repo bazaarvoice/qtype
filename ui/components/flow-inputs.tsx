@@ -8,14 +8,15 @@
 
 import { useState } from 'react'
 import FlowInput from './flow-input'
+import type { SchemaProperty, FlowInputValues, FlowInputValue } from '../types/flow'
 
 interface FlowInputsProps {
-  requestSchema: any
-  onInputChange?: (inputs: Record<string, any>) => void
+  requestSchema: SchemaProperty | null
+  onInputChange?: (inputs: FlowInputValues) => void
 }
 
 export default function FlowInputs({ requestSchema, onInputChange }: FlowInputsProps) {
-  const [inputValues, setInputValues] = useState<Record<string, any>>({})
+  const [inputValues, setInputValues] = useState<FlowInputValues>({})
 
   if (!requestSchema) {
     return (
@@ -30,7 +31,7 @@ export default function FlowInputs({ requestSchema, onInputChange }: FlowInputsP
   const requiredFields = requestSchema.required || []
 
   // Handle individual input changes
-  const handleInputChange = (name: string, value: any) => {
+  const handleInputChange = (name: string, value: FlowInputValue) => {
     const newValues = { ...inputValues, [name]: value }
     setInputValues(newValues)
     onInputChange?.(newValues)

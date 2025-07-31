@@ -7,18 +7,14 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
+import type { SchemaProperty, FlowInputValue } from '../../types/flow'
 
 interface TextInputProps {
   name: string
-  property: {
-    type: string
-    title?: string
-    description?: string
-    [key: string]: any
-  }
+  property: SchemaProperty
   required: boolean
-  value?: string
-  onChange?: (name: string, value: string) => void
+  value?: FlowInputValue
+  onChange?: (name: string, value: FlowInputValue) => void
 }
 
 export default function TextInput({ 
@@ -36,7 +32,7 @@ export default function TextInput({
     <Input
       type="text"
       placeholder={property.description || `Enter ${property.title || name}`}
-      value={value}
+      value={String(value || '')}
       onChange={handleChange}
       required={required}
       className="w-full"
