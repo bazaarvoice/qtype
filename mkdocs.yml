@@ -17,6 +17,5 @@ markdown_extensions:
 
 plugins: 
   - search
-  - exclude:
-      glob:
-        - components/*
+  - awesome-pages:
+      collapse_single_pages: false
