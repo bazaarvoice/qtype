@@ -7,6 +7,8 @@
 'use client'
 
 import { useOpenApiSpec, useApiHealth, useApiConfig } from '@/lib/hooks/use-api'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function ApiDemo() {
   const { spec, isLoading: specLoading, error: specError, refresh: refreshSpec } = useOpenApiSpec()
@@ -50,18 +52,23 @@ export default function ApiDemo() {
             Checking API health...
           </div>
         ) : healthError ? (
-          <div className="text-red-600 dark:text-red-400">
-            <p className="font-medium">❌ API Unavailable</p>
-            <p className="text-sm mt-1">Error: {healthError.message}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Make sure your FastAPI server is running on {baseUrl}
-            </p>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>API Unavailable</AlertTitle>
+            <AlertDescription>
+              {healthError.message}
+              <br />
+              <span className="text-xs">Make sure your FastAPI server is running on {baseUrl}</span>
+            </AlertDescription>
+          </Alert>
         ) : (
-          <div className="text-green-600 dark:text-green-400">
-            <p className="font-medium">✅ API Healthy</p>
-            <p className="text-sm mt-1">Last checked: {health?.timestamp}</p>
-          </div>
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>API Healthy</AlertTitle>
+            <AlertDescription>
+              Last checked: {health?.timestamp}
+            </AlertDescription>
+          </Alert>
         )}
       </div>
 
@@ -85,10 +92,13 @@ export default function ApiDemo() {
             Loading API specification...
           </div>
         ) : specError ? (
-          <div className="text-red-600 dark:text-red-400">
-            <p className="font-medium">❌ Failed to load API spec</p>
-            <p className="text-sm mt-1">Error: {specError.message}</p>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Failed to load API spec</AlertTitle>
+            <AlertDescription>
+              {specError.message}
+            </AlertDescription>
+          </Alert>
         ) : spec ? (
           <div className="space-y-3">
             <div className="text-green-600 dark:text-green-400">
