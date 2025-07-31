@@ -49,9 +49,17 @@ export default function FlowTabs() {
         )
     }
 
-    return (
-        <div className="w-full">
-            <Tabs defaultValue={flows[0]?.id} className="w-full">
+    // If there's only one flow, show it directly without tabs
+    if (flows.length === 1) {
+        return (
+            <div className="w-full">
+                <Flow flow={flows[0]} />
+            </div>
+        )
+    } else {
+        return (
+            <div className="w-full">
+                <Tabs defaultValue={flows[0]?.id} className="w-full">
                 <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${flows.length}, minmax(0, 1fr))` }}>
                     {flows.map((flow) => (
                         <TabsTrigger key={flow.id} value={flow.id} className="text-sm">
@@ -67,5 +75,6 @@ export default function FlowTabs() {
                 ))}
             </Tabs>
         </div>
-    )
+        )
+    }
 }
