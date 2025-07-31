@@ -56,7 +56,7 @@ class APIExecutor:
             ui_dir = Path(__file__).parent / "ui"
             if ui_dir.exists():
                 app.mount(
-                    "/",
+                    "/ui",
                     StaticFiles(directory=str(ui_dir), html=True),
                     name="ui",
                 )

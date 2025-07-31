@@ -54,11 +54,11 @@ export default function FlowInputs({ requestSchema, onInputChange }: FlowInputsP
       
       {/* Render input for each property */}
       <div className="space-y-4">
-        {Object.entries(properties).map(([name, property]: [string, any]) => (
+        {Object.entries(properties).map(([name, property]) => (
           <FlowInput
             key={name}
             name={name}
-            property={property}
+            property={property as SchemaProperty}
             required={requiredFields.includes(name)}
             value={inputValues[name]}
             onChange={handleInputChange}

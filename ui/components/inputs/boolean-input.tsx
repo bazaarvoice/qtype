@@ -19,7 +19,7 @@ interface BooleanInputProps {
 
 export default function BooleanInput({ 
   name, 
-  property, 
+  property: _, 
   required, 
   value = false, 
   onChange 
