@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'export',
-  distDir: '../qtype/interpreter/ui',
+  distDir: process.env.NODE_ENV === 'production' ? '../qtype/interpreter/ui' : '.next',
   trailingSlash: true,
   images: {
     unoptimized: true
