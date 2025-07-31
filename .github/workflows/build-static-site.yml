@@ -30,7 +30,7 @@ jobs:
       
       - name: Build static site
         working-directory: ui
-        run: npm run build
+        run: npx next build
         env:
           NODE_ENV: production
       
