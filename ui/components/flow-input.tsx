@@ -6,6 +6,8 @@
 
 'use client'
 
+import TextInput from './inputs/text-input'
+
 interface FlowInputProps {
   name: string
   property: {
@@ -26,6 +28,78 @@ export default function FlowInput({
   value, 
   onChange 
 }: FlowInputProps) {
+  
+  // Render the appropriate input component based on type
+  const renderInput = () => {
+    switch (property.type) {
+      case 'text':
+      case 'string':
+        return (
+          <TextInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
+        )
+      
+      // Placeholder cases for other types - will implement these next
+      case 'boolean':
+        return (
+          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Boolean input coming soon...
+            </p>
+          </div>
+        )
+      
+      case 'number':
+      case 'int':
+      case 'float':
+        return (
+          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Number input coming soon...
+            </p>
+          </div>
+        )
+      
+      case 'date':
+      case 'datetime':
+      case 'time':
+        return (
+          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Date/time input coming soon...
+            </p>
+          </div>
+        )
+      
+      case 'bytes':
+      case 'file':
+      case 'image':
+      case 'audio':
+      case 'video':
+        return (
+          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              File upload input coming soon...
+            </p>
+          </div>
+        )
+      
+      default:
+        return (
+          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Unknown input type: <code>{property.type}</code>
+            </p>
+          </div>
+        )
+    }
+  }
+
   return (
     <div className="space-y-2">
       {/* Input Label */}
@@ -41,21 +115,8 @@ export default function FlowInput({
         </p>
       )}
       
-      {/* Placeholder Input */}
-      <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          Input field for <code>{name}</code> ({property.type})
-          {required ? ' (required)' : ' (optional)'}
-        </p>
-        
-        {/* Show property details for development */}
-        <details className="mt-2">
-          <summary className="text-xs text-gray-500 cursor-pointer">Property Details</summary>
-          <pre className="text-xs text-gray-400 mt-1 overflow-x-auto">
-            {JSON.stringify(property, null, 2)}
-          </pre>
-        </details>
-      </div>
+      {/* Input Component */}
+      {renderInput()}
     </div>
   )
 }
