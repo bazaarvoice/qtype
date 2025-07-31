@@ -1,6 +1,10 @@
-from typing import Optional
+from __future__ import annotations
+
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from qtype.interpreter.flow import execute_flow
 from qtype.interpreter.typing import (
@@ -25,14 +29,37 @@ class APIExecutor:
 
     def create_app(
         self,
-        name: Optional[str],
-        fast_api_args: dict = {
-            "docs_url": "/docs",
-            "redoc_url": "/redoc",
-        },
+        name: str | None = None,
+        ui_enabled: bool = True,
+        fast_api_args: dict | None = None,
     ) -> FastAPI:
         """Create FastAPI app with dynamic endpoints."""
+        if fast_api_args is None:
+            fast_api_args = {
+                "docs_url": "/docs",
+                "redoc_url": "/redoc",
+            }
+
         app = FastAPI(title=name or "QType API", **fast_api_args)
+
+        # Serve static UI files if they exist
+        if ui_enabled:
+            # Add CORS middleware only for localhost development
+            if self.host in ("localhost", "127.0.0.1", "0.0.0.0"):
+                app.add_middleware(
+                    CORSMiddleware,
+                    allow_origins=["*"],
+                    allow_credentials=True,
+                    allow_methods=["*"],
+                    allow_headers=["*"],
+                )
+            ui_dir = Path(__file__).parent / "ui"
+            if ui_dir.exists():
+                app.mount(
+                    "/ui",
+                    StaticFiles(directory=str(ui_dir), html=True),
+                    name="ui",
+                )
 
         flows = self.definition.flows if self.definition.flows else []
 

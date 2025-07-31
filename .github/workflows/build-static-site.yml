@@ -1,0 +1,52 @@
+name: Build Static UI
+
+on:
+  push:
+    branches: [main]
+    paths: ['ui/**']
+
+jobs:
+  build-static-site:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        working-directory: ui
+        run: npm ci
+      
+      - name: Build static site
+        working-directory: ui
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add qtype/interpreter/ui/
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in qtype/interpreter/ui/"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in qtype/interpreter/ui/"
+          fi
+      
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "chore: update static site build from UI changes"
+          git push

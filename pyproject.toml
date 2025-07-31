@@ -78,6 +78,9 @@ qtype = "qtype.cli:main"
 include = ["qtype*"]
 exclude = ["tests*"]
 
+[tool.setuptools.package-data]
+"qtype.interpreter" = ["ui/**/*"]
+
 # Tool configurations
 [tool.ruff]
 line-length = 79
