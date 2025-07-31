@@ -18,6 +18,7 @@ interface FlowInputProps {
   name: string
   property: {
     type: string
+    qtype_type: string,
     title?: string
     description?: string
     [key: string]: any
@@ -37,7 +38,7 @@ export default function FlowInput({
   
   // Render the appropriate input component based on type
   const renderInput = () => {
-    switch (property.type) {
+    switch (property.qtype_type) {
       case 'text':
         return (
           <TextInput
