@@ -1,4 +1,4 @@
-# QType CLI Plugins
+# Extending QType CLI
 
 QType supports third-party CLI plugins through Python entry points. This allows developers to extend the QType CLI with custom commands without modifying the core codebase.
 
