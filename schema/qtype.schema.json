@@ -246,7 +246,7 @@
     },
     "Application": {
       "additionalProperties": false,
-      "description": "Defines a QType application that can include models, variables, and other components.",
+      "description": "Defines a complete QType application specification.\n\nAn Application is the top-level container of the entire\nprogram in a QType YAML file. It serves as the blueprint for your\nAI-powered application, containing all the models, flows, tools, data sources,\nand configuration needed to run your program. Think of it as the main entry\npoint that ties together all components into a cohesive,\nexecutable system.",
       "properties": {
         "id": {
           "description": "Unique ID of the application.",
@@ -1783,7 +1783,7 @@
               "type": "string"
             }
           ],
-          "description": "Type of data expected or produced.",
+          "description": "Type of data expected or produced. Either a TypeDefinition or domain specific type.",
           "title": "Type"
         }
       },
