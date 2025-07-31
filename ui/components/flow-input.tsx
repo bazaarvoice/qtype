@@ -7,6 +7,12 @@
 'use client'
 
 import TextInput from './inputs/text-input'
+import BooleanInput from './inputs/boolean-input'
+import NumberInput from './inputs/number-input'
+import DatePickerInput from './inputs/date-picker-input'
+import TimeInput from './inputs/time-input'
+import DateTimeInput from './inputs/datetime-input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface FlowInputProps {
   name: string
@@ -33,9 +39,41 @@ export default function FlowInput({
   const renderInput = () => {
     switch (property.type) {
       case 'text':
-      case 'string':
         return (
           <TextInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
+        )
+      
+      case 'date':
+        return (
+          <DatePickerInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
+        )
+      
+      case 'time':
+        return (
+          <TimeInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
+        )
+      
+      case 'datetime':
+        return (
+          <DateTimeInput
             name={name}
             property={property}
             required={required}
@@ -47,33 +85,26 @@ export default function FlowInput({
       // Placeholder cases for other types - will implement these next
       case 'boolean':
         return (
-          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Boolean input coming soon...
-            </p>
-          </div>
+          <BooleanInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
         )
       
       case 'number':
       case 'int':
       case 'float':
         return (
-          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Number input coming soon...
-            </p>
-          </div>
-        )
-      
-      case 'date':
-      case 'datetime':
-      case 'time':
-        return (
-          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Date/time input coming soon...
-            </p>
-          </div>
+          <NumberInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
         )
       
       case 'bytes':
@@ -91,11 +122,11 @@ export default function FlowInput({
       
       default:
         return (
-          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Unknown input type: <code>{property.type}</code>
-            </p>
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>
+              Unknown input type: <code className="font-mono text-sm">{property.type}</code>
+            </AlertDescription>
+          </Alert>
         )
     }
   }
