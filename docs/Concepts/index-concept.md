@@ -24,7 +24,7 @@ Indexes abstract away the complexity of different search backends (vector databa
 
 ## Related Concepts
 
-Indexes are used by search [Steps](step.md) and require [Model](model.md) configurations (especially embedding models for vector indexes). They may also reference [AuthorizationProvider](authorization-provider.md) for secure access.
+Indexes are used by search [Steps](Steps/index.md) and require [Model](model.md) configurations (especially embedding models for vector indexes). They may also reference [AuthorizationProvider](authorization-provider.md) for secure access.
 
 ## Example Usage
 

@@ -1,6 +1,6 @@
 # Variable
 
-Every input and output to all [Step](step.md)s, including [Flow](flow.md)s, must be defined as a variable.
+Every input and output to all [Step](Steps/index.md)s, including [Flow](flow.md)s, must be defined as a variable.
 
 Each variable must have a unique id. This is used to reference it from across your application. If conflicting, you'll recieve a validation error.
 

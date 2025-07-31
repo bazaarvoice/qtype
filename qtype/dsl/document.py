@@ -57,6 +57,11 @@ def generate_class_docstring(output_file: Path, cls: Type[Any]) -> None:
     class_name = cls.__name__
     docstring = cls.__doc__ or "No documentation available."
 
+    # new lines in the docstring often have indentation, which we want to remove
+    docstring = "\n".join(
+        line.strip() for line in docstring.splitlines() if line.strip()
+    )
+
     with output_file.open("w", encoding="utf-8") as file:
         file.write(f"### {class_name}\n\n{docstring}\n\n")
 
