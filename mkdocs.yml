@@ -10,10 +10,13 @@ extra:
   
 
 markdown_extensions:
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: docs
+      check_paths: true
+      restrict_base_path: false
 
 plugins: 
   - search
-  # - exclude:
-  #     glob:
-  #       - components/*
+  - exclude:
+      glob:
+        - components/*

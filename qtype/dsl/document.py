@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Type, Union, get_args, get_origin
 
 import qtype.dsl.model as dsl
+from qtype.dsl.base_types import PrimitiveTypeEnum
 
 
 def _format_type_name(field_type: Any) -> str:
@@ -56,8 +57,13 @@ def generate_class_docstring(output_file: Path, cls: Type[Any]) -> None:
     class_name = cls.__name__
     docstring = cls.__doc__ or "No documentation available."
 
+    # new lines in the docstring often have indentation, which we want to remove
+    docstring = "\n".join(
+        line.strip() for line in docstring.splitlines() if line.strip()
+    )
+
     with output_file.open("w", encoding="utf-8") as file:
-        file.write(f"# {class_name}\n\n{docstring}\n\n## Members\n")
+        file.write(f"### {class_name}\n\n{docstring}\n\n")
 
         # Handle Pydantic models by checking for model_fields
         if hasattr(cls, "model_fields") and hasattr(cls, "__annotations__"):
@@ -93,8 +99,6 @@ def generate_class_docstring(output_file: Path, cls: Type[Any]) -> None:
                     )
                     file.write(f"- **{name}**: {member_doc}\n")
 
-        file.write("\n---\n")
-
 
 def generate_documentation(output_prefix: Path) -> None:
     """Generates markdown documentation for all DSL classes.
@@ -105,4 +109,13 @@ def generate_documentation(output_prefix: Path) -> None:
     # Get all classes from the DSL model module
     for name, cls in inspect.getmembers(dsl, inspect.isclass):  # noqa: F821
         if cls.__module__ == dsl.__name__ and not name.startswith("_"):
+            generate_class_docstring(output_prefix / f"{name}.md", cls)
+    generate_class_docstring(
+        output_prefix / "PrimitiveTypeEnum.md", PrimitiveTypeEnum
+    )
+
+    for name, cls in inspect.getmembers(dsl.domain_types, inspect.isclass):  # noqa: F821
+        if cls.__module__ == dsl.domain_types.__name__ and not name.startswith(
+            "_"
+        ):
             generate_class_docstring(output_prefix / f"{name}.md", cls)
