@@ -3,9 +3,10 @@ name: Generate JSON Schema
 on:
   push:
     branches: [ main ]
-    # Exclude pushes made by the bot to prevent infinite loops
-    paths-ignore:
-      - 'schema/qtype.schema.json'
+    # Only run if the dsl or command to generate it change
+    paths:
+      - 'qtype/dsl/**'
+      - 'qtype/commands/**'
 
 permissions:
   contents: write
