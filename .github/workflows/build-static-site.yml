@@ -32,7 +32,9 @@ jobs:
       
       - name: Install dependencies
         working-directory: ui
-        run: npm ci
+        run: |
+          npm ci
+          npm install --save-dev typescript
       
       - name: Build static site
         working-directory: ui
