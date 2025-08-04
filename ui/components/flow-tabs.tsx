@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import Flow from './flow'
+import ChatFlow from './chatflow'
 
 export default function FlowTabs() {
     const { spec, isLoading, error } = useOpenApiSpec()
@@ -51,9 +52,10 @@ export default function FlowTabs() {
 
     // If there's only one flow, show it directly without tabs
     if (flows.length === 1) {
+        const flow = flows[0]
         return (
             <div className="w-full">
-                <Flow flow={flows[0]} />
+                {flow.mode === 'Chat' ? <ChatFlow flow={flow} /> : <Flow flow={flow} />}
             </div>
         )
     } else {
@@ -70,7 +72,7 @@ export default function FlowTabs() {
 
                 {flows.map((flow) => (
                     <TabsContent key={flow.id} value={flow.id} className="mt-6">
-                        <Flow flow={flow} />
+                        {flow.mode === 'Chat' ? <ChatFlow flow={flow} /> : <Flow flow={flow} />}
                     </TabsContent>
                 ))}
             </Tabs>
