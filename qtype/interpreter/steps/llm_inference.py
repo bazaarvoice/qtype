@@ -88,7 +88,7 @@ def execute(
                 ),
             )
             for chatResult in generator:
-                stream_fn(li, from_chat_message(chatResult.message))
+                stream_fn(li, chatResult.delta)
         else:
             chatResult: ChatResponse = model.chat(
                 messages=inputs,

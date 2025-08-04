@@ -148,9 +148,9 @@ def _update_maps_with_embedded_objects(
             _update_maps_with_embedded_objects(lookup_map, obj.tools or [])  # type: ignore
 
         if isinstance(obj, dsl.ChatFlow):
-            _update_map_with_unique_check(lookup_map, [obj, obj.memory]) # type: ignore
+            _update_map_with_unique_check(lookup_map, [obj, obj.memory])  # type: ignore
             _update_map_with_unique_check(lookup_map, obj.steps or [])  # type: ignore
-            _update_maps_with_embedded_objects(lookup_map, [obj.memory]) # type: ignore
+            _update_maps_with_embedded_objects(lookup_map, [obj.memory])  # type: ignore
             _update_maps_with_embedded_objects(lookup_map, obj.steps or [])  # type: ignore
 
         if isinstance(obj, dsl.Flow):
@@ -436,7 +436,6 @@ def validate(
             )
             flow.outputs = last_step.outputs or []  # type: ignore
 
-
     # Now we resolve all ID references in the DSL Application.
     lookup_map = {
         obj_id: _resolve_id_references(obj, lookup_map)
@@ -449,7 +448,8 @@ def validate(
             inputs = flow.inputs or []
             if not any(
                 input_var.type == qtype.dsl.domain_types.ChatMessage
-                for input_var in inputs if isinstance(input_var, dsl.Variable)
+                for input_var in inputs
+                if isinstance(input_var, dsl.Variable)
             ):
                 raise QTypeValidationError(
                     f"Chat flow {flow.id} must have at least one input variable of type ChatMessageVariable."
