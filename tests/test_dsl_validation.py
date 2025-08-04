@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import glob
 from pathlib import Path
 from typing import Callable
 
@@ -23,8 +24,7 @@ def run_validation(yaml_path: Path) -> dsl.Application:
 
 @pytest.mark.parametrize(
     "yaml_file",
-    [TEST_DIR / "valid_type_list_reference.qtype.yaml"],
-    # + [Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))],
+    [Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))],
 )
 def test_valid_dsl_files(yaml_file: str) -> None:
     """Test that valid DSL YAML files pass validation."""
@@ -57,6 +57,10 @@ def test_valid_dsl_files(yaml_file: str) -> None:
         (
             "invalid_reference_not_found.qtype.yaml",
             validator.ReferenceNotFoundError,
+        ),
+        (
+            "invalid_chatflow_no_chatmessage.qtype.yaml",
+            validator.QTypeValidationError,
         ),
     ],
 )

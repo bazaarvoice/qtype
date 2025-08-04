@@ -11,7 +11,7 @@ from qtype.interpreter.typing import (
     create_input_type_model,
     create_output_type_model,
 )
-from qtype.semantic.model import Application, Flow
+from qtype.semantic.model import Application, ChatFlow, Flow
 
 
 class APIExecutor:
@@ -65,7 +65,14 @@ class APIExecutor:
 
         # Dynamically generate POST endpoints for each flow
         for flow in flows:
-            self._create_flow_endpoint(app, flow)
+            if isinstance(flow, ChatFlow):
+                # For ChatFlow, we can create a single endpoint
+                # that handles the chat interactions
+                from qtype.interpreter.chat import create_chat_flow_endpoint
+
+                create_chat_flow_endpoint(app, flow)
+            else:
+                self._create_flow_endpoint(app, flow)
 
         return app
 
@@ -82,8 +89,7 @@ class APIExecutor:
             """Execute the specific flow with provided inputs."""
             try:
                 # Make a copy of the flow to avoid modifying the original
-                # TODO: just store this in case we're using memory / need state.
-                # TODO: Store memory and session info in a cache to enable this kind of stateful communication.
+                # TODO: Use session to ensure memory is not used across requests.
                 flow_copy = flow.model_copy(deep=True)
                 # Set input values on the flow variables
                 if flow_copy.inputs:

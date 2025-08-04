@@ -328,6 +328,18 @@ class Flow(Step):
     )
 
 
+class ChatFlow(Flow):
+    """Defines a flow specifically for chat-based interactions.
+    It can include steps that handle user messages, model responses, and other chat-related logic.
+    At least one input variable must be of chatMessage type.
+    """
+
+    memory: Memory | str = Field(
+        ...,
+        description="Memory object to retain chat history across turns.",
+    )
+
+
 class DecoderFormat(str, Enum):
     """Defines the format in which the decoder step processes data."""
 
@@ -456,7 +468,7 @@ class Application(StrictBaseModel):
     )
 
     # Orchestration
-    flows: list[Flow] | None = Field(
+    flows: list[FlowType] | None = Field(
         default=None, description="List of flows defined in this application."
     )
 
@@ -601,6 +613,7 @@ StepType = Union[
     Decoder,
     DocumentSearch,
     Flow,
+    ChatFlow,
     LLMInference,
     PromptTemplate,
     PythonFunctionTool,
@@ -617,6 +630,12 @@ IndexType = Union[
 ModelType = Union[
     EmbeddingModel,
     Model,
+]
+
+# Create a union type for all flow types
+FlowType = Union[
+    Flow,
+    ChatFlow,
 ]
 
 #
@@ -668,6 +687,7 @@ class Document(
             Application,
             AuthorizationProviderList,
             Flow,
+            ChatFlow,
             IndexList,
             ModelList,
             ToolList,
@@ -687,6 +707,7 @@ class Document(
         Application,
         AuthorizationProviderList,
         Flow,
+        ChatFlow,
         IndexList,
         ModelList,
         ToolList,

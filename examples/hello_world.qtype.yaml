@@ -2,6 +2,8 @@ id: hello_world
 
 flows:
   - id: simple_qa_flow
+    memory:
+      id: chat_memory
     steps:
       - id: llm_inference_step
         model: 
@@ -14,8 +16,8 @@ flows:
         system_message: |
           You are a helpful assistant.
         inputs:
-          - id: prompt
-            type: text
+          - id: user_message
+            type: ChatMessage
         outputs:
           - id: response_message
-            type: text
+            type: ChatMessage

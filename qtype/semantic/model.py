@@ -37,7 +37,15 @@ class Variable(DSLVariable, BaseModel):
 
 
 class Application(BaseModel):
-    """Defines a QType application that can include models, variables, and other components."""
+    """Defines a complete QType application specification.
+
+    An Application is the top-level container of the entire
+    program in a QType YAML file. It serves as the blueprint for your
+    AI-powered application, containing all the models, flows, tools, data sources,
+    and configuration needed to run your program. Think of it as the main entry
+    point that ties together all components into a cohesive,
+    executable system.
+    """
 
     id: str = Field(..., description="Unique ID of the application.")
     description: str | None = Field(
@@ -55,7 +63,7 @@ class Application(BaseModel):
     variables: list[Variable] = Field(
         [], description="List of variables used in this application."
     )
-    flows: list[Flow] = Field(
+    flows: list[Flow | ChatFlow] = Field(
         [], description="List of flows defined in this application."
     )
     auths: list[AuthorizationProvider] = Field(
@@ -291,6 +299,17 @@ class EmbeddingModel(Model):
     dimensions: int = Field(
         ...,
         description="Dimensionality of the embedding vectors produced by this model.",
+    )
+
+
+class ChatFlow(Flow):
+    """Defines a flow specifically for chat-based interactions.
+    It can include steps that handle user messages, model responses, and other chat-related logic.
+    At least one input variable must be of chatMessage type.
+    """
+
+    memory: Memory = Field(
+        ..., description="Memory object to retain chat history across turns."
     )
 
 

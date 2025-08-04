@@ -14,10 +14,10 @@ This document outlines the planned features, improvements, and milestones for th
 
 ### v0.1.0
 #### Documentation
-- [ ] Documentation setup with mkdocs
+- [x] Documentation setup with mkdocs
 - [ ] Examples showroom illustrating use cases
-- [ ] Page for each concecpt and examples thereof
-- [ ] Document how to add to the dsl
+- [x] Page for each concecpt and examples thereof
+- [x] Document how to add to the dsl
 - [ ] Document how to use DSL in visual studio code
 - [ ] Docunment how to use includes, anchors, and references.
 
@@ -25,6 +25,7 @@ This document outlines the planned features, improvements, and milestones for th
 ## Future Work
 
 ### DSL
+- [ ] Add a new flow type for state machines. It will have a list of states, each being a flow themselves, and transitions consisting of conditions and steps that deterimine if the condition has been met.
 - [ ] Add support for vectorstores and sql chat stores
 - [ ] Add support for more complex conditions
 - [ ] Expand Authorization types into abstract classes for different ways to authorize
