@@ -8,9 +8,7 @@ from fastapi.responses import StreamingResponse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
-from qtype.interpreter.flow import execute_flow
-from qtype.interpreter.streaming_helpers import create_streaming_generator
-from qtype.interpreter.vercel import (
+from qtype.interpreter.chat.vercel import (
     ChatRequest,
     FinishChunk,
     StartChunk,
@@ -19,6 +17,8 @@ from qtype.interpreter.vercel import (
     TextStartChunk,
     UIMessage,
 )
+from qtype.interpreter.flow import execute_flow
+from qtype.interpreter.streaming_helpers import create_streaming_generator
 from qtype.semantic.model import ChatFlow
 
 
@@ -50,15 +50,37 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
             blocks.append(
                 ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
             )
+        elif part.type == "reasoning":
+            blocks.append(
+                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
+            )
         elif part.type == "file":
             raise NotImplementedError(
                 "File part handling is not implemented yet."
             )
-        elif part.type == "tool-call":
+        elif part.type.startswith("tool-"):
             raise NotImplementedError(
                 "Tool call part handling is not implemented yet."
             )
-        # TODO: Handle other part types
+        elif part.type == "dynamic-tool":
+            raise NotImplementedError(
+                "Dynamic tool part handling is not implemented yet."
+            )
+        elif part.type == "step-start":
+            # Step boundaries might not need content blocks
+            continue
+        elif part.type in ["source-url", "source-document"]:
+            raise NotImplementedError(
+                "Source part handling is not implemented yet."
+            )
+        elif part.type.startswith("data-"):
+            raise NotImplementedError(
+                "Data part handling is not implemented yet."
+            )
+        else:
+            # Log unknown part types for debugging
+            print(f"Unknown part type: {part.type}")
+            continue
 
     # If no blocks were created, add an empty text block
     if not blocks:
