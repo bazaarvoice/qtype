@@ -14,6 +14,43 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug Next.js UI",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/ui/node_modules/next/dist/bin/next",
+            "args": ["dev"],
+            "cwd": "${workspaceFolder}/ui",
+            "console": "integratedTerminal",
+            "restart": true,
+            "env": {
+                "NODE_OPTIONS": "--inspect",
+                "NEXT_PUBLIC_QTYPE_HOST": "http://localhost:8000"
+            },
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/ui/**",
+                "!**/node_modules/**"
+            ],
+            "serverReadyAction": {
+                "pattern": "- Local:.+(https?://.+)",
+                "uriFormat": "%s",
+                "action": "openExternally"
+            }
+        },
+        {
+            "name": "Debug Browser (Client)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/ui",
+            "sourceMapPathOverrides": {
+                "webpack://_N_E/./*": "${webRoot}/*",
+                "webpack:///./*": "${webRoot}/*"
+            }
         }
     ],
     "inputs": [
