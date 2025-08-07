@@ -8,7 +8,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,16 +23,40 @@ interface ChatFlowProps {
 
 export default function ChatFlow({ flow }: ChatFlowProps) {
   const [input, setInput] = useState('')
+  const [sentMessageIds, setSentMessageIds] = useState<Set<string>>(new Set())
+
+  const sentMessageIdsRef = useRef(sentMessageIds)
+  
+  // Keep ref in sync with state
+  sentMessageIdsRef.current = sentMessageIds
 
   const baseUrl = `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`
   const { messages, sendMessage, status, error } = useChat({
     id: flow.id,
     transport: new DefaultChatTransport({
       api: baseUrl,
-    }),
-    onError: (error) => {
-      console.error('Chat error:', error)
-    },
+      prepareSendMessagesRequest: ({ messages, id, trigger, messageId }) => {
+        // Find messages that haven't been sent yet
+        
+        const newMessages = messages.filter(msg => !sentMessageIdsRef.current.has(msg.id) && msg.role === 'user')
+        
+        // Mark these messages as sent
+        setSentMessageIds(prev => {
+          const updated = new Set(prev)
+          newMessages.forEach(msg => updated.add(msg.id))
+          return updated
+        })
+        
+        return {
+          body: {
+            messages: newMessages,
+            id,
+            trigger: trigger,
+            messageId
+          }
+        }
+      },
+    })
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,22 +130,6 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
                 )}
               </div>
             ))}
-            
-            {(status === 'streaming' || status === 'submitted') && (
-              <div className="flex gap-3 justify-start">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    <Bot className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-muted rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </ScrollArea>
         

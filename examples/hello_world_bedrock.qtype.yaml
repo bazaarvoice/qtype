@@ -6,6 +6,7 @@ flows:
       id: chat_memory
     steps:
       - id: llm_inference_step
+        memory: chat_memory
         model: 
           id: amazon.nova-lite-v1:0
           provider: aws-bedrock

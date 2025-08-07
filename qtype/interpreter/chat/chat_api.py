@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Generator
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
 from qtype.interpreter.chat.vercel import (
     ChatRequest,
+    ErrorChunk,
     FinishChunk,
     StartChunk,
     TextDeltaChunk,
@@ -22,7 +24,7 @@ from qtype.interpreter.streaming_helpers import create_streaming_generator
 from qtype.semantic.model import ChatFlow
 
 
-def _ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:
+def _ui_request_to_domain_type(request: ChatRequest) -> ChatMessage:
     """
     Convert a ChatRequest to a domain-specific ChatMessage.
 
@@ -32,9 +34,20 @@ def _ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:
     if not request.messages:
         raise ValueError("No messages provided in request.")
 
-    return [
+    # Convert each UIMessage to a domain-specific ChatMessage
+    messages = [
         _ui_message_to_domain_type(message) for message in request.messages
     ]
+
+    # Make sure they all have the same role...
+    if len(set([msg.role for msg in messages])) != 1:
+        raise ValueError("All messages must have the same role.")
+
+    # The chat system assumes a single message input, so we combine all messages into one
+    return ChatMessage(
+        role=MessageRole(messages[0].role),
+        blocks=[block for message in messages for block in message.blocks],
+    )
 
 
 def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
@@ -79,12 +92,13 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
             )
         else:
             # Log unknown part types for debugging
-            print(f"Unknown part type: {part.type}")
-            continue
+            raise ValueError(f"Unknown part type: {part.type}")
 
-    # If no blocks were created, add an empty text block
+    # If no blocks were created, raise an error
     if not blocks:
-        blocks.append(ChatContent(type=PrimitiveTypeEnum.text, content=""))
+        raise ValueError(
+            "No valid content blocks created from UIMessage parts."
+        )
 
     return ChatMessage(
         role=MessageRole(message.role),
@@ -105,11 +119,7 @@ def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
     """
     flow_id = flow.id
 
-    async def handle_chat_data(
-        request: ChatRequest,
-        protocol: str = Query("data", description="Streaming protocol to use"),
-        # TODO: https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol#data-stream-protocol support protocol = text?
-    ) -> StreamingResponse:
+    async def handle_chat_data(request: ChatRequest) -> StreamingResponse:
         """Handle chat requests for the specific flow."""
 
         # Convert AI SDK UI request to domain ChatMessage
@@ -198,10 +208,13 @@ def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
                 result_future.result(timeout=5.0)
                 finish_chunk = FinishChunk()
                 yield f"data: {finish_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
-            except Exception:
-                # Send error finish
-                finish_chunk = FinishChunk()
-                yield f"data: {finish_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+            except Exception as e:
+                # Send error
+                error_chunk = ErrorChunk(errorText=str(e))
+                logging.error(
+                    f"Error during flow execution: {e}", exc_info=True
+                )
+                yield f"data: {error_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
 
         response = StreamingResponse(
             vercel_ai_formatter(), media_type="text/plain; charset=utf-8"

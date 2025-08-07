@@ -74,7 +74,10 @@ def execute(
         if li.memory:
             # Note that the memory is cached in the resource cache, so this should persist for a while...
             memory = to_memory(kwargs.get("session_id"), li.memory)
-            inputs = memory.get(inputs)
+            from llama_index.core.async_utils import asyncio_run
+
+            asyncio_run(memory.aput_messages(inputs))
+            inputs = memory.get_all()
         else:
             memory = None
 
@@ -100,7 +103,7 @@ def execute(
             )
         output_variable.value = from_chat_message(chatResult.message)
         if memory:
-            memory.put([chatResult.message])
+            memory.put(chatResult.message)
     else:
         model = to_llm(li.model, li.system_message)
 
