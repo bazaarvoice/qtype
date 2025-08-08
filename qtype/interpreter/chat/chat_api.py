@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
+from qtype.interpreter.chat.file_conversions import file_to_content
 from qtype.interpreter.chat.vercel import (
     ChatRequest,
     ErrorChunk,
@@ -59,8 +60,8 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
                 ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
             )
         elif part.type == "file":
-            raise NotImplementedError(
-                "File part handling is not implemented yet."
+            blocks.append(
+                file_to_content(part.url)  # type: ignore
             )
         elif part.type.startswith("tool-"):
             raise NotImplementedError(

@@ -21,3 +21,12 @@ export type ResponseData = Record<string, unknown>
 
 // OpenAPI spec type alias for convenience
 export type OpenAPISpec = OpenAPIV3_1.Document
+
+// File attachment type for chat components
+export interface FileAttachment {
+  type: 'file'
+  mediaType: string
+  filename: string
+  url: string
+  size?: number
+}

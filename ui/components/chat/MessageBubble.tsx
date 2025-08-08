@@ -1,15 +1,8 @@
 import { useMemo } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bot, User } from 'lucide-react'
+import { type FileAttachment } from '@/types/flow'
 import FileDisplay from './FileDisplay'
-
-interface FileAttachment {
-  type: 'file'
-  mediaType: string
-  filename: string
-  url: string
-  size?: number
-}
 
 interface MessageBubbleProps {
   message: any

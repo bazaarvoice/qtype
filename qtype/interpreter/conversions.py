@@ -113,6 +113,8 @@ def to_content_block(content: ChatContent) -> ContentBlock:
             return AudioBlock(audio=content.content)
         elif content.type == PrimitiveTypeEnum.file:
             return DocumentBlock(data=content.content)
+        elif content.type == PrimitiveTypeEnum.bytes:
+            return DocumentBlock(data=content.content)
 
     raise InterpreterError(
         f"Unsupported content type: {content.type} with data of type {type(content.content)}"

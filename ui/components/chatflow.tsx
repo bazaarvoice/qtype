@@ -16,22 +16,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Send, Bot, Loader2, MessageSquarePlus, Paperclip} from 'lucide-react'
 import { apiClient, type FlowInfo } from '@/lib/api-client'
+import { type FileAttachment } from '@/types/flow'
 import MessageBubble from '@/components/chat/MessageBubble'
 import AttachmentDisplay from '@/components/chat/AttachmentDisplay'
-
-interface FileAttachment {
-  type: 'file'
-  mediaType: string
-  filename: string
-  url: string
-  size?: number
-}
 
 interface ChatFlowProps {
   flow: FlowInfo
 }
 
-// Utility functions
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 
 const fileToDataUrl = (file: File): Promise<string> => 
@@ -42,17 +34,34 @@ const fileToDataUrl = (file: File): Promise<string> =>
     reader.readAsDataURL(file)
   })
 
-const formatFileSize = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-
-// Custom hook for form management
-const useFormState = () => {
+export default function ChatFlow({ flow }: ChatFlowProps) {
+  const [conversationId, setConversationId] = useState(() => generateId())
   const [input, setInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([])
+  const [fileError, setFileError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const transport = useMemo(() => new DefaultChatTransport({
+    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
+  }), [flow.path])
+
+  const { messages, sendMessage, status, error, setMessages } = useChat({
+    id: conversationId,
+    transport,
+  })
+
+  const isLoading = status === 'streaming' || status === 'submitted'
+  const canSubmit = (status === 'ready' || status === 'error') && (input.trim() || selectedFiles.length)
+
+  useEffect(() => {
+    if (status === 'ready') inputRef.current?.focus()
+  }, [status])
 
   const resetForm = useCallback(() => {
     setInput('')
     setSelectedFiles([])
+    setFileError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
@@ -60,20 +69,25 @@ const useFormState = () => {
     const files = e.target.files
     if (!files) return
 
-    for (const file of files) {
-      try {
-        const url = await fileToDataUrl(file)
-        const fileAttachment: FileAttachment = {
-          type: 'file',
-          mediaType: file.type || 'application/octet-stream',
-          filename: file.name,
-          url,
-          size: file.size,
-        }
-        setSelectedFiles(prev => [...prev, fileAttachment])
-      } catch (error) {
-        console.error(`Failed to process file: ${file.name}`, error)
-      }
+    setFileError(null) // Clear any previous errors
+
+    try {
+      const newFiles = await Promise.all(
+        Array.from(files).map(async (file): Promise<FileAttachment> => {
+          const url = await fileToDataUrl(file)
+          return {
+            type: 'file',
+            mediaType: file.type || 'application/octet-stream',
+            filename: file.name,
+            url,
+            size: file.size,
+          }
+        })
+      )
+      setSelectedFiles(prev => [...prev, ...newFiles])
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setFileError(`Failed to process files: ${errorMessage}`)
     }
   }, [])
 
@@ -86,73 +100,10 @@ const useFormState = () => {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  return {
-    input,
-    setInput,
-    selectedFiles,
-    setSelectedFiles,
-    fileInputRef,
-    resetForm,
-    handleFileSelect,
-    removeFile,
-    clearFiles,
-  }
-}
-
-export default function ChatFlow({ flow }: ChatFlowProps) {
-  const [conversationId, setConversationId] = useState(() => generateId())
-  const inputRef = useRef<HTMLInputElement>(null)
-  
-  const {
-    input,
-    setInput,
-    selectedFiles,
-    setSelectedFiles,
-    fileInputRef,
-    resetForm,
-    handleFileSelect,
-    removeFile,
-    clearFiles,
-  } = useFormState()
-
-  const transport = useMemo(() => new DefaultChatTransport({
-    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
-  }), [flow.path])
-
-  const { messages, sendMessage, status, error, setMessages } = useChat({
-    id: conversationId,
-    transport,
-    onError: () => {
-      // Simplified error handling - restore input from last user message
-      setMessages(prevMessages => {
-        const lastUserMessage = [...prevMessages].reverse().find(msg => msg.role === 'user')
-        if (lastUserMessage && 'content' in lastUserMessage && lastUserMessage.content) {
-          setInput(lastUserMessage.content as string)
-        }
-        // Remove failed messages (keep only messages before the last user message)
-        const lastUserIndex = lastUserMessage ? prevMessages.lastIndexOf(lastUserMessage) : -1
-        return lastUserIndex >= 0 ? prevMessages.slice(0, lastUserIndex) : prevMessages
-      })
-    }
-  })
-
-  // Derived state
-  const isLoading = status === 'streaming' || status === 'submitted'
-  const hasContent = Boolean(input.trim() || selectedFiles.length)
-  const canSubmit = (status === 'ready' || status === 'error') && hasContent
-
-  // Auto-focus input field after streaming ends
-  useEffect(() => {
-    if (status === 'ready' && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [status])
-
   const handleNewConversation = useCallback(() => {
     setConversationId(generateId())
     setMessages([])
     resetForm()
-    inputRef.current?.focus()
   }, [setMessages, resetForm])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -160,15 +111,14 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     if (!canSubmit) return
 
     const messageContent = input.trim()
-    const attachments = selectedFiles
-    resetForm() // Reset immediately for better UX
+    resetForm()
     
-    if (attachments.length > 0) {
+    if (selectedFiles.length > 0) {
       await sendMessage({
         role: 'user',
         parts: [
           { type: 'text', text: messageContent || "[Files attached]" },
-          ...attachments.map(file => ({
+          ...selectedFiles.map(file => ({
             type: 'file' as const,
             mediaType: file.mediaType,
             filename: file.filename,
@@ -229,6 +179,12 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
             </div>
           )}
 
+          {fileError && (
+            <div className="mb-3 p-2 bg-destructive/10 text-destructive text-sm rounded">
+              {fileError}
+            </div>
+          )}
+
           {selectedFiles.length > 0 && (
             <AttachmentDisplay 
               files={selectedFiles} 
@@ -262,7 +218,8 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && canSubmit) {
-                  handleSubmit(e as any)
+                  e.preventDefault()
+                  handleSubmit(e)
                 }
               }}
               disabled={isLoading}

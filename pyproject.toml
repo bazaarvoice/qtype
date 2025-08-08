@@ -33,6 +33,7 @@ interpreter = [
     "llama-index>=0.12.45",
     "openinference-instrumentation-llama-index>=4.3.1",
     "psycopg2-binary>=2.9.10",
+    "python-magic>=0.4.27",
     "uvicorn[standard]>=0.35.0",
 ]
 
