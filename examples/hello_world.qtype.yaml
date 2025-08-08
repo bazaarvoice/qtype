@@ -1,13 +1,15 @@
 id: hello_world
 
 flows:
-  - id: simple_qa_flow
-    memory:
-      id: chat_memory
+  - id: simple_chat_example
+    description: A simple stateful chat flow with OpenAI
+    mode: Chat
     steps:
       - id: llm_inference_step
+        memory: 
+          id: chat_memory
         model: 
-          id: gpt-4o
+          id: gpt-5
           provider: openai
           auth: 
             id: openai_auth

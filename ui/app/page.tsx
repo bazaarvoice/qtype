@@ -18,11 +18,11 @@ export default function Home() {
   }, [pageTitle, isLoading]);
 
   return (
-    <div className="font-sans min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="max-w-6xl mx-auto space-y-8">
+    <div className="font-sans min-h-screen p-6 sm:p-8">
+      <main className="max-w-6xl mx-auto space-y-6">
         
         {/* Page Header */}
-        <div className="text-center border-b pb-6">
+        <div className="text-center border-b pb-4">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             {pageTitle}
           </h1>

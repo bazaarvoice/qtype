@@ -41,6 +41,9 @@ class ChatContent(StrictBaseModel):
         ...,
         description="The actual content, which can be a string, image data, etc.",
     )
+    mime_type: str | None = Field(
+        default=None, description="The MIME type of the content, if known."
+    )
 
 
 class ChatMessage(StrictBaseModel):

@@ -2,7 +2,7 @@ import argparse
 import inspect
 import subprocess
 from pathlib import Path
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
 import networkx as nx
 
@@ -107,7 +107,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
         # Write imports
         f.write("from __future__ import annotations\n\n")
-        f.write("from typing import Any, Type\n\n")
+        f.write("from typing import Any, Type, Literal\n\n")
         f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write("from qtype.dsl.model import VariableType # noqa: F401\n")
@@ -214,6 +214,17 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
         and field_type.__class__.__name__ == "UnionType"
     ):
         return _transform_union_type(args)
+
+    # Handle Literal types
+    if origin is Literal:
+        # Format literal values
+        literal_values = []
+        for arg in args:
+            if isinstance(arg, str):
+                literal_values.append(f'"{arg}"')
+            else:
+                literal_values.append(str(arg))
+        return f"Literal[{', '.join(literal_values)}]"
 
     # Handle list types
     if origin is list:

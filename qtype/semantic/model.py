@@ -11,7 +11,7 @@ qtype generate semantic-model
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -63,7 +63,7 @@ class Application(BaseModel):
     variables: list[Variable] = Field(
         [], description="List of variables used in this application."
     )
-    flows: list[Flow | ChatFlow] = Field(
+    flows: list[Flow] = Field(
         [], description="List of flows defined in this application."
     )
     auths: list[AuthorizationProvider] = Field(
@@ -228,6 +228,10 @@ class Flow(Step):
     the first and last step, respectively.
     """
 
+    description: str | None = Field(
+        None, description="Optional description of the flow."
+    )
+    mode: Literal["Complete", "Chat"] = Field("Complete")
     steps: list[Step] = Field(..., description="List of steps or step IDs.")
 
 
@@ -299,17 +303,6 @@ class EmbeddingModel(Model):
     dimensions: int = Field(
         ...,
         description="Dimensionality of the embedding vectors produced by this model.",
-    )
-
-
-class ChatFlow(Flow):
-    """Defines a flow specifically for chat-based interactions.
-    It can include steps that handle user messages, model responses, and other chat-related logic.
-    At least one input variable must be of chatMessage type.
-    """
-
-    memory: Memory = Field(
-        ..., description="Memory object to retain chat history across turns."
     )
 
 

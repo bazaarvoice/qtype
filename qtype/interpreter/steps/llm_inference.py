@@ -26,7 +26,8 @@ def execute(
 
     Args:
         li: The LLM inference step to execute.
-        **kwargs: Additional keyword arguments.
+        stream_fn: Optional streaming callback function.
+        **kwargs: Additional keyword arguments including conversation_history.
     """
     logger.debug(f"Executing LLM inference step: {li.id}")
 
@@ -58,26 +59,44 @@ def execute(
         )
     elif output_variable.type == ChatMessage:
         model = to_llm(li.model, li.system_message)
-
         if not all(
             isinstance(input.value, ChatMessage) for input in li.inputs
         ):
             raise InterpreterError(
                 f"LLMInference step with ChatMessage output must have ChatMessage inputs. Got {li.inputs}"
             )
+
+        # Current user input
         inputs = [
             to_chat_message(input.value)  # type: ignore
             for input in li.inputs
-        ]  # type: ignore
+        ]
 
-        # prepend the inputs with memory chat history if available
+        # The session id is used to isolate the memory from other "users"
+        session_id = kwargs.get("session_id")
+
+        # If memory is defined, use it.
         if li.memory:
-            # Note that the memory is cached in the resource cache, so this should persist for a while...
-            memory = to_memory(kwargs.get("session_id"), li.memory)
-            inputs = memory.get(inputs)
-        else:
-            memory = None
+            memory = to_memory(session_id, li.memory)
 
+            from llama_index.core.async_utils import asyncio_run
+
+            # add the inputs to the memory
+            asyncio_run(memory.aput_messages(inputs))
+            # Use the whole memory state as inputs to the llm
+            inputs = memory.get_all()
+        else:
+            # If memory is not defined, see if a conversation history was provided.
+            # This is the list of messages from the front end
+            conversation_history = kwargs.get("conversation_history", [])  # type: ignore
+            if not isinstance(conversation_history, list):
+                raise ValueError(
+                    "Unexpected error: conversation history is not a list."
+                )
+            history: list[ChatMessage] = conversation_history
+            inputs = [to_chat_message(msg) for msg in history] + inputs
+
+        # If the stream function is set, we'll stream the results
         if stream_fn:
             generator = model.stream_chat(
                 messages=inputs,
@@ -87,10 +106,12 @@ def execute(
                     else {}
                 ),
             )
-            for chatResult in generator:
-                stream_fn(li, chatResult.delta)
+            for chat_result in generator:
+                stream_fn(li, chat_result.delta)
+            # Get the final result for processing
+            chat_result = chat_result  # Use the last result from streaming
         else:
-            chatResult: ChatResponse = model.chat(
+            chat_result: ChatResponse = model.chat(
                 messages=inputs,
                 **(
                     li.model.inference_params
@@ -98,9 +119,9 @@ def execute(
                     else {}
                 ),
             )
-        output_variable.value = from_chat_message(chatResult.message)
-        if memory:
-            memory.put([chatResult.message])
+        output_variable.value = from_chat_message(chat_result.message)
+        if li.memory:
+            memory.put(chat_result.message)
     else:
         model = to_llm(li.model, li.system_message)
 
@@ -118,10 +139,14 @@ def execute(
 
         if stream_fn:
             generator = model.stream_complete(prompt=input)
-            for completeResult in generator:
-                stream_fn(li, completeResult.delta)
+            for complete_result in generator:
+                stream_fn(li, complete_result.delta)
+            # Get the final result for processing
+            complete_result = (
+                complete_result
+            )  # Use the last result from streaming
         else:
-            completeResult: CompletionResponse = model.complete(prompt=input)
-        output_variable.value = completeResult.text
+            complete_result: CompletionResponse = model.complete(prompt=input)
+        output_variable.value = complete_result.text
 
     return li.outputs  # type: ignore[return-value]

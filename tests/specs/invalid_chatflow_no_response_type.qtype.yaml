@@ -1,19 +1,11 @@
-id: invalid_chatflow_app
-description: "A chat flow without any ChatMessage input variables"
+id: valid_chatflow_app
+description: "A valid chat flow with a ChatMessage input variable"
 
 flows:
   - id: chat_flow
     mode: Chat
-    inputs:
-      - id: user_input
-        type: text
-      - id: user_number
-        type: int
     steps:
       - id: llm_response
-        memory:
-          id: chat_memory
-          token_limit: 10000
         model:
           id: gpt4
           provider: openai
@@ -23,8 +15,12 @@ flows:
             type: api_key
             api_key: DEADBEEF
         system_message: "You are a helpful assistant."
+        memory:
+          id: chat_memory
+          token_limit: 10000
         inputs:
-          - user_input
+          - id: user_message
+            type: ChatMessage
         outputs:
           - id: response
             type: text

@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from enum import Enum
-from typing import Any, Type, Union
+from typing import Any, Literal, Type, Union
 
 from pydantic import Field, RootModel, model_validator
 
@@ -323,20 +323,14 @@ class Flow(Step):
     the first and last step, respectively.
     """
 
-    steps: list[StepType | str] = Field(
-        default_factory=list, description="List of steps or step IDs."
+    description: str | None = Field(
+        default=None, description="Optional description of the flow."
     )
 
+    mode: Literal["Complete", "Chat"] = "Complete"
 
-class ChatFlow(Flow):
-    """Defines a flow specifically for chat-based interactions.
-    It can include steps that handle user messages, model responses, and other chat-related logic.
-    At least one input variable must be of chatMessage type.
-    """
-
-    memory: Memory | str = Field(
-        ...,
-        description="Memory object to retain chat history across turns.",
+    steps: list[StepType | str] = Field(
+        default_factory=list, description="List of steps or step IDs."
     )
 
 
@@ -468,7 +462,7 @@ class Application(StrictBaseModel):
     )
 
     # Orchestration
-    flows: list[FlowType] | None = Field(
+    flows: list[Flow] | None = Field(
         default=None, description="List of flows defined in this application."
     )
 
@@ -613,7 +607,6 @@ StepType = Union[
     Decoder,
     DocumentSearch,
     Flow,
-    ChatFlow,
     LLMInference,
     PromptTemplate,
     PythonFunctionTool,
@@ -630,12 +623,6 @@ IndexType = Union[
 ModelType = Union[
     EmbeddingModel,
     Model,
-]
-
-# Create a union type for all flow types
-FlowType = Union[
-    Flow,
-    ChatFlow,
 ]
 
 #
@@ -687,7 +674,6 @@ class Document(
             Application,
             AuthorizationProviderList,
             Flow,
-            ChatFlow,
             IndexList,
             ModelList,
             ToolList,
@@ -707,7 +693,6 @@ class Document(
         Application,
         AuthorizationProviderList,
         Flow,
-        ChatFlow,
         IndexList,
         ModelList,
         ToolList,

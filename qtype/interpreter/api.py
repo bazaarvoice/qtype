@@ -11,7 +11,7 @@ from qtype.interpreter.typing import (
     create_input_type_model,
     create_output_type_model,
 )
-from qtype.semantic.model import Application, ChatFlow, Flow
+from qtype.semantic.model import Application, Flow
 
 
 class APIExecutor:
@@ -65,10 +65,12 @@ class APIExecutor:
 
         # Dynamically generate POST endpoints for each flow
         for flow in flows:
-            if isinstance(flow, ChatFlow):
-                # For ChatFlow, we can create a single endpoint
+            if flow.mode == "Chat":
+                # For chat, we can create a single endpoint
                 # that handles the chat interactions
-                from qtype.interpreter.chat import create_chat_flow_endpoint
+                from qtype.interpreter.chat.chat_api import (
+                    create_chat_flow_endpoint,
+                )
 
                 create_chat_flow_endpoint(app, flow)
             else:

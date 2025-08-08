@@ -18,15 +18,3 @@ Flows themselves are steps, meaning they can be nested within other flows to cre
 ## Related Concepts
 
 Flows orchestrate [Step](Steps/index.md) components to create workflows. Any step type can be included in a flow, including other flows for nested workflows.
-
-## Specialized Flow Types 
-
---8<-- "components/ChatFlow.md"
-
-
-Chatflows have specific behavior:
-
-- **ChatMessage Input Validation**: At least one input variable must be of type `ChatMessage`. Flows without this will result in a validation error.
-- **Memory Management**: ChatFlow must include a `memory` component to retain chat history across conversation turns.
-
-

@@ -106,6 +106,17 @@ def generate_documentation(output_prefix: Path) -> None:
     Args:
         output_prefix (Path): The directory where the documentation files will be saved.
     """
+    # erase everything in the output directory
+    output_prefix.mkdir(parents=True, exist_ok=True)
+    for item in output_prefix.iterdir():
+        if item.is_dir():
+            for subitem in item.iterdir():
+                if subitem.is_file():
+                    subitem.unlink()
+            item.rmdir()
+        elif item.is_file():
+            item.unlink()
+
     # Get all classes from the DSL model module
     for name, cls in inspect.getmembers(dsl, inspect.isclass):  # noqa: F821
         if cls.__module__ == dsl.__name__ and not name.startswith("_"):

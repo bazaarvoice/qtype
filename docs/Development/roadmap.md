@@ -32,6 +32,7 @@ This document outlines the planned features, improvements, and milestones for th
 - [ ] Add support for vectorstores and sql chat stores
 - [ ] Add support for DocumentIndexes.
 - [ ] Add feedbnack types and steps
+- [ ] Add conversation storage
 
 ### Tools
 - [ ] Add support for importing tools from API
@@ -43,6 +44,7 @@ This document outlines the planned features, improvements, and milestones for th
 - [ ] (Interpreter) - Store memory and session info in a cache to enable this kind of stateful communication.
 - [ ] (Interpreter) - Refine Agent interpreter for greater tool support and chat history
 - [ ] (Interpreter) - Run as MCP server
+- [ ] (Interpreter) - Set UI to have limit on number of messages if chat flow llm has memory
 
 ### Advanced AI Capabilities
 - [ ] Multi-modal support (text, image, audio)

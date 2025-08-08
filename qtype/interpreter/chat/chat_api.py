@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Generator
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
-from qtype.interpreter.flow import execute_flow
-from qtype.interpreter.streaming_helpers import create_streaming_generator
-from qtype.interpreter.vercel import (
+from qtype.interpreter.chat.file_conversions import file_to_content
+from qtype.interpreter.chat.vercel import (
     ChatRequest,
+    ErrorChunk,
     FinishChunk,
     StartChunk,
     TextDeltaChunk,
@@ -19,19 +21,22 @@ from qtype.interpreter.vercel import (
     TextStartChunk,
     UIMessage,
 )
-from qtype.semantic.model import ChatFlow
+from qtype.interpreter.flow import execute_flow
+from qtype.interpreter.streaming_helpers import create_streaming_generator
+from qtype.semantic.model import Flow
 
 
 def _ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:
     """
-    Convert a ChatRequest to a domain-specific ChatMessage.
+    Convert a ChatRequest to domain-specific ChatMessages.
 
-    Processes the UI messages from the AI SDK UI/React request format.
-    Takes the last user message from the messages and converts it to ChatMessage.
+    Processes all UI messages from the AI SDK UI/React request format.
+    Returns the full conversation history for context.
     """
     if not request.messages:
         raise ValueError("No messages provided in request.")
 
+    # Convert each UIMessage to a domain-specific ChatMessage
     return [
         _ui_message_to_domain_type(message) for message in request.messages
     ]
@@ -50,19 +55,42 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
             blocks.append(
                 ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
             )
-        elif part.type == "file":
-            raise NotImplementedError(
-                "File part handling is not implemented yet."
+        elif part.type == "reasoning":
+            blocks.append(
+                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
             )
-        elif part.type == "tool-call":
+        elif part.type == "file":
+            blocks.append(
+                file_to_content(part.url)  # type: ignore
+            )
+        elif part.type.startswith("tool-"):
             raise NotImplementedError(
                 "Tool call part handling is not implemented yet."
             )
-        # TODO: Handle other part types
+        elif part.type == "dynamic-tool":
+            raise NotImplementedError(
+                "Dynamic tool part handling is not implemented yet."
+            )
+        elif part.type == "step-start":
+            # Step boundaries might not need content blocks
+            continue
+        elif part.type in ["source-url", "source-document"]:
+            raise NotImplementedError(
+                "Source part handling is not implemented yet."
+            )
+        elif part.type.startswith("data-"):
+            raise NotImplementedError(
+                "Data part handling is not implemented yet."
+            )
+        else:
+            # Log unknown part types for debugging
+            raise ValueError(f"Unknown part type: {part.type}")
 
-    # If no blocks were created, add an empty text block
+    # If no blocks were created, raise an error
     if not blocks:
-        blocks.append(ChatContent(type=PrimitiveTypeEnum.text, content=""))
+        raise ValueError(
+            "No valid content blocks created from UIMessage parts."
+        )
 
     return ChatMessage(
         role=MessageRole(message.role),
@@ -70,53 +98,62 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
     )
 
 
-def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
+def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
     """
-    Create a chat endpoint for the given ChatFlow.
+    Create a chat endpoint for the given Flow.
 
     This creates an endpoint at /flows/{flow_id}/chat that follows the
     AI SDK UI/React request format and responds with streaming data.
 
     Args:
         app: The FastAPI application instance
-        flow: The ChatFlow to create an endpoint for
+        flow: The Flow to create an endpoint for
     """
     flow_id = flow.id
 
-    async def handle_chat_data(
-        request: ChatRequest,
-        protocol: str = Query("data", description="Streaming protocol to use"),
-        # TODO: https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol#data-stream-protocol support protocol = text?
-    ) -> StreamingResponse:
+    async def handle_chat_data(request: ChatRequest) -> StreamingResponse:
         """Handle chat requests for the specific flow."""
 
-        # Convert AI SDK UI request to domain ChatMessage
-        input_message = _ui_request_to_domain_type(request)
+        try:
+            # Convert AI SDK UI request to domain ChatMessages
+            messages = _ui_request_to_domain_type(request)
+            if not len(messages):
+                raise ValueError("No input messages received")
 
-        flow_copy = flow.model_copy(deep=True)
-        set_count = 0
+            # Pop the last message as the current input
+            current_input = messages.pop()
+            if current_input.role != MessageRole.user:
+                raise ValueError(
+                    f"Unexpected input {current_input} from non user role: {current_input.role}"
+                )
 
-        for var in flow_copy.inputs:
-            if var.type == ChatMessage:
-                # Convert the input ChatMessage to flow variables
-                var.value = input_message
-                set_count += 1
+            flow_copy = flow.model_copy(deep=True)
 
-        if set_count == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="No valid input provided for the ChatFlow.",
+            input_variable = [
+                var for var in flow_copy.inputs if var.type == ChatMessage
+            ][0]
+            input_variable.value = current_input
+
+            # Pass conversation context to flow execution for memory population
+            execution_kwargs: Any = {
+                "session_id": request.id,  # Use request ID as session identifier
+                "conversation_history": messages,
+            }
+
+            # Create a streaming generator for the flow execution
+            stream_generator, result_future = create_streaming_generator(
+                execute_flow, flow_copy, **execution_kwargs
             )
-        elif set_count > 1:
-            raise HTTPException(
-                status_code=400,
-                detail="Multiple inputs provided, expected a single ChatMessage.",
+        except Exception as e:
+            error_chunk = ErrorChunk(errorText=str(e))
+            response = StreamingResponse(
+                [
+                    f"data: {error_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+                ],
+                media_type="text/plain; charset=utf-8",
             )
-
-        # Create a streaming generator for the flow execution
-        stream_generator, result_future = create_streaming_generator(
-            execute_flow, flow_copy
-        )
+            response.headers["x-vercel-ai-ui-message-stream"] = "v1"
+            return response
 
         # Create generator that formats messages according to AI SDK UI streaming protocol
         def vercel_ai_formatter() -> Generator[str, None, None]:
@@ -176,10 +213,13 @@ def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
                 result_future.result(timeout=5.0)
                 finish_chunk = FinishChunk()
                 yield f"data: {finish_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
-            except Exception:
-                # Send error finish
-                finish_chunk = FinishChunk()
-                yield f"data: {finish_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+            except Exception as e:
+                # Send error
+                error_chunk = ErrorChunk(errorText=str(e))
+                logging.error(
+                    f"Error during flow execution: {e}", exc_info=True
+                )
+                yield f"data: {error_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
 
         response = StreamingResponse(
             vercel_ai_formatter(), media_type="text/plain; charset=utf-8"
@@ -192,6 +232,6 @@ def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
         f"/flows/{flow_id}/chat",
         tags=["chat"],
         summary=f"Chat with {flow_id} flow",
-        description=f"Stream chat responses from the '{flow_id}' ChatFlow using AI SDK UI transport protocol.",
+        description=flow.description,
         response_class=StreamingResponse,
     )(handle_chat_data)
