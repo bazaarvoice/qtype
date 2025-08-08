@@ -61,30 +61,22 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   // Restore form when error occurs
   useEffect(() => {
     if (error && lastSubmittedInputRef.current) {
-      setInput(lastSubmittedInputRef.current)
-      setSelectedFiles(lastSubmittedFilesRef.current)
       
       // Remove failed messages (empty assistant message and the user message that failed)
       setMessages(prevMessages => {
-        let filteredMessages = [...prevMessages]
-        
-        // Remove any empty assistant messages from the end
-        while (filteredMessages.length > 0) {
-          const lastMessage = filteredMessages[filteredMessages.length - 1]
-          if (lastMessage.role === 'assistant' && lastMessage.parts.length === 0) {
-            filteredMessages = filteredMessages.slice(0, -1)
-          } else {
-            break
-          }
+        // filter out any messages with zero parts
+        prevMessages = prevMessages.filter(message => message.parts.length > 0)
+
+        // Remove the last user message since there was an error -- it is repopulated below
+        if (prevMessages.length > 0) {
+          prevMessages.pop()
         }
-        
-        // Remove the last user message if it exists
-        if (filteredMessages.length > 0 && filteredMessages[filteredMessages.length - 1].role === 'user') {
-          filteredMessages = filteredMessages.slice(0, -1)
-        }
-        
-        return filteredMessages
+
+        return prevMessages
       })
+      // repopulate the inputs on error so the user can revise them
+      setInput(lastSubmittedInputRef.current)
+      setSelectedFiles(lastSubmittedFilesRef.current)
     }
   }, [error, setMessages])
 
