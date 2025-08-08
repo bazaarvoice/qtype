@@ -113,35 +113,46 @@ def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
     async def handle_chat_data(request: ChatRequest) -> StreamingResponse:
         """Handle chat requests for the specific flow."""
 
-        # Convert AI SDK UI request to domain ChatMessages
-        messages = _ui_request_to_domain_type(request)
-        if not len(messages):
-            raise ValueError("No input messages received")
+        try:
+            # Convert AI SDK UI request to domain ChatMessages
+            messages = _ui_request_to_domain_type(request)
+            if not len(messages):
+                raise ValueError("No input messages received")
 
-        # Pop the last message as the current input
-        current_input = messages.pop()
-        if current_input.role != MessageRole.user:
-            raise ValueError(
-                f"Unexpected input {current_input} from non user role: {current_input.role}"
+            # Pop the last message as the current input
+            current_input = messages.pop()
+            if current_input.role != MessageRole.user:
+                raise ValueError(
+                    f"Unexpected input {current_input} from non user role: {current_input.role}"
+                )
+
+            flow_copy = flow.model_copy(deep=True)
+
+            input_variable = [
+                var for var in flow_copy.inputs if var.type == ChatMessage
+            ][0]
+            input_variable.value = current_input
+
+            # Pass conversation context to flow execution for memory population
+            execution_kwargs: Any = {
+                "session_id": request.id,  # Use request ID as session identifier
+                "conversation_history": messages,
+            }
+
+            # Create a streaming generator for the flow execution
+            stream_generator, result_future = create_streaming_generator(
+                execute_flow, flow_copy, **execution_kwargs
             )
-
-        flow_copy = flow.model_copy(deep=True)
-
-        input_variable = [
-            var for var in flow_copy.inputs if var.type == ChatMessage
-        ][0]
-        input_variable.value = current_input
-
-        # Pass conversation context to flow execution for memory population
-        execution_kwargs: Any = {
-            "session_id": request.id,  # Use request ID as session identifier
-            "conversation_history": messages,
-        }
-
-        # Create a streaming generator for the flow execution
-        stream_generator, result_future = create_streaming_generator(
-            execute_flow, flow_copy, **execution_kwargs
-        )
+        except Exception as e:
+            error_chunk = ErrorChunk(errorText=str(e))
+            response = StreamingResponse(
+                [
+                    f"data: {error_chunk.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+                ],
+                media_type="text/plain; charset=utf-8",
+            )
+            response.headers["x-vercel-ai-ui-message-stream"] = "v1"
+            return response
 
         # Create generator that formats messages according to AI SDK UI streaming protocol
         def vercel_ai_formatter() -> Generator[str, None, None]:
