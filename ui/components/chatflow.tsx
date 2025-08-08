@@ -26,21 +26,12 @@ interface ChatFlowProps {
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 
-const fileToDataUrl = (file: File): Promise<string> => 
-  new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-
 export default function ChatFlow({ flow }: ChatFlowProps) {
   const [conversationId, setConversationId] = useState(() => generateId())
   const [input, setInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
-  const lastSubmittedInputRef = useRef('')
-  const lastSubmittedFilesRef = useRef<FileAttachment[]>([])
+  const [lastSubmission, setLastSubmission] = useState<{ input: string; files: FileAttachment[] } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,64 +43,68 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     id: conversationId,
     transport,
     onFinish: () => {
-      // Clear the stored values on successful completion
-      lastSubmittedInputRef.current = ''
-      lastSubmittedFilesRef.current = []
+      // Clear the last submission on successful completion
+      setLastSubmission(null)
     }
   })
 
+  const isLoading = status === 'streaming' || status === 'submitted'
+  const canSubmit = (status === 'ready' || status === 'error') && (input.trim() || selectedFiles.length > 0)
+
   // Restore form when error occurs
   useEffect(() => {
-    if (error && lastSubmittedInputRef.current) {
-      
-      // Remove failed messages (empty assistant message and the user message that failed)
-      setMessages(prevMessages => {
-        // filter out any messages with zero parts
-        prevMessages = prevMessages.filter(message => message.parts.length > 0)
-
-        // Remove the last user message since there was an error -- it is repopulated below
-        if (prevMessages.length > 0) {
-          prevMessages.pop()
+    if (error && lastSubmission) {
+      setInput(lastSubmission.input)
+      setSelectedFiles(lastSubmission.files)
+      setLastSubmission(null) // Clear after restoring
+      setMessages(prev => {
+        // remove empty assistant messages
+        prev = prev.filter(msg => msg.parts.length > 0)
+        // remove last message 
+        if (prev.length > 0) {
+          prev.pop()
         }
-
-        return prevMessages
+        return prev
       })
-      // repopulate the inputs on error so the user can revise them
-      setInput(lastSubmittedInputRef.current)
-      setSelectedFiles(lastSubmittedFilesRef.current)
     }
-  }, [error, setMessages])
-
-  const isLoading = status === 'streaming' || status === 'submitted'
-  const canSubmit = (status === 'ready' || status === 'error') && (input.trim() || selectedFiles.length)
+  }, [error, lastSubmission])
 
   useEffect(() => {
     if (status === 'ready') inputRef.current?.focus()
   }, [status])
 
-  const resetForm = useCallback(() => {
+  const clearForm = useCallback(() => {
     setInput('')
     setSelectedFiles([])
     setFileError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  const resetAll = useCallback(() => {
-    resetForm()
-    lastSubmittedInputRef.current = ''
-    lastSubmittedFilesRef.current = []
-  }, [resetForm])
+  const handleNewConversation = useCallback(() => {
+    setConversationId(generateId())
+    setMessages([])
+    setLastSubmission(null)
+    clearForm()
+  }, [setMessages, clearForm])
+
+  const convertFileToDataUrl = useCallback((file: File): Promise<string> => 
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    }), [])
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
-    setFileError(null) // Clear any previous errors
+    setFileError(null)
 
     try {
       const newFiles = await Promise.all(
         Array.from(files).map(async (file): Promise<FileAttachment> => {
-          const url = await fileToDataUrl(file)
+          const url = await convertFileToDataUrl(file)
           return {
             type: 'file',
             mediaType: file.type || 'application/octet-stream',
@@ -120,11 +115,11 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
         })
       )
       setSelectedFiles(prev => [...prev, ...newFiles])
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
       setFileError(`Failed to process files: ${errorMessage}`)
     }
-  }, [])
+  }, [convertFileToDataUrl])
 
   const removeFile = useCallback((index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
@@ -135,12 +130,6 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  const handleNewConversation = useCallback(() => {
-    setConversationId(generateId())
-    setMessages([])
-    resetAll()
-  }, [setMessages, resetAll])
-
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
@@ -148,12 +137,11 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     const messageContent = input.trim()
     const filesToSend = [...selectedFiles]
     
-    // Store the current input and files before clearing the form
-    lastSubmittedInputRef.current = messageContent
-    lastSubmittedFilesRef.current = filesToSend
+    // Store the submission for potential error recovery
+    setLastSubmission({ input: messageContent, files: filesToSend })
     
     // Clear the form immediately
-    resetForm()
+    clearForm()
     
     if (filesToSend.length > 0) {
       await sendMessage({
@@ -172,7 +160,7 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     } else {
       await sendMessage({ text: messageContent })
     }
-  }, [canSubmit, input, selectedFiles, sendMessage, resetForm])
+  }, [canSubmit, input, selectedFiles, sendMessage, clearForm])
 
   return (
     <Card className="w-full max-w-4xl mx-auto h-[calc(100vh-12rem)] flex flex-col">

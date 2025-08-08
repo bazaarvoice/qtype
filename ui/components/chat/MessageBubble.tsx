@@ -4,26 +4,38 @@ import { Bot, User } from 'lucide-react'
 import { type FileAttachment } from '@/types/flow'
 import FileDisplay from './FileDisplay'
 
+interface MessagePart {
+  type: string
+  text?: string
+}
+
+interface Message {
+  role: string
+  content?: string
+  parts?: (MessagePart | FileAttachment)[]
+  files?: FileAttachment[]
+  experimental_attachments?: FileAttachment[]
+}
+
 interface MessageBubbleProps {
-  message: any
+  message: Message
 }
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   
-  // Extract content with better type safety
   const textContent = useMemo(() => {
     return message.content || 
-      message.parts?.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('') ||
+      message.parts?.filter(p => p.type === 'text').map(p => 'text' in p ? p.text : '').join('') ||
       ''
   }, [message])
   
-  // Extract file attachments with better type safety
-  const fileAttachments = useMemo(() => {
-    return message.files || 
+  const fileAttachments = useMemo((): FileAttachment[] => {
+    const files = message.files || 
       message.experimental_attachments ||
-      message.parts?.filter((p: any) => p.type === 'file') ||
+      message.parts?.filter((p): p is FileAttachment => p.type === 'file') ||
       []
+    return files
   }, [message])
   
   return (
@@ -43,7 +55,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         )}
         
-        {fileAttachments.map((file: FileAttachment, index: number) => (
+        {fileAttachments.map((file, index) => (
           <FileDisplay
             key={`${file.filename}-${index}`}
             mediaType={file.mediaType}
