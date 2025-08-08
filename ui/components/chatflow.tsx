@@ -39,6 +39,8 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const [input, setInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
+  const lastSubmittedInputRef = useRef('')
+  const lastSubmittedFilesRef = useRef<FileAttachment[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -49,7 +51,42 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const { messages, sendMessage, status, error, setMessages } = useChat({
     id: conversationId,
     transport,
+    onFinish: () => {
+      // Clear the stored values on successful completion
+      lastSubmittedInputRef.current = ''
+      lastSubmittedFilesRef.current = []
+    }
   })
+
+  // Restore form when error occurs
+  useEffect(() => {
+    if (error && lastSubmittedInputRef.current) {
+      setInput(lastSubmittedInputRef.current)
+      setSelectedFiles(lastSubmittedFilesRef.current)
+      
+      // Remove failed messages (empty assistant message and the user message that failed)
+      setMessages(prevMessages => {
+        let filteredMessages = [...prevMessages]
+        
+        // Remove any empty assistant messages from the end
+        while (filteredMessages.length > 0) {
+          const lastMessage = filteredMessages[filteredMessages.length - 1]
+          if (lastMessage.role === 'assistant' && lastMessage.parts.length === 0) {
+            filteredMessages = filteredMessages.slice(0, -1)
+          } else {
+            break
+          }
+        }
+        
+        // Remove the last user message if it exists
+        if (filteredMessages.length > 0 && filteredMessages[filteredMessages.length - 1].role === 'user') {
+          filteredMessages = filteredMessages.slice(0, -1)
+        }
+        
+        return filteredMessages
+      })
+    }
+  }, [error, setMessages])
 
   const isLoading = status === 'streaming' || status === 'submitted'
   const canSubmit = (status === 'ready' || status === 'error') && (input.trim() || selectedFiles.length)
@@ -64,6 +101,12 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     setFileError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
+
+  const resetAll = useCallback(() => {
+    resetForm()
+    lastSubmittedInputRef.current = ''
+    lastSubmittedFilesRef.current = []
+  }, [resetForm])
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -103,22 +146,29 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const handleNewConversation = useCallback(() => {
     setConversationId(generateId())
     setMessages([])
-    resetForm()
-  }, [setMessages, resetForm])
+    resetAll()
+  }, [setMessages, resetAll])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
 
     const messageContent = input.trim()
+    const filesToSend = [...selectedFiles]
+    
+    // Store the current input and files before clearing the form
+    lastSubmittedInputRef.current = messageContent
+    lastSubmittedFilesRef.current = filesToSend
+    
+    // Clear the form immediately
     resetForm()
     
-    if (selectedFiles.length > 0) {
+    if (filesToSend.length > 0) {
       await sendMessage({
         role: 'user',
         parts: [
           { type: 'text', text: messageContent || "[Files attached]" },
-          ...selectedFiles.map(file => ({
+          ...filesToSend.map(file => ({
             type: 'file' as const,
             mediaType: file.mediaType,
             filename: file.filename,
@@ -200,7 +250,7 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
               multiple
               onChange={handleFileSelect}
               className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json"
+              accept="*"
             />
             <Button
               type="button"
