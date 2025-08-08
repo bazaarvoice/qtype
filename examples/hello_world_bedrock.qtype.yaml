@@ -2,8 +2,7 @@ id: hello_world
 
 flows:
   - id: simple_qa_flow
-    memory:
-      id: chat_memory
+    mode: Chat
     steps:
       - id: llm_inference_step
         memory: chat_memory

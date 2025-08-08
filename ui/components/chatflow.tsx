@@ -16,7 +16,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +24,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Send, User, Bot, Loader2 } from 'lucide-react'
 import { apiClient, type FlowInfo } from '@/lib/api-client'
-import { stat } from 'fs'
 
 interface ChatFlowProps {
   flow: FlowInfo
@@ -32,19 +31,9 @@ interface ChatFlowProps {
 
 export default function ChatFlow({ flow }: ChatFlowProps) {
   const [input, setInput] = useState('')
-  const sentMessageIdsRef = useRef(new Set<string>())
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
-    prepareSendMessagesRequest: ({ messages, id, trigger, messageId }) => {
-      const newMessages = messages.filter(msg =>
-        msg.role === 'user' && !sentMessageIdsRef.current.has(msg.id)
-      )
-
-      newMessages.forEach(msg => sentMessageIdsRef.current.add(msg.id))
-
-      return { body: { messages: newMessages, id, trigger, messageId } }
-    },
   }), [flow])
 
   const { messages, sendMessage, status, error, setMessages } = useChat({

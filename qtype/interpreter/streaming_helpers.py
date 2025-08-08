@@ -48,7 +48,7 @@ def create_streaming_generator(
 
     Example:
         ```python
-        def my_flow_execution(flow: ChatFlow, stream_fn: Callable | None = None):
+        def my_flow_execution(flow: Flow, stream_fn: Callable | None = None):
             # Some execution logic that calls stream_fn(step, message)
             return {"status": "completed", "steps_executed": 3}
 

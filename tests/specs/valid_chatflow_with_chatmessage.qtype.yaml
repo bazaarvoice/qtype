@@ -3,9 +3,7 @@ description: "A valid chat flow with a ChatMessage input variable"
 
 flows:
   - id: chat_flow
-    memory:
-      id: chat_memory
-      token_limit: 10000
+    mode: Chat
     inputs:
       - id: user_message
         type: ChatMessage
@@ -20,6 +18,9 @@ flows:
             type: api_key
             api_key: DEADBEEF
         system_message: "You are a helpful assistant."
+        memory:
+          id: chat_memory
+          token_limit: 10000
         inputs:
           - user_message
         outputs:

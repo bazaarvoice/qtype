@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Generator
+from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
@@ -21,33 +22,23 @@ from qtype.interpreter.chat.vercel import (
 )
 from qtype.interpreter.flow import execute_flow
 from qtype.interpreter.streaming_helpers import create_streaming_generator
-from qtype.semantic.model import ChatFlow
+from qtype.semantic.model import Flow
 
 
-def _ui_request_to_domain_type(request: ChatRequest) -> ChatMessage:
+def _ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:
     """
-    Convert a ChatRequest to a domain-specific ChatMessage.
+    Convert a ChatRequest to domain-specific ChatMessages.
 
-    Processes the UI messages from the AI SDK UI/React request format.
-    Takes the last user message from the messages and converts it to ChatMessage.
+    Processes all UI messages from the AI SDK UI/React request format.
+    Returns the full conversation history for context.
     """
     if not request.messages:
         raise ValueError("No messages provided in request.")
 
     # Convert each UIMessage to a domain-specific ChatMessage
-    messages = [
+    return [
         _ui_message_to_domain_type(message) for message in request.messages
     ]
-
-    # Make sure they all have the same role...
-    if len(set([msg.role for msg in messages])) != 1:
-        raise ValueError("All messages must have the same role.")
-
-    # The chat system assumes a single message input, so we combine all messages into one
-    return ChatMessage(
-        role=MessageRole(messages[0].role),
-        blocks=[block for message in messages for block in message.blocks],
-    )
 
 
 def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
@@ -106,48 +97,50 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
     )
 
 
-def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
+def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
     """
-    Create a chat endpoint for the given ChatFlow.
+    Create a chat endpoint for the given Flow.
 
     This creates an endpoint at /flows/{flow_id}/chat that follows the
     AI SDK UI/React request format and responds with streaming data.
 
     Args:
         app: The FastAPI application instance
-        flow: The ChatFlow to create an endpoint for
+        flow: The Flow to create an endpoint for
     """
     flow_id = flow.id
 
     async def handle_chat_data(request: ChatRequest) -> StreamingResponse:
         """Handle chat requests for the specific flow."""
 
-        # Convert AI SDK UI request to domain ChatMessage
-        input_message = _ui_request_to_domain_type(request)
+        # Convert AI SDK UI request to domain ChatMessages
+        messages = _ui_request_to_domain_type(request)
+        if not len(messages):
+            raise ValueError("No input messages received")
+
+        # Pop the last message as the current input
+        current_input = messages.pop()
+        if current_input.role != MessageRole.user:
+            raise ValueError(
+                f"Unexpected input {current_input} from non user role: {current_input.role}"
+            )
 
         flow_copy = flow.model_copy(deep=True)
-        set_count = 0
 
-        for var in flow_copy.inputs:
-            if var.type == ChatMessage:
-                # Convert the input ChatMessage to flow variables
-                var.value = input_message
-                set_count += 1
+        input_variable = [
+            var for var in flow_copy.inputs if var.type == ChatMessage
+        ][0]
+        input_variable.value = current_input
 
-        if set_count == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="No valid input provided for the ChatFlow.",
-            )
-        elif set_count > 1:
-            raise HTTPException(
-                status_code=400,
-                detail="Multiple inputs provided, expected a single ChatMessage.",
-            )
+        # Pass conversation context to flow execution for memory population
+        execution_kwargs: Any = {
+            "session_id": request.id,  # Use request ID as session identifier
+            "conversation_history": messages,
+        }
 
         # Create a streaming generator for the flow execution
         stream_generator, result_future = create_streaming_generator(
-            execute_flow, flow_copy
+            execute_flow, flow_copy, **execution_kwargs
         )
 
         # Create generator that formats messages according to AI SDK UI streaming protocol
@@ -227,6 +220,6 @@ def create_chat_flow_endpoint(app: FastAPI, flow: ChatFlow) -> None:
         f"/flows/{flow_id}/chat",
         tags=["chat"],
         summary=f"Chat with {flow_id} flow",
-        description=f"Stream chat responses from the '{flow_id}' ChatFlow using AI SDK UI transport protocol.",
+        description=f"Stream chat responses from the '{flow_id}' Flow using AI SDK UI transport protocol.",
         response_class=StreamingResponse,
     )(handle_chat_data)

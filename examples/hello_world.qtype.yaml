@@ -2,12 +2,10 @@ id: hello_world
 
 flows:
   - id: simple_qa_flow
-    memory:
-      id: chat_memory
     steps:
       - id: llm_inference_step
         model: 
-          id: gpt-4o
+          id: gpt-5
           provider: openai
           auth: 
             id: openai_auth

@@ -348,14 +348,7 @@
           "anyOf": [
             {
               "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Flow"
-                  },
-                  {
-                    "$ref": "#/$defs/ChatFlow"
-                  }
-                ]
+                "$ref": "#/$defs/Flow"
               },
               "type": "array"
             },
@@ -627,126 +620,6 @@
       "title": "AuthorizationProviderList",
       "type": "array"
     },
-    "ChatFlow": {
-      "additionalProperties": false,
-      "description": "Defines a flow specifically for chat-based interactions.\nIt can include steps that handle user messages, model responses, and other chat-related logic.\nAt least one input variable must be of chatMessage type.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of this component.",
-          "title": "Id",
-          "type": "string"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
-        },
-        "steps": {
-          "description": "List of steps or step IDs.",
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/Agent"
-              },
-              {
-                "$ref": "#/$defs/APITool"
-              },
-              {
-                "$ref": "#/$defs/Condition"
-              },
-              {
-                "$ref": "#/$defs/Decoder"
-              },
-              {
-                "$ref": "#/$defs/DocumentSearch"
-              },
-              {
-                "$ref": "#/$defs/Flow"
-              },
-              {
-                "$ref": "#/$defs/ChatFlow"
-              },
-              {
-                "$ref": "#/$defs/LLMInference"
-              },
-              {
-                "$ref": "#/$defs/PromptTemplate"
-              },
-              {
-                "$ref": "#/$defs/PythonFunctionTool"
-              },
-              {
-                "$ref": "#/$defs/VectorSearch"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "title": "Steps",
-          "type": "array"
-        },
-        "memory": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Memory"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Memory object to retain chat history across turns.",
-          "title": "Memory"
-        }
-      },
-      "required": [
-        "id",
-        "memory"
-      ],
-      "title": "ChatFlow",
-      "type": "object"
-    },
     "Condition": {
       "additionalProperties": false,
       "description": "Conditional logic gate within a flow. Supports branching logic for execution based on variable values.",
@@ -823,9 +696,6 @@
               "$ref": "#/$defs/Flow"
             },
             {
-              "$ref": "#/$defs/ChatFlow"
-            },
-            {
               "$ref": "#/$defs/LLMInference"
             },
             {
@@ -883,9 +753,6 @@
             },
             {
               "$ref": "#/$defs/Flow"
-            },
-            {
-              "$ref": "#/$defs/ChatFlow"
             },
             {
               "$ref": "#/$defs/LLMInference"
@@ -1003,9 +870,6 @@
         },
         {
           "$ref": "#/$defs/Flow"
-        },
-        {
-          "$ref": "#/$defs/ChatFlow"
         },
         {
           "$ref": "#/$defs/IndexList"
@@ -1296,6 +1160,15 @@
           "description": "Variable where output is stored.",
           "title": "Outputs"
         },
+        "mode": {
+          "default": "Complete",
+          "enum": [
+            "Complete",
+            "Chat"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
         "steps": {
           "description": "List of steps or step IDs.",
           "items": {
@@ -1317,9 +1190,6 @@
               },
               {
                 "$ref": "#/$defs/Flow"
-              },
-              {
-                "$ref": "#/$defs/ChatFlow"
               },
               {
                 "$ref": "#/$defs/LLMInference"
