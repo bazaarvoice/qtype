@@ -228,6 +228,9 @@ class Flow(Step):
     the first and last step, respectively.
     """
 
+    description: str | None = Field(
+        None, description="Optional description of the flow."
+    )
     mode: Literal["Complete", "Chat"] = Field("Complete")
     steps: list[Step] = Field(..., description="List of steps or step IDs.")
 

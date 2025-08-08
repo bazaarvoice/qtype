@@ -1160,6 +1160,19 @@
           "description": "Variable where output is stored.",
           "title": "Outputs"
         },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional description of the flow.",
+          "title": "Description"
+        },
         "mode": {
           "default": "Complete",
           "enum": [

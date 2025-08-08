@@ -34,6 +34,7 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const [lastSubmission, setLastSubmission] = useState<{ input: string; files: FileAttachment[] } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
@@ -50,6 +51,16 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
 
   const isLoading = status === 'streaming' || status === 'submitted'
   const canSubmit = (status === 'ready' || status === 'error') && (input.trim() || selectedFiles.length > 0)
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   // Restore form when error occurs
   useEffect(() => {
@@ -192,13 +203,14 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[400px] text-center text-muted-foreground">
                 <Bot className="h-12 w-12 mb-4 opacity-50" />
-                <p>Start a conversation with {flow.name}</p>
+                <p>Start a conversation!</p>
               </div>
             ) : (
               messages.map(message => (
                 <MessageBubble key={message.id} message={message} />
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 

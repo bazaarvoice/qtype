@@ -232,6 +232,6 @@ def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
         f"/flows/{flow_id}/chat",
         tags=["chat"],
         summary=f"Chat with {flow_id} flow",
-        description=f"Stream chat responses from the '{flow_id}' Flow using AI SDK UI transport protocol.",
+        description=flow.description,
         response_class=StreamingResponse,
     )(handle_chat_data)

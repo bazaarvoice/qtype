@@ -1,7 +1,8 @@
 id: hello_world
 
 flows:
-  - id: simple_qa_flow
+  - id: simple_chat_example
+    description: A simple stateful chat flow with AWS Bedrock
     mode: Chat
     steps:
       - id: llm_inference_step
