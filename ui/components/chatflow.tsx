@@ -16,28 +16,35 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Send, User, Bot, Loader2 } from 'lucide-react'
+import { Send, User, Bot, Loader2, MessageSquarePlus } from 'lucide-react'
 import { apiClient, type FlowInfo } from '@/lib/api-client'
 
 interface ChatFlowProps {
   flow: FlowInfo
 }
 
+// Generate a simple random string for conversation ID
+function generateConversationId(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+}
+
 export default function ChatFlow({ flow }: ChatFlowProps) {
   const [input, setInput] = useState('')
+  const [conversationId, setConversationId] = useState(() => generateConversationId())
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
   }), [flow])
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
-    id: flow.id,
+    id: conversationId,
     transport,
     onError: (error) => {
       // Find and remove user messages from the end of the array, repopulate input
@@ -67,6 +74,22 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const isLoading = status === 'streaming' || status === 'submitted'
   const canSubmit = (status === 'ready' && input.trim()) || (status === 'error' || error)
 
+  // Auto-focus input field after streaming ends
+  useEffect(() => {
+    if (status === 'ready' && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [status])
+
+  const handleNewConversation = useCallback(() => {
+    setConversationId(generateConversationId())
+    setMessages([])
+    setInput('')
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [setMessages])
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
@@ -76,21 +99,35 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   }, [input, canSubmit, sendMessage])
 
   return (
-    <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col">
+    <Card className="w-full max-w-4xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
       <CardHeader className="flex-shrink-0">
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="h-5 w-5" />
-          {flow.name}
-        </CardTitle>
-        {flow.description && <CardDescription>{flow.description}</CardDescription>}
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              {flow.name}
+            </CardTitle>
+            {flow.description && <CardDescription>{flow.description}</CardDescription>}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNewConversation}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            New Conversation
+          </Button>
+        </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea>
-          <div className="space-y-4">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-4 p-4">
             {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-center text-muted-foreground">
+                <Bot className="h-12 w-12 mb-4 opacity-50" />
                 <p>Start a conversation with {flow.name}</p>
               </div>
             ) : (
@@ -121,6 +158,7 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
 
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
