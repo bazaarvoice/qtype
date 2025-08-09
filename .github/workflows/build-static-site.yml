@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies and build
         working-directory: ui
         run: |
-          npm ci
+          npm install
           npm run build
         env:
           NODE_ENV: production
