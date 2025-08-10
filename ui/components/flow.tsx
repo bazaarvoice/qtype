@@ -64,21 +64,11 @@ export default function Flow({ flow }: FlowProps) {
         )}
       </div>
 
-    {/* Flow Inputs */}
-    <FlowInputs 
+      {/* Flow Inputs */}
+      <FlowInputs
         requestSchema={flow.requestSchema || null}
         onInputChange={handleInputChange}
-    />
-    
-    {/* Execute Button */}
-    <div className="mt-6 pt-4 border-t">
-        <Button 
-        disabled={isExecuting}
-        onClick={executeFlow}
-        >
-        {isExecuting ? 'Executing...' : 'Execute Flow'}
-        </Button>
-    </div>
+      />
 
       {/* Response Section */}
       <div>
@@ -93,14 +83,26 @@ export default function Flow({ flow }: FlowProps) {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {responseData && (
-          <FlowResponse 
+          <FlowResponse
             responseSchema={flow.responseSchema?.properties?.outputs}
             responseData={responseData}
           />
         )}
       </div>
+
+      {/* Execute Button */}
+      <div className="mt-6 pt-4 border-t">
+        <Button
+          disabled={isExecuting}
+          onClick={executeFlow}
+        >
+          {isExecuting ? 'Executing...' : 'Execute Flow'}
+        </Button>
+      </div>
+
+
     </div>
   )
 }

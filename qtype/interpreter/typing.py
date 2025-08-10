@@ -49,7 +49,8 @@ def create_output_type_model(flow: Flow) -> Type[BaseModel]:
         for var in flow.outputs:
             python_type, type_metadata = _get_variable_type(var)
             field_info = Field(
-                description=f"Output for {var.id}",
+                # TODO: grok the description from the variable if available
+                # description=f"Output for {var.id}",
                 title=var.id,
                 json_schema_extra=type_metadata,
             )
@@ -87,7 +88,8 @@ def create_input_type_model(flow: Flow) -> Type[BaseModel]:
     for var in flow.inputs:
         python_type, type_metadata = _get_variable_type(var)
         field_info = Field(
-            description=f"Input for {var.id}",
+            # TODO: grok the description from the variable if available
+            # description=f"Input for {var.id}",
             title=var.id,
             json_schema_extra=type_metadata,
         )

@@ -13,15 +13,17 @@ Install QType:
 pip install qtype[interpreter]
 ```
 
-Create a file `hello_world.qtype.yaml` that executes a single chat question:
+Create a file `hello_world.qtype.yaml` that answers a question:
 ```yaml
 id: hello_world
 flows:
-  - id: simple_qa_flow
+  - id: chat_example
+    description: A simple chat flow with OpenAI
+    mode: Chat
     steps:
       - id: llm_inference_step
         model: 
-          id: gpt-4o
+          id: gpt-4
           provider: openai
           auth: 
             id: openai_auth
@@ -30,11 +32,11 @@ flows:
         system_message: |
           You are a helpful assistant.
         inputs:
-          - id: prompt
-            type: text
+          - id: user_message
+            type: ChatMessage
         outputs:
-          - id: response_message
-            type: text
+          - id: response
+            type: ChatMessage
 ```
 
 Put your openai api key into your `.env` file:
@@ -42,12 +44,14 @@ Put your openai api key into your `.env` file:
 echo "OPENAI_KEY=sk...." >> .env
 ```
 
-Validate that the file matches the spec:
-```
-qtype validate hello_world.qtype.yaml
+Validate it's semantic correctness:
+
+```bash
+qtype validate hello_world.qtype.yaml 
 ```
 
 You should see:
+
 ```
 INFO: ✅ Schema validation successful.
 INFO: ✅ Model validation successful.
@@ -55,22 +59,23 @@ INFO: ✅ Language validation successful
 INFO: ✅ Semantic validation successful
 ```
 
-Finally,execute the flow.
-```
-qtype run flow '{"prompt":"What is the airspeed of a laden swallow?"}' hello_world.qtype.yaml 
+Launch the interpreter:
+
+```bash
+qtype serve hello_world.qtype.yaml`
 ```
 
-You should see (something similar to):
 
-```
-INFO: Executing flow: simple_qa_flow
+And go to [http://localhost:8000/ui](http://localhost:8000/ui) to see the user interface for your application:
 
-The airspeed of a laden swallow is a humorous reference from the movie "Monty Python and the Holy Grail." In the film, the question is posed as "What is the airspeed velocity of an unladen swallow?" The joke revolves around the absurdity and specificity of the question, and it doesn't have a straightforward answer. However, if you're curious about the real-life airspeed of a swallow, the European Swallow (Hirundo rustica) typically flies at around 11 meters per second, or 24 miles per hour, when unladen. The concept of a "laden" swallow is part of the humor, as it would depend on what the swallow is carrying and is not a standard measurement.
-```
+![Example UI](docs/example_ui.png)
+
 
 ---
 
 See the [full docs](https://bazaarvoice.github.io/qtype/) for more examples and guides.
+
+
 
 ## 🤝 Contributing
 

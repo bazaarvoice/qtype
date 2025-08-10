@@ -1,6 +1,8 @@
 id: hello_world
 flows:
-  - id: simple_example
+  - id: chat_example
+    description: A simple chat flow with OpenAI
+    mode: Chat
     steps:
       - id: llm_inference_step
         model: 
@@ -11,8 +13,10 @@ flows:
             type: api_key
             api_key: ${OPENAI_KEY}
         system_message: |
-          You are a helpful assistant. Answer the following question:
-          {{ question }}
+          You are a helpful assistant.
         inputs:
-          - id: question
-            type: text
+          - id: user_message
+            type: ChatMessage
+        outputs:
+          - id: response
+            type: ChatMessage

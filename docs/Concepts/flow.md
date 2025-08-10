@@ -18,3 +18,33 @@ Flows themselves are steps, meaning they can be nested within other flows to cre
 ## Related Concepts
 
 Flows orchestrate [Step](Steps/index.md) components to create workflows. Any step type can be included in a flow, including other flows for nested workflows.
+
+# Flow Modes
+
+## Complete Flows
+
+The default mode for a flow is 'Complete'. These are stateless executions -- think of them like data pipelines. They will accept input values and produce output values.
+
+
+### Intepreter Behavior
+
+The interpreter hosts each complete flow as an endpoint where you can post the input values and it returns the output values of your declared output variables.
+
+## Chat Flows
+
+Chat flows are a more restrictive, but defining one enables unique behavior in the interpreter.
+
+### Restrictions:
+* Chat flows must have at least one input variable of type `ChatMessage`.
+* Chat flows may only have one output variable and it must be of type `ChatMessage`.
+
+`qtype validate` will check for these conditions.
+
+### Intepreter Behavior
+The interpreter hosts each chat flow as an endpoint that ends in `/chat`.
+
+The endpoint supports Vercel's [ai-sdk](https://ai-sdk.dev/).
+
+The UI will detect the chat flows, and surface a conversation experience.
+
+Chat flows can be _stateful_ or _stateless_. If the llm inference step in the chat flow has [Memory](memory.md), then it is stateful. Otherwise, it is stateless. In both casses the UI sends the entire conversation to the api with each new message, but the stateful behavior will truncate it based on the memory settings.

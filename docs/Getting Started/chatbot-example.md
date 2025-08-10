@@ -1,6 +1,6 @@
-# Building Your First Chatbot with QType
+# Building A Chatbot with QType
 
-This tutorial will walk you through creating a simple chatbot step by step, using the `hello_world.qtype.yaml` example. Along the way, we'll explain the core QType concepts that make it all work.
+This tutorial will walk you through creating a simple chatbot step by step, using the `hello_world_chat.qtype.yaml` example. Along the way, we'll explain the core QType concepts that make it all work.
 
 By the end of this tutorial, you'll have a functioning chatbot that can maintain conversation history and respond intelligently using OpenAI's language models.
 
@@ -25,7 +25,7 @@ Before we start, make sure you have:
 
 Every QType program starts with an [Application](../Concepts/application.md). Think of an application as the blueprint for your entire AI-powered program - it's the top-level container that holds all your models, flows, tools, and configuration.
 
-Let's create a new file called `hello_world.qtype.yaml` and start with the basic application structure:
+Let's create a new file called `hello_world_chat.qtype.yaml` and start with the basic application structure:
 
 ```yaml
 id: hello_world
@@ -92,7 +92,7 @@ steps:
     memory: 
       id: chat_memory
     model: 
-      id: gpt-5
+      id: gpt-4
       provider: openai
       auth: 
         id: openai_auth
@@ -108,6 +108,11 @@ Breaking this down:
   - `type`: We're using API key authentication
   - `api_key`: References the `OPENAI_KEY` environment variable using `${OPENAI_KEY}` syntax
 
+Add your openai key to `.env` like:
+```
+OPENAI_KEY=sk...
+```
+
 ## Step 6: Setting the System Message
 
 The system message tells the AI how to behave. Let's add a helpful system prompt:
@@ -118,7 +123,7 @@ steps:
     memory: 
       id: chat_memory
     model: 
-      id: gpt-5
+      id: gpt-4
       provider: openai
       auth: 
         id: openai_auth
@@ -140,7 +145,7 @@ steps:
     memory: 
       id: chat_memory
     model: 
-      id: gpt-5
+      id: gpt-4
       provider: openai
       auth: 
         id: openai_auth
@@ -165,7 +170,7 @@ The `ChatMessage` type is a built-in QType type specifically designed for chat a
 
 ## The Complete Chatbot
 
-Here's the complete `hello_world.qtype.yaml` file we've built:
+Here's the complete `hello_world_chat.qtype.yaml` file we've built:
 
 ```yaml
 id: hello_world
@@ -179,7 +184,7 @@ flows:
         memory: 
           id: chat_memory
         model: 
-          id: gpt-5
+          id: gpt-4
           provider: openai
           auth: 
             id: openai_auth
@@ -195,17 +200,40 @@ flows:
             type: ChatMessage
 ```
 
+## Validating Your Chatbot
+
+Use the `qtype` cli to validate your file:
+
+```bash
+qtype validate hello_world_chat.qtype.yaml
+```
+
+You should see:
+```bash
+INFO: ✅ Schema validation successful.
+INFO: ✅ Model validation successful.
+INFO: ✅ Language validation successful
+INFO: ✅ Semantic validation successful
+```
+
+If you get errors, correct them before proceeding.
 
 ## Running Your Chatbot
 
-To run your chatbot, use the QType CLI:
+Finally, you can use the interpreter to serve your qtype application and interact with it:
 
 ```bash
-qtype serve hello_world.qtype.yaml
+qtype serve hello_world_chat.qtype.yaml
 ```
 
-This will start a server that you can interact with to test your chatbot!
-Go to `http://localhost:3000/ui` to see it!
+This will start a web server on your local machine
+
+Visit:
+
+* [http://localhost:8000/ui](http://localhost:8000/ui) to see a web UI where you can use your prototype.
+* [http://localhost:8000/docs](http://localhost:8000/docs) to see swagger docs for the automatically generated API.
+
+![Example UI](../example_ui.png)
 
 ## Understanding What Happens at Runtime
 
