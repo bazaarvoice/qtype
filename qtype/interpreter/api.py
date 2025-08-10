@@ -88,7 +88,6 @@ class APIExecutor:
 
         # Create the endpoint function with proper model binding
         def execute_flow_endpoint(request: RequestModel) -> ResponseModel:  # type: ignore
-            """Execute the specific flow with provided inputs."""
             try:
                 # Make a copy of the flow to avoid modifying the original
                 # TODO: Use session to ensure memory is not used across requests.
@@ -136,7 +135,6 @@ class APIExecutor:
         app.post(
             f"/flows/{flow_id}",
             tags=["flow"],
-            summary=f"Execute {flow_id} flow",
-            description=f"Execute the '{flow_id}' flow with the provided input parameters.",
+            description=flow.description or "Execute a flow",
             response_model=ResponseModel,
         )(execute_flow_endpoint)

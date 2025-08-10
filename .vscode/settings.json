@@ -6,7 +6,7 @@
     ],
     "yaml.schemaStore.enable": false,
     "yaml.schemas" : {
-        "./schema/qtype.schema.json": ["*.qtype.yaml"]
+        "${workspaceFolder}/schema/qtype.schema.json": ["*.qtype.yaml"]
     },
     "python.testing.pytestArgs": [
         "tests"
