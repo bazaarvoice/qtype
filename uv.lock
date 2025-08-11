@@ -1969,6 +1969,18 @@ wheels = [
 ]
 
 [[package]]
+name = "mermaid-py"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cb/b6/b5973f5b4b726f8b09e6558f459f0d6b70ee00206aacd873c8ed972a16cf/mermaid_py-0.8.0.tar.gz", hash = "sha256:8ba7853f88c09ebf9c2d355c0ebd1e272e877c9568c10612ae9d0f57245608ef", size = 21229, upload-time = "2025-05-12T14:42:26.354Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/0e/fbcc38fef8ff71e5df09d9d629e8b620fe974709664b81da2774b6debfe2/mermaid_py-0.8.0-py3-none-any.whl", hash = "sha256:dab0463ffe67fb3f13f0058cf5c0c2fa2685136cdc7e4ae3067d8b9d9c9e378a", size = 31741, upload-time = "2025-05-12T14:42:25.04Z" },
+]
+
+[[package]]
 name = "mkdocs"
 version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2501,7 +2513,7 @@ wheels = [
 
 [[package]]
 name = "openinference-instrumentation-llama-index"
-version = "4.3.2"
+version = "4.3.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-instrumentation" },
@@ -2512,9 +2524,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/d8/01b23d3a06e619fe048ed1b41689dbe61b4105099cc3f22bdc1bb16f5859/openinference_instrumentation_llama_index-4.3.2.tar.gz", hash = "sha256:7dbbc1c73b99da6394066c3e2e28143fe9f594679170313dc5609304d02858f0", size = 59566, upload-time = "2025-07-23T23:29:26.507Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/df/6622fb09eacfad140067c5c6f649c6a3d835f081b5cfba6c8fa5252ab944/openinference_instrumentation_llama_index-4.3.4.tar.gz", hash = "sha256:2e03347bf7d9d6f7ff4b62101239c7408c2a6c69065f7d00f9a3b1e2145ac626", size = 60693, upload-time = "2025-08-01T22:33:33.532Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/40/bfeed647443250af39eb316f2a02d3dd2f092b84cd70aa03f9c9d08b699b/openinference_instrumentation_llama_index-4.3.2-py3-none-any.whl", hash = "sha256:f1016eddbaedcb0008a8a7c38f133300fcc9940d604e29eabec16ad36963162d", size = 28381, upload-time = "2025-07-23T23:29:25.355Z" },
+    { url = "https://files.pythonhosted.org/packages/be/a7/e63f05f49ea66d416c770b92f0670723811c285e2f10c13ce91c0558eb4b/openinference_instrumentation_llama_index-4.3.4-py3-none-any.whl", hash = "sha256:aa94297ede190cd55f62e04dd050fbb7975fec55a63752df8f4faec6b403bac0", size = 28815, upload-time = "2025-08-01T22:33:32.285Z" },
 ]
 
 [[package]]
@@ -3474,6 +3486,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fsspec" },
     { name = "jsonschema" },
+    { name = "mermaid-py" },
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "openai" },
     { name = "pydantic" },
@@ -3539,9 +3552,10 @@ requires-dist = [
     { name = "llama-index-embeddings-openai", marker = "extra == 'interpreter'", specifier = ">=0.3.1" },
     { name = "llama-index-llms-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.3.8" },
     { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.7.4" },
+    { name = "mermaid-py", specifier = ">=0.8.0" },
     { name = "mkdocs-awesome-pages-plugin", specifier = ">=2.10.1" },
     { name = "openai", specifier = ">=1.93.0" },
-    { name = "openinference-instrumentation-llama-index", marker = "extra == 'interpreter'", specifier = ">=4.3.1" },
+    { name = "openinference-instrumentation-llama-index", marker = "extra == 'interpreter'", specifier = ">=4.3.4" },
     { name = "psycopg2-binary", marker = "extra == 'interpreter'", specifier = ">=2.9.10" },
     { name = "pydantic", specifier = ">=2.11.5" },
     { name = "pydantic-yaml", specifier = ">=1.5.1" },
