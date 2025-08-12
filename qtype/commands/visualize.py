@@ -30,12 +30,12 @@ def main(args: Any) -> None:
 
     diagram = visualize_application(application)
 
+    render = None
     if args.output:
         if args.output.endswith(".mmd") or args.output.endswith(".mermaid"):
             with open(args.output, "w") as f:
                 f.write(diagram)
             logger.info(f"Mermaid diagram written to {args.output}")
-            render = None
         elif args.output.endswith(".svg"):
             render = md.Mermaid(diagram)
             render.to_svg(args.output)
