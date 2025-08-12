@@ -17,12 +17,7 @@ from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
-from qtype.dsl.model import (
-    ArrayTypeDefinition,
-    DecoderFormat,
-    ObjectTypeDefinition,
-    StructuralTypeEnum,
-)
+from qtype.dsl.model import CustomType, DecoderFormat  # noqa: F401
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
 
@@ -57,7 +52,7 @@ class Application(BaseModel):
     models: list[Model] = Field(
         [], description="List of models used in this application."
     )
-    types: list[ObjectTypeDefinition | ArrayTypeDefinition] = Field(
+    types: list[CustomType] = Field(
         [], description="List of custom types defined in this application."
     )
     variables: list[Variable] = Field(
@@ -177,21 +172,6 @@ class TelemetrySink(BaseModel):
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
-    )
-
-
-class TypeDefinitionBase(BaseModel):
-    """Semantic version of TypeDefinitionBase."""
-
-    id: str = Field(
-        ..., description="The unique identifier for this custom type."
-    )
-    kind: StructuralTypeEnum = Field(
-        ...,
-        description="The kind of structure this type represents (object/array).",
-    )
-    description: str | None = Field(
-        None, description="A description of what this type represents."
     )
 
 

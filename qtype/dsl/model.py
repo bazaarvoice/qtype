@@ -59,7 +59,7 @@ class Variable(StrictBaseModel):
     type: VariableType | str = Field(
         ...,
         description=(
-            "Type of data expected or produced. Either a TypeDefinition or domain specific type."
+            "Type of data expected or produced. Either a CustomType or domain specific type."
         ),
     )
 
@@ -71,53 +71,17 @@ class Variable(StrictBaseModel):
         return data
 
 
-class TypeDefinitionBase(StrictBaseModel, ABC):
-    id: str = Field(description="The unique identifier for this custom type.")
-    kind: StructuralTypeEnum = Field(
-        ...,
-        description="The kind of structure this type represents (object/array).",
-    )
-    description: str | None = Field(
-        None, description="A description of what this type represents."
-    )
+class CustomType(StrictBaseModel):
+    """A simple declaration of a custom data type by the user."""
+
+    id: str
+    description: str | None = None
+    properties: dict[str, str]
 
 
-class ObjectTypeDefinition(TypeDefinitionBase):
-    kind: StructuralTypeEnum = StructuralTypeEnum.object
-    properties: dict[str, VariableType | str] | None = Field(
-        None, description="Defines the nested properties."
-    )
-
-    @model_validator(mode="after")
-    def resolve_type(self) -> "ObjectTypeDefinition":
-        """Resolve the type string to its corresponding PrimitiveTypeEnum."""
-        # Pydantic doesn't properly handle enums as strings in model validation,
-        if self.properties:
-            for key, value in self.properties.items():
-                if isinstance(value, str):
-                    self.properties[key] = _resolve_variable_type(value)
-        return self
-
-
-class ArrayTypeDefinition(TypeDefinitionBase):
-    kind: StructuralTypeEnum = StructuralTypeEnum.array
-    type: VariableType | str = Field(
-        ..., description="The type of items in the array."
-    )
-
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_type(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "type" in data:
-            # If the type is a string, resolve it to PrimitiveTypeEnum or Domain Entity class.
-            data["type"] = _resolve_variable_type(data["type"])  # type: ignore
-        return data
-
-
-TypeDefinition = ObjectTypeDefinition | ArrayTypeDefinition
 VariableType = (
     PrimitiveTypeEnum
-    | TypeDefinition
+    | CustomType
     | Type[Embedding]
     | Type[ChatMessage]
     | Type[ChatContent]
@@ -453,7 +417,7 @@ class Application(StrictBaseModel):
     models: list[ModelType] | None = Field(
         default=None, description="List of models used in this application."
     )
-    types: list[TypeDefinition] | None = Field(
+    types: list[CustomType] | None = Field(
         default=None,
         description="List of custom types defined in this application.",
     )
@@ -556,24 +520,7 @@ class VectorSearch(Search):
             ]
 
         if self.outputs is None:
-            self.outputs = [
-                Variable(
-                    id=f"{self.id}.results",
-                    type=ArrayTypeDefinition(
-                        id=f"{self.id}.SearchResult",
-                        type=ObjectTypeDefinition(
-                            id="SearchResult",
-                            description="Result of a search operation.",
-                            properties={
-                                "score": PrimitiveTypeEnum.number,
-                                "id": PrimitiveTypeEnum.text,
-                                "document": PrimitiveTypeEnum.text,
-                            },
-                        ),
-                        description=None,
-                    ),
-                )
-            ]
+            self.outputs = [Variable(id=f"{self.id}.results", type=Embedding)]
         return self
 
 
@@ -655,10 +602,10 @@ class ToolList(RootModel[list[ToolType]]):
     root: list[ToolType]
 
 
-class TypeList(RootModel[list[TypeDefinition]]):
+class TypeList(RootModel[list[CustomType]]):
     """Schema for a standalone list of type definitions."""
 
-    root: list[TypeDefinition]
+    root: list[CustomType]
 
 
 class VariableList(RootModel[list[Variable]]):

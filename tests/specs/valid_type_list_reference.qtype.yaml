@@ -4,9 +4,7 @@ types:
     description: "A block of chat content."
     properties:
       content_type: text
-      content:
-        id: ChatBlockList
-        type: ChatBlock
+      content: list[ChatBlock]
   - id: ChatMessage
     description: "A type for testing purposes."
     properties:
