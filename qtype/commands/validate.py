@@ -10,8 +10,13 @@ from typing import Any
 from pydantic import ValidationError
 
 from qtype import dsl
+from qtype.dsl.custom_types import build_dynamic_types
 from qtype.dsl.validator import QTypeValidationError, validate
-from qtype.loader import _resolve_root, load_yaml
+from qtype.loader import (
+    _list_dynamic_types_from_document,
+    _resolve_root,
+    load_yaml,
+)
 from qtype.semantic.errors import SemanticResolutionError
 from qtype.semantic.resolver import resolve
 
@@ -30,29 +35,34 @@ def main(args: Any) -> None:
     """
     try:
         yaml_data = load_yaml(args.spec)
+        dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
+        dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
         logging.info("✅ Schema validation successful.")
-        document = dsl.Document.model_validate(yaml_data)
+
+        document = dsl.Document.model_validate(
+            yaml_data, context={"custom_types": dynamic_types_registry}
+        )
         logging.info("✅ Model validation successful.")
-        document = _resolve_root(document)
-        if not isinstance(document, dsl.Application):
+        root = _resolve_root(document)
+        if not isinstance(root, dsl.Application):
             logging.warning(
                 "🟨 Spec is not an Application, skipping semantic resolution."
             )
         else:
-            document = validate(document)
+            root = validate(root)
             logger.info("✅ Language validation successful")
-            document = resolve(document)
+            app = resolve(root)
             logger.info("✅ Semantic validation successful")
         if args.print:
             logger.info(
-                document.model_dump_json(  # type: ignore
+                (app if "app" in locals() else root).model_dump_json(  # type: ignore
                     indent=2,
                     exclude_none=True,
                 )
             )
 
     except ValidationError as exc:
-        logger.error("❌ Schema validation failed:\n%s", exc)
+        logger.error("❌ Validation failed:\n%s", exc)
         sys.exit(1)
     except QTypeValidationError as exc:
         logger.error("❌ DSL validation failed:\n%s", exc)

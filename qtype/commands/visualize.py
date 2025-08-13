@@ -26,7 +26,7 @@ def main(args: Any) -> None:
     """
     import mermaid as md
 
-    application = load(args.spec)
+    application, _ = load(args.spec)
 
     diagram = visualize_application(application)
 

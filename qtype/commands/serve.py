@@ -22,7 +22,7 @@ def serve(args: Any) -> None:
     Args:
         args: Arguments passed from the command line or calling context.
     """
-    spec = load(args.spec)
+    spec, _ = load(args.spec)
     logger.info(f"Running API for spec: {args.spec}")
     from qtype.interpreter.api import APIExecutor
 

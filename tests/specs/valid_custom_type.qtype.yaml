@@ -1,16 +1,15 @@
 id: valid_custom_type
 types:
-  - id: BlogPost
-    properties:
-      title: text
-      subtitle: "text?"
-      author: Author # <-- This is a forward reference
-      tags: "list[text]"
-      published: boolean
   - id: Author
     properties:
       id: int
       name: text
+  - id: Book
+    properties:
+      title: text
+      author: Author
+      tags: "list[text]"
+      published: boolean
 
 flows:
   - id: my_person_flow
@@ -18,22 +17,11 @@ flows:
     steps:
       - id: prompt_template
         template: >
-          You are a helpful assistant. Please provide information about the following person:
-          Name: {{inputs.person.name}}
-          Age: {{inputs.person.age}}
-          Email: {{inputs.person.email}}
+          You are a helpful assistant. Please provide information about the following book:
+          {book}
         inputs:
-          - id: person
-            type: Author
+          - id: book
+            type: Book
         outputs:
-          - id: llm_response
-            type: text
-      - id: inference
-        model: 
-          id: amazon.nova-lite-v1:0
-          provider: aws-bedrock
-        inputs:
-          - llm_response
-        outputs:
-          - id: result
+          - id: prompt_format
             type: text

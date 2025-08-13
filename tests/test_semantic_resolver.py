@@ -11,7 +11,7 @@ TEST_DIR = Path(__file__).parent / "specs"
 def test_resolver_full_application() -> None:
     """Test resolver.resolve with a fully populated application YAML."""
     yaml_path = TEST_DIR / "full_application_test.qtype.yaml"
-    ir_app = loader.load(yaml_path.read_text(encoding="utf-8"))
+    ir_app, dynamic_types = loader.load(yaml_path.read_text(encoding="utf-8"))
     # Application level
     assert isinstance(ir_app, ir.Application)
     assert ir_app.id == "test_app"

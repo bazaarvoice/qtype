@@ -4,8 +4,15 @@ import inspect
 from abc import ABC
 from enum import Enum
 from typing import Any, Literal, Type, Union
+from unittest.mock import Base
 
-from pydantic import Field, RootModel, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    RootModel,
+    ValidationInfo,
+    model_validator,
+)
 
 import qtype.dsl.domain_types as domain_types
 from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
@@ -26,7 +33,9 @@ DOMAIN_CLASSES = {
 }
 
 
-def _resolve_variable_type(parsed_type: Any) -> Any:
+def _resolve_variable_type(
+    parsed_type: Any, custom_type_registry: dict[str, Type[BaseModel]]
+) -> Any:
     """Resolve a type string to its corresponding PrimitiveTypeEnum or return as is."""
     # If the type is already resolved or is a structured definition, pass it through.
     if not isinstance(parsed_type, str):
@@ -44,12 +53,16 @@ def _resolve_variable_type(parsed_type: Any) -> Any:
     if parsed_type in DOMAIN_CLASSES:
         return DOMAIN_CLASSES[parsed_type]
 
+    # Check the registry of dynamically created custom types
+    if parsed_type in custom_type_registry:
+        return custom_type_registry[parsed_type]
+
     # If it's not a primitive or a known domain entity, return it as a string.
     # This assumes it might be a reference ID to another custom type.
     return parsed_type
 
 
-class Variable(StrictBaseModel):
+class Variable(BaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
     id: str = Field(
@@ -65,9 +78,21 @@ class Variable(StrictBaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def resolve_type(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "type" in data:
-            data["type"] = _resolve_variable_type(data["type"])  # type: ignore
+    def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
+        """
+        This validator runs during the main validation pass. It uses the
+        context to resolve string-based type references.
+        """
+        if (
+            isinstance(data, dict)
+            and "type" in data
+            and isinstance(data["type"], str)
+        ):
+            # Get the registry of custom types from the validation context.
+            custom_types = (info.context or {}).get("custom_types", {})
+            resolved = _resolve_variable_type(data["type"], custom_types)
+            # {'id': 'user_message', 'type': 'ChatMessage'}
+            data["type"] = resolved
         return data
 
 
@@ -81,10 +106,11 @@ class CustomType(StrictBaseModel):
 
 VariableType = (
     PrimitiveTypeEnum
-    | CustomType
+    | str
     | Type[Embedding]
     | Type[ChatMessage]
     | Type[ChatContent]
+    | Type[BaseModel]
 )
 
 
