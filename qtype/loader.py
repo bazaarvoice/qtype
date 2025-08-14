@@ -7,15 +7,17 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Type
 from urllib.parse import urljoin, urlparse
 
 import fsspec
 import yaml
 from dotenv import load_dotenv
 from fsspec.core import url_to_fs
+from pydantic import BaseModel
 
 from qtype.dsl import model as dsl
+from qtype.dsl.custom_types import build_dynamic_types
 from qtype.dsl.validator import validate
 from qtype.semantic.model import Application
 from qtype.semantic.resolver import resolve
@@ -328,14 +330,61 @@ def _resolve_root(doc: dsl.Document) -> ResolveableType:
     return root  # type: ignore[return-value]
 
 
-def load(content: str) -> Application:
+CustomTypeRegistry = dict[str, Type[BaseModel]]
+
+
+def _list_dynamic_types_from_document(
+    loaded_yaml: dict[str, Any]
+) -> list[dict]:
+    """
+    Build dynamic types from the loaded YAML data.
+
+    Args:
+        loaded_yaml: The parsed YAML data containing type definitions.
+
+    Returns:
+        A registry of dynamically created Pydantic BaseModel classes.
+    """
+    rv = []
+
+    # add any "types" if the loaded doc is an application
+    rv.extend(loaded_yaml.get("types", []))
+
+    # check for TypeList by seeing if we have root + custom types
+    if "root" in loaded_yaml:
+        root = loaded_yaml["root"]
+        if (
+            isinstance(root, list)
+            and len(root) > 0
+            and "properties" in root[0]
+        ):
+            rv.extend(root)
+
+    # call recursively for any references
+    if "references" in loaded_yaml:
+        for ref in loaded_yaml["references"]:
+            rv.extend(_list_dynamic_types_from_document(ref))
+    return rv
+
+
+def load_document(content: str) -> tuple[ResolveableType, CustomTypeRegistry]:
     """Load a QType YAML file, validate it, and return the resolved root."""
     yaml_data = load_yaml(content)
-    document = dsl.Document.model_validate(yaml_data)
-    document = _resolve_root(document)
-    if not isinstance(document, dsl.Application):
+    dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
+    dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
+    document = dsl.Document.model_validate(
+        yaml_data, context={"custom_types": dynamic_types_registry}
+    )
+    root = _resolve_root(document)
+    return root, dynamic_types_registry
+
+
+def load(content: str) -> tuple[Application, CustomTypeRegistry]:
+    """Load a QType YAML file, validate it, and return the resolved root."""
+    root, dynamic_types_registry = load_document(content)
+    if not isinstance(root, dsl.Application):
         raise ValueError(
-            f"Root document is not an Application, found {type(document)}."
+            f"Root document is not an Application, found {type(root)}."
         )
-    document = validate(document)
-    return resolve(document)
+    root = validate(root)
+    return resolve(root), dynamic_types_registry

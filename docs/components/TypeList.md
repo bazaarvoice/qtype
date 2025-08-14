@@ -2,4 +2,4 @@
 
 Schema for a standalone list of type definitions.
 
-- **root** (`list[ObjectTypeDefinition | ArrayTypeDefinition]`): (No documentation available.)
+- **root** (`list[CustomType]`): (No documentation available.)

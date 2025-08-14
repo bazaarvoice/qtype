@@ -2,13 +2,39 @@
 
 QType can be installed in two different ways depending on your needs:
 
+## Interpreter Package Installation (Recommended)
+
+For full functionality including the ability to execute QType flows, serve them as APIs, and launch user experiences, install with the interpreter extra:
+
+=== "uv"
+    ```sh
+    uv add qtype[interpreter]
+    ```
+
+=== "pip"
+    ```bash
+    pip install qtype[interpreter]
+    ```
+
+
 ## Base Package Installation
 
 The base QType package provides core functionality for defining, validating, and generating schemas for QType specifications:
 
-```bash
-pip install qtype
-```
+=== "uv"
+    ```sh
+    uv add qtype
+    ```
+
+=== "uvx"
+    ```sh
+    uvx qtype
+    ```
+
+=== "pip"
+    ```sh
+    pip install qtype
+    ```
 
 ### What's included in the base package:
 
@@ -18,13 +44,6 @@ pip install qtype
 - **Core DSL components**: Define models, prompts, tools, and flows
 - **Basic CLI commands**: `validate`, `generate`, `convert`
 
-## Interpreter Package Installation (Recommended)
-
-For full functionality including the ability to execute QType flows, serve them as APIs, and launch user experiences, install with the interpreter extra:
-
-```bash
-pip install qtype[interpreter]
-```
 
 ### Additional capabilities with the interpreter package:
 

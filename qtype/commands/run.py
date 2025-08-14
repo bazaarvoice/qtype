@@ -53,7 +53,7 @@ def run_flow(args: Any) -> None:
     Args:
         args: Arguments passed from the command line or calling context.
     """
-    spec = load(args.spec)
+    spec, _ = load(args.spec)
 
     flow = _get_flow(spec, args.flow)
     logger.info(f"Executing flow: {flow.id}")

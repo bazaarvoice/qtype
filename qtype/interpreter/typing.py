@@ -5,7 +5,7 @@ from typing import Any, Type
 from pydantic import BaseModel, Field, create_model
 
 from qtype.converters.types import PRIMITIVE_TO_PYTHON_TYPE
-from qtype.dsl.model import DOMAIN_CLASSES, PrimitiveTypeEnum
+from qtype.dsl.model import PrimitiveTypeEnum
 from qtype.semantic.model import Flow, Variable
 
 
@@ -23,13 +23,12 @@ def _get_variable_type(var: Variable) -> tuple[Type, dict[str, Any]]:
         field_metadata["qtype_type"] = var.type.value
     elif (
         isinstance(var.type, type)
+        and issubclass(var.type, BaseModel)
         and hasattr(var.type, "__name__")
-        and var.type.__name__ in DOMAIN_CLASSES
     ):
-        python_type = DOMAIN_CLASSES[var.type.__name__]
+        python_type = var.type
         field_metadata["qtype_type"] = var.type.__name__
     else:
-        # TODO: handle custom TypeDefinition...
         raise ValueError(f"Unsupported variable type: {var.type}")
 
     return python_type, field_metadata

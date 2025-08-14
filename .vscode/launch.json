@@ -9,7 +9,7 @@
             "args": "${input:cliArgs}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "justMyCode": true,
+            "justMyCode": false,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             },

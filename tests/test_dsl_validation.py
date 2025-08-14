@@ -14,9 +14,9 @@ TEST_DIR = Path(__file__).parent / "specs"
 
 def run_validation(yaml_path: Path) -> dsl.Application:
     """Load and validate a DSL Application from a YAML file."""
-    content = yaml_path.read_text(encoding="utf-8")
-    yaml_data = loader.load_yaml(content)
-    model = dsl.Document.model_validate(yaml_data).root
+    model, dynamic_types_registry = loader.load_document(
+        yaml_path.read_text(encoding="utf-8")
+    )
     if not isinstance(model, dsl.Application):
         raise TypeError(f"Expected Application, got {type(model)}")
     return validator.validate(model)

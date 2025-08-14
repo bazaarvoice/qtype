@@ -54,14 +54,6 @@ flows:
             - slack_tool  # Reference by ID
 ```
 
-flows:
-  - id: main_flow
-    steps:
-      - id: llm_step
-        model: shared_gpt4  # Defined in models.qtype.yaml
-        system_message: !include_raw prompts/system_message.txt
-```
-
 ```yaml
 # common/models.qtype.yaml
 - id: shared_gpt4
@@ -112,6 +104,7 @@ You are an expert AI assistant with deep knowledge across multiple domains.
 Always provide accurate, helpful, and well-structured responses.
 
 When answering questions:
+
 1. Be concise but thorough
 2. Provide examples when helpful
 3. Cite sources when making factual claims
