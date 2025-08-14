@@ -309,14 +309,7 @@
           "anyOf": [
             {
               "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/ObjectTypeDefinition"
-                  },
-                  {
-                    "$ref": "#/$defs/ArrayTypeDefinition"
-                  }
-                ]
+                "$ref": "#/$defs/CustomType"
               },
               "type": "array"
             },
@@ -455,58 +448,6 @@
         "id"
       ],
       "title": "Application",
-      "type": "object"
-    },
-    "ArrayTypeDefinition": {
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "description": "The unique identifier for this custom type.",
-          "title": "Id",
-          "type": "string"
-        },
-        "kind": {
-          "$ref": "#/$defs/StructuralTypeEnum",
-          "default": "array"
-        },
-        "description": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "A description of what this type represents.",
-          "title": "Description"
-        },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PrimitiveTypeEnum"
-            },
-            {
-              "$ref": "#/$defs/ObjectTypeDefinition"
-            },
-            {
-              "$ref": "#/$defs/ArrayTypeDefinition"
-            },
-            {},
-            {
-              "type": "string"
-            }
-          ],
-          "description": "The type of items in the array.",
-          "title": "Type"
-        }
-      },
-      "required": [
-        "id",
-        "type"
-      ],
-      "title": "ArrayTypeDefinition",
       "type": "object"
     },
     "AuthorizationProvider": {
@@ -779,6 +720,41 @@
         "then"
       ],
       "title": "Condition",
+      "type": "object"
+    },
+    "CustomType": {
+      "additionalProperties": false,
+      "description": "A simple declaration of a custom data type by the user.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "id",
+        "properties"
+      ],
+      "title": "CustomType",
       "type": "object"
     },
     "Decoder": {
@@ -1467,68 +1443,6 @@
       "title": "ModelList",
       "type": "array"
     },
-    "ObjectTypeDefinition": {
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "description": "The unique identifier for this custom type.",
-          "title": "Id",
-          "type": "string"
-        },
-        "kind": {
-          "$ref": "#/$defs/StructuralTypeEnum",
-          "default": "object"
-        },
-        "description": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "A description of what this type represents.",
-          "title": "Description"
-        },
-        "properties": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/PrimitiveTypeEnum"
-                  },
-                  {
-                    "$ref": "#/$defs/ObjectTypeDefinition"
-                  },
-                  {
-                    "$ref": "#/$defs/ArrayTypeDefinition"
-                  },
-                  {},
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Defines the nested properties.",
-          "title": "Properties"
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "title": "ObjectTypeDefinition",
-      "type": "object"
-    },
     "PrimitiveTypeEnum": {
       "description": "Represents the type of data a user or system input can accept within the DSL.",
       "enum": [
@@ -1703,15 +1617,6 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
-    "StructuralTypeEnum": {
-      "description": "Represents a structured type that can be used in the DSL.",
-      "enum": [
-        "object",
-        "array"
-      ],
-      "title": "StructuralTypeEnum",
-      "type": "string"
-    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -1768,20 +1673,12 @@
     "TypeList": {
       "description": "Schema for a standalone list of type definitions.",
       "items": {
-        "anyOf": [
-          {
-            "$ref": "#/$defs/ObjectTypeDefinition"
-          },
-          {
-            "$ref": "#/$defs/ArrayTypeDefinition"
-          }
-        ]
+        "$ref": "#/$defs/CustomType"
       },
       "title": "TypeList",
       "type": "array"
     },
     "Variable": {
-      "additionalProperties": false,
       "description": "Schema for a variable that can serve as input, output, or parameter within the DSL.",
       "properties": {
         "id": {
@@ -1794,18 +1691,12 @@
             {
               "$ref": "#/$defs/PrimitiveTypeEnum"
             },
-            {
-              "$ref": "#/$defs/ObjectTypeDefinition"
-            },
-            {
-              "$ref": "#/$defs/ArrayTypeDefinition"
-            },
             {},
             {
               "type": "string"
             }
           ],
-          "description": "Type of data expected or produced. Either a TypeDefinition or domain specific type.",
+          "description": "Type of data expected or produced. Either a CustomType or domain specific type.",
           "title": "Type"
         }
       },
