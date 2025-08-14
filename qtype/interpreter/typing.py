@@ -5,7 +5,7 @@ from typing import Any, Type
 from pydantic import BaseModel, Field, create_model
 
 from qtype.converters.types import PRIMITIVE_TO_PYTHON_TYPE
-from qtype.dsl.model import DOMAIN_CLASSES, PrimitiveTypeEnum
+from qtype.dsl.model import PrimitiveTypeEnum
 from qtype.semantic.model import Flow, Variable
 
 

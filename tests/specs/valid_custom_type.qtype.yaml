@@ -1,16 +1,16 @@
 id: valid_custom_type
 types:
+  - id: Book
+    properties:
+      title: text
+      author: Author # <-- this is a forward reference
+      year: int?
+      tags: "list[text]"
+      published: boolean
   - id: Author
     properties:
       id: int
       name: text
-  - id: Book
-    properties:
-      title: text
-      author: Author
-      tags: "list[text]"
-      published: boolean
-
 flows:
   - id: my_person_flow
     mode: Complete

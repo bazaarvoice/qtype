@@ -4,7 +4,6 @@ import inspect
 from abc import ABC
 from enum import Enum
 from typing import Any, Literal, Type, Union
-from unittest.mock import Base
 
 from pydantic import (
     BaseModel,
@@ -106,7 +105,6 @@ class CustomType(StrictBaseModel):
 
 VariableType = (
     PrimitiveTypeEnum
-    | str
     | Type[Embedding]
     | Type[ChatMessage]
     | Type[ChatContent]
