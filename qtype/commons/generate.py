@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from pydantic_yaml import to_yaml_str
 
 from qtype.converters.tools_from_module import tools_from_module
-from qtype.dsl.model import Model, ModelList, ToolList
+from qtype.dsl.model import Application, Model, ModelList
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +25,19 @@ def _write_yaml_file(data: BaseModel, output_path: str) -> None:
 
 
 def dump_built_in_tools(args: argparse.Namespace) -> None:
-    tools = tools_from_module("qtype.commons.tools")
+    tools, types = tools_from_module("qtype.commons.tools")
     if not tools:
         logger.error("No tools found in the commons library.")
         return
 
-    tool_list = ToolList(root=tools)  # type: ignore
+    doc = Application(
+        id="qtype-common-tools",
+        description="Common Tools for QType",
+        tools=list(tools),
+        types=types,
+    )
     output_path = f"{args.prefix}/tools.qtype.yaml"
-    _write_yaml_file(tool_list, output_path)
+    _write_yaml_file(doc, output_path)
     logging.info(f"Built-in tools exported to {output_path}")
 
 

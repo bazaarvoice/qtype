@@ -19,7 +19,6 @@ class PrimitiveTypeEnum(str, Enum):
     file = "file"
     float = "float"
     image = "image"
-    number = "number"
     text = "text"
     time = "time"
     video = "video"
