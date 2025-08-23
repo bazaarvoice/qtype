@@ -1,20 +1,23 @@
+description: Common Tools for QType
+id: qtype-common-tools
+tools:
 - description: Decode a Base64 string to bytes.
   function_name: base64_decode
   id: qtype.commons.tools.base64_decode
   inputs:
-  - id: data
+  - id: base64_decode.data
     type: text
   module_path: qtype.commons.tools
   name: base64_decode
   outputs:
   - id: qtype.commons.tools.base64_decode.result
-    type: bytes
+    type: file
 - description: Encode bytes to a Base64 string.
   function_name: base64_encode
   id: qtype.commons.tools.base64_encode
   inputs:
-  - id: data
-    type: bytes
+  - id: base64_encode.data
+    type: file
   module_path: qtype.commons.tools
   name: base64_encode
   outputs:
@@ -24,29 +27,22 @@
   function_name: calculate_time_difference
   id: qtype.commons.tools.calculate_time_difference
   inputs:
-  - id: start_time
+  - id: calculate_time_difference.start_time
     type: datetime
-  - id: end_time
+  - id: calculate_time_difference.end_time
     type: datetime
   module_path: qtype.commons.tools
   name: calculate_time_difference
   outputs:
   - id: qtype.commons.tools.calculate_time_difference.result
-    type:
-      days: integer
-      microseconds: integer
-      seconds: integer
-      total_days: number
-      total_hours: number
-      total_minutes: number
-      total_seconds: number
+    type: TimeDifferenceResultType
 - description: Format a timestamp using a custom format string.
   function_name: format_datetime
   id: qtype.commons.tools.format_datetime
   inputs:
-  - id: timestamp
+  - id: format_datetime.timestamp
     type: datetime
-  - id: format_string
+  - id: format_datetime.format_string
     type: text
   module_path: qtype.commons.tools
   name: format_datetime
@@ -65,7 +61,7 @@
   function_name: parse_duration_string
   id: qtype.commons.tools.parse_duration_string
   inputs:
-  - id: duration
+  - id: parse_duration_string.duration
     type: text
   module_path: qtype.commons.tools
   name: parse_duration_string
@@ -76,24 +72,35 @@
   function_name: timedelta
   id: qtype.commons.tools.timedelta
   inputs:
-  - id: timestamp
+  - id: timedelta.timestamp
     type: datetime
-  - id: days
+  - id: timedelta.days
     type: int
-  - id: seconds
+  - id: timedelta.seconds
     type: int
-  - id: microseconds
+  - id: timedelta.microseconds
     type: int
-  - id: milliseconds
+  - id: timedelta.milliseconds
     type: int
-  - id: minutes
+  - id: timedelta.minutes
     type: int
-  - id: hours
+  - id: timedelta.hours
     type: int
-  - id: weeks
+  - id: timedelta.weeks
     type: int
   module_path: qtype.commons.tools
   name: timedelta
   outputs:
   - id: qtype.commons.tools.timedelta.result
     type: datetime
+types:
+- description: Custom type for TimeDifferenceResultType
+  id: TimeDifferenceResultType
+  properties:
+    days: int
+    microseconds: int
+    seconds: int
+    total_days: float
+    total_hours: float
+    total_minutes: float
+    total_seconds: float

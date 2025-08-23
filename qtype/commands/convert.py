@@ -3,6 +3,8 @@ import logging
 
 from pydantic_yaml import to_yaml_str
 
+from qtype.dsl.model import Application
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,12 +19,22 @@ def convert_module(args: argparse.Namespace) -> None:
     from qtype.converters.tools_from_module import tools_from_module
     from qtype.dsl.model import ToolList
 
-    tools = ToolList(tools_from_module(args.module_path))  # type: ignore
+    tools, types = tools_from_module(args.module_path)  # type: ignore
     if not tools:
         raise ValueError(f"No tools found in the module: {args.module_path}")
+    
+    if types:
+        doc = Application(
+            id=args.module_path,
+            description=f"Tools created from Python module {args.module_path}",
+            tools=list(tools),
+            types=types,
+        )
+    else:
+        doc = ToolList(root=list(tools))
 
     if args.output:
-        _write_yaml_file(tools, args.output)
+        _write_yaml_file(doc, args.output)
         logger.info("Resulting yaml written to %s", args.output)
     else:
         logger.info(

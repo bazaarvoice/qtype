@@ -2,7 +2,7 @@ from typing import Any, ForwardRef, Type, Union
 
 from pydantic import BaseModel, create_model
 
-from qtype.converters.types import PRIMITIVE_TO_PYTHON_TYPE
+from qtype.converters.types import PYTHON_TYPE_TO_PRIMITIVE_TYPE
 
 # --- This would be in your interpreter's logic ---
 
@@ -16,8 +16,6 @@ def build_dynamic_types(
     a two-pass approach with ForwardRef.
     """
     created_models: dict[str, Type[BaseModel]] = {}
-
-    PRIMITIVE_MAP = {k.value: v for k, v in PRIMITIVE_TO_PYTHON_TYPE.items()}
 
     def _parse_type_string(type_str: str) -> tuple[Any, bool]:
         """
@@ -33,8 +31,8 @@ def build_dynamic_types(
             inner_type_name = type_str[5:-1]
             inner_type, _ = _parse_type_string(inner_type_name)
             resolved_type = list[inner_type]
-        elif type_str in PRIMITIVE_MAP:
-            resolved_type = PRIMITIVE_MAP[type_str]
+        elif type_str in PYTHON_TYPE_TO_PRIMITIVE_TYPE:
+            resolved_type = PYTHON_TYPE_TO_PRIMITIVE_TYPE[type_str]
         elif type_str in created_models:
             resolved_type = created_models[type_str]
         else:
