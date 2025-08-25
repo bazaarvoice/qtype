@@ -42,7 +42,7 @@ jobs:
       - name: Rewrite AbsolutePaths
         working-directory: qtype/interpreter/ui
         run: |
-          perl -p -i -e 's@https://rewriteme@.@g' $(find . )
+          perl -p -i -e 's@https://rewriteme@\.@g' $(find . )
 
       - name: Check for changes
         id: check_changes
