@@ -26,7 +26,11 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'ui/package-lock.json'
-      
+
+      - name: Clean previous UI
+        run: |
+          rm -rf qtype/interpreter/ui/*
+
       - name: Install dependencies and build
         working-directory: ui
         run: |
@@ -35,6 +39,11 @@ jobs:
         env:
           NODE_ENV: production
       
+      - name: Rewrite AbsolutePaths
+        working-directory: qtype/interpreter/ui
+        run: |
+          find . -type f -exec sed -i 's|https://REWRITEME|.|g' {} +
+
       - name: Check for changes
         id: check_changes
         run: |
