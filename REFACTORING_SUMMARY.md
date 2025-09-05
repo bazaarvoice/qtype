@@ -166,7 +166,12 @@ qtype/
 ├── application/             # ✅ NEW: Application orchestration
 │   ├── __init__.py
 │   ├── facade.py
-│   └── services.py
+│   ├── services.py
+│   └── converters/          # ✅ MOVED: Format converters
+│       ├── __init__.py
+│       ├── tools_from_api.py
+│       ├── tools_from_module.py
+│       └── types.py
 ├── commands/                # ✅ REFACTORED: Simplified commands
 │   ├── convert.py
 │   ├── run.py
@@ -176,7 +181,6 @@ qtype/
 │   └── __init__.py          # Updated exports
 ├── semantic/                # ✅ ENHANCED: Now handles validation
 ├── interpreter/             # ✅ UNCHANGED: Execution engine
-├── converters/              # ✅ UNCHANGED: Format converters
 └── commons/                 # ✅ UNCHANGED: Legacy utilities
 ```
 

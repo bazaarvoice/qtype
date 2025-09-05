@@ -4,7 +4,7 @@ import logging
 from pydantic import BaseModel
 from pydantic_yaml import to_yaml_str
 
-from qtype.converters.tools_from_module import tools_from_module
+from qtype.application.converters.tools_from_module import tools_from_module
 from qtype.dsl.model import Application, Model, ModelList
 
 logger = logging.getLogger(__name__)

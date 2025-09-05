@@ -20,7 +20,9 @@ def convert_api(args: argparse.Namespace) -> None:
 
 def convert_module(args: argparse.Namespace) -> None:
     """Convert Python module tools to qtype format."""
-    from qtype.converters.tools_from_module import tools_from_module
+    from qtype.application.converters.tools_from_module import (
+        tools_from_module,
+    )
     from qtype.dsl.model import Application, ToolList
 
     try:

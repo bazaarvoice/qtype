@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from pydantic import BaseModel
 
-from qtype.converters.tools_from_module import (
+from qtype.application.converters.tools_from_module import (
     _create_tool_from_function,
     _get_module_functions,
     _map_python_type_to_type_str,

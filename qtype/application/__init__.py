@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from . import converters
 from .facade import QTypeFacade
 from .services import (
     ConversionService,
@@ -16,4 +17,5 @@ __all__ = [
     "GenerationService",
     "ValidationService",
     "VisualizationService",
+    "converters",
 ]
