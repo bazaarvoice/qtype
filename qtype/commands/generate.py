@@ -10,9 +10,66 @@ logger = logging.getLogger(__name__)
 
 
 def run_dump_commons_library(args: argparse.Namespace) -> None:
-    from qtype.commons.generate import dump_commons_library
+    """Generate commons library tools and AWS Bedrock models."""
+    import logging
+    from pathlib import Path
 
-    dump_commons_library(args)
+    from qtype.application.facade import QTypeFacade
+    from qtype.application.services import ModelDiscoveryService
+    from qtype.dsl.model import Model, ModelList
+
+    logger = logging.getLogger(__name__)
+    facade = QTypeFacade()
+
+    try:
+        # Generate common tools using convert module functionality
+        logger.info("Generating common tools...")
+
+        # Create a mock args object for convert_module
+        import argparse
+
+        from qtype.commands.convert import convert_module
+
+        convert_args = argparse.Namespace(
+            module_path="qtype.application.commons.tools",
+            output=f"{args.prefix}/tools.qtype.yaml",
+        )
+        convert_module(convert_args)
+
+        # Generate AWS Bedrock models
+        logger.info("Generating AWS Bedrock models...")
+        try:
+            model_service = ModelDiscoveryService()
+            model_definitions = model_service.generate_aws_bedrock_models()
+
+            model_list = ModelList(
+                root=[
+                    Model(
+                        id=model_def["id"],
+                        provider=model_def["provider"],
+                    )
+                    for model_def in model_definitions
+                ]
+            )
+
+            # Convert to YAML and save
+            content = facade.convert_document(model_list)
+            output_path = Path(f"{args.prefix}/aws.bedrock.models.qtype.yaml")
+            output_path.write_text(content, encoding="utf-8")
+            logger.info(f"AWS Bedrock models exported to {output_path}")
+
+        except ImportError:
+            logger.warning(
+                "boto3 not available. Skipping AWS Bedrock model generation."
+            )
+        except Exception as e:
+            logger.error(f"Failed to generate AWS Bedrock models: {e}")
+
+        logger.info("Commons library generation complete.")
+
+    except Exception as e:
+        logger.error(f"Failed to generate commons library: {e}")
+        raise
 
 
 def run_generate_documentation(args: argparse.Namespace) -> None:

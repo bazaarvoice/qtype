@@ -215,3 +215,55 @@ class ExecutionService:
             from qtype.base.exceptions import InterpreterError
 
             raise InterpreterError(f"Workflow execution failed: {e}") from e
+
+
+class ModelDiscoveryService:
+    """Service for discovering and generating model definitions."""
+
+    def __init__(self) -> None:
+        """Initialize the model discovery service."""
+        pass
+
+    def generate_aws_bedrock_models(self) -> list[dict[str, Any]]:
+        """
+        Generate AWS Bedrock model definitions.
+
+        Returns:
+            List of model definitions for AWS Bedrock models.
+
+        Raises:
+            ImportError: If boto3 is not installed.
+            Exception: If AWS API call fails.
+        """
+        try:
+            import boto3
+
+            logger.info("Discovering AWS Bedrock models...")
+            client = boto3.client("bedrock")
+            models = client.list_foundation_models()
+
+            model_definitions = []
+            for model_summary in models.get("modelSummaries", []):
+                model_definitions.append(
+                    {
+                        "id": model_summary["modelId"],
+                        "provider": "aws-bedrock",
+                    }
+                )
+
+            logger.info(
+                f"Discovered {len(model_definitions)} AWS Bedrock models"
+            )
+            return model_definitions
+
+        except ImportError as e:
+            logger.error(
+                "boto3 is not installed. Please install it to use AWS Bedrock model discovery."
+            )
+            raise ImportError(
+                "boto3 is required for AWS Bedrock model discovery"
+            ) from e
+
+        except Exception as e:
+            logger.error(f"Failed to discover AWS Bedrock models: {e}")
+            raise
