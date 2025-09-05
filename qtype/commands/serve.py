@@ -10,7 +10,7 @@ from typing import Any
 
 import uvicorn
 
-from qtype.commands.run import _telemetry
+# from qtype.commands.run import _telemetry
 from qtype.loader import load
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def serve(args: Any) -> None:
         .title()
     )
 
-    _telemetry(spec)
+    # _telemetry(spec)
     api_executor = APIExecutor(spec)
     fastapi_app = api_executor.create_app(
         name=name, ui_enabled=not args.disable_ui

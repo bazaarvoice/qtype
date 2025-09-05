@@ -5,46 +5,15 @@ Command-line interface for running QType YAML spec files.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+from pathlib import Path
 from typing import Any
 
-from qtype.dsl.domain_types import ChatMessage
-from qtype.interpreter.flow import execute_flow
-from qtype.interpreter.typing import create_input_type_model
-from qtype.loader import load
-from qtype.semantic.model import Application, Flow, Step
+from qtype.application.facade import QTypeFacade
+from qtype.base.exceptions import InterpreterError, LoadError, ValidationError
 
 logger = logging.getLogger(__name__)
-
-
-def _get_flow(app: Application, flow_id: str | None) -> Flow:
-    if len(app.flows) == 0:
-        raise ValueError(
-            "No flows found in the application."
-            " Please ensure the spec contains at least one flow."
-        )
-
-    if flow_id is not None:
-        # find the first flow in the list with the given flow_id
-        flow = next((f for f in app.flows if f.id == flow_id), None)
-        if flow is None:
-            raise ValueError(f"Flow not found: {flow_id}")
-
-    else:
-        flow = app.flows[0]
-
-    return flow
-
-
-def _telemetry(spec: Application) -> None:
-    if spec.telemetry:
-        logger.info(
-            f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
-        )
-        # Register telemetry if needed
-        from qtype.interpreter.telemetry import register
-
-        register(spec.telemetry, spec.id)
 
 
 def run_flow(args: Any) -> None:
@@ -53,45 +22,51 @@ def run_flow(args: Any) -> None:
     Args:
         args: Arguments passed from the command line or calling context.
     """
-    spec, _ = load(args.spec)
+    facade = QTypeFacade()
+    spec_path = Path(args.spec)
 
-    flow = _get_flow(spec, args.flow)
-    logger.info(f"Executing flow: {flow.id}")
-    input_type = create_input_type_model(flow)
-    inputs = input_type.model_validate_json(args.input)
-    for var in flow.inputs:
-        # Get the value from the request using the variable ID
-        inputs_dict = inputs.model_dump()  # type: ignore
-        if var.id in inputs_dict:
-            var.value = getattr(inputs, var.id)
-    _telemetry(spec)
+    try:
+        logger.info(f"Running flow from {spec_path}")
 
-    was_streamed = False
-    previous: str = ""
+        # Parse input JSON
+        try:
+            input_data = json.loads(args.input) if args.input else {}
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Invalid JSON input: {e}")
+            return
 
-    def stream_fn(step: Step, msg: ChatMessage | str) -> None:
-        """Stream function to handle step outputs."""
-        nonlocal was_streamed, previous
-        if step == flow.steps[-1]:
-            was_streamed = True
-            if isinstance(msg, ChatMessage):
-                content = " ".join(
-                    [m.content for m in msg.blocks if m.content]
-                )
-                # Note: streaming chat messages accumulate the content...
-                content = content.removeprefix(previous)
-                print(content, end="", flush=True)
-                previous += content
-            else:
-                print(msg, end="", flush=True)
-
-    result = execute_flow(flow, stream_fn=stream_fn)  # type: ignore
-    if not was_streamed:
-        logger.info(
-            f"Flow execution result: {', '.join([f'{var.id}: {var.value}' for var in result])}"
+        # Execute the workflow using the facade
+        result = facade.execute_workflow(
+            spec_path, flow_name=args.flow, **input_data
         )
-    else:
-        print("\n")
+
+        logger.info("✅ Flow execution completed successfully")
+
+        # Print results
+        if result:
+            if hasattr(result, "__iter__") and not isinstance(result, str):
+                # If result is a list of variables or similar
+                try:
+                    for item in result:
+                        if hasattr(item, "id") and hasattr(item, "value"):
+                            logger.info(f"Output {item.id}: {item.value}")
+                        else:
+                            logger.info(f"Result: {item}")
+                except TypeError:
+                    logger.info(f"Result: {result}")
+            else:
+                logger.info(f"Result: {result}")
+        else:
+            logger.info("Flow completed with no output")
+
+    except LoadError as e:
+        logger.error(f"❌ Failed to load document: {e}")
+    except ValidationError as e:
+        logger.error(f"❌ Validation failed: {e}")
+    except InterpreterError as e:
+        logger.error(f"❌ Execution failed: {e}")
+    except Exception as e:
+        logger.error(f"❌ Unexpected error: {e}")
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
@@ -113,11 +88,11 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     cmd_parser.add_argument(
         "input",
         type=str,
-        help="JSON blob of input values for the flow.",
+        nargs="?",
+        default="{}",
+        help="JSON blob of input values for the flow (default: {}).",
     )
-
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
     )
-
     cmd_parser.set_defaults(func=run_flow)

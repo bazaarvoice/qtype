@@ -1,0 +1,240 @@
+flowchart TD
+    %% Root level files
+    subgraph root ["qtype/"]
+        A["qtype/__init__.py"]
+        B["qtype/cli.py"]
+        C["qtype/loader.py"]
+    end
+
+    %% Base utilities subgraph
+    subgraph base ["qtype/base/"]
+        BASE1["qtype/base/__init__.py"]
+        BASE2["qtype/base/exceptions.py"]
+        BASE3["qtype/base/logging.py"]
+        BASE4["qtype/base/types.py"]
+    end
+
+    %% Application layer subgraph
+    subgraph application ["qtype/application/"]
+        APP1["qtype/application/__init__.py"]
+        APP2["qtype/application/facade.py"]
+        APP3["qtype/application/services.py"]
+    end
+
+    %% Commands subgraph
+    subgraph commands ["qtype/commands/"]
+        D["qtype/commands/__init__.py"]
+        E["qtype/commands/convert.py"]
+        F["qtype/commands/generate.py"]
+        G["qtype/commands/run.py"]
+        H["qtype/commands/serve.py"]
+        I["qtype/commands/validate.py"]
+        J["qtype/commands/visualize.py"]
+    end
+
+    %% Commons subgraph
+    subgraph commons ["qtype/commons/"]
+        K["qtype/commons/__init__.py"]
+        L["qtype/commons/generate.py"]
+        M["qtype/commons/tools.py"]
+    end
+
+    %% Converters subgraph
+    subgraph converters ["qtype/converters/"]
+        N["qtype/converters/__init__.py"]
+        O["qtype/converters/tools_from_api.py"]
+        P["qtype/converters/tools_from_module.py"]
+        Q["qtype/converters/types.py"]
+    end
+
+    %% DSL subgraph
+    subgraph dsl ["qtype/dsl/"]
+        R["qtype/dsl/__init__.py"]
+        S["qtype/dsl/base_types.py"]
+        T["qtype/dsl/custom_types.py"]
+        U["qtype/dsl/document.py"]
+        V["qtype/dsl/domain_types.py"]
+        W["qtype/dsl/model.py"]
+        X["qtype/dsl/validator.py"]
+    end
+
+    %% Interpreter subgraph
+    subgraph interpreter ["qtype/interpreter/"]
+        Y["qtype/interpreter/__init__.py"]
+        Z["qtype/interpreter/api.py"]
+        AA["qtype/interpreter/conversions.py"]
+        BB["qtype/interpreter/exceptions.py"]
+        CC["qtype/interpreter/flow.py"]
+        DD["qtype/interpreter/resource_cache.py"]
+        EE["qtype/interpreter/step.py"]
+        FF["qtype/interpreter/streaming_helpers.py"]
+        GG["qtype/interpreter/telemetry.py"]
+        HH["qtype/interpreter/typing.py"]
+    end
+
+    %% Interpreter chat subgraph
+    subgraph chat ["qtype/interpreter/chat/"]
+        II["qtype/interpreter/chat/chat_api.py"]
+        JJ["qtype/interpreter/chat/file_conversions.py"]
+        KK["qtype/interpreter/chat/vercel.py"]
+    end
+
+    %% Interpreter steps subgraph
+    subgraph steps ["qtype/interpreter/steps/"]
+        LL["qtype/interpreter/steps/__init__.py"]
+        MM["qtype/interpreter/steps/agent.py"]
+        NN["qtype/interpreter/steps/condition.py"]
+        OO["qtype/interpreter/steps/decoder.py"]
+        PP["qtype/interpreter/steps/llm_inference.py"]
+        QQ["qtype/interpreter/steps/prompt_template.py"]
+        RR["qtype/interpreter/steps/search.py"]
+        SS["qtype/interpreter/steps/tool.py"]
+    end
+
+    %% Semantic subgraph
+    subgraph semantic ["qtype/semantic/"]
+        TT["qtype/semantic/__init__.py"]
+        UU["qtype/semantic/base_types.py"]
+        VV["qtype/semantic/errors.py"]
+        WW["qtype/semantic/generate.py"]
+        XX["qtype/semantic/model.py"]
+        YY["qtype/semantic/resolver.py"]
+        ZZ["qtype/semantic/visualize.py"]
+    end
+
+    %% NEW ARCHITECTURE DEPENDENCIES
+
+    %% Application layer dependencies
+    APP1 --> APP2
+    APP1 --> APP3
+    APP2 --> APP3
+    APP2 --> BASE2
+    APP2 --> BASE3
+    APP2 --> BASE4
+    APP2 --> W
+    APP2 --> XX
+    APP3 --> BASE2
+    APP3 --> BASE3
+    APP3 --> W
+    APP3 --> XX
+
+    %% Commands now only depend on application layer
+    I --> APP2
+    I --> BASE2
+    G --> APP2
+    G --> BASE2
+    J --> APP2
+    J --> BASE2
+    E --> APP2
+    E --> BASE2
+
+    %% Base utilities (no dependencies on other qtype modules)
+    BASE1 --> BASE2
+    BASE1 --> BASE3
+    BASE1 --> BASE4
+
+    %% Application services access other layers (encapsulated)
+    APP3 --> C
+    APP3 --> X
+    APP3 --> YY
+    APP3 --> CC
+
+    %% Original dependencies still exist (but accessed through application layer)
+    C --> W
+    C --> T
+    C --> X
+    C --> XX
+    C --> YY
+
+    %% Dependencies within DSL (cleaned up)
+    R --> W
+    R --> S
+    R --> V
+    T --> Q
+    U --> W
+    U --> S
+    V --> S
+    W --> V
+    W --> S
+    X --> S
+    X --> V
+    X --> W
+
+    %% Dependencies from semantic (validation moved here)
+    XX --> W
+    YY --> V
+    YY --> W
+    YY --> X
+    YY --> XX
+    YY --> VV
+    ZZ --> W
+    ZZ --> XX
+    WW --> W
+    WW --> X
+
+    %% Dependencies from converters
+    P --> Q
+    P --> S
+    P --> W
+    O --> W
+    Q --> S
+
+    %% Dependencies from commons (legacy)
+    L --> P
+    L --> W
+
+    %% Dependencies from interpreter
+    HH --> Q
+    HH --> W
+    HH --> XX
+    AA --> S
+    AA --> V
+    AA --> W
+    AA --> BB
+    AA --> DD
+    AA --> XX
+    CC --> BB
+    CC --> EE
+    CC --> XX
+    EE --> BB
+    EE --> LL
+    EE --> XX
+    Z --> CC
+    Z --> HH
+    Z --> XX
+    GG --> XX
+    FF --> V
+    FF --> XX
+
+    %% Dependencies from interpreter/steps
+    QQ --> BB
+    QQ --> XX
+    SS --> BB
+    SS --> XX
+    RR --> XX
+    PP --> V
+    PP --> AA
+    PP --> BB
+    PP --> XX
+    OO --> W
+    OO --> XX
+    NN --> XX
+    MM --> V
+    MM --> AA
+    MM --> BB
+    MM --> XX
+
+    %% Dependencies from interpreter/chat
+    JJ --> S
+    JJ --> V
+    II --> S
+    II --> V
+    II --> JJ
+    II --> KK
+    II --> CC
+    II --> FF
+    II --> XX
+
+    %% Styling for new components
+    classDef newComponent fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    class APP1,APP2,APP3,BASE1,BASE2,BASE3,BASE4 newComponent
