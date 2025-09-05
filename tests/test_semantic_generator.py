@@ -54,7 +54,7 @@ def test_generate_semantic_model_matches_existing():
         normalized_existing = normalize_python_code(existing_content)
 
         # Compare the normalized contents
-        assert normalized_generated == normalized_existing, (
+        assert generated_content == existing_content, (
             "Generated semantic model does not functionally match existing model.py. "
             f"Generated file: {output_file}, "
             f"Existing file: {existing_model_path}"
