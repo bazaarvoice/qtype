@@ -114,7 +114,7 @@ class ConversionService:
         """Convert document to YAML format."""
         from pydantic_yaml import to_yaml_str
 
-        return to_yaml_str(document)
+        return to_yaml_str(document, exclude_unset=True, exclude_none=True)
 
 
 class GenerationService:

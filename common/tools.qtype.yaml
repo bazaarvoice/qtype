@@ -1,76 +1,76 @@
-description: Common Tools for QType
-id: qtype-common-tools
+description: Tools created from Python module qtype.application.commons.tools
+id: qtype.application.commons.tools
 tools:
 - description: Decode a Base64 string to bytes.
   function_name: base64_decode
-  id: qtype.commons.tools.base64_decode
+  id: qtype.application.commons.tools.base64_decode
   inputs:
   - id: base64_decode.data
     type: text
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: base64_decode
   outputs:
-  - id: qtype.commons.tools.base64_decode.result
+  - id: qtype.application.commons.tools.base64_decode.result
     type: file
 - description: Encode bytes to a Base64 string.
   function_name: base64_encode
-  id: qtype.commons.tools.base64_encode
+  id: qtype.application.commons.tools.base64_encode
   inputs:
   - id: base64_encode.data
     type: file
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: base64_encode
   outputs:
-  - id: qtype.commons.tools.base64_encode.result
+  - id: qtype.application.commons.tools.base64_encode.result
     type: text
 - description: Calculate the difference between two timestamps.
   function_name: calculate_time_difference
-  id: qtype.commons.tools.calculate_time_difference
+  id: qtype.application.commons.tools.calculate_time_difference
   inputs:
   - id: calculate_time_difference.start_time
     type: datetime
   - id: calculate_time_difference.end_time
     type: datetime
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: calculate_time_difference
   outputs:
-  - id: qtype.commons.tools.calculate_time_difference.result
+  - id: qtype.application.commons.tools.calculate_time_difference.result
     type: TimeDifferenceResultType
 - description: Format a timestamp using a custom format string.
   function_name: format_datetime
-  id: qtype.commons.tools.format_datetime
+  id: qtype.application.commons.tools.format_datetime
   inputs:
   - id: format_datetime.timestamp
     type: datetime
   - id: format_datetime.format_string
     type: text
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: format_datetime
   outputs:
-  - id: qtype.commons.tools.format_datetime.result
+  - id: qtype.application.commons.tools.format_datetime.result
     type: text
 - description: Get the current UTC timestamp.
   function_name: get_current_timestamp
-  id: qtype.commons.tools.get_current_timestamp
-  module_path: qtype.commons.tools
+  id: qtype.application.commons.tools.get_current_timestamp
+  module_path: qtype.application.commons.tools
   name: get_current_timestamp
   outputs:
-  - id: qtype.commons.tools.get_current_timestamp.result
+  - id: qtype.application.commons.tools.get_current_timestamp.result
     type: datetime
 - description: Parse a human-readable duration string into seconds.
   function_name: parse_duration_string
-  id: qtype.commons.tools.parse_duration_string
+  id: qtype.application.commons.tools.parse_duration_string
   inputs:
   - id: parse_duration_string.duration
     type: text
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: parse_duration_string
   outputs:
-  - id: qtype.commons.tools.parse_duration_string.result
+  - id: qtype.application.commons.tools.parse_duration_string.result
     type: int
 - description: Add a specified amount of time from a given timestamp.
   function_name: timedelta
-  id: qtype.commons.tools.timedelta
+  id: qtype.application.commons.tools.timedelta
   inputs:
   - id: timedelta.timestamp
     type: datetime
@@ -88,10 +88,10 @@ tools:
     type: int
   - id: timedelta.weeks
     type: int
-  module_path: qtype.commons.tools
+  module_path: qtype.application.commons.tools
   name: timedelta
   outputs:
-  - id: qtype.commons.tools.timedelta.result
+  - id: qtype.application.commons.tools.timedelta.result
     type: datetime
 types:
 - description: Custom type for TimeDifferenceResultType
