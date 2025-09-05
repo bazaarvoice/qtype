@@ -40,9 +40,6 @@ auths:
     type: api_key
     api_key: "secret-key"
     host: "https://api.example.com"
-    scopes:
-      - "read"
-    token_url: "https://api.example.com/token"
 tools:
   - id: tool1
     name: "Test Tool"

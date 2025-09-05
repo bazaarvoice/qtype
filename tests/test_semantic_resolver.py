@@ -56,8 +56,6 @@ def test_resolver_full_application() -> None:
     assert auth.type == "api_key"
     assert auth.api_key == "secret-key"
     assert auth.host == "https://api.example.com"
-    assert "read" in auth.scopes
-    assert auth.token_url == "https://api.example.com/token"
     # Tools
     assert len(ir_app.tools) == 1
     tool = ir_app.tools[0]
