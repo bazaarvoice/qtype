@@ -22,7 +22,7 @@ def convert_module(args: argparse.Namespace) -> None:
     tools, types = tools_from_module(args.module_path)  # type: ignore
     if not tools:
         raise ValueError(f"No tools found in the module: {args.module_path}")
-    
+
     if types:
         doc = Application(
             id=args.module_path,

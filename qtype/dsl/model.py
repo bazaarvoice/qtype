@@ -14,7 +14,11 @@ from pydantic import (
 )
 
 import qtype.dsl.domain_types as domain_types
-from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
+from qtype.dsl.base_types import (
+    PrimitiveTypeEnum,
+    StepCardinality,
+    StrictBaseModel,
+)
 from qtype.dsl.domain_types import ChatContent, ChatMessage, Embedding
 
 
@@ -172,6 +176,10 @@ class Step(StrictBaseModel, ABC):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
+    cardinality: StepCardinality = Field(
+        default=StepCardinality.one,
+        description="Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?",
+    )
     inputs: list[Variable | str] | None = Field(
         default=None,
         description="Input variables required by this step.",
@@ -481,6 +489,52 @@ class Application(StrictBaseModel):
 
 
 #
+# ---------------- Data Pipeline Components ----------------
+#
+
+
+class Source(Step):
+    """Base class for data sources"""
+
+    id: str = Field(..., description="Unique ID of the data source.")
+    cardinality: Literal[StepCardinality.many] = Field(
+        default=StepCardinality.many,
+        description="Sources always emit 0...N instances of the outputs.",
+    )
+
+
+class SQLSource(Source):
+    """SQL database source that executes queries and emits rows."""
+
+    query: str = Field(..., description="SQL query to execute.")
+    connection: str = Field(
+        ...,
+        description="Database connection string or reference to auth provider.",
+    )
+    auth: AuthorizationProvider | str | None = Field(
+        default=None,
+        description="Optional AuthorizationProvider for database authentication.",
+    )
+
+    @model_validator(mode="after")
+    def validate_sql_source(self) -> "SQLSource":
+        """Validate SQL source configuration."""
+        if self.outputs is None:
+            raise ValueError(
+                "SQLSource must define output variables that match the result columns."
+            )
+        return self
+
+
+class Sink(Step):
+    """Base class for data sinks"""
+
+    id: str = Field(..., description="Unique ID of the data sink.")
+    # Remove cardinality field - it's always one for sinks
+    # ...existing code...
+
+
+#
 # ---------------- Retrieval Augmented Generation Components ----------------
 #
 
@@ -539,7 +593,7 @@ class VectorSearch(Search):
         """Set default input and output variables if none provided."""
         if self.inputs is None:
             self.inputs = [
-                Variable(id="top_k", type=PrimitiveTypeEnum.number),
+                Variable(id="top_k", type=PrimitiveTypeEnum.int),
                 Variable(id="query", type=PrimitiveTypeEnum.text),
             ]
 
@@ -570,6 +624,9 @@ ToolType = Union[
     PythonFunctionTool,
 ]
 
+# Create a union type for all source types
+SourceType = Union[SQLSource,]
+
 # Create a union type for all step types
 StepType = Union[
     Agent,
@@ -581,6 +638,7 @@ StepType = Union[
     LLMInference,
     PromptTemplate,
     PythonFunctionTool,
+    SQLSource,
     VectorSearch,
 ]
 

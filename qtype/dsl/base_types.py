@@ -24,6 +24,13 @@ class PrimitiveTypeEnum(str, Enum):
     video = "video"
 
 
+class StepCardinality(str, Enum):
+    """Does this step emit 1 (one) or 0...N (many) items?"""
+
+    one = "one"
+    many = "many"
+
+
 class StrictBaseModel(BaseModel):
     """Base model with extra fields forbidden."""
 
