@@ -118,7 +118,9 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write(
             "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"
         )
-        f.write("from qtype.semantic.base_types import ImmutableModel\n")
+        f.write(
+            "from qtype.semantic.base_types import ImmutableModel, StepCardinality\n"
+        )
 
         # Write the new variable class
         f.write("class Variable(DSLVariable, BaseModel):\n")
