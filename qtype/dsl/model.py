@@ -764,35 +764,24 @@ class VariableList(RootModel[list[Variable]]):
     root: list[Variable]
 
 
-class Document(
-    RootModel[
-        Union[
-            Agent,
-            Application,
-            AuthorizationProviderList,
-            Flow,
-            IndexList,
-            ModelList,
-            ToolList,
-            TypeList,
-            VariableList,
-        ]
-    ]
-):
+DocumentType = Union[
+    Agent,
+    Application,
+    AuthorizationProviderList,
+    Flow,
+    IndexList,
+    ModelList,
+    ToolList,
+    TypeList,
+    VariableList,
+]
+
+
+class Document(RootModel[DocumentType]):
     """Schema for any valid QType document structure.
 
     This allows validation of standalone lists of components, individual components,
     or full QType application specs. Supports modular composition and reuse.
     """
 
-    root: Union[
-        Agent,
-        Application,
-        AuthorizationProviderList,
-        Flow,
-        IndexList,
-        ModelList,
-        ToolList,
-        TypeList,
-        VariableList,
-    ]
+    root: DocumentType

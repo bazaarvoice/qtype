@@ -8,6 +8,7 @@ from typing import Any
 from qtype.base.exceptions import LoadError, ValidationError
 from qtype.base.logging import get_logger
 from qtype.dsl.model import Application as DSLApplication
+from qtype.dsl.model import DocumentType
 from qtype.semantic.model import Application as SemanticApplication
 
 logger = get_logger("application.services")
@@ -109,23 +110,11 @@ class ConversionService:
         """Initialize the conversion service."""
         pass
 
-    def convert_to_yaml(self, document: DSLApplication) -> str:
+    def convert_to_yaml(self, document: DocumentType) -> str:
         """Convert document to YAML format."""
-        try:
-            from pydantic_yaml import to_yaml_str
+        from pydantic_yaml import to_yaml_str
 
-            return to_yaml_str(document)
-        except ImportError:
-            # Fallback to standard yaml if pydantic_yaml not available
-            import yaml
-
-            return yaml.dump(document.model_dump(), default_flow_style=False)
-
-    def convert_to_json(self, document: DSLApplication) -> str:
-        """Convert document to JSON format."""
-        import json
-
-        return json.dumps(document.model_dump(), indent=2)
+        return to_yaml_str(document)
 
 
 class GenerationService:

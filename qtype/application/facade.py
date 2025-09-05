@@ -9,6 +9,7 @@ from qtype.base.exceptions import LoadError, ValidationError
 from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
 from qtype.dsl.model import Application as DSLApplication
+from qtype.dsl.model import Document
 from qtype.semantic.model import Application as SemanticApplication
 
 from .services import (
@@ -174,7 +175,7 @@ class QTypeFacade:
 
         Args:
             path: Path to the qtype document
-            target_format: Target format ('yaml', 'json')
+            target_format: Target format ('yaml' only)
 
         Returns:
             The converted document as a string
@@ -187,9 +188,9 @@ class QTypeFacade:
             document = self.load_and_validate(path)
 
             if target_format.lower() == "yaml":
-                return self._conversion_service.convert_to_yaml(document)
-            elif target_format.lower() == "json":
-                return self._conversion_service.convert_to_json(document)
+                # Wrap Application in Document for conversion
+                doc = Document(root=document)
+                return self._conversion_service.convert_to_yaml(doc)
             else:
                 raise ValueError(f"Unsupported format: {target_format}")
 
@@ -265,13 +266,11 @@ class QTypeFacade:
             document, flow_name, **kwargs
         )
 
-    def convert_document(
-        self, document: DSLApplication, target_format: str
-    ) -> str:
-        """Convert an already-loaded document to a different format."""
-        if target_format.lower() == "yaml":
-            return self._conversion_service.convert_to_yaml(document)
-        elif target_format.lower() == "json":
-            return self._conversion_service.convert_to_json(document)
+    def convert_document(self, document: Document | DSLApplication) -> str:
+        """Convert a document to YAML format."""
+        # If it's an Application, wrap it in a Document
+        if isinstance(document, DSLApplication):
+            doc = Document(root=document)
         else:
-            raise ValueError(f"Unsupported format: {target_format}")
+            doc = document
+        return self._conversion_service.convert_to_yaml(doc)
