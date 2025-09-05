@@ -73,7 +73,7 @@ def run_dump_commons_library(args: argparse.Namespace) -> None:
 
 
 def run_generate_documentation(args: argparse.Namespace) -> None:
-    from qtype.dsl.document import generate_documentation
+    from qtype.application.documentation import generate_documentation
 
     generate_documentation(Path(args.output))
 

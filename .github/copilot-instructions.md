@@ -1,3 +1,42 @@
+# Project Info
+
+## Architecture Layers
+
+The architecture establishes clear layers with controlled dependencies:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     CLI Commands                            │ 
+│                 (validate, run, etc.)                       │
+├─────────────────────────────────────────────────────────────┤
+│                  Application Facade                         │
+│               (QTypeFacade + Services)                      │
+├─────────────────────────────────────────────────────────────┤
+│                    Interpreter                              │
+│                 (execution engine)                          │
+├─────────────────────────────────────────────────────────────┤
+│                     Semantic                                │
+│              (processing & validation)                      │
+├─────────────────────────────────────────────────────────────┤
+│                       DSL                                   │
+│                  (core models)                              │
+├─────────────────────────────────────────────────────────────┤
+│                   Base/Commons                              │
+│                (shared utilities)                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Dependency Flow Rules
+
+1. **Commands** only import from Application layer
+2. **Application** orchestrates DSL, Semantic, and Interpreter layers
+3. **Interpreter** depends on Semantic models
+4. **Semantic** depends on DSL models and validates them
+5. **DSL** contains only core data models
+6. **Base** provides utilities to all layers
+
+
+
 # GitHub Copilot Instructions
  All Python code generated for this repository *must*:
     - Follow PEP8 style guidelines (https://peps.python.org/pep-0008/)
