@@ -1,17 +1,18 @@
 """
-Command-line interface for running QType YAML spec files.
+Command-line interface for serving QType YAML spec files as web APIs.
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 from typing import Any
 
 import uvicorn
 
-# from qtype.commands.run import _telemetry
-from qtype.loader import load
+from qtype.application.facade import QTypeFacade
+from qtype.base.exceptions import LoadError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -22,31 +23,47 @@ def serve(args: Any) -> None:
     Args:
         args: Arguments passed from the command line or calling context.
     """
-    spec, _ = load(args.spec)
-    logger.info(f"Running API for spec: {args.spec}")
-    from qtype.interpreter.api import APIExecutor
+    facade = QTypeFacade()
 
-    # Get the name from the spec filename.
-    # so if filename is tests/specs/full_application_test.qtype.yaml, name should be "Full Application Test"
-    name = (
-        args.spec.split("/")[-1]
-        .replace(".qtype.yaml", "")
-        .replace("_", " ")
-        .title()
-    )
+    try:
+        # Use facade to load and validate the document
+        spec_path = Path(args.spec)
+        logger.info(f"Loading and validating spec: {spec_path}")
 
-    # _telemetry(spec)
-    api_executor = APIExecutor(spec)
-    fastapi_app = api_executor.create_app(
-        name=name, ui_enabled=not args.disable_ui
-    )
+        semantic_model = facade.load_semantic_model(spec_path)
+        logger.info(f"✅ Successfully loaded spec: {spec_path}")
 
-    uvicorn.run(
-        fastapi_app,
-        host=args.host,
-        port=args.port,
-        log_level="info",
-    )
+        # Import APIExecutor and create the FastAPI app
+        from qtype.interpreter.api import APIExecutor
+
+        # Get the name from the spec filename
+        name = (
+            spec_path.name.replace(".qtype.yaml", "").replace("_", " ").title()
+        )
+
+        logger.info(f"Starting server for: {name}")
+        api_executor = APIExecutor(semantic_model)
+        fastapi_app = api_executor.create_app(
+            name=name, ui_enabled=not args.disable_ui
+        )
+
+        # Start the server
+        uvicorn.run(
+            fastapi_app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+        )
+
+    except LoadError as e:
+        logger.error(f"❌ Failed to load document: {e}")
+        exit(1)
+    except ValidationError as e:
+        logger.error(f"❌ Validation failed: {e}")
+        exit(1)
+    except Exception as e:
+        logger.error(f"❌ Unexpected error starting server: {e}")
+        exit(1)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
