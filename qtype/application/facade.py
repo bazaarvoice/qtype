@@ -9,7 +9,7 @@ from qtype.base.exceptions import LoadError, ValidationError
 from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
 from qtype.dsl.model import Application as DSLApplication
-from qtype.dsl.model import Document
+from qtype.dsl.model import DocumentType
 from qtype.semantic.model import Application as SemanticApplication
 
 from .services import (
@@ -169,38 +169,6 @@ class QTypeFacade:
         except Exception as e:
             raise LoadError(f"Failed to validate {path}: {e}") from e
 
-    def convert_to_format(self, path: PathLike, target_format: str) -> str:
-        """
-        Convert document to different formats.
-
-        Args:
-            path: Path to the qtype document
-            target_format: Target format ('yaml' only)
-
-        Returns:
-            The converted document as a string
-
-        Raises:
-            LoadError: If loading fails
-            ValueError: If format is not supported
-        """
-        try:
-            document = self.load_and_validate(path)
-
-            if target_format.lower() == "yaml":
-                # Wrap Application in Document for conversion
-                doc = Document(root=document)
-                return self._conversion_service.convert_to_yaml(doc)
-            else:
-                raise ValueError(f"Unsupported format: {target_format}")
-
-        except Exception as e:
-            if isinstance(e, (LoadError, ValidationError, ValueError)):
-                raise
-            raise LoadError(
-                f"Failed to convert {path} to {target_format}: {e}"
-            ) from e
-
     def generate_schema(self, path: PathLike) -> dict[str, Any]:
         """
         Generate JSON schema from qtype document.
@@ -266,11 +234,8 @@ class QTypeFacade:
             document, flow_name, **kwargs
         )
 
-    def convert_document(self, document: Document | DSLApplication) -> str:
+    def convert_document(self, document: DocumentType) -> str:
         """Convert a document to YAML format."""
         # If it's an Application, wrap it in a Document
-        if isinstance(document, DSLApplication):
-            doc = Document(root=document)
-        else:
-            doc = document
-        return self._conversion_service.convert_to_yaml(doc)
+
+        return self._conversion_service.convert_to_yaml(document)
