@@ -22,7 +22,7 @@ def normalize_python_code(code: str) -> str:
 
 def test_generate_semantic_model_matches_existing():
     """Test that generate_semantic_model produces functionally equivalent output to the existing semantic model."""
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=".") as temp_dir:
         # Create output path for generated file
         output_file = Path(temp_dir) / "generated_model.py"
 
@@ -54,7 +54,7 @@ def test_generate_semantic_model_matches_existing():
         normalized_existing = normalize_python_code(existing_content)
 
         # Compare the normalized contents
-        assert generated_content == existing_content, (
+        assert normalized_generated == normalized_existing, (
             "Generated semantic model does not functionally match existing model.py. "
             f"Generated file: {output_file}, "
             f"Existing file: {existing_model_path}"
