@@ -140,9 +140,9 @@ def test_reference_id_resolution(yaml_file: str, getter: Callable) -> None:
     yaml_path = TEST_DIR / yaml_file
     app = run_validation(yaml_path)
     component = getter(app)
-    assert not isinstance(
-        component, str
-    ), "Component should be resolved to an object"
+    assert not isinstance(component, str), (
+        "Component should be resolved to an object"
+    )
 
 
 def test_embedding_model() -> None:

@@ -1,5 +1,6 @@
 import argparse
 import inspect
+import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Literal, Union, get_args, get_origin
@@ -147,11 +148,14 @@ def format_with_ruff(file_path: str) -> None:
     """Format the given file using Ruff and isort to match pre-commit configuration."""
     try:
         # Apply the same formatting as pre-commit but only to the specific file
+        # Use --force-exclude to match pre-commit behavior exactly
         subprocess.run(["ruff", "check", "--fix", file_path], check=True)
-        subprocess.run(["ruff", "format", file_path], check=True)
+        subprocess.run(
+            ["ruff", "format", "--force-exclude", file_path], check=True
+        )
         subprocess.run(["isort", file_path], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error while formatting with Ruff/isort: {e}")
+        logging.error(f"Error while formatting with Ruff/isort: {e}")
 
 
 DSL_ONLY_UNION_TYPES = {

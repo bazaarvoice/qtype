@@ -69,9 +69,9 @@ def create_streaming_generator(
         ```
     """
     # Create thread-safe queue for communication
-    stream_queue: queue.Queue[
-        tuple[Step, ChatMessage | str] | None
-    ] = queue.Queue()
+    stream_queue: queue.Queue[tuple[Step, ChatMessage | str] | None] = (
+        queue.Queue()
+    )
 
     # Create future for the return value
     result_future: Future[T] = Future()
