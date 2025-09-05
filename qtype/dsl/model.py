@@ -120,7 +120,7 @@ class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: AuthorizationProvider | str | None = Field(
+    auth: AuthProviderType | str | None = Field(
         default=None,
         description="AuthorizationProvider used for model access.",
     )
@@ -269,7 +269,7 @@ class APITool(Tool):
         default="GET",
         description="HTTP method to use (GET, POST, PUT, DELETE, etc.).",
     )
-    auth: AuthorizationProvider | str | None = Field(
+    auth: AuthProviderType | str | None = Field(
         default=None,
         description="Optional AuthorizationProvider for API authentication.",
     )
@@ -376,33 +376,94 @@ class Decoder(Step):
 #
 
 
-class AuthorizationProvider(StrictBaseModel):
-    """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
+class AuthorizationProvider(StrictBaseModel, ABC):
+    """Base class for authentication providers."""
 
     id: str = Field(
         ..., description="Unique ID of the authorization configuration."
     )
-    api_key: str | None = Field(
-        default=None, description="API key if using token-based auth."
-    )
-    client_id: str | None = Field(
-        default=None, description="OAuth2 client ID."
-    )
-    client_secret: str | None = Field(
-        default=None, description="OAuth2 client secret."
-    )
+    type: str = Field(..., description="Authorization method type.")
+
+
+class APIKeyAuthProvider(AuthorizationProvider):
+    """API key-based authentication provider."""
+
+    type: Literal["api_key"] = "api_key"
+    api_key: str = Field(..., description="API key for authentication.")
     host: str | None = Field(
         default=None, description="Base URL or domain of the provider."
     )
+
+
+class OAuth2AuthProvider(AuthorizationProvider):
+    """OAuth2 authentication provider."""
+
+    type: Literal["oauth2"] = "oauth2"
+    client_id: str = Field(..., description="OAuth2 client ID.")
+    client_secret: str = Field(..., description="OAuth2 client secret.")
+    token_url: str = Field(..., description="Token endpoint URL.")
     scopes: list[str] | None = Field(
         default=None, description="OAuth2 scopes required."
     )
-    token_url: str | None = Field(
-        default=None, description="Token endpoint URL."
+
+
+class AWSAuthProvider(AuthorizationProvider):
+    """AWS authentication provider supporting multiple credential methods."""
+
+    type: Literal["aws"] = "aws"
+
+    # Method 1: Access key/secret/session
+    access_key_id: str | None = Field(
+        default=None, description="AWS access key ID."
     )
-    type: str = Field(
-        ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
+    secret_access_key: str | None = Field(
+        default=None, description="AWS secret access key."
     )
+    session_token: str | None = Field(
+        default=None,
+        description="AWS session token for temporary credentials.",
+    )
+
+    # Method 2: Profile
+    profile_name: str | None = Field(
+        default=None, description="AWS profile name from credentials file."
+    )
+
+    # Method 3: Role assumption
+    role_arn: str | None = Field(
+        default=None, description="ARN of the role to assume."
+    )
+    role_session_name: str | None = Field(
+        default=None, description="Session name for role assumption."
+    )
+    external_id: str | None = Field(
+        default=None, description="External ID for role assumption."
+    )
+
+    # Common AWS settings
+    region: str | None = Field(default=None, description="AWS region.")
+
+    @model_validator(mode="after")
+    def validate_aws_auth(self) -> "AWSAuthProvider":
+        """Validate AWS authentication configuration."""
+        # At least one auth method must be specified
+        has_keys = self.access_key_id and self.secret_access_key
+        has_profile = self.profile_name
+        has_role = self.role_arn
+
+        if not (has_keys or has_profile or has_role):
+            raise ValueError(
+                "AWSAuthProvider must specify at least one authentication method: "
+                "access keys, profile name, or role ARN."
+            )
+
+        # If assuming a role, need either keys or profile for base credentials
+        if has_role and not (has_keys or has_profile):
+            raise ValueError(
+                "Role assumption requires base credentials (access keys or profile)."
+            )
+
+        return self
 
 
 class TelemetrySink(StrictBaseModel):
@@ -411,7 +472,7 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: AuthorizationProvider | str | None = Field(
+    auth: AuthProviderType | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
@@ -463,7 +524,7 @@ class Application(StrictBaseModel):
     )
 
     # External integrations
-    auths: list[AuthorizationProvider] | None = Field(
+    auths: list[AuthProviderType] | None = Field(
         default=None,
         description="List of authorization providers used for API access.",
     )
@@ -511,7 +572,7 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider.",
     )
-    auth: AuthorizationProvider | str | None = Field(
+    auth: AuthProviderType | str | None = Field(
         default=None,
         description="Optional AuthorizationProvider for database authentication.",
     )
@@ -547,7 +608,7 @@ class Index(StrictBaseModel, ABC):
         default=None,
         description="Index-specific configuration and connection parameters.",
     )
-    auth: AuthorizationProvider | str | None = Field(
+    auth: AuthProviderType | str | None = Field(
         default=None,
         description="AuthorizationProvider for accessing the index.",
     )
@@ -627,6 +688,13 @@ ToolType = Union[
 # Create a union type for all source types
 SourceType = Union[SQLSource,]
 
+# Create a union type for all authorization provider types
+AuthProviderType = Union[
+    APIKeyAuthProvider,
+    AWSAuthProvider,
+    OAuth2AuthProvider,
+]
+
 # Create a union type for all step types
 StepType = Union[
     Agent,
@@ -660,10 +728,10 @@ ModelType = Union[
 #
 
 
-class AuthorizationProviderList(RootModel[list[AuthorizationProvider]]):
+class AuthorizationProviderList(RootModel[list[AuthProviderType]]):
     """Schema for a standalone list of authorization providers."""
 
-    root: list[AuthorizationProvider]
+    root: list[AuthProviderType]
 
 
 class IndexList(RootModel[list[IndexType]]):
