@@ -8,7 +8,7 @@ from qtype.converters.types import PRIMITIVE_TO_PYTHON_TYPE
 
 
 def build_dynamic_types(
-    type_definitions: list[dict]
+    type_definitions: list[dict],
 ) -> dict[str, Type[BaseModel]]:
     """
     Parses a list of simplified type definitions and dynamically creates

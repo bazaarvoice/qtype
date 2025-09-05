@@ -16,10 +16,18 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
-from qtype.dsl.model import CustomType, VariableType  # noqa: F401
-from qtype.dsl.model import DecoderFormat
+from qtype.dsl.model import VariableType  # noqa: F401
+from qtype.dsl.model import (  # noqa: F401
+    ArrayTypeDefinition,
+    CustomType,
+    DecoderFormat,
+    ObjectTypeDefinition,
+    PrimitiveTypeEnum,
+    StepCardinality,
+    StructuralTypeEnum,
+)
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
-from qtype.semantic.base_types import ImmutableModel, StepCardinality
+from qtype.semantic.base_types import ImmutableModel
 
 
 class Variable(DSLVariable, BaseModel):
@@ -70,11 +78,11 @@ class Application(BaseModel):
     flows: list[Flow] = Field(
         [], description="List of flows defined in this application."
     )
-    auths: list[APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider] = (
-        Field(
-            [],
-            description="List of authorization providers used for API access.",
-        )
+    auths: list[
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider
+    ] = Field(
+        [],
+        description="List of authorization providers used for API access.",
     )
     tools: list[Tool] = Field(
         [], description="List of tools available in this application."
@@ -111,10 +119,10 @@ class Index(ImmutableModel):
         {},
         description="Index-specific configuration and connection parameters.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None, description="AuthorizationProvider for accessing the index."
-        )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(
+        None, description="AuthorizationProvider for accessing the index."
     )
     name: str = Field(..., description="Name of the index/collection/table.")
 
@@ -123,9 +131,9 @@ class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(None, description="AuthorizationProvider used for model access.")
-    )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(None, description="AuthorizationProvider used for model access.")
     inference_params: dict[str, Any] = Field(
         {},
         description="Optional inference parameters like temperature or max_tokens.",
@@ -161,11 +169,11 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="AuthorizationProvider used to authenticate telemetry data transmission.",
-        )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(
+        None,
+        description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
@@ -376,11 +384,11 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for database authentication.",
-        )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for database authentication.",
     )
 
 
@@ -392,11 +400,11 @@ class SourceType(Source):
         ...,
         description="Database connection string or reference to auth provider.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for database authentication.",
-        )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for database authentication.",
     )
 
 
@@ -407,11 +415,11 @@ class APITool(Tool):
     method: str = Field(
         "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for API authentication.",
-        )
+    auth: (
+        APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for API authentication.",
     )
     headers: dict[str, str] = Field(
         {}, description="Optional HTTP headers to include in the request."

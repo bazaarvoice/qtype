@@ -106,21 +106,23 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
         # Write imports
         f.write("from __future__ import annotations\n\n")
-        f.write("from typing import Any, Type, Literal\n\n")
+        f.write("from typing import Any, Literal\n\n")
         f.write("from pydantic import BaseModel, Field\n\n")
         f.write("# Import enums and type aliases from DSL\n")
+        f.write("from qtype.dsl.model import VariableType  # noqa: F401\n")
+        f.write("from qtype.dsl.model import (  # noqa: F401\n")
+        f.write("    ArrayTypeDefinition,\n")
+        f.write("    CustomType,\n")
+        f.write("    DecoderFormat,\n")
+        f.write("    ObjectTypeDefinition,\n")
+        f.write("    PrimitiveTypeEnum,\n")
+        f.write("    StepCardinality,\n")
+        f.write("    StructuralTypeEnum,\n")
+        f.write(")\n")
         f.write(
-            "from qtype.dsl.model import CustomType, VariableType # noqa: F401\n"
+            "from qtype.dsl.model import Variable as DSLVariable  # noqa: F401\n"
         )
-        f.write(
-            "from qtype.dsl.model import ArrayTypeDefinition, DecoderFormat, PrimitiveTypeEnum, ObjectTypeDefinition, StructuralTypeEnum\n"
-        )
-        f.write(
-            "from qtype.dsl.model import Variable as DSLVariable # noqa: F401\n"
-        )
-        f.write(
-            "from qtype.semantic.base_types import ImmutableModel, StepCardinality\n"
-        )
+        f.write("from qtype.semantic.base_types import ImmutableModel\n")
 
         # Write the new variable class
         f.write("class Variable(DSLVariable, BaseModel):\n")
@@ -142,12 +144,14 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
 
 def format_with_ruff(file_path: str) -> None:
-    """Format the given file using Ruff."""
+    """Format the given file using Ruff and isort to match pre-commit configuration."""
     try:
+        # Apply the same formatting as pre-commit but only to the specific file
         subprocess.run(["ruff", "check", "--fix", file_path], check=True)
         subprocess.run(["ruff", "format", file_path], check=True)
+        subprocess.run(["isort", file_path], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error while formatting with Ruff: {e}")
+        print(f"Error while formatting with Ruff/isort: {e}")
 
 
 DSL_ONLY_UNION_TYPES = {
