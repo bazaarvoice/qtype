@@ -125,6 +125,7 @@ warn_required_dynamic_aliases = true
 source = ["qtype"]
 omit = [
     "qtype/commands/*",
+    "qtype/interpreter/*",
     "qtype/*.py",
 ]
 

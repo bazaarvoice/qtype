@@ -288,6 +288,9 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
                 inheritance = f"ABC, {semantic_base}"
             else:
                 inheritance = semantic_base
+            if semantic_name == "Tool":
+                # Tools should inherit from Step and be immutable
+                inheritance = f"{semantic_base}, ImmutableModel"
             break
 
     # Get field information from the class - only fields defined on this class, not inherited

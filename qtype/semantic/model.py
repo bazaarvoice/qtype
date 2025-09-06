@@ -316,7 +316,7 @@ class Source(Step):
     )
 
 
-class Tool(Step):
+class Tool(Step, ImmutableModel):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """
