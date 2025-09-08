@@ -99,7 +99,7 @@ class Step(BaseModel):
     id: str = Field(..., description="Unique ID of this component.")
     cardinality: StepCardinality = Field(
         StepCardinality.one,
-        description="Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?",
+        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
     )
     inputs: list[Variable] = Field(
         [], description="Input variables required by this step."
@@ -260,6 +260,10 @@ class Flow(Step):
     description: str | None = Field(
         None, description="Optional description of the flow."
     )
+    cardinality: Literal["one"] = Field(
+        StepCardinality.one,
+        description="Flows always emit exactly one instance of the outputs.",
+    )
     mode: Literal["Complete", "Chat"] = Field("Complete")
     steps: list[Step] = Field(..., description="List of steps or step IDs.")
 
@@ -304,6 +308,10 @@ class Sink(Step):
     """Base class for data sinks"""
 
     id: str = Field(..., description="Unique ID of the data sink.")
+    cardinality: Literal["one"] = Field(
+        StepCardinality.one,
+        description="Flows always emit exactly one instance of the outputs.",
+    )
 
 
 class Source(Step):
@@ -369,8 +377,16 @@ class VectorSearch(Search):
     """Performs vector similarity search against a vector index."""
 
     default_top_k: int | None = Field(
-        ...,
+        50,
         description="Number of top results to retrieve if not provided in the inputs.",
+    )
+
+
+class IndexUpsert(Sink):
+    """Semantic version of IndexUpsert."""
+
+    index: Index = Field(
+        ..., description="Index to upsert into (object or ID reference)."
     )
 
 
