@@ -53,7 +53,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -308,7 +308,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -673,7 +673,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -742,6 +742,9 @@
               "$ref": "#/$defs/Flow"
             },
             {
+              "$ref": "#/$defs/IndexUpsert"
+            },
+            {
               "$ref": "#/$defs/LLMInference"
             },
             {
@@ -752,6 +755,9 @@
             },
             {
               "$ref": "#/$defs/SQLSource"
+            },
+            {
+              "$ref": "#/$defs/Sink"
             },
             {
               "$ref": "#/$defs/VectorSearch"
@@ -804,6 +810,9 @@
               "$ref": "#/$defs/Flow"
             },
             {
+              "$ref": "#/$defs/IndexUpsert"
+            },
+            {
               "$ref": "#/$defs/LLMInference"
             },
             {
@@ -814,6 +823,9 @@
             },
             {
               "$ref": "#/$defs/SQLSource"
+            },
+            {
+              "$ref": "#/$defs/Sink"
             },
             {
               "$ref": "#/$defs/VectorSearch"
@@ -880,7 +892,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1052,7 +1064,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1224,9 +1236,11 @@
           "type": "string"
         },
         "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
+          "const": "one",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -1319,6 +1333,9 @@
                 "$ref": "#/$defs/Flow"
               },
               {
+                "$ref": "#/$defs/IndexUpsert"
+              },
+              {
                 "$ref": "#/$defs/LLMInference"
               },
               {
@@ -1329,6 +1346,9 @@
               },
               {
                 "$ref": "#/$defs/SQLSource"
+              },
+              {
+                "$ref": "#/$defs/Sink"
               },
               {
                 "$ref": "#/$defs/VectorSearch"
@@ -1363,6 +1383,90 @@
       "title": "IndexList",
       "type": "array"
     },
+    "IndexUpsert": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "index": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DocumentIndex"
+            },
+            {
+              "$ref": "#/$defs/VectorIndex"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Index to upsert into (object or ID reference).",
+          "title": "Index"
+        }
+      },
+      "required": [
+        "id",
+        "index"
+      ],
+      "title": "IndexUpsert",
+      "type": "object"
+    },
     "LLMInference": {
       "additionalProperties": false,
       "description": "Defines a step that performs inference using a language model.\nIt can take input variables and produce output variables based on the model's response.",
@@ -1375,7 +1479,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1682,7 +1786,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1755,7 +1859,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1935,6 +2039,75 @@
         "connection"
       ],
       "title": "SQLSource",
+      "type": "object"
+    },
+    "Sink": {
+      "additionalProperties": false,
+      "description": "Base class for data sinks",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Sink",
       "type": "object"
     },
     "StepCardinality": {
@@ -2133,7 +2306,7 @@
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -2219,14 +2392,14 @@
               "type": "null"
             }
           ],
+          "default": 50,
           "description": "Number of top results to retrieve if not provided in the inputs.",
           "title": "Default Top K"
         }
       },
       "required": [
         "id",
-        "index",
-        "default_top_k"
+        "index"
       ],
       "title": "VectorSearch",
       "type": "object"

@@ -178,7 +178,7 @@ class Step(StrictBaseModel, ABC):
     id: str = Field(..., description="Unique ID of this component.")
     cardinality: StepCardinality = Field(
         default=StepCardinality.one,
-        description="Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?",
+        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
     )
     inputs: list[Variable | str] | None = Field(
         default=None,
@@ -321,6 +321,11 @@ class Flow(Step):
 
     description: str | None = Field(
         default=None, description="Optional description of the flow."
+    )
+
+    cardinality: Literal[StepCardinality.one] = Field(
+        default=StepCardinality.one,
+        description="Flows always emit exactly one instance of the outputs.",
     )
 
     mode: Literal["Complete", "Chat"] = "Complete"
@@ -593,6 +598,10 @@ class Sink(Step):
     id: str = Field(..., description="Unique ID of the data sink.")
     # Remove cardinality field - it's always one for sinks
     # ...existing code...
+    cardinality: Literal[StepCardinality.one] = Field(
+        default=StepCardinality.one,
+        description="Flows always emit exactly one instance of the outputs.",
+    )
 
 
 #
@@ -613,6 +622,12 @@ class Index(StrictBaseModel, ABC):
         description="AuthorizationProvider for accessing the index.",
     )
     name: str = Field(..., description="Name of the index/collection/table.")
+
+
+class IndexUpsert(Sink):
+    index: IndexType | str = Field(
+        ..., description="Index to upsert into (object or ID reference)."
+    )
 
 
 class VectorIndex(Index):
@@ -646,6 +661,7 @@ class VectorSearch(Search):
     """Performs vector similarity search against a vector index."""
 
     default_top_k: int | None = Field(
+        default=50,
         description="Number of top results to retrieve if not provided in the inputs.",
     )
 
@@ -703,10 +719,12 @@ StepType = Union[
     Decoder,
     DocumentSearch,
     Flow,
+    IndexUpsert,
     LLMInference,
     PromptTemplate,
     PythonFunctionTool,
     SQLSource,
+    Sink,
     VectorSearch,
 ]
 

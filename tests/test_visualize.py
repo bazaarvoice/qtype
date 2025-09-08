@@ -13,7 +13,9 @@ from qtype.semantic.visualize import visualize_application
 def test_visualize_application_with_hello_world_chat():
     """Test that visualize_application produces valid Mermaid output."""
     # Load the DSL example file
-    example_path = Path(__file__).parent / "specs" / "full_application_test.qtype.yaml"
+    example_path = (
+        Path(__file__).parent / "specs" / "full_application_test.qtype.yaml"
+    )
     assert example_path.exists(), f"Example file not found: {example_path}"
 
     # Load and parse the document
