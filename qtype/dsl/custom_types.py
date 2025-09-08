@@ -2,13 +2,13 @@ from typing import Any, ForwardRef, Type, Union
 
 from pydantic import BaseModel, create_model
 
-from qtype.converters.types import PRIMITIVE_TO_PYTHON_TYPE
+from qtype.application.converters.types import PRIMITIVE_TO_PYTHON_TYPE
 
 # --- This would be in your interpreter's logic ---
 
 
 def build_dynamic_types(
-    type_definitions: list[dict]
+    type_definitions: list[dict],
 ) -> dict[str, Type[BaseModel]]:
     """
     Parses a list of simplified type definitions and dynamically creates

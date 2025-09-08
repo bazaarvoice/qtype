@@ -2,61 +2,75 @@
 Command-line interface for visualizing QType YAML spec files.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import tempfile
 import webbrowser
+from pathlib import Path
 from typing import Any
 
-from qtype.loader import load
-from qtype.semantic.visualize import visualize_application
+from qtype.application.facade import QTypeFacade
+from qtype.base.exceptions import LoadError, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 def main(args: Any) -> None:
     """
-    visualize a QType YAML spec file against the QTypeSpec schema and semantics.
+    Visualize a QType YAML spec file.
 
     Args:
         args: Arguments passed from the command line or calling context.
 
     Exits:
-        Exits with code 1 if validation fails.
+        Exits with code 1 if visualization fails.
     """
-    import mermaid as md
+    facade = QTypeFacade()
+    spec_path = Path(args.spec)
 
-    application, _ = load(args.spec)
+    try:
+        # Generate visualization using the facade
+        mermaid_content = facade.visualize_application(spec_path)
 
-    diagram = visualize_application(application)
+        if args.output:
+            # Write to file
+            output_path = Path(args.output)
+            output_path.write_text(mermaid_content, encoding="utf-8")
+            logger.info(f"✅ Visualization saved to {output_path}")
 
-    render = None
-    if args.output:
-        if args.output.endswith(".mmd") or args.output.endswith(".mermaid"):
-            with open(args.output, "w") as f:
-                f.write(diagram)
-            logger.info(f"Mermaid diagram written to {args.output}")
-        elif args.output.endswith(".svg"):
-            render = md.Mermaid(diagram)
-            render.to_svg(args.output)
-            logger.info(f"SVG diagram written to {args.output}")
+        if not args.no_display:
+            # Create temporary HTML file and open in browser
+            try:
+                import mermaid as md
 
-        elif args.output.endswith(".png"):
-            render = md.Mermaid(diagram)
-            render.to_png(args.output)
-            logger.info(f"PNG diagram written to {args.output}")
+                mm = md.Mermaid(mermaid_content)
+                html_content = mm._repr_html_()
 
-    if not args.no_display:
-        if not render:
-            render = md.Mermaid(diagram)
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".html", delete=False, encoding="utf-8"
+                ) as f:
+                    f.write(html_content)
+                    temp_file = f.name
 
-        html_content = render._repr_html_()
-        # Create a temporary HTML file to display the diagram
-        with tempfile.NamedTemporaryFile(
-            delete=False, suffix=".html"
-        ) as temp_file:
-            temp_file.write(html_content.encode("utf-8"))
-            webbrowser.open(temp_file.name)
+                logger.info(f"Opening visualization in browser: {temp_file}")
+                webbrowser.open(f"file://{temp_file}")
+            except ImportError:
+                logger.warning(
+                    "❌ Mermaid library not installed. Cannot display in browser."
+                )
+                logger.info("Install with: pip install mermaid")
+
+    except LoadError as e:
+        logger.error(f"❌ Failed to load document: {e}")
+        exit(1)
+    except ValidationError as e:
+        logger.error(f"❌ Visualization failed: {e}")
+        exit(1)
+    except Exception as e:
+        logger.error(f"❌ Unexpected error: {e}")
+        exit(1)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

@@ -1,5 +1,46 @@
 {
   "$defs": {
+    "APIKeyAuthProvider": {
+      "additionalProperties": false,
+      "description": "API key-based authentication provider.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "api_key",
+          "default": "api_key",
+          "title": "Type",
+          "type": "string"
+        },
+        "api_key": {
+          "description": "API key for authentication.",
+          "title": "Api Key",
+          "type": "string"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Base URL or domain of the provider.",
+          "title": "Host"
+        }
+      },
+      "required": [
+        "id",
+        "api_key"
+      ],
+      "title": "APIKeyAuthProvider",
+      "type": "object"
+    },
     "APITool": {
       "additionalProperties": false,
       "description": "Tool that invokes an API endpoint.",
@@ -8,6 +49,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -79,7 +125,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -118,6 +170,132 @@
       "title": "APITool",
       "type": "object"
     },
+    "AWSAuthProvider": {
+      "additionalProperties": false,
+      "description": "AWS authentication provider supporting multiple credential methods.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "aws",
+          "default": "aws",
+          "title": "Type",
+          "type": "string"
+        },
+        "access_key_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS access key ID.",
+          "title": "Access Key Id"
+        },
+        "secret_access_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS secret access key.",
+          "title": "Secret Access Key"
+        },
+        "session_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS session token for temporary credentials.",
+          "title": "Session Token"
+        },
+        "profile_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS profile name from credentials file.",
+          "title": "Profile Name"
+        },
+        "role_arn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ARN of the role to assume.",
+          "title": "Role Arn"
+        },
+        "role_session_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Session name for role assumption.",
+          "title": "Role Session Name"
+        },
+        "external_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "External ID for role assumption.",
+          "title": "External Id"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS region.",
+          "title": "Region"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "AWSAuthProvider",
+      "type": "object"
+    },
     "Agent": {
       "additionalProperties": false,
       "description": "Defines an agent that can perform tasks and make decisions based on user input and context.",
@@ -126,6 +304,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -357,7 +540,17 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/$defs/AuthorizationProvider"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/APIKeyAuthProvider"
+                  },
+                  {
+                    "$ref": "#/$defs/AWSAuthProvider"
+                  },
+                  {
+                    "$ref": "#/$defs/OAuth2AuthProvider"
+                  }
+                ]
               },
               "type": "array"
             },
@@ -450,113 +643,20 @@
       "title": "Application",
       "type": "object"
     },
-    "AuthorizationProvider": {
-      "additionalProperties": false,
-      "description": "Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the authorization configuration.",
-          "title": "Id",
-          "type": "string"
-        },
-        "api_key": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "API key if using token-based auth.",
-          "title": "Api Key"
-        },
-        "client_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "OAuth2 client ID.",
-          "title": "Client Id"
-        },
-        "client_secret": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "OAuth2 client secret.",
-          "title": "Client Secret"
-        },
-        "host": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Base URL or domain of the provider.",
-          "title": "Host"
-        },
-        "scopes": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "OAuth2 scopes required.",
-          "title": "Scopes"
-        },
-        "token_url": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Token endpoint URL.",
-          "title": "Token Url"
-        },
-        "type": {
-          "description": "Authorization method, e.g., 'oauth2' or 'api_key'.",
-          "title": "Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "type"
-      ],
-      "title": "AuthorizationProvider",
-      "type": "object"
-    },
     "AuthorizationProviderList": {
       "description": "Schema for a standalone list of authorization providers.",
       "items": {
-        "$ref": "#/$defs/AuthorizationProvider"
+        "anyOf": [
+          {
+            "$ref": "#/$defs/APIKeyAuthProvider"
+          },
+          {
+            "$ref": "#/$defs/AWSAuthProvider"
+          },
+          {
+            "$ref": "#/$defs/OAuth2AuthProvider"
+          }
+        ]
       },
       "title": "AuthorizationProviderList",
       "type": "array"
@@ -569,6 +669,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -646,6 +751,9 @@
               "$ref": "#/$defs/PythonFunctionTool"
             },
             {
+              "$ref": "#/$defs/SQLSource"
+            },
+            {
               "$ref": "#/$defs/VectorSearch"
             },
             {
@@ -703,6 +811,9 @@
             },
             {
               "$ref": "#/$defs/PythonFunctionTool"
+            },
+            {
+              "$ref": "#/$defs/SQLSource"
             },
             {
               "$ref": "#/$defs/VectorSearch"
@@ -765,6 +876,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -892,7 +1008,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -926,6 +1048,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1022,7 +1149,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -1089,6 +1222,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1190,6 +1328,9 @@
                 "$ref": "#/$defs/PythonFunctionTool"
               },
               {
+                "$ref": "#/$defs/SQLSource"
+              },
+              {
                 "$ref": "#/$defs/VectorSearch"
               },
               {
@@ -1230,6 +1371,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1375,7 +1521,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -1443,6 +1595,62 @@
       "title": "ModelList",
       "type": "array"
     },
+    "OAuth2AuthProvider": {
+      "additionalProperties": false,
+      "description": "OAuth2 authentication provider.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "oauth2",
+          "default": "oauth2",
+          "title": "Type",
+          "type": "string"
+        },
+        "client_id": {
+          "description": "OAuth2 client ID.",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_secret": {
+          "description": "OAuth2 client secret.",
+          "title": "Client Secret",
+          "type": "string"
+        },
+        "token_url": {
+          "description": "Token endpoint URL.",
+          "title": "Token Url",
+          "type": "string"
+        },
+        "scopes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "OAuth2 scopes required.",
+          "title": "Scopes"
+        }
+      },
+      "required": [
+        "id",
+        "client_id",
+        "client_secret",
+        "token_url"
+      ],
+      "title": "OAuth2AuthProvider",
+      "type": "object"
+    },
     "PrimitiveTypeEnum": {
       "description": "Represents the type of data a user or system input can accept within the DSL.",
       "enum": [
@@ -1470,6 +1678,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1538,6 +1751,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [
@@ -1616,6 +1834,118 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "SQLSource": {
+      "additionalProperties": false,
+      "description": "SQL database source that executes queries and emits rows.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data source.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "many",
+          "default": "many",
+          "description": "Sources always emit 0...N instances of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "query": {
+          "description": "SQL query to execute.",
+          "title": "Query",
+          "type": "string"
+        },
+        "connection": {
+          "description": "Database connection string or reference to auth provider.",
+          "title": "Connection",
+          "type": "string"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional AuthorizationProvider for database authentication.",
+          "title": "Auth"
+        }
+      },
+      "required": [
+        "id",
+        "query",
+        "connection"
+      ],
+      "title": "SQLSource",
+      "type": "object"
+    },
+    "StepCardinality": {
+      "description": "Does this step emit 1 (one) or 0...N (many) items?",
+      "enum": [
+        "one",
+        "many"
+      ],
+      "title": "StepCardinality",
+      "type": "string"
+    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -1628,7 +1958,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -1740,7 +2076,13 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AuthorizationProvider"
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
               "type": "string"
@@ -1787,6 +2129,11 @@
           "description": "Unique ID of this component.",
           "title": "Id",
           "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?"
         },
         "inputs": {
           "anyOf": [

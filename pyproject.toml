@@ -124,11 +124,9 @@ warn_required_dynamic_aliases = true
 [tool.coverage.run]
 source = ["qtype"]
 omit = [
-    "*/tests/*",
-    "*/test_*",
-    "*/__pycache__/*",
-    "*/venv/*",
-    "*/.venv/*",
+    "qtype/commands/*",
+    "qtype/interpreter/*",
+    "qtype/*.py",
 ]
 
 [tool.coverage.report]

@@ -13,7 +13,7 @@ import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 from qtype.dsl.validator import _is_dsl_type, _resolve_forward_ref
 from qtype.semantic import model as ir
-from qtype.semantic.errors import SemanticResolutionError
+from qtype.base.exceptions import SemanticError
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def to_semantic_ir(
         class_name = dslobj.__class__.__name__
         ir_class = getattr(ir, class_name, None)
         if not ir_class:
-            raise SemanticResolutionError(
+            raise SemanticError(
                 f"Could not find Semantic class for DSL type: {class_name}"
             )
         # iterate over the parameters of the DSL object and convert them to their semantic IR equivalents.
@@ -90,7 +90,7 @@ def resolve(application: dsl.Application) -> ir.Application:
     # references to actual objects.
     result = to_semantic_ir(application, {})
     if not isinstance(result, ir.Application):
-        raise SemanticResolutionError(
+        raise SemanticError(
             "The root object must be an Application, but got: "
             f"{type(result).__name__}"
         )

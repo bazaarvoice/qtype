@@ -1,3 +1,9 @@
+- id: anthropic.claude-sonnet-4-20250514-v1:0
+  provider: aws-bedrock
+- id: twelvelabs.pegasus-1-2-v1:0
+  provider: aws-bedrock
+- id: anthropic.claude-opus-4-1-20250805-v1:0
+  provider: aws-bedrock
 - id: amazon.titan-tg1-large
   provider: aws-bedrock
 - id: amazon.titan-image-generator-v1:0
@@ -122,19 +128,9 @@
   provider: aws-bedrock
 - id: anthropic.claude-opus-4-20250514-v1:0
   provider: aws-bedrock
-- id: anthropic.claude-sonnet-4-20250514-v1:0
-  provider: aws-bedrock
-- id: cohere.command-text-v14:7:4k
-  provider: aws-bedrock
-- id: cohere.command-text-v14
-  provider: aws-bedrock
 - id: cohere.command-r-v1:0
   provider: aws-bedrock
 - id: cohere.command-r-plus-v1:0
-  provider: aws-bedrock
-- id: cohere.command-light-text-v14:7:4k
-  provider: aws-bedrock
-- id: cohere.command-light-text-v14
   provider: aws-bedrock
 - id: cohere.embed-english-v3:0:512
   provider: aws-bedrock
@@ -177,4 +173,6 @@
 - id: mistral.mistral-small-2402-v1:0
   provider: aws-bedrock
 - id: mistral.pixtral-large-2502-v1:0
+  provider: aws-bedrock
+- id: twelvelabs.marengo-embed-2-7-v1:0
   provider: aws-bedrock

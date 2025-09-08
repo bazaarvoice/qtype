@@ -334,7 +334,7 @@ CustomTypeRegistry = dict[str, Type[BaseModel]]
 
 
 def _list_dynamic_types_from_document(
-    loaded_yaml: dict[str, Any]
+    loaded_yaml: dict[str, Any],
 ) -> list[dict]:
     """
     Build dynamic types from the loaded YAML data.

@@ -1,3 +1,5 @@
+"""Documentation generation utilities for DSL classes."""
+
 import inspect
 from pathlib import Path
 from typing import Any, Type, Union, get_args, get_origin

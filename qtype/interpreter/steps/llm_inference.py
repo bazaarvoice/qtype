@@ -143,8 +143,8 @@ def execute(
                 stream_fn(li, complete_result.delta)
             # Get the final result for processing
             complete_result = (
-                complete_result
-            )  # Use the last result from streaming
+                complete_result  # Use the last result from streaming
+            )
         else:
             complete_result: CompletionResponse = model.complete(prompt=input)
         output_variable.value = complete_result.text

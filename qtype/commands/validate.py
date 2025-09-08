@@ -2,23 +2,16 @@
 Command-line interface for validating QType YAML spec files.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
+from pathlib import Path
 from typing import Any
 
-from pydantic import ValidationError
-
-from qtype import dsl
-from qtype.dsl.custom_types import build_dynamic_types
-from qtype.dsl.validator import QTypeValidationError, validate
-from qtype.loader import (
-    _list_dynamic_types_from_document,
-    _resolve_root,
-    load_yaml,
-)
-from qtype.semantic.errors import SemanticResolutionError
-from qtype.semantic.resolver import resolve
+from qtype.application.facade import QTypeFacade
+from qtype.base.exceptions import LoadError
 
 logger = logging.getLogger(__name__)
 
@@ -33,42 +26,34 @@ def main(args: Any) -> None:
     Exits:
         Exits with code 1 if validation fails.
     """
+    facade = QTypeFacade()
+    spec_path = Path(args.spec)
+
     try:
-        yaml_data = load_yaml(args.spec)
-        dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
-        dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
-        logging.info("✅ Schema validation successful.")
+        # Use the facade for validation
+        errors = facade.validate_only(spec_path)
 
-        document = dsl.Document.model_validate(
-            yaml_data, context={"custom_types": dynamic_types_registry}
-        )
-        logging.info("✅ Model validation successful.")
-        root = _resolve_root(document)
-        if not isinstance(root, dsl.Application):
-            logging.warning(
-                "🟨 Spec is not an Application, skipping semantic resolution."
-            )
+        if errors:
+            logger.error("❌ Validation failed with the following errors:")
+            for error in errors:
+                logger.error(f"  - {error}")
+            sys.exit(1)
         else:
-            root = validate(root)
-            logger.info("✅ Language validation successful")
-            app = resolve(root)
-            logger.info("✅ Semantic validation successful")
-        if args.print:
-            logger.info(
-                (app if "app" in locals() else root).model_dump_json(  # type: ignore
-                    indent=2,
-                    exclude_none=True,
-                )
-            )
+            logger.info("✅ Validation successful - document is valid.")
 
-    except ValidationError as exc:
-        logger.error("❌ Validation failed:\n%s", exc)
+        # If printing is requested, load and print the document
+        if args.print:
+            try:
+                document = facade.load_and_validate(spec_path)
+                print(document.model_dump_json(indent=2, exclude_none=True))
+            except Exception as e:
+                logger.warning(f"Could not print document: {e}")
+
+    except LoadError as e:
+        logger.error(f"❌ Failed to load document: {e}")
         sys.exit(1)
-    except QTypeValidationError as exc:
-        logger.error("❌ DSL validation failed:\n%s", exc)
-        sys.exit(1)
-    except SemanticResolutionError as exc:
-        logger.error("❌ Semantic resolution failed:\n%s", exc)
+    except Exception as e:
+        logger.error(f"❌ Unexpected error during validation: {e}")
         sys.exit(1)
 
 

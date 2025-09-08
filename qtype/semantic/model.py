@@ -17,7 +17,13 @@ from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
-from qtype.dsl.model import CustomType, DecoderFormat  # noqa: F401
+from qtype.dsl.model import (  # noqa: F401
+    CustomType,
+    DecoderFormat,
+    PrimitiveTypeEnum,
+    StepCardinality,
+    StructuralTypeEnum,
+)
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
 
@@ -29,6 +35,15 @@ class Variable(DSLVariable, BaseModel):
 
     def is_set(self) -> bool:
         return self.value is not None
+
+
+class AuthorizationProvider(ImmutableModel):
+    """Base class for authentication providers."""
+
+    id: str = Field(
+        ..., description="Unique ID of the authorization configuration."
+    )
+    type: str = Field(..., description="Authorization method type.")
 
 
 class Application(BaseModel):
@@ -61,8 +76,11 @@ class Application(BaseModel):
     flows: list[Flow] = Field(
         [], description="List of flows defined in this application."
     )
-    auths: list[AuthorizationProvider] = Field(
-        [], description="List of authorization providers used for API access."
+    auths: list[APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider] = (
+        Field(
+            [],
+            description="List of authorization providers used for API access.",
+        )
     )
     tools: list[Tool] = Field(
         [], description="List of tools available in this application."
@@ -75,33 +93,14 @@ class Application(BaseModel):
     )
 
 
-class AuthorizationProvider(ImmutableModel):
-    """Defines how tools or providers authenticate with APIs, such as OAuth2 or API keys."""
-
-    id: str = Field(
-        ..., description="Unique ID of the authorization configuration."
-    )
-    api_key: str | None = Field(
-        None, description="API key if using token-based auth."
-    )
-    client_id: str | None = Field(None, description="OAuth2 client ID.")
-    client_secret: str | None = Field(
-        None, description="OAuth2 client secret."
-    )
-    host: str | None = Field(
-        None, description="Base URL or domain of the provider."
-    )
-    scopes: list[str] = Field([], description="OAuth2 scopes required.")
-    token_url: str | None = Field(None, description="Token endpoint URL.")
-    type: str = Field(
-        ..., description="Authorization method, e.g., 'oauth2' or 'api_key'."
-    )
-
-
 class Step(BaseModel):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
+    cardinality: StepCardinality = Field(
+        StepCardinality.one,
+        description="Does this step emit 1 (one) or 0...N (many) instahnces of the outputs?",
+    )
     inputs: list[Variable] = Field(
         [], description="Input variables required by this step."
     )
@@ -118,8 +117,10 @@ class Index(ImmutableModel):
         {},
         description="Index-specific configuration and connection parameters.",
     )
-    auth: AuthorizationProvider | None = Field(
-        None, description="AuthorizationProvider for accessing the index."
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(
+            None, description="AuthorizationProvider for accessing the index."
+        )
     )
     name: str = Field(..., description="Name of the index/collection/table.")
 
@@ -128,8 +129,8 @@ class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: AuthorizationProvider | None = Field(
-        None, description="AuthorizationProvider used for model access."
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(None, description="AuthorizationProvider used for model access.")
     )
     inference_params: dict[str, Any] = Field(
         {},
@@ -166,13 +167,61 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: AuthorizationProvider | None = Field(
-        None,
-        description="AuthorizationProvider used to authenticate telemetry data transmission.",
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(
+            None,
+            description="AuthorizationProvider used to authenticate telemetry data transmission.",
+        )
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
+
+
+class APIKeyAuthProvider(AuthorizationProvider):
+    """API key-based authentication provider."""
+
+    type: Literal["api_key"] = Field("api_key")
+    api_key: str = Field(..., description="API key for authentication.")
+    host: str | None = Field(
+        None, description="Base URL or domain of the provider."
+    )
+
+
+class AWSAuthProvider(AuthorizationProvider):
+    """AWS authentication provider supporting multiple credential methods."""
+
+    type: Literal["aws"] = Field("aws")
+    access_key_id: str | None = Field(None, description="AWS access key ID.")
+    secret_access_key: str | None = Field(
+        None, description="AWS secret access key."
+    )
+    session_token: str | None = Field(
+        None, description="AWS session token for temporary credentials."
+    )
+    profile_name: str | None = Field(
+        None, description="AWS profile name from credentials file."
+    )
+    role_arn: str | None = Field(
+        None, description="ARN of the role to assume."
+    )
+    role_session_name: str | None = Field(
+        None, description="Session name for role assumption."
+    )
+    external_id: str | None = Field(
+        None, description="External ID for role assumption."
+    )
+    region: str | None = Field(None, description="AWS region.")
+
+
+class OAuth2AuthProvider(AuthorizationProvider):
+    """OAuth2 authentication provider."""
+
+    type: Literal["oauth2"] = Field("oauth2")
+    client_id: str = Field(..., description="OAuth2 client ID.")
+    client_secret: str = Field(..., description="OAuth2 client secret.")
+    token_url: str = Field(..., description="Token endpoint URL.")
+    scopes: list[str] = Field([], description="OAuth2 scopes required.")
 
 
 class Condition(Step):
@@ -251,7 +300,23 @@ class Search(Step):
     )
 
 
-class Tool(Step):
+class Sink(Step):
+    """Base class for data sinks"""
+
+    id: str = Field(..., description="Unique ID of the data sink.")
+
+
+class Source(Step):
+    """Base class for data sources"""
+
+    id: str = Field(..., description="Unique ID of the data source.")
+    cardinality: Literal["many"] = Field(
+        StepCardinality.many,
+        description="Sources always emit 0...N instances of the outputs.",
+    )
+
+
+class Tool(Step, ImmutableModel):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """
@@ -309,6 +374,38 @@ class VectorSearch(Search):
     )
 
 
+class SQLSource(Source):
+    """SQL database source that executes queries and emits rows."""
+
+    query: str = Field(..., description="SQL query to execute.")
+    connection: str = Field(
+        ...,
+        description="Database connection string or reference to auth provider.",
+    )
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(
+            None,
+            description="Optional AuthorizationProvider for database authentication.",
+        )
+    )
+
+
+class SourceType(Source):
+    """SQL database source that executes queries and emits rows."""
+
+    query: str = Field(..., description="SQL query to execute.")
+    connection: str = Field(
+        ...,
+        description="Database connection string or reference to auth provider.",
+    )
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(
+            None,
+            description="Optional AuthorizationProvider for database authentication.",
+        )
+    )
+
+
 class APITool(Tool):
     """Tool that invokes an API endpoint."""
 
@@ -316,9 +413,11 @@ class APITool(Tool):
     method: str = Field(
         "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
     )
-    auth: AuthorizationProvider | None = Field(
-        None,
-        description="Optional AuthorizationProvider for API authentication.",
+    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
+        Field(
+            None,
+            description="Optional AuthorizationProvider for API authentication.",
+        )
     )
     headers: dict[str, str] = Field(
         {}, description="Optional HTTP headers to include in the request."

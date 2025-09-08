@@ -15,7 +15,7 @@ executable system.
 - **types** (`list[CustomType] | None`): List of custom types defined in this application.
 - **variables** (`list[Variable] | None`): List of variables used in this application.
 - **flows** (`list[Flow] | None`): List of flows defined in this application.
-- **auths** (`list[AuthorizationProvider] | None`): List of authorization providers used for API access.
+- **auths** (`list[AuthProviderType] | None`): List of authorization providers used for API access.
 - **tools** (`list[ToolType] | None`): List of tools available in this application.
 - **indexes** (`list[IndexType] | None`): List of indexes available for search operations.
 - **telemetry** (`TelemetrySink | None`): Optional telemetry sink for observability.
