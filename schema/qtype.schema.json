@@ -1236,11 +1236,9 @@
           "type": "string"
         },
         "cardinality": {
-          "const": "one",
-          "default": "one",
-          "description": "Flows always emit exactly one instance of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
+          "$ref": "#/$defs/StepCardinality",
+          "default": "auto",
+          "description": "The cardinality of the flow, inferred from its steps when set to 'auto'."
         },
         "inputs": {
           "anyOf": [
@@ -2114,7 +2112,8 @@
       "description": "Does this step emit 1 (one) or 0...N (many) items?",
       "enum": [
         "one",
-        "many"
+        "many",
+        "auto"
       ],
       "title": "StepCardinality",
       "type": "string"

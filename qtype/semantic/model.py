@@ -260,9 +260,9 @@ class Flow(Step):
     description: str | None = Field(
         None, description="Optional description of the flow."
     )
-    cardinality: Literal["one"] = Field(
-        StepCardinality.one,
-        description="Flows always emit exactly one instance of the outputs.",
+    cardinality: StepCardinality = Field(
+        StepCardinality.auto,
+        description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
     )
     mode: Literal["Complete", "Chat"] = Field("Complete")
     steps: list[Step] = Field(..., description="List of steps or step IDs.")

@@ -29,6 +29,7 @@ class StepCardinality(str, Enum):
 
     one = "one"
     many = "many"
+    auto = "auto"  # Let's the step determine this in semantic resolution. Currently only Flows can do this..
 
 
 class StrictBaseModel(BaseModel):
