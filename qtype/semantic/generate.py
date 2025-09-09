@@ -148,6 +148,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("\n\n".join(generated))
 
         # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
+        f.write("\n\n")
         f.write(
             dedent('''
             class Flow(Step):
