@@ -28,6 +28,7 @@ class TestGenericAuthContextManager:
 
         with auth(provider) as result:
             assert result is provider
+            assert isinstance(result, APIKeyAuthProvider)
             assert result.api_key == "sk-test123"
             assert result.host == "api.openai.com"
 
@@ -37,7 +38,13 @@ class TestGenericAuthContextManager:
         provider = AWSAuthProvider(
             id="test-aws",
             type="aws",
+            access_key_id=None,
+            secret_access_key=None,
+            session_token=None,
             profile_name="default",
+            role_arn=None,
+            role_session_name=None,
+            external_id=None,
             region="us-east-1",
         )
 
@@ -58,6 +65,7 @@ class TestGenericAuthContextManager:
             client_id="client123",
             client_secret="secret456",
             token_url="https://auth.example.com/token",
+            scopes=[],
         )
 
         with pytest.raises(NotImplementedError) as exc_info:
