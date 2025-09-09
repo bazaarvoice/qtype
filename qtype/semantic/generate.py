@@ -134,6 +134,9 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
 
+        # Write classes
+        f.write("\n\n".join(generated))
+
         # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
         f.write("\n\n")
         f.write("class Flow(Step):\n")
@@ -163,6 +166,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write('    @model_validator(mode="after")\n')
         f.write('    def infer_cardinality(self) -> "Flow":\n')
         f.write("        if self.cardinality == StepCardinality.auto:\n")
+        f.write("            self.cardinality = StepCardinality.one\n")
         f.write("            for step in self.steps:\n")
         f.write(
             "                if step.cardinality == StepCardinality.many:\n"
@@ -171,15 +175,9 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             "                    self.cardinality = StepCardinality.many\n"
         )
         f.write("                    break\n")
-        f.write(
-            "            # If no 'many' steps were found, it stays as 'one' (the default)\n"
-        )
-        f.write("            # which is the correct inferred value.\n")
         f.write("        return self\n")
         f.write("\n")
 
-        # Write classes
-        f.write("\n\n".join(generated))
         f.write("\n\n")
 
     # Format the file with Ruff
