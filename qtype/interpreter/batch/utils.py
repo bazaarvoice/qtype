@@ -151,3 +151,29 @@ def batch_iterator(
         failed_df = pd.DataFrame(columns=original_columns + [error_col])
 
     return success_df, failed_df
+
+
+def reconcile_results_and_errors(
+    results: list[pd.DataFrame], errors: list[pd.DataFrame]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Concatenates lists of pandas DataFrames containing results and errors into single DataFrames.
+
+    If the input lists are empty, creates empty DataFrames as placeholders.
+
+    Args:
+        results (list[pd.DataFrame]): List of DataFrames containing results.
+        errors (list[pd.DataFrame]): List of DataFrames containing errors.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing:
+            - A single DataFrame with all results concatenated.
+            - A single DataFrame with all errors concatenated.
+    """
+    if not results:
+        results = [pd.DataFrame({})]
+    if not errors:
+        errors = [pd.DataFrame({})]
+    return pd.concat(results, ignore_index=True), pd.concat(
+        errors, ignore_index=True
+    )

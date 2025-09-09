@@ -3,6 +3,7 @@ from typing import Any, Tuple
 
 import pandas as pd
 
+from qtype.interpreter.batch.sql_source import execute_sql_source
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.interpreter.batch.utils import (
     batch_iterator,
@@ -13,8 +14,10 @@ from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import (
     Condition,
     Decoder,
+    Flow,
     PromptTemplate,
     Search,
+    SQLSource,
     Step,
     Tool,
 )
@@ -43,7 +46,13 @@ def batch_execute_step(
 
     validate_inputs(inputs, step)
 
-    if step in SINGLE_WRAP_STEPS:
+    if isinstance(step, Flow):
+        from qtype.interpreter.batch.flow import batch_execute_flow
+
+        return batch_execute_flow(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, SQLSource):
+        return execute_sql_source(step, inputs, batch_config, **kwargs)
+    elif step in SINGLE_WRAP_STEPS:
         return batch_iterator(
             f=partial(single_step_adapter, step=step),
             batch=inputs,
