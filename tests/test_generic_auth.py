@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from qtype.interpreter.auth import UnsupportedAuthProviderError, auth
+from qtype.interpreter.auth.generic import UnsupportedAuthProviderError, auth
 from qtype.semantic.model import (
     APIKeyAuthProvider,
     AWSAuthProvider,
@@ -32,7 +32,7 @@ class TestGenericAuthContextManager:
             assert result.api_key == "sk-test123"
             assert result.host == "api.openai.com"
 
-    @patch("qtype.interpreter.auth.aws")
+    @patch("qtype.interpreter.auth.generic.aws")
     def test_aws_provider_delegates_to_aws_context_manager(self, mock_aws):
         """Test that AWSAuthProvider delegates to the AWS context manager."""
         provider = AWSAuthProvider(

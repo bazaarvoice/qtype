@@ -1,6 +1,12 @@
-from turtle import pd
 from typing import Tuple
 
+import boto3
+import pandas as pd
+import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+
+from qtype.interpreter.auth.generic import auth
 from qtype.semantic.model import SQLSource
 
 
@@ -17,25 +23,19 @@ def execute_sql_source(
             - The first DataFrame contains the successfully retrieved data.
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
-    import pandas as pd
-    import sqlalchemy
-    from sqlalchemy import create_engine
-    from sqlalchemy.exc import SQLAlchemyError
-
     # Create a database engine
+    connect_args = {}
     if step.auth:
-        # If authentication details are provided, use them to create the engine
-        engine = create_engine(
-            step.connection,
-            connect_args=step.auth,
-        )
-    engine = create_engine(step.connection)
+        with auth(step.auth) as creds:
+            if isinstance(creds, boto3.Session):
+                connect_args["boto3_session"] = creds
+    engine = create_engine(step.connection, connect_args=connect_args)
 
     try:
         # Execute the query and fetch the results into a DataFrame
         with engine.connect() as connection:
             result = connection.execute(sqlalchemy.text(step.query))
-            df = pd.DataFrame(result.fetchall(), columns=result.keys())
+            df = pd.DataFrame(result.fetchall(), columns=list(result.keys()))
         return (
             df,
             pd.DataFrame(),
