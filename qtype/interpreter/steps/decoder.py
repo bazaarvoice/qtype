@@ -44,6 +44,17 @@ def parse_xml(input: str) -> dict[str, Any]:
         raise ValueError(f"Invalid XML input: {e}")
 
 
+def parse(input: str, format: DecoderFormat) -> dict[str, Any]:
+    if format == DecoderFormat.json:
+        return parse_json(input)
+    elif format == DecoderFormat.xml:
+        return parse_xml(input)
+    else:
+        raise ValueError(
+            f"Unsupported decoder format: {format}. Supported formats are: {DecoderFormat.json}, {DecoderFormat.xml}."
+        )
+
+
 def execute(decoder: Decoder, **kwargs: dict[str, Any]) -> list[Variable]:
     """Execute a decoder step with the provided arguments.
 
@@ -64,14 +75,7 @@ def execute(decoder: Decoder, **kwargs: dict[str, Any]) -> list[Variable]:
             f"Input to decoder step {decoder.id} must be a string, found {type(input).__name__}."
         )
 
-    if decoder.format == DecoderFormat.json:
-        result_dict = parse_json(input)
-    elif decoder.format == DecoderFormat.xml:
-        result_dict = parse_xml(input)
-    else:
-        raise ValueError(
-            f"Unsupported decoder format: {decoder.format}. Supported formats are: {DecoderFormat.json}, {DecoderFormat.xml}."
-        )
+    result_dict = parse(input, decoder.format)
 
     # Set the output variables with the parsed results
     for output in decoder.outputs:
