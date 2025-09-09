@@ -14,6 +14,7 @@ TYPES_TO_IGNORE = {
     "CustomType",
     "DecoderFormat",
     "Document",
+    "Flow",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
     "StructuralTypeEnum",
@@ -107,7 +108,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write imports
         f.write("from __future__ import annotations\n\n")
         f.write("from typing import Any, Literal\n\n")
-        f.write("from pydantic import BaseModel, Field\n\n")
+        f.write("from pydantic import BaseModel, Field, model_validator\n\n")
         f.write("# Import enums and type aliases from DSL\n")
         f.write("from qtype.dsl.model import VariableType  # noqa: F401\n")
         f.write("from qtype.dsl.model import (  # noqa: F401\n")
@@ -132,6 +133,50 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         )
         f.write("    def is_set(self) -> bool:\n")
         f.write("        return self.value is not None\n")
+
+        # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
+        f.write("\n\n")
+        f.write("class Flow(Step):\n")
+        f.write(
+            '    """Defines a flow of steps that can be executed in sequence or parallel.\n'
+        )
+        f.write(
+            "    If input or output variables are not specified, they are inferred from\n"
+        )
+        f.write("    the first and last step, respectively.\n")
+        f.write('    """\n\n')
+        f.write("    description: str | None = Field(\n")
+        f.write(
+            '        None, description="Optional description of the flow."\n'
+        )
+        f.write("    )\n")
+        f.write("    cardinality: StepCardinality = Field(\n")
+        f.write("        StepCardinality.auto,\n")
+        f.write(
+            "        description=\"The cardinality of the flow, inferred from its steps when set to 'auto'.\",\n"
+        )
+        f.write("    )\n")
+        f.write('    mode: Literal["Complete", "Chat"] = Field("Complete")\n')
+        f.write(
+            '    steps: list[Step] = Field(..., description="List of steps or step IDs.")\n\n'
+        )
+        f.write('    @model_validator(mode="after")\n')
+        f.write('    def infer_cardinality(self) -> "Flow":\n')
+        f.write("        if self.cardinality == StepCardinality.auto:\n")
+        f.write("            for step in self.steps:\n")
+        f.write(
+            "                if step.cardinality == StepCardinality.many:\n"
+        )
+        f.write(
+            "                    self.cardinality = StepCardinality.many\n"
+        )
+        f.write("                    break\n")
+        f.write(
+            "            # If no 'many' steps were found, it stays as 'one' (the default)\n"
+        )
+        f.write("            # which is the correct inferred value.\n")
+        f.write("        return self\n")
+        f.write("\n")
 
         # Write classes
         f.write("\n\n".join(generated))
