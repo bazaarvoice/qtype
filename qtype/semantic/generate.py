@@ -2,6 +2,7 @@ import argparse
 import inspect
 import subprocess
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Literal, Union, get_args, get_origin
 
 import networkx as nx
@@ -91,94 +92,92 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
     # Write to output file
     with open(output_path, "w") as f:
         # Write header
-        f.write('"""\n')
-        f.write("Semantic Intermediate Representation models.\n\n")
         f.write(
-            "This module contains the semantic models that represent a resolved QType\n"
+            dedent('''
+            """
+            Semantic Intermediate Representation models.
+
+            This module contains the semantic models that represent a resolved QType
+            specification where all ID references have been replaced with actual object
+            references.
+
+            Generated automatically with command:
+            qtype generate semantic-model
+            """
+
+        ''').lstrip()
         )
-        f.write(
-            "specification where all ID references have been replaced with actual object\n"
-        )
-        f.write("references.\n\n")
-        f.write(
-            "Generated automatically with command:\nqtype generate semantic-model\n"
-        )
-        f.write('"""\n\n')
 
         # Write imports
-        f.write("from __future__ import annotations\n\n")
-        f.write("from typing import Any, Literal\n\n")
-        f.write("from pydantic import BaseModel, Field, model_validator\n\n")
-        f.write("# Import enums and type aliases from DSL\n")
-        f.write("from qtype.dsl.model import VariableType  # noqa: F401\n")
-        f.write("from qtype.dsl.model import (  # noqa: F401\n")
-        f.write("    CustomType,\n")
-        f.write("    DecoderFormat,\n")
-        f.write("    PrimitiveTypeEnum,\n")
-        f.write("    StepCardinality,\n")
-        f.write("    StructuralTypeEnum,\n")
-        f.write(")\n")
         f.write(
-            "from qtype.dsl.model import Variable as DSLVariable  # noqa: F401\n"
+            dedent("""
+            from __future__ import annotations
+
+            from typing import Any, Literal
+
+            from pydantic import BaseModel, Field, model_validator
+
+            # Import enums and type aliases from DSL
+            from qtype.dsl.model import VariableType  # noqa: F401
+            from qtype.dsl.model import (  # noqa: F401
+                CustomType,
+                DecoderFormat,
+                PrimitiveTypeEnum,
+                StepCardinality,
+                StructuralTypeEnum,
+            )
+            from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
+            from qtype.semantic.base_types import ImmutableModel
+
+        """).lstrip()
         )
-        f.write("from qtype.semantic.base_types import ImmutableModel\n")
 
         # Write the new variable class
-        f.write("class Variable(DSLVariable, BaseModel):\n")
         f.write(
-            '    """Semantic version of DSL Variable with ID references resolved."""\n'
+            dedent('''
+            class Variable(DSLVariable, BaseModel):
+                """Semantic version of DSL Variable with ID references resolved."""
+                value: Any | None = Field(None, description="The value of the variable")
+                def is_set(self) -> bool:
+                    return self.value is not None
+
+        ''').lstrip()
         )
-        f.write(
-            '    value: Any | None = Field(None, description="The value of the variable")\n'
-        )
-        f.write("    def is_set(self) -> bool:\n")
-        f.write("        return self.value is not None\n")
 
         # Write classes
         f.write("\n\n".join(generated))
 
         # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
-        f.write("\n\n")
-        f.write("class Flow(Step):\n")
         f.write(
-            '    """Defines a flow of steps that can be executed in sequence or parallel.\n'
-        )
-        f.write(
-            "    If input or output variables are not specified, they are inferred from\n"
-        )
-        f.write("    the first and last step, respectively.\n")
-        f.write('    """\n\n')
-        f.write("    description: str | None = Field(\n")
-        f.write(
-            '        None, description="Optional description of the flow."\n'
-        )
-        f.write("    )\n")
-        f.write("    cardinality: StepCardinality = Field(\n")
-        f.write("        StepCardinality.auto,\n")
-        f.write(
-            "        description=\"The cardinality of the flow, inferred from its steps when set to 'auto'.\",\n"
-        )
-        f.write("    )\n")
-        f.write('    mode: Literal["Complete", "Chat"] = Field("Complete")\n')
-        f.write(
-            '    steps: list[Step] = Field(..., description="List of steps or step IDs.")\n\n'
-        )
-        f.write('    @model_validator(mode="after")\n')
-        f.write('    def infer_cardinality(self) -> "Flow":\n')
-        f.write("        if self.cardinality == StepCardinality.auto:\n")
-        f.write("            self.cardinality = StepCardinality.one\n")
-        f.write("            for step in self.steps:\n")
-        f.write(
-            "                if step.cardinality == StepCardinality.many:\n"
-        )
-        f.write(
-            "                    self.cardinality = StepCardinality.many\n"
-        )
-        f.write("                    break\n")
-        f.write("        return self\n")
-        f.write("\n")
+            dedent('''
+            class Flow(Step):
+                """Defines a flow of steps that can be executed in sequence or parallel.
+                If input or output variables are not specified, they are inferred from
+                the first and last step, respectively.
+                """
 
-        f.write("\n\n")
+                description: str | None = Field(
+                    None, description="Optional description of the flow."
+                )
+                cardinality: StepCardinality = Field(
+                    StepCardinality.auto,
+                    description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
+                )
+                mode: Literal["Complete", "Chat"] = Field("Complete")
+                steps: list[Step] = Field(..., description="List of steps or step IDs.")
+
+                @model_validator(mode="after")
+                def infer_cardinality(self) -> "Flow":
+                    if self.cardinality == StepCardinality.auto:
+                        self.cardinality = StepCardinality.one
+                        for step in self.steps:
+                            if step.cardinality == StepCardinality.many:
+                                self.cardinality = StepCardinality.many
+                                break
+                    return self
+
+        ''').lstrip()
+        )
 
     # Format the file with Ruff
     format_with_ruff(str(output_path))
