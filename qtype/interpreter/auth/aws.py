@@ -13,6 +13,7 @@ from typing import Any, Generator
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 
+from qtype.interpreter.auth.cache import cache_auth, get_cached_auth
 from qtype.semantic.model import AWSAuthProvider
 
 
@@ -22,17 +23,55 @@ class AWSAuthenticationError(Exception):
     pass
 
 
+def _is_session_valid(session: boto3.Session) -> bool:
+    """
+    Check if a boto3 session is still valid by testing credential access.
+
+    Args:
+        session: The boto3 session to validate
+
+    Returns:
+        bool: True if the session is valid, False otherwise
+    """
+    try:
+        credentials = session.get_credentials()
+        if credentials is None:
+            return False
+
+        # For temporary credentials, check if they're still valid
+        if hasattr(credentials, "token") and credentials.token:
+            # Create a test STS client to verify the credentials
+            sts_client = session.client("sts")
+            sts_client.get_caller_identity()
+
+        return True
+    except (ClientError, NoCredentialsError):
+        return False
+    except Exception:
+        # Any other exception means the session is likely invalid
+        return False
+
+
 @contextmanager
 def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
     """
     Create a boto3 Session using AWS authentication provider configuration.
 
     This context manager creates a boto3 Session based on the authentication
-    method specified in the AWSAuthProvider. It supports:
+    method specified in the AWSAuthProvider. Sessions are cached using an LRU
+    cache to avoid recreating them unnecessarily. The cache size can be configured
+    via the AUTH_CACHE_MAX_SIZE environment variable (default: 128).
+
+    It supports:
     - Direct credentials (access key + secret key + optional session token)
     - AWS profiles from shared credentials/config files
     - Role assumption (with optional external ID and MFA)
     - Environment-based authentication (when no explicit credentials provided)
+
+    Caching behavior:
+    - Sessions are cached based on the AWSAuthProvider configuration
+    - Cached sessions are validated before reuse to check for expiration
+    - Invalid or expired sessions are evicted and recreated
 
     Args:
         aws_provider: AWSAuthProvider instance containing authentication configuration
@@ -46,7 +85,7 @@ def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
     Example:
         ```python
         from qtype.semantic.model import AWSAuthProvider
-        from qtype.interpreter.auth import aws
+        from qtype.interpreter.auth.aws import aws
 
         aws_auth = AWSAuthProvider(
             id="my-aws-auth",
@@ -62,6 +101,15 @@ def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
         ```
     """
     try:
+        # Check cache first - use provider object directly as cache key
+        cached_session = get_cached_auth(aws_provider)
+
+        if cached_session is not None and _is_session_valid(cached_session):
+            # Cache hit with valid session
+            yield cached_session
+            return
+
+        # Cache miss or invalid session - create new session
         session = _create_session(aws_provider)
 
         # Validate the session by attempting to get credentials
@@ -70,6 +118,9 @@ def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
             raise AWSAuthenticationError(
                 f"Failed to obtain AWS credentials for provider '{aws_provider.id}'"
             )
+
+        # Cache the valid session using provider object as key
+        cache_auth(aws_provider, session)
 
         yield session
 
