@@ -52,6 +52,35 @@ def input_df():
     return pd.DataFrame([{"user_id": "123"}, {"user_id": "456"}])
 
 
+@pytest.fixture
+def mock_db_engine():
+    """Create a mock database engine with connection."""
+    mock_connection = MagicMock()
+    mock_engine = MagicMock()
+    mock_engine.connect.return_value.__enter__.return_value = mock_connection
+    return mock_engine, mock_connection
+
+
+@pytest.fixture
+def mock_sql_result():
+    """Create a mock SQL result."""
+    mock_result = MagicMock()
+    mock_result.fetchall.return_value = [("John", 25), ("Jane", 30)]
+    mock_result.keys.return_value = ["name", "age"]
+    return mock_result
+
+
+@pytest.fixture
+def auth_provider():
+    """Create an API key auth provider for testing."""
+    return APIKeyAuthProvider(
+        id="test-auth",
+        type="api_key",
+        api_key="test-key",
+        host="test-host",
+    )
+
+
 class TestToOutputColumns:
     """Test the to_output_columns function."""
 
@@ -92,21 +121,14 @@ class TestExecuteSQLSource:
         sample_sql_source,
         input_df,
         batch_config,
+        mock_db_engine,
+        mock_sql_result,
     ):
         """Test successful SQL execution."""
-        # Mock database connection and results
-        mock_connection = MagicMock()
-        mock_engine = MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = (
-            mock_connection
-        )
+        # Setup mocks
+        mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
-
-        # Mock SQL result
-        mock_result = MagicMock()
-        mock_result.fetchall.return_value = [("John", 25), ("Jane", 30)]
-        mock_result.keys.return_value = ["name", "age"]
-        mock_connection.execute.return_value = mock_result
+        mock_connection.execute.return_value = mock_sql_result
 
         results, errors = execute_sql_source(
             sample_sql_source, input_df, batch_config
@@ -127,9 +149,10 @@ class TestExecuteSQLSource:
         sample_sql_source,
         input_df,
         batch_config,
+        mock_db_engine,
     ):
         """Test SQL error handling in FAIL mode."""
-        mock_engine = MagicMock()
+        mock_engine, _ = mock_db_engine
         mock_engine.connect.side_effect = SQLAlchemyError("Database error")
         mock_create_engine.return_value = mock_engine
 
@@ -145,9 +168,10 @@ class TestExecuteSQLSource:
         sample_sql_source,
         input_df,
         batch_config_drop,
+        mock_db_engine,
     ):
         """Test SQL error handling in DROP mode."""
-        mock_engine = MagicMock()
+        mock_engine, _ = mock_db_engine
         mock_engine.connect.side_effect = SQLAlchemyError("Database error")
         mock_create_engine.return_value = mock_engine
 
@@ -164,16 +188,16 @@ class TestExecuteSQLSource:
     @patch("qtype.interpreter.batch.sql_source.create_engine")
     @patch("qtype.interpreter.batch.sql_source.validate_inputs")
     def test_with_authentication(
-        self, mock_validate, mock_create_engine, mock_auth, batch_config
+        self,
+        mock_validate,
+        mock_create_engine,
+        mock_auth,
+        batch_config,
+        auth_provider,
+        mock_db_engine,
     ):
         """Test SQL execution with authentication."""
         # Create SQL source with auth
-        auth_provider = APIKeyAuthProvider(
-            id="test-auth",
-            type="api_key",
-            api_key="test-key",
-            host="test-host",
-        )
         sql_source = SQLSource(
             id="test-sql-source",
             query="SELECT * FROM table",
@@ -187,11 +211,7 @@ class TestExecuteSQLSource:
         mock_session = MagicMock()
         mock_auth.return_value.__enter__.return_value = mock_session
 
-        mock_connection = MagicMock()
-        mock_engine = MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = (
-            mock_connection
-        )
+        mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
 
         mock_result = MagicMock()
@@ -213,19 +233,13 @@ class TestExecuteSQLSource:
         mock_create_engine,
         sample_sql_source,
         batch_config,
+        mock_db_engine,
+        mock_sql_result,
     ):
         """Test that input parameters are correctly injected into SQL queries."""
-        mock_connection = MagicMock()
-        mock_engine = MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = (
-            mock_connection
-        )
+        mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
-
-        mock_result = MagicMock()
-        mock_result.fetchall.return_value = [("John", 25)]
-        mock_result.keys.return_value = ["name", "age"]
-        mock_connection.execute.return_value = mock_result
+        mock_connection.execute.return_value = mock_sql_result
 
         input_df = pd.DataFrame([{"user_id": "123", "extra_col": "ignored"}])
         execute_sql_source(sample_sql_source, input_df, batch_config)
