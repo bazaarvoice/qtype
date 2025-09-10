@@ -5,21 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from qtype.base.exceptions import LoadError, ValidationError
+from qtype.base.exceptions import InterpreterError, LoadError, ValidationError
 from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
 from qtype.semantic.model import Application as SemanticApplication
-
-from .services import (
-    ConversionService,
-    ExecutionService,
-    GenerationService,
-    LoadingService,
-    ValidationService,
-    VisualizationService,
-)
 
 logger = get_logger("application.facade")
 
@@ -33,13 +24,45 @@ class QTypeFacade:
     """
 
     def __init__(self) -> None:
-        """Initialize the facade with all necessary services."""
-        self._loading_service = LoadingService()
-        self._validation_service = ValidationService()
-        self._conversion_service = ConversionService()
-        self._generation_service = GenerationService()
-        self._visualization_service = VisualizationService()
-        self._execution_service = ExecutionService()
+        """Initialize the facade."""
+        # Lazy-loaded imports to avoid circular dependencies
+        self._loader = None
+        self._resolver = None
+        self._validator = None
+
+    def _validate_loaded_document(self, document: DSLApplication) -> list[str]:
+        """Helper method to validate an already-loaded DSL document."""
+        logger.info("Validating document")
+        errors: list[str] = []
+
+        # DSL-level validation
+        if self._validator is None:
+            from qtype.dsl.validator import validate
+
+            self._validator = validate
+
+        try:
+            self._validator(document)
+        except Exception as e:
+            errors.append(f"DSL validation failed: {e}")
+
+        # Semantic-level validation
+        if self._resolver is None:
+            from qtype.semantic.resolver import resolve
+
+            self._resolver = resolve
+
+        try:
+            self._resolver(document)
+        except Exception as e:
+            errors.append(f"Semantic validation failed: {e}")
+
+        if errors:
+            logger.warning(f"Validation failed with {len(errors)} errors")
+        else:
+            logger.info("Document validation passed")
+
+        return errors
 
     def load_and_validate(self, path: PathLike) -> DSLApplication:
         """
@@ -63,17 +86,24 @@ class QTypeFacade:
             logger.info(f"Loading and validating document: {path_obj}")
 
             # Load the DSL document
-            document = self._loading_service.load_document_dsl_only(path_obj)
+            from qtype.loader import load_document
 
-            # Validate it
-            errors = self._validation_service.validate_document(document)
+            content = path_obj.read_text(encoding="utf-8")
+            dsl_app, _ = load_document(content)
+            if not isinstance(dsl_app, DSLApplication):
+                raise ValueError(
+                    f"Root document is not an Application, found {type(dsl_app)}"
+                )
+
+            # Validate the document
+            errors = self._validate_loaded_document(dsl_app)
             if errors:
                 raise ValidationError(
                     f"Validation failed: {'; '.join(errors)}", errors
                 )
 
             logger.info("Document loaded and validated successfully")
-            return document
+            return dsl_app
 
         except (LoadError, ValidationError):
             raise
@@ -98,7 +128,14 @@ class QTypeFacade:
             path_obj = Path(path)
             logger.info(f"Loading semantic model: {path_obj}")
 
-            semantic_model, _ = self._loading_service.load_document(path_obj)
+            # Load the document
+            if self._loader is None:
+                from qtype.loader import load
+
+                self._loader = load
+
+            content = path_obj.read_text(encoding="utf-8")
+            semantic_model, _ = self._loader(content)
             return semantic_model
 
         except Exception as e:
@@ -137,13 +174,34 @@ class QTypeFacade:
             document = self.load_and_validate(path)
 
             # Execute the workflow
-            return self._execution_service.execute_workflow(
-                document, flow_name, **kwargs
-            )
+            if self._resolver is None:
+                from qtype.semantic.resolver import resolve
+
+                self._resolver = resolve
+
+            logger.info(f"Executing workflow: {flow_name or 'default'}")
+            semantic_model = self._resolver(document)
+
+            # Find the flow to execute
+            target_flow = None
+            if flow_name:
+                for flow in semantic_model.flows:
+                    if flow.id == flow_name:
+                        target_flow = flow
+                        break
+                if target_flow is None:
+                    raise ValueError(f"Flow '{flow_name}' not found")
+            else:
+                if semantic_model.flows:
+                    target_flow = semantic_model.flows[0]
+                else:
+                    raise ValueError("No flows found in application")
+
+            from qtype.interpreter.flow import execute_flow
+
+            return execute_flow(target_flow, **kwargs)
 
         except Exception as e:
-            from qtype.base.exceptions import InterpreterError
-
             if isinstance(e, (LoadError, ValidationError)):
                 raise
             raise InterpreterError(f"Workflow execution failed: {e}") from e
@@ -163,8 +221,19 @@ class QTypeFacade:
         """
         try:
             path_obj = Path(path)
-            document = self._loading_service.load_document_dsl_only(path_obj)
-            return self._validation_service.validate_document(document)
+
+            # Load the DSL document
+            from qtype.loader import load_document
+
+            content = path_obj.read_text(encoding="utf-8")
+            dsl_app, _ = load_document(content)
+            if not isinstance(dsl_app, DSLApplication):
+                raise ValueError(
+                    f"Root document is not an Application, found {type(dsl_app)}"
+                )
+
+            # Validate the document
+            return self._validate_loaded_document(dsl_app)
 
         except Exception as e:
             raise LoadError(f"Failed to validate {path}: {e}") from e
@@ -185,7 +254,18 @@ class QTypeFacade:
         """
         try:
             document = self.load_and_validate(path)
-            return self._generation_service.generate_schema(document)
+
+            # Generate schema from the semantic model
+            if self._resolver is None:
+                from qtype.semantic.resolver import resolve
+
+                self._resolver = resolve
+
+            semantic_model = self._resolver(document)
+
+            # For now, return the schema of the semantic model
+            # TODO: Implement proper schema generation
+            return semantic_model.model_json_schema()
 
         except Exception as e:
             if isinstance(e, (LoadError, ValidationError)):
@@ -210,7 +290,18 @@ class QTypeFacade:
         """
         try:
             document = self.load_and_validate(path)
-            return self._visualization_service.visualize_application(document)
+
+            # Generate visualization from the semantic model
+            if self._resolver is None:
+                from qtype.semantic.resolver import resolve
+
+                self._resolver = resolve
+
+            semantic_model = self._resolver(document)
+
+            from qtype.semantic.visualize import visualize_application
+
+            return visualize_application(semantic_model)
 
         except Exception as e:
             if isinstance(e, (LoadError, ValidationError)):
@@ -221,7 +312,7 @@ class QTypeFacade:
 
     def validate_document(self, document: DSLApplication) -> list[str]:
         """Validate an already-loaded document."""
-        return self._validation_service.validate_document(document)
+        return self._validate_loaded_document(document)
 
     def execute_document_workflow(
         self,
@@ -230,12 +321,110 @@ class QTypeFacade:
         **kwargs: Any,
     ) -> Any:
         """Execute a workflow from an already-loaded document."""
-        return self._execution_service.execute_workflow(
-            document, flow_name, **kwargs
-        )
+        try:
+            if self._resolver is None:
+                from qtype.semantic.resolver import resolve
+
+                self._resolver = resolve
+
+            logger.info(f"Executing workflow: {flow_name or 'default'}")
+            semantic_model = self._resolver(document)
+
+            # Find the flow to execute
+            target_flow = None
+            if flow_name:
+                for flow in semantic_model.flows:
+                    if flow.id == flow_name:
+                        target_flow = flow
+                        break
+                if target_flow is None:
+                    raise ValueError(f"Flow '{flow_name}' not found")
+            else:
+                if semantic_model.flows:
+                    target_flow = semantic_model.flows[0]
+                else:
+                    raise ValueError("No flows found in application")
+
+            from qtype.interpreter.flow import execute_flow
+
+            return execute_flow(target_flow, **kwargs)
+
+        except Exception as e:
+            raise InterpreterError(f"Workflow execution failed: {e}") from e
 
     def convert_document(self, document: DocumentType) -> str:
         """Convert a document to YAML format."""
-        # If it's an Application, wrap it in a Document
+        try:
+            from pydantic_yaml import to_yaml_str
 
-        return self._conversion_service.convert_to_yaml(document)
+            # If it's an Application, wrap it in a Document
+            if isinstance(document, DSLApplication):
+                from qtype.dsl.model import Document
+
+                wrapped_document = Document(root=document)
+                return to_yaml_str(
+                    wrapped_document, exclude_unset=True, exclude_none=True
+                )
+
+            return to_yaml_str(document, exclude_unset=True, exclude_none=True)
+        except ImportError:
+            # Fallback to basic YAML if pydantic_yaml is not available
+            import yaml
+
+            if isinstance(document, DSLApplication):
+                from qtype.dsl.model import Document
+
+                wrapped_document = Document(root=document)
+                document_dict = wrapped_document.model_dump(
+                    exclude_unset=True, exclude_none=True
+                )
+            else:
+                document_dict = document.model_dump(
+                    exclude_unset=True, exclude_none=True
+                )
+
+            return yaml.dump(document_dict, default_flow_style=False)
+
+    def generate_aws_bedrock_models(self) -> list[dict[str, Any]]:
+        """
+        Generate AWS Bedrock model definitions.
+
+        Returns:
+            List of model definitions for AWS Bedrock models.
+
+        Raises:
+            ImportError: If boto3 is not installed.
+            Exception: If AWS API call fails.
+        """
+        try:
+            import boto3
+
+            logger.info("Discovering AWS Bedrock models...")
+            client = boto3.client("bedrock")
+            models = client.list_foundation_models()
+
+            model_definitions = []
+            for model_summary in models.get("modelSummaries", []):
+                model_definitions.append(
+                    {
+                        "id": model_summary["modelId"],
+                        "provider": "aws-bedrock",
+                    }
+                )
+
+            logger.info(
+                f"Discovered {len(model_definitions)} AWS Bedrock models"
+            )
+            return model_definitions
+
+        except ImportError as e:
+            logger.error(
+                "boto3 is not installed. Please install it to use AWS Bedrock model discovery."
+            )
+            raise ImportError(
+                "boto3 is required for AWS Bedrock model discovery"
+            ) from e
+
+        except Exception as e:
+            logger.error(f"Failed to discover AWS Bedrock models: {e}")
+            raise

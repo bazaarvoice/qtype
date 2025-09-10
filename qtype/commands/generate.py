@@ -15,7 +15,6 @@ def run_dump_commons_library(args: argparse.Namespace) -> None:
     from pathlib import Path
 
     from qtype.application.facade import QTypeFacade
-    from qtype.application.services import ModelDiscoveryService
     from qtype.dsl.model import Model, ModelList
 
     logger = logging.getLogger(__name__)
@@ -39,8 +38,7 @@ def run_dump_commons_library(args: argparse.Namespace) -> None:
         # Generate AWS Bedrock models
         logger.info("Generating AWS Bedrock models...")
         try:
-            model_service = ModelDiscoveryService()
-            model_definitions = model_service.generate_aws_bedrock_models()
+            model_definitions = facade.generate_aws_bedrock_models()
 
             model_list = ModelList(
                 root=[

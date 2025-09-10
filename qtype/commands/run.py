@@ -10,10 +10,36 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import magic
+import pandas as pd
+
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import InterpreterError, LoadError, ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+def read_data_from_file(file_path: str) -> pd.DataFrame:
+    """
+    Reads a file into a pandas DataFrame based on its MIME type.
+    """
+    mime_type = magic.Magic(mime=True).from_file(file_path)
+
+    if mime_type == "text/csv":
+        return pd.read_csv(file_path)
+    elif mime_type == "application/json":
+        return pd.read_json(file_path)
+    elif mime_type in [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+    ]:
+        return pd.read_excel(file_path)
+    elif mime_type in ["application/vnd.parquet", "application/octet-stream"]:
+        return pd.read_parquet(file_path)
+    else:
+        raise ValueError(
+            f"Unsupported MIME type for file {file_path}: {mime_type}"
+        )
 
 
 def run_flow(args: Any) -> None:
@@ -28,12 +54,18 @@ def run_flow(args: Any) -> None:
     try:
         logger.info(f"Running flow from {spec_path}")
 
-        # Parse input JSON
-        try:
-            input_data = json.loads(args.input) if args.input else {}
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Invalid JSON input: {e}")
-            return
+        if args.input_file:
+            logger.info(f"Loading input data from file: {args.input_file}")
+            # The facade should handle file loading internally
+            # or you can add file reading logic here
+            input_data = read_data_from_file(args.input_file)
+        else:
+            # Parse input JSON
+            try:
+                input_data = json.loads(args.input) if args.input else {}
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ Invalid JSON input: {e}")
+                return
 
         # Execute the workflow using the facade
         result = facade.execute_workflow(
@@ -85,13 +117,23 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         help="The name of the flow to run. If not specified, runs the first flow found.",
     )
-    cmd_parser.add_argument(
-        "input",
+    # Allow either a direct JSON string or an input file
+    input_group = cmd_parser.add_mutually_exclusive_group()
+    input_group.add_argument(
+        "-i",
+        "--input",
         type=str,
-        nargs="?",
         default="{}",
         help="JSON blob of input values for the flow (default: {}).",
     )
+    input_group.add_argument(
+        "-I",
+        "--input-file",
+        type=str,
+        default=None,
+        help="Path to a file (e.g., CSV, JSON) with input data for batch processing.",
+    )
+
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
     )
