@@ -49,10 +49,7 @@ def serve(args: Any) -> None:
 
         # Start the server
         uvicorn.run(
-            fastapi_app,
-            host=args.host,
-            port=args.port,
-            log_level="info",
+            fastapi_app, host=args.host, port=args.port, log_level="info"
         )
 
     except LoadError as e:
