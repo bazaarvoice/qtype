@@ -5,11 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from qtype.base.logging import get_logger
 from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
+from qtype.dsl.base_types import StepCardinality
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
+from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
+from qtype.semantic.model import Variable
 
 logger = get_logger("application.facade")
 
@@ -47,9 +52,11 @@ class QTypeFacade:
     def execute_workflow(
         self,
         path: PathLike,
+        inputs: dict | pd.DataFrame,
         flow_name: str | None = None,
+        batch_config: BatchConfig | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> pd.DataFrame | list[Variable]:
         """Execute a complete workflow from document to results."""
         logger.info(f"Executing workflow from {path}")
 
@@ -70,10 +77,25 @@ class QTypeFacade:
                 target_flow = semantic_model.flows[0]
             else:
                 raise ValueError("No flows found in application")
+        if target_flow.cardinality == StepCardinality.many:
+            if isinstance(inputs, dict):
+                inputs = pd.DataFrame([inputs])
+            if not isinstance(inputs, pd.DataFrame):
+                raise ValueError(
+                    "Input must be a DataFrame for flows with 'many' cardinality"
+                )
+            from qtype.interpreter.batch.flow import batch_execute_flow
 
-        from qtype.interpreter.flow import execute_flow
+            batch_config = batch_config or BatchConfig()
+            results, errors = batch_execute_flow(
+                target_flow, inputs, batch_config, **kwargs
+            )  # type: ignore
+            return results
+        else:
+            from qtype.interpreter.flow import execute_flow
 
-        return execute_flow(target_flow, **kwargs)
+            args = {**kwargs, **inputs}
+            return execute_flow(target_flow, **args)
 
     def visualize_application(self, path: PathLike) -> str:
         """Visualize an application as Mermaid diagram."""

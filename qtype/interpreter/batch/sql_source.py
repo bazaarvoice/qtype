@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from qtype.interpreter.auth.generic import auth
-from qtype.interpreter.batch.types import BatchConfig
+from qtype.interpreter.batch.types import BatchConfig, ErrorMode
 from qtype.interpreter.batch.utils import (
     reconcile_results_and_errors,
     validate_inputs,
@@ -38,7 +38,7 @@ def execute_sql_source(
     if step.auth:
         with auth(step.auth) as creds:
             if isinstance(creds, boto3.Session):
-                connect_args["boto3_session"] = creds
+                connect_args["session"] = creds
     engine = create_engine(step.connection, connect_args=connect_args)
 
     results = []
@@ -59,6 +59,8 @@ def execute_sql_source(
                 )
             results.append(df)
         except SQLAlchemyError as e:
+            if batch_config.error_mode == ErrorMode.FAIL:
+                raise e
             # If there's an error, return an empty DataFrame and the error message
             error_df = pd.DataFrame([{"error": str(e)}])
             errors.append(error_df)

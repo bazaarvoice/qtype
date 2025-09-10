@@ -56,36 +56,42 @@ def run_flow(args: Any) -> None:
 
         if args.input_file:
             logger.info(f"Loading input data from file: {args.input_file}")
-            input_data = read_data_from_file(args.input_file)
+            input = read_data_from_file(args.input_file)
         else:
             # Parse input JSON
             try:
-                input_data = json.loads(args.input) if args.input else {}
+                input = json.loads(args.input) if args.input else {}
             except json.JSONDecodeError as e:
                 logger.error(f"❌ Invalid JSON input: {e}")
                 return
 
         # Execute the workflow using the facade
         result = facade.execute_workflow(
-            spec_path, flow_name=args.flow, **input_data
+            spec_path, flow_name=args.flow, inputs=input, batch_config=None
         )
 
         logger.info("✅ Flow execution completed successfully")
 
         # Print results
-        if result:
-            if hasattr(result, "__iter__") and not isinstance(result, str):
-                # If result is a list of variables or similar
-                try:
-                    for item in result:
-                        if hasattr(item, "id") and hasattr(item, "value"):
-                            logger.info(f"Output {item.id}: {item.value}")
-                        else:
-                            logger.info(f"Result: {item}")
-                except TypeError:
-                    logger.info(f"Result: {result}")
-            else:
+        if isinstance(result, pd.DataFrame):
+            logging.info("Output DataFrame:")
+            logging.info(result)
+        elif (
+            result
+            and hasattr(result, "__iter__")
+            and not isinstance(result, str)
+        ):
+            # If result is a list of variables or similar
+            try:
+                for item in result:
+                    if hasattr(item, "id") and hasattr(item, "value"):
+                        logger.info(f"Output {item.id}: {item.value}")
+                    else:
+                        logger.info(f"Result: {item}")
+            except TypeError:
                 logger.info(f"Result: {result}")
+        elif isinstance(result, str):
+            logger.info(f"Result: {result}")
         else:
             logger.info("Flow completed with no output")
 
@@ -96,7 +102,7 @@ def run_flow(args: Any) -> None:
     except InterpreterError as e:
         logger.error(f"❌ Execution failed: {e}")
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}")
+        logger.error(f"❌ Unexpected error: {e}", exc_info=True)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
