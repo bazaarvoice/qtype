@@ -34,19 +34,38 @@ def _get_variable_type(var: Variable) -> tuple[Type, dict[str, Any]]:
     return python_type, field_metadata
 
 
-def create_output_type_model(flow: Flow) -> Type[BaseModel]:
+def create_output_type_model(
+    flow: Flow, is_batch: bool = False
+) -> Type[BaseModel]:
     """Dynamically create a Pydantic response model for a flow."""
-    fields = {}
+    fields: dict[str, tuple[Any, Any]] = {}
 
     # Always include flow_id and status
     fields["flow_id"] = (str, Field(description="ID of the executed flow"))
     fields["status"] = (str, Field(description="Execution status"))
+
+    if is_batch:
+        # Include information about the number of results, errors, etc.
+        fields["num_inputs"] = (int, Field(description="Number of inputs."))
+        fields["num_results"] = (int, Field(description="Number of results."))
+        fields["num_errors"] = (int, Field(description="Number of errors."))
+        fields["errors"] = (
+            list[dict[Any, Any]],
+            Field(description="All inputs with their associated errors."),
+        )
 
     # Add dynamic output fields
     if flow.outputs:
         output_fields = {}
         for var in flow.outputs:
             python_type, type_metadata = _get_variable_type(var)
+
+            # Make type optional for batch processing since rows might have missing values
+            if is_batch:
+                from typing import Union
+
+                python_type = Union[python_type, type(None)]  # type: ignore
+
             field_info = Field(
                 # TODO: grok the description from the variable if available
                 # description=f"Output for {var.id}",
@@ -56,15 +75,21 @@ def create_output_type_model(flow: Flow) -> Type[BaseModel]:
             output_fields[var.id] = (python_type, field_info)
 
         # Create nested outputs model
-        outputs_model = create_model(
+        outputs_model: Type[BaseModel] = create_model(
             f"{flow.id}Outputs",
             __base__=BaseModel,
             **output_fields,
         )  # type: ignore
-        fields["outputs"] = (
-            outputs_model,
-            Field(description="Flow execution outputs"),
-        )
+        if is_batch:
+            fields["outputs"] = (
+                list[outputs_model],  # type: ignore
+                Field(description="List of flow execution outputs"),
+            )
+        else:
+            fields["outputs"] = (
+                outputs_model,
+                Field(description="Flow execution outputs"),
+            )
     else:
         fields["outputs"] = (
             dict[str, Any],
@@ -74,10 +99,9 @@ def create_output_type_model(flow: Flow) -> Type[BaseModel]:
     return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)  # type: ignore
 
 
-def create_input_type_model(flow: Flow) -> Type[BaseModel]:
+def create_input_type_model(flow: Flow, is_batch: bool) -> Type[BaseModel]:
     """Dynamically create a Pydantic request model for a flow."""
-    if not flow.inputs:
-        # Return a simple model with no required fields
+    if not flow.inputs and not is_batch:
         return create_model(
             f"{flow.id}Request",
             __base__=BaseModel,
@@ -93,5 +117,17 @@ def create_input_type_model(flow: Flow) -> Type[BaseModel]:
             json_schema_extra=type_metadata,
         )
         fields[var.id] = (python_type, field_info)
+
+    if is_batch:
+        # For batch processing, wrap inputs in a list
+        single_input_model: Type[BaseModel] = create_model(
+            f"{flow.id}SingleInput", __base__=BaseModel, **fields
+        )  # type: ignore
+        fields = {
+            "inputs": (
+                list[single_input_model],  # type: ignore
+                Field(description="List of inputs for batch processing"),
+            )
+        }
 
     return create_model(f"{flow.id}Request", __base__=BaseModel, **fields)  # type: ignore

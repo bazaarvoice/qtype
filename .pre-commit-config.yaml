@@ -14,8 +14,7 @@ repos:
         args: [qtype/, tests/]
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.8.0
+  #   rev: v1.17.1
   #   hooks:
   #     - id: mypy
   #       additional_dependencies: [types-PyYAML, pydantic>=2.11.5]
-  #       args: [--strict, qtype/, tests/]

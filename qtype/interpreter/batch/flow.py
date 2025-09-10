@@ -32,6 +32,8 @@ def batch_execute_flow(
 
     previous_outputs = inputs
 
+    all_errors = []
+
     # Iterate over each step in the flow
     for step in flow.steps:
         results: list[pd.DataFrame] = []
@@ -64,23 +66,30 @@ def batch_execute_flow(
             results, errors
         )
 
-        if len(errors_df) and batch_config.write_errors_to:
-            output_file = (
-                f"{batch_config.write_errors_to}/{step.id}.errors.parquet"
-            )
-            try:
-                errors_df.to_parquet(
-                    output_file, engine="pyarrow", compression="snappy"
+        if len(errors_df):
+            all_errors.append(errors_df)
+            if batch_config.write_errors_to:
+                output_file = (
+                    f"{batch_config.write_errors_to}/{step.id}.errors.parquet"
                 )
-                logging.info(
-                    f"Saved errors for step {step.id} to {output_file}"
-                )
-            except Exception as e:
-                logging.warning(
-                    f"Could not save errors step {step.id} to {output_file}",
-                    exc_info=e,
-                    stack_info=True,
-                )
+                try:
+                    errors_df.to_parquet(
+                        output_file, engine="pyarrow", compression="snappy"
+                    )
+                    logging.info(
+                        f"Saved errors for step {step.id} to {output_file}"
+                    )
+                except Exception as e:
+                    logging.warning(
+                        f"Could not save errors step {step.id} to {output_file}",
+                        exc_info=e,
+                        stack_info=True,
+                    )
 
     # Return the last steps results and errors
-    return previous_outputs, errors_df
+    rv_errors = (
+        pd.concat(all_errors, ignore_index=True)
+        if len(all_errors)
+        else pd.DataFrame({})
+    )
+    return previous_outputs, rv_errors

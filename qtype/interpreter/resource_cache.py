@@ -2,7 +2,7 @@ import functools
 import os
 from typing import Any, Callable
 
-from cachetools import LRUCache
+from cachetools import LRUCache  # type: ignore[import-untyped]
 
 # Global LRU cache with a reasonable default size
 _RESOURCE_CACHE_MAX_SIZE = int(os.environ.get("RESOURCE_CACHE_MAX_SIZE", 128))
