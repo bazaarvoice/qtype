@@ -1999,12 +1999,12 @@
           "title": "Outputs"
         },
         "query": {
-          "description": "SQL query to execute.",
+          "description": "SQL query to execute. Inputs are injected as params.",
           "title": "Query",
           "type": "string"
         },
         "connection": {
-          "description": "Database connection string or reference to auth provider.",
+          "description": "Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
           "title": "Connection",
           "type": "string"
         },
