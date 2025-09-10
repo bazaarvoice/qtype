@@ -26,11 +26,6 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
-          
-      - name: Install dependencies
-        run: |
-          uv sync --group dev --extra interpreter
-          uv pip install -e .[interpreter]
 
       - name: Cache uv dependencies
         uses: actions/cache@v4
@@ -41,6 +36,11 @@ jobs:
             .venv
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           
+      - name: Install dependencies
+        run: |
+          uv sync --group dev --extra interpreter
+          uv pip install -e .[interpreter]
+
       - name: Run tests with coverage
         run: |
           uv run pytest --cov=qtype --cov-report=xml --cov-report=term-missing -v
