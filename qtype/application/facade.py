@@ -108,12 +108,11 @@ class QTypeFacade:
     def convert_document(self, document: DocumentType) -> str:
         """Convert a document to YAML format."""
         # Wrap DSLApplication in Document if needed
+        wrapped_document: BaseModel = document
         if isinstance(document, DSLApplication):
             from qtype.dsl.model import Document
 
-            wrapped_document: BaseModel = Document(root=document)
-        else:
-            wrapped_document: BaseModel = document
+            wrapped_document = Document(root=document)
 
         # Try to use pydantic_yaml first
         try:

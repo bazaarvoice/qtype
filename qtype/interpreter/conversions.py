@@ -38,8 +38,8 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     if model.provider in "aws-bedrock":
         # BedrockConverse requires a model_id and system_prompt
         # Inference params can be passed as additional kwargs
-        from llama_index.llms.bedrock_converse import (
-            BedrockConverse,  # type: ignore[import]
+        from llama_index.llms.bedrock_converse import (  # type: ignore[import]
+            BedrockConverse,
         )
 
         brv: BaseLLM = BedrockConverse(
@@ -60,8 +60,8 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
             else None,
         )
     elif model.provider == "anthropic":
-        from llama_index.llms.anthropic import (
-            Anthropic,  # type: ignore[import-untyped]
+        from llama_index.llms.anthropic import (  # type: ignore[import-untyped]
+            Anthropic,
         )
 
         arv: BaseLLM = Anthropic(
@@ -84,8 +84,8 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
     if model.provider in {"bedrock", "aws", "aws-bedrock"}:
-        from llama_index.embeddings.bedrock import (
-            BedrockEmbedding,  # type: ignore[import-untyped]
+        from llama_index.embeddings.bedrock import (  # type: ignore[import-untyped]
+            BedrockEmbedding,
         )
 
         bedrock_embedding: BaseEmbedding = BedrockEmbedding(
@@ -93,8 +93,8 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
         )
         return bedrock_embedding
     elif model.provider == "openai":
-        from llama_index.embeddings.openai import (
-            OpenAIEmbedding,  # type: ignore[import-untyped]
+        from llama_index.embeddings.openai import (  # type: ignore[import-untyped]
+            OpenAIEmbedding,
         )
 
         openai_embedding: BaseEmbedding = OpenAIEmbedding(
