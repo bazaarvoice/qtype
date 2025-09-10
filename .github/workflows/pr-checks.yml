@@ -31,6 +31,15 @@ jobs:
         run: |
           uv sync --group dev --extra interpreter
           uv pip install -e .[interpreter]
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            /runner/_work/_temp/setup-uv-cache
+            .venv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           
       - name: Run tests with coverage
         run: |
