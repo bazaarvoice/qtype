@@ -70,6 +70,8 @@ jobs:
           uv run mypy qtype/ tests/
           
       - name: Verify CLI functionality
+        env:
+          OPENAI_KEY: DEADBEEF
         run: |
           # Test that the CLI can be invoked
           uv run qtype --help
