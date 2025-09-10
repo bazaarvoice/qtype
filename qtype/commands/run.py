@@ -95,6 +95,15 @@ def run_flow(args: Any) -> None:
         else:
             logger.info("Flow completed with no output")
 
+        # save the output
+        if isinstance(result, pd.DataFrame) and args.output:
+            result.to_parquet(args.output)
+            logger.info(f"Output DataFrame saved to {args.output}")
+        elif args.output:
+            with open(args.output, "w") as f:
+                json.dump(result, f, indent=2)
+            logger.info(f"Output saved to {args.output}")
+
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
     except ValidationError as e:
@@ -137,8 +146,13 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         help="Path to a file (e.g., CSV, JSON, Parquet) with input data for batch processing.",
     )
-
-    # Allow
+    cmd_parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=None,
+        help="Path to save output data. If input is a DataFrame, output will be saved as parquet. If single result, saved as JSON.",
+    )
 
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."

@@ -6,6 +6,7 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 
+from qtype.base.exceptions import InterpreterError
 from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.batch.types import BatchConfig, ErrorMode
 from qtype.interpreter.batch.utils import (
@@ -13,6 +14,29 @@ from qtype.interpreter.batch.utils import (
     validate_inputs,
 )
 from qtype.semantic.model import SQLSource
+
+
+def to_output_columns(
+    df: pd.DataFrame, output_columns: set[str]
+) -> pd.DataFrame:
+    """Filters the DataFrame to only include specified output columns.
+
+    Args:
+        df: The input DataFrame.
+        output_columns: A set of column names to retain in the DataFrame.
+
+    Returns:
+        A DataFrame containing only the specified output columns.
+    """
+    if len(df) == 0:
+        return df
+    missing = output_columns - set(df.columns)
+    if missing:
+        raise InterpreterError(
+            f"SQL Result was missing expected columns: {','.join(missing)}, it has columns: {','.join(df.columns)}"
+        )
+
+    return df[[col for col in df.columns if col in output_columns]]
 
 
 def execute_sql_source(
@@ -41,6 +65,8 @@ def execute_sql_source(
                 connect_args["session"] = creds
     engine = create_engine(step.connection, connect_args=connect_args)
 
+    output_columns = {output.id for output in step.outputs}
+
     results = []
     errors = []
     step_inputs = {i.id for i in step.inputs}
@@ -57,6 +83,7 @@ def execute_sql_source(
                 df = pd.DataFrame(
                     result.fetchall(), columns=list(result.keys())
                 )
+            df = to_output_columns(df, output_columns)
             results.append(df)
         except SQLAlchemyError as e:
             if batch_config.error_mode == ErrorMode.FAIL:
