@@ -10,7 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Generator
 
-import boto3
+import boto3  # type: ignore[import-untyped]
 
 from qtype.interpreter.auth.aws import aws
 from qtype.semantic.model import (

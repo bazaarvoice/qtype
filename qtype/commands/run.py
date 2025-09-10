@@ -56,7 +56,7 @@ def run_flow(args: Any) -> None:
 
         if args.input_file:
             logger.info(f"Loading input data from file: {args.input_file}")
-            input = read_data_from_file(args.input_file)
+            input: Any = read_data_from_file(args.input_file)
         else:
             # Parse input JSON
             try:

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from pydantic import BaseModel
 
 from qtype.base.logging import get_logger
 from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
@@ -110,9 +111,9 @@ class QTypeFacade:
         if isinstance(document, DSLApplication):
             from qtype.dsl.model import Document
 
-            wrapped_document = Document(root=document)
+            wrapped_document: BaseModel = Document(root=document)
         else:
-            wrapped_document = document
+            wrapped_document: BaseModel = document
 
         # Try to use pydantic_yaml first
         try:

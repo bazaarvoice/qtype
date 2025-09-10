@@ -32,7 +32,7 @@ def test_visualize_application_with_hello_world_chat():
 
     # Test Mermaid validity using mermaid-py library
     try:
-        import mermaid as md
+        import mermaid as md  # type: ignore[import-untyped]
 
         # Mock the HTTP requests to avoid SSL issues
         mock_response = Mock()

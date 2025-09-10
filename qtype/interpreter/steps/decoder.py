@@ -85,4 +85,4 @@ def execute(decoder: Decoder, **kwargs: dict[str, Any]) -> list[Variable]:
             raise ValueError(
                 f"Output variable {output.id} not found in decoded result: {result_dict}"
             )
-    return decoder.outputs
+    return decoder.outputs  # type: ignore[no-any-return]

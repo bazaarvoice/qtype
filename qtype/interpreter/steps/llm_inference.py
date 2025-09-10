@@ -106,10 +106,12 @@ def execute(
                     else {}
                 ),
             )
-            for chat_result in generator:
-                stream_fn(li, chat_result.delta)
+            for chat_response in generator:
+                stream_fn(li, chat_response.delta)
             # Get the final result for processing
-            chat_result = chat_result  # Use the last result from streaming
+            chat_result: ChatResponse = (
+                chat_response  # Use the last result from streaming
+            )
         else:
             chat_result: ChatResponse = model.chat(
                 messages=inputs,

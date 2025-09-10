@@ -38,7 +38,9 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     if model.provider in "aws-bedrock":
         # BedrockConverse requires a model_id and system_prompt
         # Inference params can be passed as additional kwargs
-        from llama_index.llms.bedrock_converse import BedrockConverse
+        from llama_index.llms.bedrock_converse import (
+            BedrockConverse,  # type: ignore[import]
+        )
 
         brv: BaseLLM = BedrockConverse(
             model=model.model_id if model.model_id else model.id,
@@ -53,17 +55,22 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
-            api_key=model.auth.api_key
-            if model.auth and model.auth.api_key
+            api_key=getattr(model.auth, "api_key", None)
+            if model.auth
             else None,
         )
     elif model.provider == "anthropic":
-        from llama_index.llms.anthropic import Anthropic
+        from llama_index.llms.anthropic import (
+            Anthropic,  # type: ignore[import-untyped]
+        )
 
         arv: BaseLLM = Anthropic(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
+            api_key=getattr(model.auth, "api_key", None)
+            if model.auth
+            else None,
         )
         return arv
     else:
@@ -77,19 +84,23 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
     if model.provider in {"bedrock", "aws", "aws-bedrock"}:
-        from llama_index.embeddings.bedrock import BedrockEmbedding
+        from llama_index.embeddings.bedrock import (
+            BedrockEmbedding,  # type: ignore[import-untyped]
+        )
 
-        embedding: BaseEmbedding = BedrockEmbedding(
+        bedrock_embedding: BaseEmbedding = BedrockEmbedding(
             model_name=model.model_id if model.model_id else model.id
         )
-        return embedding
+        return bedrock_embedding
     elif model.provider == "openai":
-        from llama_index.embeddings.openai import OpenAIEmbedding
+        from llama_index.embeddings.openai import (
+            OpenAIEmbedding,  # type: ignore[import-untyped]
+        )
 
-        embedding: BaseEmbedding = OpenAIEmbedding(
+        openai_embedding: BaseEmbedding = OpenAIEmbedding(
             model_name=model.model_id if model.model_id else model.id
         )
-        return embedding
+        return openai_embedding
     else:
         raise InterpreterError(
             f"Unsupported embedding model provider: {model.provider}."

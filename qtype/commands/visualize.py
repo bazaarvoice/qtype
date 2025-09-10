@@ -43,7 +43,7 @@ def main(args: Any) -> None:
         if not args.no_display:
             # Create temporary HTML file and open in browser
             try:
-                import mermaid as md
+                import mermaid as md  # type: ignore[import-untyped]
 
                 mm = md.Mermaid(mermaid_content)
                 html_content = mm._repr_html_()

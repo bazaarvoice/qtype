@@ -1,6 +1,6 @@
 from typing import Any, Tuple
 
-import boto3
+import boto3  # type: ignore[import-untyped]
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import create_engine

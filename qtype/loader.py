@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
-import fsspec
+import fsspec  # type: ignore[import-untyped]
 import yaml
 from dotenv import load_dotenv
-from fsspec.core import url_to_fs
+from fsspec.core import url_to_fs  # type: ignore[import-untyped]
 
 from qtype.base.types import CustomTypeRegistry, DocumentRootType
 from qtype.dsl import model as dsl

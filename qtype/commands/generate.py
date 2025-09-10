@@ -148,7 +148,7 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
     # only add this if networkx and ruff are installed
     try:
         import networkx  # noqa: F401
-        import ruff  # noqa: F401
+        import ruff  # noqa: F401  # type: ignore[import-untyped]
 
         from qtype.semantic.generate import generate_semantic_model
 

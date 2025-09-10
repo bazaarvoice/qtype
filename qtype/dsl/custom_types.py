@@ -32,7 +32,7 @@ def build_dynamic_types(
         if type_str.startswith("list[") and type_str.endswith("]"):
             inner_type_name = type_str[5:-1]
             inner_type, _ = _parse_type_string(inner_type_name)
-            resolved_type: Any = list[inner_type]  # type: ignore[misc]
+            resolved_type: Any = list[inner_type]  # type: ignore[misc, valid-type]
         elif type_str in PRIMITIVE_MAP:
             resolved_type = PRIMITIVE_MAP[type_str]
         elif type_str in created_models:

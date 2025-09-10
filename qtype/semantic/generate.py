@@ -94,7 +94,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write header
         f.write(
             dedent('''
-            # type: ignore
             """
             Semantic Intermediate Representation models.
 
