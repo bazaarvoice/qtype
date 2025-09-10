@@ -6,7 +6,9 @@ from cachetools import LRUCache
 
 # Global LRU cache with a reasonable default size
 _RESOURCE_CACHE_MAX_SIZE = int(os.environ.get("RESOURCE_CACHE_MAX_SIZE", 128))
-_GLOBAL_RESOURCE_CACHE = LRUCache(maxsize=_RESOURCE_CACHE_MAX_SIZE)
+_GLOBAL_RESOURCE_CACHE: LRUCache[Any, Any] = LRUCache(
+    maxsize=_RESOURCE_CACHE_MAX_SIZE
+)
 
 
 def cached_resource(func: Callable[..., Any]) -> Callable[..., Any]:

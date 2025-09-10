@@ -32,7 +32,7 @@ def build_dynamic_types(
         if type_str.startswith("list[") and type_str.endswith("]"):
             inner_type_name = type_str[5:-1]
             inner_type, _ = _parse_type_string(inner_type_name)
-            resolved_type = list[inner_type]
+            resolved_type: Any = list[inner_type]  # type: ignore[misc]
         elif type_str in PRIMITIVE_MAP:
             resolved_type = PRIMITIVE_MAP[type_str]
         elif type_str in created_models:
@@ -60,7 +60,9 @@ def build_dynamic_types(
 
         # Pass the created_models dict as the local namespace for resolution
         DynamicModel = create_model(
-            model_name, **field_definitions, __localns=created_models
+            model_name,
+            **field_definitions,
+            __localns=created_models,  # type: ignore[call-overload]
         )
         created_models[model_name] = DynamicModel
 

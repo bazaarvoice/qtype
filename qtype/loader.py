@@ -182,7 +182,7 @@ def _include_raw_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
 
     try:
         with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
-            return f.read()  # type: ignore[misc]
+            return f.read()  # type: ignore[no-any-return]
     except Exception as e:
         msg = f"Failed to load included file '{resolved_path}': {e}"
         raise FileNotFoundError(msg) from e
@@ -253,7 +253,7 @@ def load_yaml_from_string(
     # Use the string stream directly with the loader
     result = yaml.load(stream, Loader=YamlLoader)
 
-    return result
+    return result  # type: ignore[no-any-return]
 
 
 def load_yaml(content: str) -> dict[str, Any]:

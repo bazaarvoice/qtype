@@ -239,7 +239,7 @@ def _map_python_type_to_variable_type(
         return PYTHON_TYPE_TO_PRIMITIVE_TYPE[python_type]
     elif python_type in get_args(VariableType):
         # If it's a domain type, return its name
-        return python_type
+        return python_type  # type: ignore[no-any-return]
     elif inspect.isclass(python_type) and issubclass(python_type, BaseModel):
         # If it's a Pydantic model, create or retrieve its CustomType definition
         return _pydantic_to_custom_types(python_type, custom_types)

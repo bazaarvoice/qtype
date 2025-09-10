@@ -1,3 +1,4 @@
+# type: ignore
 """
 Semantic Intermediate Representation models.
 

@@ -39,7 +39,7 @@ def sort_classes_by_inheritance(
     classes: list[tuple[str, type]],
 ) -> list[tuple[str, type]]:
     """Sort classes based on their inheritance hierarchy."""
-    graph = nx.DiGraph()
+    graph: nx.DiGraph = nx.DiGraph()
     class_dict = dict(classes)
 
     # Build dependency graph
@@ -94,6 +94,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write header
         f.write(
             dedent('''
+            # type: ignore
             """
             Semantic Intermediate Representation models.
 
@@ -103,6 +104,8 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
             Generated automatically with command:
             qtype generate semantic-model
+
+            Types are ignored since they should reflect dsl directly, which is type checked.
             """
 
         ''').lstrip()
@@ -293,10 +296,10 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
     if hasattr(field_type, "__name__"):
         type_name = field_type.__name__
         if _is_dsl_type(field_type) and type_name not in TYPES_TO_IGNORE:
-            return type_name
+            return str(type_name)
         if type_name == "NoneType":
             return "None"
-        return type_name
+        return str(type_name)
 
     return str(field_type)
 
