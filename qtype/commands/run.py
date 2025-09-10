@@ -56,8 +56,6 @@ def run_flow(args: Any) -> None:
 
         if args.input_file:
             logger.info(f"Loading input data from file: {args.input_file}")
-            # The facade should handle file loading internally
-            # or you can add file reading logic here
             input_data = read_data_from_file(args.input_file)
         else:
             # Parse input JSON
@@ -131,8 +129,10 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         "--input-file",
         type=str,
         default=None,
-        help="Path to a file (e.g., CSV, JSON) with input data for batch processing.",
+        help="Path to a file (e.g., CSV, JSON, Parquet) with input data for batch processing.",
     )
+
+    # Allow
 
     cmd_parser.add_argument(
         "spec", type=str, help="Path to the QType YAML spec file."
