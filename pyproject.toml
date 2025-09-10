@@ -15,6 +15,7 @@ dependencies = [
     "pydantic-yaml>=1.5.1",
     "mkdocs-awesome-pages-plugin>=2.10.1",
     "mermaid-py>=0.8.0",
+    "pip-system-certs>=5.2",
 ]
 license = "APACHE-2.0"
 license-files = ["LICEN[CS]E*"]
