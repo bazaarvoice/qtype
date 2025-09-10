@@ -74,8 +74,6 @@ jobs:
           # Test that the CLI can be invoked
           uv run qtype --help
           # Test schema generation
-          uv run qtype generate-schema -o /tmp/test-schema.json
+          uv run qtype generate schema -o /tmp/test-schema.json
           # Test validation if example exists
-          if [ -f "examples/hello_world.qtype.yaml" ]; then
-            uv run qtype validate examples/hello_world.qtype.yaml
-          fi
+          uv run qtype validate examples/hello_world.qtype.yaml
