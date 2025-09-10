@@ -5,7 +5,10 @@ Unit tests for the AWS authentication context manager.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import (  # type: ignore[import-untyped]
+    ClientError,
+    NoCredentialsError,
+)
 
 from qtype.interpreter.auth.aws import AWSAuthenticationError, aws
 from qtype.semantic.model import AWSAuthProvider

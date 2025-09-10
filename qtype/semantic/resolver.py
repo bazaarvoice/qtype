@@ -11,9 +11,9 @@ from typing import Any
 
 import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
+import qtype.semantic.model as ir
 from qtype.base.exceptions import SemanticError
 from qtype.dsl.validator import _is_dsl_type, _resolve_forward_ref
-from qtype.semantic import model as ir
 
 logger = logging.getLogger(__name__)
 

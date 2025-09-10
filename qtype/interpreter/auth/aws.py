@@ -10,8 +10,11 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Generator
 
-import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
+import boto3  # type: ignore[import-untyped]
+from botocore.exceptions import (  # type: ignore[import-untyped]
+    ClientError,
+    NoCredentialsError,
+)
 
 from qtype.interpreter.auth.cache import cache_auth, get_cached_auth
 from qtype.semantic.model import AWSAuthProvider

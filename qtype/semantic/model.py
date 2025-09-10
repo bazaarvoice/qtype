@@ -7,6 +7,8 @@ references.
 
 Generated automatically with command:
 qtype generate semantic-model
+
+Types are ignored since they should reflect dsl directly, which is type checked.
 """
 
 from __future__ import annotations

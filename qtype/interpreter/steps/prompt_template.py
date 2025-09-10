@@ -51,4 +51,4 @@ def execute(step: PromptTemplate, **kwargs: dict[str, Any]) -> list[Variable]:
         )
     step.outputs[0].value = result
 
-    return step.outputs  # type: ignore[return-value]
+    return step.outputs  # type: ignore[return-value, no-any-return]

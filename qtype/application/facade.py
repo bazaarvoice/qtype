@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from pydantic import BaseModel
 
 from qtype.base.logging import get_logger
 from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
@@ -107,12 +108,11 @@ class QTypeFacade:
     def convert_document(self, document: DocumentType) -> str:
         """Convert a document to YAML format."""
         # Wrap DSLApplication in Document if needed
+        wrapped_document: BaseModel = document
         if isinstance(document, DSLApplication):
             from qtype.dsl.model import Document
 
             wrapped_document = Document(root=document)
-        else:
-            wrapped_document = document
 
         # Try to use pydantic_yaml first
         try:

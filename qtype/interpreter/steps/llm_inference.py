@@ -97,6 +97,7 @@ def execute(
             inputs = [to_chat_message(msg) for msg in history] + inputs
 
         # If the stream function is set, we'll stream the results
+        chat_result: ChatResponse
         if stream_fn:
             generator = model.stream_chat(
                 messages=inputs,
@@ -106,12 +107,12 @@ def execute(
                     else {}
                 ),
             )
-            for chat_result in generator:
-                stream_fn(li, chat_result.delta)
+            for chat_response in generator:
+                stream_fn(li, chat_response.delta)
             # Get the final result for processing
-            chat_result = chat_result  # Use the last result from streaming
+            chat_result = chat_response  # Use the last result from streaming
         else:
-            chat_result: ChatResponse = model.chat(
+            chat_result = model.chat(
                 messages=inputs,
                 **(
                     li.model.inference_params
@@ -137,16 +138,13 @@ def execute(
             )
             input = str(input)
 
+        complete_result: CompletionResponse
         if stream_fn:
             generator = model.stream_complete(prompt=input)
             for complete_result in generator:
                 stream_fn(li, complete_result.delta)
-            # Get the final result for processing
-            complete_result = (
-                complete_result  # Use the last result from streaming
-            )
         else:
-            complete_result: CompletionResponse = model.complete(prompt=input)
+            complete_result = model.complete(prompt=input)
         output_variable.value = complete_result.text
 
     return li.outputs  # type: ignore[return-value]

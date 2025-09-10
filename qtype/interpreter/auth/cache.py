@@ -14,7 +14,9 @@ from cachetools import LRUCache
 
 # Global LRU cache for authorization sessions with configurable size
 _AUTH_CACHE_MAX_SIZE = int(os.environ.get("AUTH_CACHE_MAX_SIZE", 128))
-_AUTHORIZATION_CACHE = LRUCache(maxsize=_AUTH_CACHE_MAX_SIZE)
+_AUTHORIZATION_CACHE: LRUCache[Any, Any] = LRUCache(
+    maxsize=_AUTH_CACHE_MAX_SIZE
+)
 
 
 def get_cached_auth(auth_provider: Any) -> Any | None:

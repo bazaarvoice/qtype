@@ -34,7 +34,7 @@ def convert_module(args: argparse.Namespace) -> None:
 
         # Create application document
         if types:
-            doc = Application(
+            doc: Application | ToolList = Application(
                 id=args.module_path,
                 description=f"Tools created from Python module {args.module_path}",
                 tools=list(tools),

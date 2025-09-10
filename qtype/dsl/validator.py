@@ -80,7 +80,7 @@ def _update_map_with_unique_check(
             # This is a special case where we do not want to add the string itself.
             continue
         # Note: There is no current abstraction for the `id` field, so we assume it exists.
-        obj_id = obj.id
+        obj_id = obj.id  # type: ignore[attr-defined]
         # If the object already exists in the map, we check if it is the same object.
         # If it is not the same object, we raise an error.
         # This ensures that we do not have duplicate components with the same ID.
@@ -449,9 +449,14 @@ def validate(
                     f"Chat flow {flow.id} must have at least one input variable of type ChatMessage."
                 )
             if (
-                len(flow.outputs) != 1
-                or flow.outputs[0].type != qtype.dsl.domain_types.ChatMessage
-            ):  # type: ignore
+                not flow.outputs
+                or len(flow.outputs) != 1
+                or (
+                    isinstance(flow.outputs[0], dsl.Variable)
+                    and flow.outputs[0].type
+                    != qtype.dsl.domain_types.ChatMessage
+                )
+            ):
                 raise QTypeValidationError(
                     f"Chat flow {flow.id} must have exactly one output variable of type ChatMessage."
                 )

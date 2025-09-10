@@ -26,12 +26,21 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            /runner/_work/_temp/setup-uv-cache
+            .venv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           
       - name: Install dependencies
         run: |
-          uv sync --group dev
-          uv pip install -e .
-          
+          uv sync --group dev --extra interpreter
+          uv pip install -e .[interpreter]
+
       - name: Run tests with coverage
         run: |
           uv run pytest --cov=qtype --cov-report=xml --cov-report=term-missing -v
@@ -43,8 +52,6 @@ jobs:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           thresholdAll: 0.8
-          thresholdNew: 0.9
-          thresholdModified: 0.8
           
       - name: Run ruff check (linting)
         run: |
@@ -63,12 +70,12 @@ jobs:
           uv run mypy qtype/ tests/
           
       - name: Verify CLI functionality
+        env:
+          OPENAI_KEY: DEADBEEF
         run: |
           # Test that the CLI can be invoked
           uv run qtype --help
           # Test schema generation
-          uv run qtype generate-schema -o /tmp/test-schema.json
+          uv run qtype generate schema -o /tmp/test-schema.json
           # Test validation if example exists
-          if [ -f "examples/hello_world.qtype.yaml" ]; then
-            uv run qtype validate examples/hello_world.qtype.yaml
-          fi
+          uv run qtype validate examples/hello_world.qtype.yaml

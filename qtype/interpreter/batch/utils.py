@@ -92,7 +92,7 @@ def to_series(
     # If rv is an exception, return a series with index "error"
     if isinstance(rv, Exception):
         return pd.Series({error_col_name: str(rv)})
-    return pd.Series(rv)
+    return pd.Series(rv)  # type: ignore[no-any-return]
 
 
 def batch_iterator(
