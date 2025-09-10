@@ -1236,11 +1236,9 @@
           "type": "string"
         },
         "cardinality": {
-          "const": "one",
-          "default": "one",
-          "description": "Flows always emit exactly one instance of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
+          "$ref": "#/$defs/StepCardinality",
+          "default": "auto",
+          "description": "The cardinality of the flow, inferred from its steps when set to 'auto'."
         },
         "inputs": {
           "anyOf": [
@@ -2001,12 +1999,12 @@
           "title": "Outputs"
         },
         "query": {
-          "description": "SQL query to execute.",
+          "description": "SQL query to execute. Inputs are injected as params.",
           "title": "Query",
           "type": "string"
         },
         "connection": {
-          "description": "Database connection string or reference to auth provider.",
+          "description": "Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
           "title": "Connection",
           "type": "string"
         },
@@ -2114,7 +2112,8 @@
       "description": "Does this step emit 1 (one) or 0...N (many) items?",
       "enum": [
         "one",
-        "many"
+        "many",
+        "auto"
       ],
       "title": "StepCardinality",
       "type": "string"

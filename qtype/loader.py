@@ -7,15 +7,15 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import fsspec
 import yaml
 from dotenv import load_dotenv
 from fsspec.core import url_to_fs
-from pydantic import BaseModel
 
+from qtype.base.types import CustomTypeRegistry, DocumentRootType
 from qtype.dsl import model as dsl
 from qtype.dsl.custom_types import build_dynamic_types
 from qtype.dsl.validator import validate
@@ -310,10 +310,7 @@ def load_yaml(content: str) -> dict[str, Any]:
         return load_yaml_from_string(content)
 
 
-ResolveableType = dsl.Agent | dsl.Application | dsl.Flow | list
-
-
-def _resolve_root(doc: dsl.Document) -> ResolveableType:
+def _resolve_root(doc: dsl.Document) -> DocumentRootType:
     root = doc.root
     # If the docroot is a type that ends in the name `List`, resolve it again
     types_to_resolve = set(
@@ -328,9 +325,6 @@ def _resolve_root(doc: dsl.Document) -> ResolveableType:
     if root is not None and type(root) in types_to_resolve:
         root = root.root  # type: ignore
     return root  # type: ignore[return-value]
-
-
-CustomTypeRegistry = dict[str, Type[BaseModel]]
 
 
 def _list_dynamic_types_from_document(
@@ -367,7 +361,7 @@ def _list_dynamic_types_from_document(
     return rv
 
 
-def load_document(content: str) -> tuple[ResolveableType, CustomTypeRegistry]:
+def load_document(content: str) -> tuple[DocumentRootType, CustomTypeRegistry]:
     """Load a QType YAML file, validate it, and return the resolved root."""
     yaml_data = load_yaml(content)
     dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)

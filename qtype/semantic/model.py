@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
@@ -251,23 +251,6 @@ class Decoder(Step):
     )
 
 
-class Flow(Step):
-    """Defines a flow of steps that can be executed in sequence or parallel.
-    If input or output variables are not specified, they are inferred from
-    the first and last step, respectively.
-    """
-
-    description: str | None = Field(
-        None, description="Optional description of the flow."
-    )
-    cardinality: Literal["one"] = Field(
-        StepCardinality.one,
-        description="Flows always emit exactly one instance of the outputs.",
-    )
-    mode: Literal["Complete", "Chat"] = Field("Complete")
-    steps: list[Step] = Field(..., description="List of steps or step IDs.")
-
-
 class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
@@ -393,10 +376,12 @@ class IndexUpsert(Sink):
 class SQLSource(Source):
     """SQL database source that executes queries and emits rows."""
 
-    query: str = Field(..., description="SQL query to execute.")
+    query: str = Field(
+        ..., description="SQL query to execute. Inputs are injected as params."
+    )
     connection: str = Field(
         ...,
-        description="Database connection string or reference to auth provider.",
+        description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
     auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
         Field(
@@ -409,10 +394,12 @@ class SQLSource(Source):
 class SourceType(Source):
     """SQL database source that executes queries and emits rows."""
 
-    query: str = Field(..., description="SQL query to execute.")
+    query: str = Field(
+        ..., description="SQL query to execute. Inputs are injected as params."
+    )
     connection: str = Field(
         ...,
-        description="Database connection string or reference to auth provider.",
+        description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
     auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
         Field(
@@ -449,3 +436,30 @@ class PythonFunctionTool(Tool):
     module_path: str = Field(
         ..., description="Optional module path where the function is defined."
     )
+
+
+class Flow(Step):
+    """Defines a flow of steps that can be executed in sequence or parallel.
+    If input or output variables are not specified, they are inferred from
+    the first and last step, respectively.
+    """
+
+    description: str | None = Field(
+        None, description="Optional description of the flow."
+    )
+    cardinality: StepCardinality = Field(
+        StepCardinality.auto,
+        description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
+    )
+    mode: Literal["Complete", "Chat"] = Field("Complete")
+    steps: list[Step] = Field(..., description="List of steps or step IDs.")
+
+    @model_validator(mode="after")
+    def infer_cardinality(self) -> "Flow":
+        if self.cardinality == StepCardinality.auto:
+            self.cardinality = StepCardinality.one
+            for step in self.steps:
+                if step.cardinality == StepCardinality.many:
+                    self.cardinality = StepCardinality.many
+                    break
+        return self

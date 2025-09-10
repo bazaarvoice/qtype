@@ -323,9 +323,9 @@ class Flow(Step):
         default=None, description="Optional description of the flow."
     )
 
-    cardinality: Literal[StepCardinality.one] = Field(
-        default=StepCardinality.one,
-        description="Flows always emit exactly one instance of the outputs.",
+    cardinality: StepCardinality = Field(
+        default=StepCardinality.auto,
+        description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
     )
 
     mode: Literal["Complete", "Chat"] = "Complete"
@@ -572,10 +572,12 @@ class Source(Step):
 class SQLSource(Source):
     """SQL database source that executes queries and emits rows."""
 
-    query: str = Field(..., description="SQL query to execute.")
+    query: str = Field(
+        ..., description="SQL query to execute. Inputs are injected as params."
+    )
     connection: str = Field(
         ...,
-        description="Database connection string or reference to auth provider.",
+        description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
     auth: AuthProviderType | str | None = Field(
         default=None,

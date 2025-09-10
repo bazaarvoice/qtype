@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from qtype.application.facade import QTypeFacade
-from qtype.base.exceptions import LoadError
+from qtype.base.exceptions import LoadError, SemanticError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -30,27 +30,25 @@ def main(args: Any) -> None:
     spec_path = Path(args.spec)
 
     try:
-        # Use the facade for validation
-        errors = facade.validate_only(spec_path)
-
-        if errors:
-            logger.error("❌ Validation failed with the following errors:")
-            for error in errors:
-                logger.error(f"  - {error}")
-            sys.exit(1)
-        else:
-            logger.info("✅ Validation successful - document is valid.")
+        # Use the facade for validation - it will raise exceptions on errors
+        loaded_data = facade.load_and_validate(spec_path)
+        logger.info("✅ Validation successful - document is valid.")
 
         # If printing is requested, load and print the document
         if args.print:
             try:
-                document = facade.load_and_validate(spec_path)
-                print(document.model_dump_json(indent=2, exclude_none=True))
+                print(loaded_data.model_dump_json(indent=2, exclude_none=True))  # type: ignore
             except Exception as e:
                 logger.warning(f"Could not print document: {e}")
 
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
+        sys.exit(1)
+    except ValidationError as e:
+        logger.error(f"❌ Validation failed: {e}")
+        sys.exit(1)
+    except SemanticError as e:
+        logger.error(f"❌ Semantic validation failed: {e}")
         sys.exit(1)
     except Exception as e:
         logger.error(f"❌ Unexpected error during validation: {e}")

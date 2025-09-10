@@ -33,8 +33,11 @@ interpreter = [
     "llama-index-llms-bedrock>=0.3.8",
     "llama-index>=0.12.45",
     "openinference-instrumentation-llama-index>=4.3.4",
+    "pandas>=2.2.3",
     "psycopg2-binary>=2.9.10",
+    "pyathena[sqlalchemy]>=3.18.0",
     "python-magic>=0.4.27",
+    "sqlalchemy>=2.0.42",
     "uvicorn[standard]>=0.35.0",
 ]
 

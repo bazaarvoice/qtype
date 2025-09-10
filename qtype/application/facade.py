@@ -5,21 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from qtype.base.exceptions import LoadError, ValidationError
+import pandas as pd
+
 from qtype.base.logging import get_logger
-from qtype.base.types import PathLike
+from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
+from qtype.dsl.base_types import StepCardinality
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
+from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
-
-from .services import (
-    ConversionService,
-    ExecutionService,
-    GenerationService,
-    LoadingService,
-    ValidationService,
-    VisualizationService,
-)
+from qtype.semantic.model import Variable
 
 logger = get_logger("application.facade")
 
@@ -32,210 +27,134 @@ class QTypeFacade:
     and interpreter layers, providing a clean API for common operations.
     """
 
-    def __init__(self) -> None:
-        """Initialize the facade with all necessary services."""
-        self._loading_service = LoadingService()
-        self._validation_service = ValidationService()
-        self._conversion_service = ConversionService()
-        self._generation_service = GenerationService()
-        self._visualization_service = VisualizationService()
-        self._execution_service = ExecutionService()
+    def load_dsl_document(
+        self, path: PathLike
+    ) -> tuple[DocumentRootType, CustomTypeRegistry]:
+        from qtype.loader import load_document
 
-    def load_and_validate(self, path: PathLike) -> DSLApplication:
-        """
-        Load and validate a document in one operation.
+        return load_document(Path(path).read_text(encoding="utf-8"))
 
-        This is the most common operation - combines loading, parsing,
-        semantic resolution, and validation.
+    def load_and_validate(self, path: PathLike) -> DocumentRootType:
+        """Load and validate a document."""
+        logger.info("Document loaded, proceeding to validation")
+        root, _ = self.load_dsl_document(path)
+        return root
 
-        Args:
-            path: Path to the qtype document
+    def load_semantic_model(
+        self, path: PathLike
+    ) -> tuple[SemanticApplication, CustomTypeRegistry]:
+        """Load a document and return the resolved semantic model."""
+        from qtype.loader import load
 
-        Returns:
-            The validated DSL application
-
-        Raises:
-            LoadError: If loading fails
-            ValidationError: If validation fails
-        """
-        try:
-            path_obj = Path(path)
-            logger.info(f"Loading and validating document: {path_obj}")
-
-            # Load the DSL document
-            document = self._loading_service.load_document_dsl_only(path_obj)
-
-            # Validate it
-            errors = self._validation_service.validate_document(document)
-            if errors:
-                raise ValidationError(
-                    f"Validation failed: {'; '.join(errors)}", errors
-                )
-
-            logger.info("Document loaded and validated successfully")
-            return document
-
-        except (LoadError, ValidationError):
-            raise
-        except Exception as e:
-            raise LoadError(f"Failed to load/validate {path}: {e}") from e
-
-    def load_semantic_model(self, path: PathLike) -> SemanticApplication:
-        """
-        Load a document and return the resolved semantic model.
-
-        Args:
-            path: Path to the qtype document
-
-        Returns:
-            The resolved semantic application model
-
-        Raises:
-            LoadError: If loading fails
-            ValidationError: If resolution fails
-        """
-        try:
-            path_obj = Path(path)
-            logger.info(f"Loading semantic model: {path_obj}")
-
-            semantic_model, _ = self._loading_service.load_document(path_obj)
-            return semantic_model
-
-        except Exception as e:
-            raise LoadError(
-                f"Failed to load semantic model from {path}: {e}"
-            ) from e
+        content = Path(path).read_text(encoding="utf-8")
+        return load(content)
 
     def execute_workflow(
         self,
         path: PathLike,
+        inputs: dict | pd.DataFrame,
         flow_name: str | None = None,
+        batch_config: BatchConfig | None = None,
         **kwargs: Any,
-    ) -> Any:
-        """
-        Execute a complete workflow from document to results.
+    ) -> pd.DataFrame | list[Variable]:
+        """Execute a complete workflow from document to results."""
+        logger.info(f"Executing workflow from {path}")
 
-        This orchestrates the entire pipeline: Load -> Validate -> Execute
+        # Load the semantic application
+        semantic_model, type_registry = self.load_semantic_model(path)
 
-        Args:
-            path: Path to the qtype document
-            flow_name: Name of the flow to execute (optional)
-            **kwargs: Input variables for the workflow
+        # Find the flow to execute (inlined from _find_flow)
+        if flow_name:
+            target_flow = None
+            for flow in semantic_model.flows:
+                if flow.id == flow_name:
+                    target_flow = flow
+                    break
+            if target_flow is None:
+                raise ValueError(f"Flow '{flow_name}' not found")
+        else:
+            if semantic_model.flows:
+                target_flow = semantic_model.flows[0]
+            else:
+                raise ValueError("No flows found in application")
+        if target_flow.cardinality == StepCardinality.many:
+            if isinstance(inputs, dict):
+                inputs = pd.DataFrame([inputs])
+            if not isinstance(inputs, pd.DataFrame):
+                raise ValueError(
+                    "Input must be a DataFrame for flows with 'many' cardinality"
+                )
+            from qtype.interpreter.batch.flow import batch_execute_flow
 
-        Returns:
-            The workflow execution results
+            batch_config = batch_config or BatchConfig()
+            results, errors = batch_execute_flow(
+                target_flow, inputs, batch_config, **kwargs
+            )  # type: ignore
+            return results
+        else:
+            from qtype.interpreter.flow import execute_flow
 
-        Raises:
-            LoadError: If loading fails
-            ValidationError: If validation fails
-            InterpreterError: If execution fails
-        """
-        try:
-            logger.info(f"Executing workflow from {path}")
-
-            # Load and validate document
-            document = self.load_and_validate(path)
-
-            # Execute the workflow
-            return self._execution_service.execute_workflow(
-                document, flow_name, **kwargs
-            )
-
-        except Exception as e:
-            from qtype.base.exceptions import InterpreterError
-
-            if isinstance(e, (LoadError, ValidationError)):
-                raise
-            raise InterpreterError(f"Workflow execution failed: {e}") from e
-
-    def validate_only(self, path: PathLike) -> list[str]:
-        """
-        Validate a document and return any errors.
-
-        Args:
-            path: Path to the qtype document
-
-        Returns:
-            List of validation error messages (empty if valid)
-
-        Raises:
-            LoadError: If loading fails
-        """
-        try:
-            path_obj = Path(path)
-            document = self._loading_service.load_document_dsl_only(path_obj)
-            return self._validation_service.validate_document(document)
-
-        except Exception as e:
-            raise LoadError(f"Failed to validate {path}: {e}") from e
-
-    def generate_schema(self, path: PathLike) -> dict[str, Any]:
-        """
-        Generate JSON schema from qtype document.
-
-        Args:
-            path: Path to the qtype document
-
-        Returns:
-            The generated JSON schema
-
-        Raises:
-            LoadError: If loading fails
-            ValidationError: If schema generation fails
-        """
-        try:
-            document = self.load_and_validate(path)
-            return self._generation_service.generate_schema(document)
-
-        except Exception as e:
-            if isinstance(e, (LoadError, ValidationError)):
-                raise
-            raise ValidationError(
-                f"Failed to generate schema for {path}: {e}"
-            ) from e
+            args = {**kwargs, **inputs}
+            return execute_flow(target_flow, **args)
 
     def visualize_application(self, path: PathLike) -> str:
-        """
-        Generate visualization of the application structure.
+        """Visualize an application as Mermaid diagram."""
+        from qtype.semantic.visualize import visualize_application
 
-        Args:
-            path: Path to the qtype document
-
-        Returns:
-            The visualization as a string (e.g., Mermaid diagram)
-
-        Raises:
-            LoadError: If loading fails
-            ValidationError: If visualization generation fails
-        """
-        try:
-            document = self.load_and_validate(path)
-            return self._visualization_service.visualize_application(document)
-
-        except Exception as e:
-            if isinstance(e, (LoadError, ValidationError)):
-                raise
-            raise ValidationError(f"Failed to visualize {path}: {e}") from e
-
-    # Convenience methods for working with loaded documents
-
-    def validate_document(self, document: DSLApplication) -> list[str]:
-        """Validate an already-loaded document."""
-        return self._validation_service.validate_document(document)
-
-    def execute_document_workflow(
-        self,
-        document: DSLApplication,
-        flow_name: str | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Execute a workflow from an already-loaded document."""
-        return self._execution_service.execute_workflow(
-            document, flow_name, **kwargs
-        )
+        semantic_model, _ = self.load_semantic_model(path)
+        return visualize_application(semantic_model)
 
     def convert_document(self, document: DocumentType) -> str:
         """Convert a document to YAML format."""
-        # If it's an Application, wrap it in a Document
+        # Wrap DSLApplication in Document if needed
+        if isinstance(document, DSLApplication):
+            from qtype.dsl.model import Document
 
-        return self._conversion_service.convert_to_yaml(document)
+            wrapped_document = Document(root=document)
+        else:
+            wrapped_document = document
+
+        # Try to use pydantic_yaml first
+        try:
+            from pydantic_yaml import to_yaml_str
+
+            return to_yaml_str(
+                wrapped_document, exclude_unset=True, exclude_none=True
+            )
+        except ImportError:
+            # Fallback to basic YAML if pydantic_yaml is not available
+            import yaml
+
+            document_dict = wrapped_document.model_dump(
+                exclude_unset=True, exclude_none=True
+            )
+            return yaml.dump(document_dict, default_flow_style=False)
+
+    def generate_aws_bedrock_models(self) -> list[dict[str, Any]]:
+        """
+        Generate AWS Bedrock model definitions.
+
+        Returns:
+            List of model definitions for AWS Bedrock models.
+
+        Raises:
+            ImportError: If boto3 is not installed.
+            Exception: If AWS API call fails.
+        """
+        import boto3  # type: ignore[import-untyped]
+
+        logger.info("Discovering AWS Bedrock models...")
+        client = boto3.client("bedrock")
+        models = client.list_foundation_models()
+
+        model_definitions = []
+        for model_summary in models.get("modelSummaries", []):
+            model_definitions.append(
+                {
+                    "id": model_summary["modelId"],
+                    "provider": "aws-bedrock",
+                }
+            )
+
+        logger.info(f"Discovered {len(model_definitions)} AWS Bedrock models")
+        return model_definitions
