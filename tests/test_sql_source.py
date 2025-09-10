@@ -41,12 +41,6 @@ def batch_config():
 
 
 @pytest.fixture
-def batch_config_drop():
-    """Create a batch config with DROP error mode."""
-    return BatchConfig(error_mode=ErrorMode.DROP)
-
-
-@pytest.fixture
 def input_df():
     """Create sample input DataFrame."""
     return pd.DataFrame([{"user_id": "123"}, {"user_id": "456"}])
@@ -81,6 +75,20 @@ def auth_provider():
     )
 
 
+@pytest.fixture
+def mock_patches():
+    """Common patches for SQL source tests."""
+    with (
+        patch(
+            "qtype.interpreter.batch.sql_source.create_engine"
+        ) as mock_create_engine,
+        patch(
+            "qtype.interpreter.batch.sql_source.validate_inputs"
+        ) as mock_validate,
+    ):
+        yield mock_create_engine, mock_validate
+
+
 class TestToOutputColumns:
     """Test the to_output_columns function."""
 
@@ -112,20 +120,17 @@ class TestToOutputColumns:
 class TestExecuteSQLSource:
     """Test the execute_sql_source function."""
 
-    @patch("qtype.interpreter.batch.sql_source.create_engine")
-    @patch("qtype.interpreter.batch.sql_source.validate_inputs")
     def test_successful_execution(
         self,
-        mock_validate,
-        mock_create_engine,
         sample_sql_source,
         input_df,
         batch_config,
         mock_db_engine,
         mock_sql_result,
+        mock_patches,
     ):
         """Test successful SQL execution."""
-        # Setup mocks
+        mock_create_engine, mock_validate = mock_patches
         mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
         mock_connection.execute.return_value = mock_sql_result
@@ -140,63 +145,54 @@ class TestExecuteSQLSource:
         assert all(col in results.columns for col in ["name", "age"])
         mock_validate.assert_called_once_with(input_df, sample_sql_source)
 
-    @patch("qtype.interpreter.batch.sql_source.create_engine")
-    @patch("qtype.interpreter.batch.sql_source.validate_inputs")
-    def test_sql_error_fail_mode(
+    @pytest.mark.parametrize(
+        "error_mode,should_raise",
+        [
+            (ErrorMode.FAIL, True),
+            (ErrorMode.DROP, False),
+        ],
+    )
+    def test_sql_error_handling(
         self,
-        mock_validate,
-        mock_create_engine,
         sample_sql_source,
         input_df,
-        batch_config,
         mock_db_engine,
+        mock_patches,
+        error_mode,
+        should_raise,
     ):
-        """Test SQL error handling in FAIL mode."""
+        """Test SQL error handling in different modes."""
+        mock_create_engine, mock_validate = mock_patches
         mock_engine, _ = mock_db_engine
         mock_engine.connect.side_effect = SQLAlchemyError("Database error")
         mock_create_engine.return_value = mock_engine
 
-        with pytest.raises(SQLAlchemyError):
-            execute_sql_source(sample_sql_source, input_df, batch_config)
+        batch_config = BatchConfig(error_mode=error_mode)
 
-    @patch("qtype.interpreter.batch.sql_source.create_engine")
-    @patch("qtype.interpreter.batch.sql_source.validate_inputs")
-    def test_sql_error_drop_mode(
-        self,
-        mock_validate,
-        mock_create_engine,
-        sample_sql_source,
-        input_df,
-        batch_config_drop,
-        mock_db_engine,
-    ):
-        """Test SQL error handling in DROP mode."""
-        mock_engine, _ = mock_db_engine
-        mock_engine.connect.side_effect = SQLAlchemyError("Database error")
-        mock_create_engine.return_value = mock_engine
-
-        results, errors = execute_sql_source(
-            sample_sql_source, input_df, batch_config_drop
-        )
-
-        # Verify error handling
-        assert len(results) == 0
-        assert len(errors) == 2  # One error per input row
-        assert "error" in errors.columns
+        if should_raise:
+            with pytest.raises(SQLAlchemyError):
+                execute_sql_source(sample_sql_source, input_df, batch_config)
+        else:
+            results, errors = execute_sql_source(
+                sample_sql_source, input_df, batch_config
+            )
+            # Verify error handling
+            assert len(results) == 0
+            assert len(errors) == 2  # One error per input row
+            assert "error" in errors.columns
 
     @patch("qtype.interpreter.batch.sql_source.auth")
-    @patch("qtype.interpreter.batch.sql_source.create_engine")
-    @patch("qtype.interpreter.batch.sql_source.validate_inputs")
     def test_with_authentication(
         self,
-        mock_validate,
-        mock_create_engine,
         mock_auth,
         batch_config,
         auth_provider,
         mock_db_engine,
+        mock_patches,
     ):
         """Test SQL execution with authentication."""
+        mock_create_engine, mock_validate = mock_patches
+
         # Create SQL source with auth
         sql_source = SQLSource(
             id="test-sql-source",
@@ -225,18 +221,16 @@ class TestExecuteSQLSource:
         # Verify auth was called
         mock_auth.assert_called_once_with(sql_source.auth)
 
-    @patch("qtype.interpreter.batch.sql_source.create_engine")
-    @patch("qtype.interpreter.batch.sql_source.validate_inputs")
     def test_parameter_injection(
         self,
-        mock_validate,
-        mock_create_engine,
         sample_sql_source,
         batch_config,
         mock_db_engine,
         mock_sql_result,
+        mock_patches,
     ):
         """Test that input parameters are correctly injected into SQL queries."""
+        mock_create_engine, mock_validate = mock_patches
         mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
         mock_connection.execute.return_value = mock_sql_result
