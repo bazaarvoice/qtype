@@ -30,7 +30,7 @@ def serve(args: Any) -> None:
         spec_path = Path(args.spec)
         logger.info(f"Loading and validating spec: {spec_path}")
 
-        semantic_model = facade.load_semantic_model(spec_path)
+        semantic_model, type_registry = facade.load_semantic_model(spec_path)
         logger.info(f"✅ Successfully loaded spec: {spec_path}")
 
         # Import APIExecutor and create the FastAPI app
