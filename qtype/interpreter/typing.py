@@ -62,7 +62,9 @@ def create_output_type_model(
 
             # Make type optional for batch processing since rows might have missing values
             if is_batch:
-                python_type = python_type | None
+                from typing import Union
+
+                python_type = Union[python_type, type(None)]  # type: ignore
 
             field_info = Field(
                 # TODO: grok the description from the variable if available
@@ -73,14 +75,14 @@ def create_output_type_model(
             output_fields[var.id] = (python_type, field_info)
 
         # Create nested outputs model
-        outputs_model = create_model(
+        outputs_model: Type[BaseModel] = create_model(
             f"{flow.id}Outputs",
             __base__=BaseModel,
             **output_fields,
         )  # type: ignore
         if is_batch:
             fields["outputs"] = (
-                list[outputs_model],
+                list[outputs_model],  # type: ignore
                 Field(description="List of flow execution outputs"),
             )
         else:
@@ -118,13 +120,12 @@ def create_input_type_model(flow: Flow, is_batch: bool) -> Type[BaseModel]:
 
     if is_batch:
         # For batch processing, wrap inputs in a list
+        single_input_model: Type[BaseModel] = create_model(
+            f"{flow.id}SingleInput", __base__=BaseModel, **fields
+        )  # type: ignore
         fields = {
             "inputs": (
-                list[
-                    create_model(
-                        f"{flow.id}SingleInput", __base__=BaseModel, **fields
-                    )
-                ],  # type: ignore
+                list[single_input_model],  # type: ignore
                 Field(description="List of inputs for batch processing"),
             )
         }

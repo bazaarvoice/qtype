@@ -110,8 +110,8 @@ class APIExecutor:
                     flow_copy = flow.model_copy(deep=True)
                     # convert the inputs into a dataframe with a single row
                     inputs = pd.DataFrame(
-                        [i.model_dump() for i in request.inputs]
-                    )  # type: ignore
+                        [i.model_dump() for i in request.inputs]  # type: ignore
+                    )
 
                     # Execute the flow
                     results, errors = batch_execute_flow(
