@@ -43,8 +43,17 @@ def serve(args: Any) -> None:
 
         logger.info(f"Starting server for: {name}")
         api_executor = APIExecutor(semantic_model)
+
+        # Create server info for OpenAPI spec
+        servers = [
+            {
+                "url": f"http://{args.host}:{args.port}",
+                "description": "Development server",
+            }
+        ]
+
         fastapi_app = api_executor.create_app(
-            name=name, ui_enabled=not args.disable_ui
+            name=name, ui_enabled=not args.disable_ui, servers=servers
         )
 
         # Start the server

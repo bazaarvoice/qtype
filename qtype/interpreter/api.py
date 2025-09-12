@@ -37,6 +37,7 @@ class APIExecutor:
         name: str | None = None,
         ui_enabled: bool = True,
         fast_api_args: dict | None = None,
+        servers: list[dict] | None = None,
     ) -> FastAPI:
         """Create FastAPI app with dynamic endpoints."""
         if fast_api_args is None:
@@ -44,6 +45,10 @@ class APIExecutor:
                 "docs_url": "/docs",
                 "redoc_url": "/redoc",
             }
+
+        # Add servers to FastAPI kwargs if provided
+        if servers is not None:
+            fast_api_args["servers"] = servers
 
         app = FastAPI(title=name or "QType API", **fast_api_args)
 

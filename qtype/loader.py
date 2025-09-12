@@ -347,7 +347,8 @@ def _list_dynamic_types_from_document(
     rv = []
 
     # add any "types" if the loaded doc is an application
-    rv.extend(loaded_yaml.get("types", []))
+    if isinstance(loaded_yaml, dict):
+        rv.extend(loaded_yaml.get("types", []))
 
     # check for TypeList by seeing if we have root + custom types
     if "root" in loaded_yaml:
