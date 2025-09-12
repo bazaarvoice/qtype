@@ -211,7 +211,12 @@ def _resolve_path(current_path: str, target_path: str) -> str:
         return urljoin(current_path, target_path)
     else:
         # Current is a local path, resolve relative to its directory
-        current_dir = Path(current_path).parent
+        current_path_obj = Path(current_path)
+        if current_path_obj.is_dir():
+            current_dir = current_path_obj
+        else:
+            # If it's a directory or doesn't exist yet, use it as-is
+            current_dir = current_path_obj.parent
         return str(current_dir / target_path)
 
 

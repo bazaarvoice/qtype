@@ -9,14 +9,14 @@ PRIMITIVE_TO_PYTHON_TYPE = {
     PrimitiveTypeEnum.audio: bytes,
     PrimitiveTypeEnum.boolean: bool,
     PrimitiveTypeEnum.bytes: bytes,
-    PrimitiveTypeEnum.date: str,  # Use str for date representation
-    PrimitiveTypeEnum.datetime: str,  # Use str for datetime representation
+    PrimitiveTypeEnum.date: date,
+    PrimitiveTypeEnum.datetime: datetime,
     PrimitiveTypeEnum.int: int,
     PrimitiveTypeEnum.file: bytes,  # Use bytes for file content
     PrimitiveTypeEnum.float: float,
     PrimitiveTypeEnum.image: bytes,  # Use bytes for image data
     PrimitiveTypeEnum.text: str,
-    PrimitiveTypeEnum.time: str,  # Use str for time representation
+    PrimitiveTypeEnum.time: time,  # Use time for time representation
     PrimitiveTypeEnum.video: bytes,  # Use bytes for video data
 }
 
