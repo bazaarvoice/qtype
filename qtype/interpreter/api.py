@@ -158,7 +158,6 @@ class APIExecutor:
                                     status_code=400,
                                     detail=f"Required input '{var.id}' not provided",
                                 )
-                    return flow_copy
                     # Execute the flow
                     result_vars = execute_flow(flow_copy)
 
