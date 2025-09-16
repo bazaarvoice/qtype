@@ -9,10 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from qtype.base.exceptions import InterpreterError
 from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.batch.types import BatchConfig, ErrorMode
-from qtype.interpreter.batch.utils import (
-    reconcile_results_and_errors,
-    validate_inputs,
-)
+from qtype.interpreter.batch.utils import reconcile_results_and_errors
 from qtype.semantic.model import SQLSource
 
 
@@ -56,8 +53,6 @@ def execute_sql_source(
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
     # Create a database engine
-    validate_inputs(inputs, step)
-
     connect_args = {}
     if step.auth:
         with auth(step.auth) as creds:
@@ -84,6 +79,8 @@ def execute_sql_source(
                     result.fetchall(), columns=list(result.keys())
                 )
             df = to_output_columns(df, output_columns)
+            # Augment with all input row columns (fan-out-right)
+            df = df.assign(**row.to_dict())
             results.append(df)
         except SQLAlchemyError as e:
             if batch_config.error_mode == ErrorMode.FAIL:

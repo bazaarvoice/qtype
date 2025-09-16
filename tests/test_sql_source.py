@@ -78,15 +78,10 @@ def auth_provider():
 @pytest.fixture
 def mock_patches():
     """Common patches for SQL source tests."""
-    with (
-        patch(
-            "qtype.interpreter.batch.sql_source.create_engine"
-        ) as mock_create_engine,
-        patch(
-            "qtype.interpreter.batch.sql_source.validate_inputs"
-        ) as mock_validate,
-    ):
-        yield mock_create_engine, mock_validate
+    with patch(
+        "qtype.interpreter.batch.sql_source.create_engine"
+    ) as mock_create_engine:
+        yield mock_create_engine
 
 
 class TestToOutputColumns:
@@ -130,7 +125,7 @@ class TestExecuteSQLSource:
         mock_patches,
     ):
         """Test successful SQL execution."""
-        mock_create_engine, mock_validate = mock_patches
+        mock_create_engine = mock_patches
         mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
         mock_connection.execute.return_value = mock_sql_result
@@ -143,7 +138,8 @@ class TestExecuteSQLSource:
         assert len(results) == 4  # 2 rows * 2 input rows
         assert len(errors) == 0
         assert all(col in results.columns for col in ["name", "age"])
-        mock_validate.assert_called_once_with(input_df, sample_sql_source)
+        # Verify fan-out-right behavior: input columns are preserved
+        assert all(col in results.columns for col in ["user_id"])
 
     @pytest.mark.parametrize(
         "error_mode,should_raise",
@@ -162,7 +158,7 @@ class TestExecuteSQLSource:
         should_raise,
     ):
         """Test SQL error handling in different modes."""
-        mock_create_engine, mock_validate = mock_patches
+        mock_create_engine = mock_patches
         mock_engine, _ = mock_db_engine
         mock_engine.connect.side_effect = SQLAlchemyError("Database error")
         mock_create_engine.return_value = mock_engine
@@ -191,7 +187,7 @@ class TestExecuteSQLSource:
         mock_patches,
     ):
         """Test SQL execution with authentication."""
-        mock_create_engine, mock_validate = mock_patches
+        mock_create_engine = mock_patches
 
         # Create SQL source with auth
         sql_source = SQLSource(
@@ -230,7 +226,7 @@ class TestExecuteSQLSource:
         mock_patches,
     ):
         """Test that input parameters are correctly injected into SQL queries."""
-        mock_create_engine, mock_validate = mock_patches
+        mock_create_engine = mock_patches
         mock_engine, mock_connection = mock_db_engine
         mock_create_engine.return_value = mock_engine
         mock_connection.execute.return_value = mock_sql_result
@@ -241,3 +237,65 @@ class TestExecuteSQLSource:
         # Verify the execute call received correct parameters
         call_args = mock_connection.execute.call_args
         assert call_args[1]["parameters"] == {"user_id": "123"}
+
+    def test_fan_out_right_behavior_with_dummy_columns(
+        self,
+        sample_sql_source,
+        batch_config,
+        mock_db_engine,
+        mock_sql_result,
+        mock_patches,
+    ):
+        """Test that all input columns are preserved in output (fan-out-right)."""
+        mock_create_engine = mock_patches
+        mock_engine, mock_connection = mock_db_engine
+        mock_create_engine.return_value = mock_engine
+        mock_connection.execute.return_value = mock_sql_result
+
+        # Input DataFrame with additional dummy columns
+        input_df = pd.DataFrame(
+            [
+                {
+                    "user_id": "123",
+                    "dummy_row": "test_value",
+                    "session_id": "sess_1",
+                },
+                {
+                    "user_id": "456",
+                    "dummy_row": "another_value",
+                    "session_id": "sess_2",
+                },
+            ]
+        )
+
+        results, errors = execute_sql_source(
+            sample_sql_source, input_df, batch_config
+        )
+
+        # Verify results contain both SQL output and all input columns
+        assert len(results) == 4  # 2 SQL rows * 2 input rows
+        assert len(errors) == 0
+
+        # Check that SQL output columns are present
+        assert all(col in results.columns for col in ["name", "age"])
+
+        # Check that ALL input columns are preserved (fan-out-right)
+        assert all(
+            col in results.columns
+            for col in ["user_id", "dummy_row", "session_id"]
+        )
+
+        # Verify that dummy values are correctly propagated
+        user_123_rows = results[results["user_id"] == "123"]
+        user_456_rows = results[results["user_id"] == "456"]
+
+        assert len(user_123_rows) == 2  # 2 SQL result rows for this input
+        assert len(user_456_rows) == 2  # 2 SQL result rows for this input
+
+        # All rows for user 123 should have the same dummy values
+        assert all(user_123_rows["dummy_row"] == "test_value")
+        assert all(user_123_rows["session_id"] == "sess_1")
+
+        # All rows for user 456 should have the same dummy values
+        assert all(user_456_rows["dummy_row"] == "another_value")
+        assert all(user_456_rows["session_id"] == "sess_2")

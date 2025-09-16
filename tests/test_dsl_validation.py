@@ -62,6 +62,14 @@ def test_valid_dsl_files(yaml_file: str) -> None:
             "invalid_chatflow_no_chatmessage.qtype.yaml",
             validator.QTypeValidationError,
         ),
+        (
+            "invalid_file_source_no_path.qtype.yaml",
+            ValueError,
+        ),
+        (
+            "invalid_file_sink_no_path.qtype.yaml",
+            ValueError,
+        ),
     ],
 )
 def test_invalid_dsl_files(

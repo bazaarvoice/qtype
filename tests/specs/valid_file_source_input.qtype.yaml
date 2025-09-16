@@ -1,0 +1,13 @@
+id: file_source_input_test
+description: "Test FileSource with path from input variable"
+
+flows:
+  - id: read_file_flow
+    steps:
+      - id: read_data
+        inputs:
+          - id: path
+            type: text
+        outputs:
+          - id: content
+            type: text

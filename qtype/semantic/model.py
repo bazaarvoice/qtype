@@ -367,6 +367,15 @@ class VectorSearch(Search):
     )
 
 
+class FileSink(Sink):
+    """File sink that writes data to a file using fsspec-compatible URIs."""
+
+    path: str | None = Field(
+        None,
+        description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
+    )
+
+
 class IndexUpsert(Sink):
     """Semantic version of IndexUpsert."""
 
@@ -375,25 +384,16 @@ class IndexUpsert(Sink):
     )
 
 
+class FileSource(Source):
+    """File source that reads data from a file using fsspec-compatible URIs."""
+
+    path: str | None = Field(
+        None,
+        description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+    )
+
+
 class SQLSource(Source):
-    """SQL database source that executes queries and emits rows."""
-
-    query: str = Field(
-        ..., description="SQL query to execute. Inputs are injected as params."
-    )
-    connection: str = Field(
-        ...,
-        description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
-    )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for database authentication.",
-        )
-    )
-
-
-class SourceType(Source):
     """SQL database source that executes queries and emits rows."""
 
     query: str = Field(

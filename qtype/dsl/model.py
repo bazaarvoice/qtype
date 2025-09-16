@@ -594,6 +594,38 @@ class SQLSource(Source):
         return self
 
 
+class FileSource(Source):
+    """File source that reads data from a file using fsspec-compatible URIs."""
+
+    path: str | None = Field(
+        default=None,
+        description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+    )
+
+    @model_validator(mode="after")
+    def validate_file_source(self) -> "FileSource":
+        """Validate that either path is specified or 'path' input variable exists."""
+        if self.path is None:
+            # Check if 'path' input variable exists
+            if self.inputs is None:
+                raise ValueError(
+                    "FileSource must either specify 'path' field or have a 'path' input variable."
+                )
+
+            path_input_exists = any(
+                (isinstance(inp, Variable) and inp.id == "path")
+                or (isinstance(inp, str) and inp == "path")
+                for inp in self.inputs
+            )
+
+            if not path_input_exists:
+                raise ValueError(
+                    "FileSource must either specify 'path' field or have a 'path' input variable."
+                )
+
+        return self
+
+
 class Sink(Step):
     """Base class for data sinks"""
 
@@ -604,6 +636,47 @@ class Sink(Step):
         default=StepCardinality.one,
         description="Flows always emit exactly one instance of the outputs.",
     )
+
+
+class FileSink(Sink):
+    """File sink that writes data to a file using fsspec-compatible URIs."""
+
+    path: str | None = Field(
+        default=None,
+        description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
+    )
+
+    @model_validator(mode="after")
+    def validate_file_sink(self) -> "FileSink":
+        """Validate that either path is specified or 'path' input variable exists."""
+        # Ensure user does not set any output variables
+        if self.outputs is not None and len(self.outputs) > 0:
+            raise ValueError(
+                "FileSink outputs are automatically generated. Do not specify outputs."
+            )
+
+        # Automatically set the output variable
+        self.outputs = [Variable(id=f"{self.id}-file-uri", type="text")]
+
+        if self.path is None:
+            # Check if 'path' input variable exists
+            if self.inputs is None:
+                raise ValueError(
+                    "FileSink must either specify 'path' field or have a 'path' input variable."
+                )
+
+            path_input_exists = any(
+                (isinstance(inp, Variable) and inp.id == "path")
+                or (isinstance(inp, str) and inp == "path")
+                for inp in self.inputs
+            )
+
+            if not path_input_exists:
+                raise ValueError(
+                    "FileSink must either specify 'path' field or have a 'path' input variable."
+                )
+
+        return self
 
 
 #
@@ -704,7 +777,10 @@ ToolType = Union[
 ]
 
 # Create a union type for all source types
-SourceType = Union[SQLSource,]
+SourceType = Union[
+    FileSource,
+    SQLSource,
+]
 
 # Create a union type for all authorization provider types
 AuthProviderType = Union[
@@ -720,6 +796,8 @@ StepType = Union[
     Condition,
     Decoder,
     DocumentSearch,
+    FileSink,
+    FileSource,
     Flow,
     IndexUpsert,
     LLMInference,

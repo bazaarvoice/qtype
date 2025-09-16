@@ -60,9 +60,7 @@ class TestValidateInputs:
 
     def test_valid_inputs(self, sample_step, sample_df):
         """Test validation with valid inputs."""
-        result = validate_inputs(sample_df, sample_step)
-        assert list(result.columns) == ["input1", "input2"]
-        assert len(result) == 2
+        validate_inputs(sample_df, sample_step)
 
     def test_missing_input_raises_error(self, sample_step):
         """Test that missing inputs raise InputMissingError."""
@@ -78,8 +76,7 @@ class TestValidateInputs:
         step = MagicMock(spec=Step)
         step.inputs = []
         df = pd.DataFrame([{"col": "value"}])
-        result = validate_inputs(df, step)
-        assert len(result.columns) == 0
+        validate_inputs(df, step)
 
 
 class TestFailModeWrapper:
@@ -93,7 +90,7 @@ class TestFailModeWrapper:
 
         row = pd.Series({"x": 1, "y": 2})
         result = fail_mode_wrapper(success_func, row, batch_config)
-        assert result == {"result": 3}
+        assert result == {"result": 3, "x": 1, "y": 2}
 
     def test_fail_mode_raises_exception(self, batch_config):
         """Test that FAIL mode raises exceptions."""
@@ -124,7 +121,7 @@ class TestFailModeWrapper:
 
         row = pd.Series({"x": 1, "y": 2})
         result = fail_mode_wrapper(func, row, batch_config)
-        assert result == {"sum": 3}
+        assert result == {"sum": 3, "x": 1, "y": 2}
 
 
 class TestSingleStepAdapter:
