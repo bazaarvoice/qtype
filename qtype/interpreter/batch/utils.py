@@ -15,19 +15,15 @@ class InputMissingError(Exception):
     pass
 
 
-def validate_inputs(batch: pd.DataFrame, step: Step) -> pd.DataFrame:
+def validate_inputs(batch: pd.DataFrame, step: Step) -> None:
     """Ensures all input variables for the step are columns in the DataFrame.
     If not, an Exception is raised.
 
     Args:
         batch: The input DataFrame to decode.
-        decoder: The decoder step to validate.
-
-    Returns:
-        A view of the dataframe with only the input columns for the step.
-
+        step: The step to validate.
     Raises:
-        InputMissingError: If the decoder step does not have exactly one input or if the input column is not in the DataFrame.
+        InputMissingError: If any input variable is missing from the DataFrame.
     """
     input_ids = [input_var.id for input_var in step.inputs]
     for input_var in input_ids:
@@ -35,7 +31,6 @@ def validate_inputs(batch: pd.DataFrame, step: Step) -> pd.DataFrame:
             raise InputMissingError(
                 f"Input DataFrame must contain column '{input_var}' for step {step.id}."
             )
-    return batch[input_ids]
 
 
 def fail_mode_wrapper(

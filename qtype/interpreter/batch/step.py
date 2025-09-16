@@ -50,6 +50,7 @@ def batch_execute_step(
         Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing the output results and any rows that returned errors.
     """
 
+    # ensure the inputs to step are included in the current data frame
     validate_inputs(inputs, step)
 
     if isinstance(step, Flow):
