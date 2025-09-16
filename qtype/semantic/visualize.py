@@ -131,6 +131,14 @@ def _generate_flow_subgraph(
     step_nodes = []
     external_connections = []
 
+    # Add start node if flow has inputs
+    start_node_id = None
+    if flow.inputs:
+        start_node_id = f"{flow_id}_START"
+        lines.append(
+            f'        {start_node_id}@{{shape: circle, label: "▶️ Start"}}'
+        )
+
     for i, step in enumerate(flow.steps):
         node_id = f"{flow_id}_S{i}"
         node_def, ext_conn = _generate_step_node(step, node_id, flow_id)
@@ -139,7 +147,9 @@ def _generate_flow_subgraph(
         external_connections.extend(ext_conn)
 
     # Connect steps based on input/output variables
-    step_connections = _generate_step_connections(step_nodes, flow_id)
+    step_connections = _generate_step_connections(
+        step_nodes, flow_id, start_node_id, flow.inputs
+    )
     lines.extend(step_connections)
 
     lines.append("    end")
@@ -257,7 +267,10 @@ def _generate_step_node(
 
 
 def _generate_step_connections(
-    step_nodes: list[tuple[str, Step]], flow_id: str
+    step_nodes: list[tuple[str, Step]],
+    flow_id: str,
+    start_node_id: str | None = None,
+    flow_inputs: list[Any] | None = None,
 ) -> list[str]:
     """Generate connections between steps based on variable flow."""
     lines = []
@@ -267,6 +280,11 @@ def _generate_step_connections(
     for node_id, step in step_nodes:
         for output_var in step.outputs:
             output_map[output_var.id] = node_id
+
+    # If we have a start node and flow inputs, add them to the output map
+    if start_node_id and flow_inputs:
+        for flow_input in flow_inputs:
+            output_map[flow_input.id] = start_node_id
 
     # Connect steps based on input requirements
     for node_id, step in step_nodes:
