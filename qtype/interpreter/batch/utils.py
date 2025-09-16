@@ -53,7 +53,7 @@ def fail_mode_wrapper(
     try:
         # turn row into a dict and merge with kwargs
         merged_kwargs = {**row.to_dict(), **kwargs}
-        return f(**merged_kwargs)
+        return {**f(**merged_kwargs), **row.to_dict()}
     except Exception as e:
         if batch_config.error_mode == ErrorMode.FAIL:
             raise e

@@ -52,7 +52,7 @@ def batch_execute_flow(
             batch_size = batch_config.batch_size
             for start in range(0, len(previous_outputs), batch_size):
                 end = start + batch_size
-                batch = previous_outputs.iloc[start:end]
+                batch = previous_outputs.iloc[start:end].copy()
                 # Execute the step with the current batch
                 batch_results, batch_errors = batch_execute_step(
                     step, batch, batch_config
