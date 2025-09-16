@@ -739,6 +739,12 @@
               "$ref": "#/$defs/DocumentSearch"
             },
             {
+              "$ref": "#/$defs/FileSink"
+            },
+            {
+              "$ref": "#/$defs/FileSource"
+            },
+            {
               "$ref": "#/$defs/Flow"
             },
             {
@@ -805,6 +811,12 @@
             },
             {
               "$ref": "#/$defs/DocumentSearch"
+            },
+            {
+              "$ref": "#/$defs/FileSink"
+            },
+            {
+              "$ref": "#/$defs/FileSource"
             },
             {
               "$ref": "#/$defs/Flow"
@@ -1226,6 +1238,170 @@
       "title": "EmbeddingModel",
       "type": "object"
     },
+    "FileSink": {
+      "additionalProperties": false,
+      "description": "File sink that writes data to a file using fsspec-compatible URIs.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "fsspec-compatible URI to write to. If None, expects 'path' input variable.",
+          "title": "Path"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "FileSink",
+      "type": "object"
+    },
+    "FileSource": {
+      "additionalProperties": false,
+      "description": "File source that reads data from a file using fsspec-compatible URIs.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data source.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "many",
+          "default": "many",
+          "description": "Sources always emit 0...N instances of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+          "title": "Path"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "FileSource",
+      "type": "object"
+    },
     "Flow": {
       "additionalProperties": false,
       "description": "Defines a flow of steps that can be executed in sequence or parallel.\nIf input or output variables are not specified, they are inferred from\nthe first and last step, respectively.",
@@ -1326,6 +1502,12 @@
               },
               {
                 "$ref": "#/$defs/DocumentSearch"
+              },
+              {
+                "$ref": "#/$defs/FileSink"
+              },
+              {
+                "$ref": "#/$defs/FileSource"
               },
               {
                 "$ref": "#/$defs/Flow"

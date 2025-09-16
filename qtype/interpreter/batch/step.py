@@ -3,6 +3,10 @@ from typing import Any, Tuple
 
 import pandas as pd
 
+from qtype.interpreter.batch.file_sink_source import (
+    execute_file_sink,
+    execute_file_source,
+)
 from qtype.interpreter.batch.sql_source import execute_sql_source
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.interpreter.batch.utils import (
@@ -14,6 +18,8 @@ from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import (
     Condition,
     Decoder,
+    FileSink,
+    FileSource,
     Flow,
     PromptTemplate,
     Search,
@@ -52,6 +58,10 @@ def batch_execute_step(
         return batch_execute_flow(step, inputs, batch_config, **kwargs)
     elif isinstance(step, SQLSource):
         return execute_sql_source(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, FileSource):
+        return execute_file_source(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, FileSink):
+        return execute_file_sink(step, inputs, batch_config, **kwargs)
     elif step in SINGLE_WRAP_STEPS:
         return batch_iterator(
             f=partial(single_step_adapter, step=step),
