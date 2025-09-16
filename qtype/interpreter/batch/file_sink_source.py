@@ -124,8 +124,9 @@ def execute_file_sink(
 
         try:
             # Use fsspec to write the parquet file
+            input_columns = [i.id for i in step.inputs]
             with fsspec.open(file_path, "wb") as file_handle:
-                inputs.to_parquet(file_handle, index=False)  # type: ignore[arg-type]
+                inputs[input_columns].to_parquet(file_handle, index=False)  # type: ignore[arg-type]
 
             inputs[output_column_name] = file_path
             return inputs, pd.DataFrame()

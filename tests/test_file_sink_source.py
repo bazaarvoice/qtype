@@ -221,3 +221,67 @@ class TestFileSink:
         assert len(results) == 0
         assert len(errors) == 1
         assert "Write failed" in errors.iloc[0]["error"]
+
+    def test_write_only_input_columns(self, batch_config, tmp_path):
+        """Test that only columns specified in step.inputs are written to file."""
+        from qtype.semantic.model import Variable
+
+        # Create a temporary parquet file path
+        output_file = tmp_path / "output.parquet"
+
+        # Create a FileSink with specific input columns
+        file_sink_with_inputs = FileSink(
+            id="test-sink",
+            path=str(output_file),
+            cardinality="one",
+            inputs=[
+                Variable(id="col1", type="text", value=None),
+                Variable(id="col2", type="text", value=None),
+            ],
+            outputs=[
+                Variable(id="test-sink-file-uri", type="text", value=None)
+            ],
+        )
+
+        # Input DataFrame with extra column that should not be written
+        inputs = pd.DataFrame(
+            [
+                {
+                    "col1": "value1",
+                    "col2": "value2",
+                    "extra_col": "should_not_be_written",
+                },
+                {
+                    "col1": "value3",
+                    "col2": "value4",
+                    "extra_col": "also_should_not_be_written",
+                },
+            ]
+        )
+
+        # Execute the file sink
+        results, errors = execute_file_sink(
+            file_sink_with_inputs, inputs, batch_config
+        )
+
+        # Verify successful execution
+        assert len(results) == 2
+        assert len(errors) == 0
+        assert results.iloc[0]["test-sink-file-uri"] == str(output_file)
+
+        # Verify the file was actually created
+        assert output_file.exists()
+
+        # Read back the parquet file and verify only specified columns were written
+        written_df = pd.read_parquet(output_file)
+
+        # Verify only the specified input columns were written
+        assert list(written_df.columns) == ["col1", "col2"]
+        assert "extra_col" not in written_df.columns
+
+        # Verify the data content
+        assert len(written_df) == 2
+        assert written_df.iloc[0]["col1"] == "value1"
+        assert written_df.iloc[0]["col2"] == "value2"
+        assert written_df.iloc[1]["col1"] == "value3"
+        assert written_df.iloc[1]["col2"] == "value4"
