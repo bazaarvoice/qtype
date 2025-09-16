@@ -1,6 +1,6 @@
 from typing import Any, Tuple
 
-import fsspec
+import fsspec  # type: ignore[import-untyped]
 import pandas as pd
 
 from qtype.base.exceptions import InterpreterError
