@@ -84,13 +84,9 @@ class TestFileSource:
         self, mock_read, mock_fsspec_open, file_source, batch_config
     ):
         """Test reading from a fixed path."""
-        # Setup mock file handle
         mock_file_handle = MagicMock()
         mock_fsspec_open.return_value.__enter__.return_value = mock_file_handle
-
-        # Setup mock data
-        mock_data = pd.DataFrame([{"data": "test"}])
-        mock_read.return_value = mock_data
+        mock_read.return_value = pd.DataFrame([{"data": "test"}])
 
         inputs = pd.DataFrame([{"input": "value"}])
         results, errors = execute_file_source(
@@ -108,23 +104,14 @@ class TestFileSource:
         self, mock_read, mock_fsspec_open, file_source_no_path, batch_config
     ):
         """Test reading from variable path."""
-        # Setup mock file handle
         mock_file_handle = MagicMock()
         mock_fsspec_open.return_value.__enter__.return_value = mock_file_handle
-
-        # Setup mock data
-        mock_data = pd.DataFrame([{"data": "test"}])
-        mock_read.return_value = mock_data
+        mock_read.return_value = pd.DataFrame([{"data": "test"}])
 
         inputs = pd.DataFrame([{"path": "/var/file.parquet"}])
         results, errors = execute_file_source(
             file_source_no_path, inputs, batch_config
         )
-
-        mock_fsspec_open.assert_called_once_with("/var/file.parquet", "rb")
-        mock_read.assert_called_once_with(mock_file_handle)
-        assert len(results) == 1
-        assert len(errors) == 0
 
         mock_fsspec_open.assert_called_once_with("/var/file.parquet", "rb")
         mock_read.assert_called_once_with(mock_file_handle)
@@ -173,7 +160,6 @@ class TestFileSink:
         batch_config,
     ):
         """Test writing to multiple paths (splits and recurses)."""
-        # Setup mock file handle
         mock_file_handle = MagicMock()
         mock_fsspec_open.return_value.__enter__.return_value = mock_file_handle
 
@@ -220,7 +206,6 @@ class TestFileSink:
         self, mock_to_parquet, mock_fsspec_open, file_sink, batch_config
     ):
         """Test error handling in DROP mode."""
-        # Setup mock file handle
         mock_file_handle = MagicMock()
         mock_fsspec_open.return_value.__enter__.return_value = mock_file_handle
 
