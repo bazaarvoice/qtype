@@ -84,6 +84,9 @@ def execute_sql_source(
                     result.fetchall(), columns=list(result.keys())
                 )
             df = to_output_columns(df, output_columns)
+            # Augment with input parameters
+            for param_name, param_value in params.items():
+                df[param_name] = param_value
             results.append(df)
         except SQLAlchemyError as e:
             if batch_config.error_mode == ErrorMode.FAIL:

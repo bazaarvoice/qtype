@@ -62,7 +62,7 @@ def batch_execute_step(
         return execute_file_source(step, inputs, batch_config, **kwargs)
     elif isinstance(step, FileSink):
         return execute_file_sink(step, inputs, batch_config, **kwargs)
-    elif step in SINGLE_WRAP_STEPS:
+    elif type(step) in SINGLE_WRAP_STEPS:
         return batch_iterator(
             f=partial(single_step_adapter, step=step),
             batch=inputs,

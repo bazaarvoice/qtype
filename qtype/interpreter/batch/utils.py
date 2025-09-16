@@ -132,6 +132,10 @@ def batch_iterator(
 
     results = batch.apply(the_pipe, axis=1)
 
+    # If error column doesn't exist, add it with NaN values
+    if error_col not in results.columns:
+        results[error_col] = pd.NA
+
     # Split the results into two dataframes, one where error_col is not defined, and one where it is.
     success_mask = ~results[error_col].notna()
     failed_mask = results[error_col].notna()

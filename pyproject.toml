@@ -38,6 +38,7 @@ interpreter = [
     "psycopg2-binary>=2.9.10",
     "pyathena[sqlalchemy]>=3.18.0",
     "python-magic>=0.4.27",
+    "s3fs>=2025.7.0",
     "sqlalchemy>=2.0.42",
     "uvicorn[standard]>=0.35.0",
 ]

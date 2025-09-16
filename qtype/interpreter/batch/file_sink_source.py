@@ -1,5 +1,6 @@
 from typing import Any, Tuple
 
+import fsspec
 import pandas as pd
 
 from qtype.base.exceptions import InterpreterError
@@ -69,8 +70,9 @@ def execute_file_source(
         try:
             file_path = _get_file_path(step, row)
 
-            # Use fsspec to read the file
-            df = pd.read_parquet(file_path)
+            # Use fsspec to open the file and read with pandas
+            with fsspec.open(file_path, "rb") as file_handle:
+                df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
 
             # Filter to only the expected output columns if they exist
             if output_columns and len(df) > 0:
@@ -115,11 +117,13 @@ def execute_file_sink(
             - The first DataFrame contains success indicators.
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
-    validate_inputs(inputs, step)
+
+    # Filter the input data to the columns specified
+    data_to_save = validate_inputs(inputs, step)
 
     # Get file paths for all rows
     file_paths = []
-    for _, row in inputs.iterrows():
+    for _, row in data_to_save.iterrows():
         try:
             file_path = _get_file_path(step, row)
             file_paths.append(file_path)
@@ -138,8 +142,9 @@ def execute_file_sink(
         file_path = unique_paths[0]
 
         try:
-            # Use pandas to write directly to the fsspec path
-            inputs.to_parquet(file_path, index=False)
+            # Use fsspec to write the parquet file
+            with fsspec.open(file_path, "wb") as file_handle:
+                data_to_save.to_parquet(file_handle, index=False)  # type: ignore[arg-type]
 
             # Create success result for all rows
             success_df = pd.DataFrame(
@@ -164,9 +169,9 @@ def execute_file_sink(
             # Create mask for rows with this path
             path_mask = [
                 _get_file_path(step, row) == unique_path
-                for _, row in inputs.iterrows()
+                for _, row in data_to_save.iterrows()
             ]
-            sliced_inputs = inputs[path_mask]
+            sliced_inputs = data_to_save[path_mask]
 
             # Recursively call execute_file_sink with the sliced DataFrame
             results, errors = execute_file_sink(
