@@ -60,9 +60,7 @@ class TestValidateInputs:
 
     def test_valid_inputs(self, sample_step, sample_df):
         """Test validation with valid inputs."""
-        result = validate_inputs(sample_df, sample_step)
-        assert list(result.columns) == ["input1", "input2"]
-        assert len(result) == 2
+        validate_inputs(sample_df, sample_step)
 
     def test_missing_input_raises_error(self, sample_step):
         """Test that missing inputs raise InputMissingError."""
@@ -78,8 +76,7 @@ class TestValidateInputs:
         step = MagicMock(spec=Step)
         step.inputs = []
         df = pd.DataFrame([{"col": "value"}])
-        result = validate_inputs(df, step)
-        assert len(result.columns) == 0
+        validate_inputs(df, step)
 
 
 class TestFailModeWrapper:

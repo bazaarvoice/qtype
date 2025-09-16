@@ -649,6 +649,15 @@ class FileSink(Sink):
     @model_validator(mode="after")
     def validate_file_sink(self) -> "FileSink":
         """Validate that either path is specified or 'path' input variable exists."""
+        # Ensure user does not set any output variables
+        if self.outputs is not None and len(self.outputs) > 0:
+            raise ValueError(
+                "FileSink outputs are automatically generated. Do not specify outputs."
+            )
+
+        # Automatically set the output variable
+        self.outputs = [Variable(id=f"{self.id}-file-uri", type="text")]
+
         if self.path is None:
             # Check if 'path' input variable exists
             if self.inputs is None:

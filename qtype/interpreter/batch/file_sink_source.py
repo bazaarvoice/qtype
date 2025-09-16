@@ -5,37 +5,8 @@ import pandas as pd
 
 from qtype.base.exceptions import InterpreterError
 from qtype.interpreter.batch.types import BatchConfig, ErrorMode
-from qtype.interpreter.batch.utils import (
-    reconcile_results_and_errors,
-    validate_inputs,
-)
+from qtype.interpreter.batch.utils import reconcile_results_and_errors
 from qtype.semantic.model import FileSink, FileSource
-
-
-def _get_file_path(step: FileSource | FileSink, row: pd.Series) -> str:
-    """Get the file path from either the step's path field or input variable.
-
-    Args:
-        step: The FileSource or FileSink step.
-        row: The current input row being processed.
-
-    Returns:
-        The file path to use.
-
-    Raises:
-        InterpreterError: If path cannot be determined.
-    """
-    if step.path is not None:
-        return step.path
-
-    # Look for 'path' in the input row
-    if "path" in row.index:
-        return str(row["path"])
-
-    raise InterpreterError(
-        f"No path specified for {type(step).__name__}. "
-        "Either set the 'path' field or provide a 'path' input variable."
-    )
 
 
 def execute_file_source(
@@ -57,8 +28,6 @@ def execute_file_source(
             - The first DataFrame contains the successfully read data.
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
-    validate_inputs(inputs, step)
-
     output_columns = {output.id for output in step.outputs}
 
     results = []
@@ -68,7 +37,12 @@ def execute_file_source(
     # We process each input row (which might have different paths) separately
     for _, row in inputs.iterrows():
         try:
-            file_path = _get_file_path(step, row)
+            file_path = step.path if step.path else row.get("path")
+            if not file_path:
+                raise InterpreterError(
+                    f"No path specified for {type(step).__name__}. "
+                    "Either set the 'path' field or provide a 'path' input variable."
+                )
 
             # Use fsspec to open the file and read with pandas
             with fsspec.open(file_path, "rb") as file_handle:
@@ -117,22 +91,29 @@ def execute_file_sink(
             - The first DataFrame contains success indicators.
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
+    # this is enforced by the dsl, but we'll check here to confirm
+    if len(step.outputs) > 1:
+        raise InterpreterError(
+            f"There should only be one output variable for {type(step).__name__}."
+        )
+    output_column_name = step.outputs[0].id
 
-    # Filter the input data to the columns specified
-    data_to_save = validate_inputs(inputs, step)
-
-    # Get file paths for all rows
-    file_paths = []
-    for _, row in data_to_save.iterrows():
-        try:
-            file_path = _get_file_path(step, row)
-            file_paths.append(file_path)
-        except Exception as e:
-            if batch_config.error_mode == ErrorMode.FAIL:
-                raise e
-            # If we can't get the path, we can't proceed
-            error_df = pd.DataFrame([{"error": str(e)}])
-            return pd.DataFrame(), error_df
+    # make a list of all file paths
+    try:
+        if step.path:
+            file_paths = [step.path] * len(inputs)
+        else:
+            if "path" not in inputs.columns:
+                raise InterpreterError(
+                    f"No path specified for {type(step).__name__}. "
+                    "Either set the 'path' field or provide a 'path' input variable."
+                )
+            file_paths = inputs["path"].tolist()
+    except Exception as e:
+        if batch_config.error_mode == ErrorMode.FAIL:
+            raise e
+        # If we can't get the path, we can't proceed
+        return pd.DataFrame(), pd.DataFrame([{"error": str(e)}])
 
     # Check if all paths are the same
     unique_paths = list(set(file_paths))
@@ -144,13 +125,10 @@ def execute_file_sink(
         try:
             # Use fsspec to write the parquet file
             with fsspec.open(file_path, "wb") as file_handle:
-                data_to_save.to_parquet(file_handle, index=False)  # type: ignore[arg-type]
+                inputs.to_parquet(file_handle, index=False)  # type: ignore[arg-type]
 
-            # Create success result for all rows
-            success_df = pd.DataFrame(
-                [{"success": True, "file_path": file_path}]
-            )
-            return success_df, pd.DataFrame()
+            inputs[output_column_name] = file_path
+            return inputs, pd.DataFrame()
 
         except Exception as e:
             if batch_config.error_mode == ErrorMode.FAIL:
@@ -167,11 +145,8 @@ def execute_file_sink(
 
         for unique_path in unique_paths:
             # Create mask for rows with this path
-            path_mask = [
-                _get_file_path(step, row) == unique_path
-                for _, row in data_to_save.iterrows()
-            ]
-            sliced_inputs = data_to_save[path_mask]
+            path_mask = [p == unique_path for p in file_paths]
+            sliced_inputs = inputs[path_mask].copy()
 
             # Recursively call execute_file_sink with the sliced DataFrame
             results, errors = execute_file_sink(

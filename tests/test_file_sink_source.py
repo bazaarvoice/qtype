@@ -13,7 +13,7 @@ from qtype.interpreter.batch.file_sink_source import (
     execute_file_source,
 )
 from qtype.interpreter.batch.types import BatchConfig, ErrorMode
-from qtype.semantic.model import FileSink, FileSource
+from qtype.semantic.model import FileSink, FileSource, Variable
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def file_sink():
         path="/test/output.parquet",
         cardinality="one",
         inputs=[],
-        outputs=[],
+        outputs=[Variable(id="test-sink-file-uri", type="text", value=None)],
     )
 
 
@@ -71,7 +71,7 @@ def file_sink_no_path():
             Variable(id="path", type="text", value=None),
             Variable(id="data", type="text", value=None),
         ],
-        outputs=[],
+        outputs=[Variable(id="test-sink-file-uri", type="text", value=None)],
     )
 
 
@@ -146,8 +146,10 @@ class TestFileSink:
 
         mock_fsspec_open.assert_called_once_with("/test/output.parquet", "wb")
         mock_to_parquet.assert_called_once_with(mock_file_handle, index=False)
-        assert len(results) == 1
-        assert results.iloc[0]["success"]
+        assert len(results) == len(inputs)
+        assert (
+            results[file_sink.outputs[0].id].iloc[0] == "/test/output.parquet"
+        )
         assert len(errors) == 0
 
     @patch("fsspec.open")
@@ -190,7 +192,9 @@ class TestFileSink:
             path=None,
             cardinality="one",
             inputs=[Variable(id="data", type="text", value=None)],
-            outputs=[],
+            outputs=[
+                Variable(id="test-sink-file-uri", type="text", value=None)
+            ],
         )
 
         inputs = pd.DataFrame([{"data": "test", "other": "value"}])
