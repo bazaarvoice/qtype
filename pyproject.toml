@@ -16,6 +16,7 @@ dependencies = [
     "mkdocs-awesome-pages-plugin>=2.10.1",
     "mermaid-py>=0.8.0",
     "pip-system-certs>=5.2",
+    "openapi3-parser>=1.1.21",
 ]
 license = "APACHE-2.0"
 license-files = ["LICEN[CS]E*"]

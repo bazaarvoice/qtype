@@ -9,13 +9,48 @@ import logging
 from pathlib import Path
 
 from qtype.application.facade import QTypeFacade
+from qtype.dsl.model import Application, ToolList
 
 logger = logging.getLogger(__name__)
 
 
 def convert_api(args: argparse.Namespace) -> None:
     """Convert API specification to qtype format."""
-    raise NotImplementedError("API conversion is not implemented yet.")
+    from qtype.application.converters.tools_from_api import tools_from_api
+
+    try:
+        api_name, auths, tools, types = tools_from_api(args.api_spec)
+        if not tools:
+            raise ValueError(
+                f"No tools found from the API specification: {args.api_spec}"
+            )
+        if not auths and not types:
+            doc = ToolList(
+                root=list(tools),
+            )
+        else:
+            doc: Application | ToolList = Application(
+                id=api_name,
+                description=f"Tools created from API specification {args.api_spec}",
+                tools=list(tools),
+                types=types,
+                auths=auths,
+            )
+        # Use facade to convert to YAML format
+        facade = QTypeFacade()
+        content = facade.convert_document(doc)
+
+        # Write to file or stdout
+        if args.output:
+            output_path = Path(args.output)
+            output_path.write_text(content, encoding="utf-8")
+            logger.info(f"✅ Converted tools saved to {output_path}")
+        else:
+            print(content)
+
+    except Exception as e:
+        logger.error(f"❌ Conversion failed: {e}")
+        raise
 
 
 def convert_module(args: argparse.Namespace) -> None:
@@ -23,7 +58,6 @@ def convert_module(args: argparse.Namespace) -> None:
     from qtype.application.converters.tools_from_module import (
         tools_from_module,
     )
-    from qtype.dsl.model import Application, ToolList
 
     try:
         tools, types = tools_from_module(args.module_path)
