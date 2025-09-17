@@ -31,23 +31,35 @@ from qtype.dsl.model import (
 
 
 def _schema_to_qtype_properties(
-    schema: Schema, existing_custom_types: dict[str, CustomType]
+    schema: Schema,
+    existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str] | None = None,
 ) -> dict[str, str]:
     """Convert OpenAPI Schema properties to QType CustomType properties."""
     properties = {}
 
     # Check if schema is an Object type with properties
     if isinstance(schema, Object) and schema.properties:
+        # Get the list of required properties for this object
+        required_props = schema.required or []
+
         for prop in schema.properties:
             prop_type = _schema_to_qtype_type(
-                prop.schema, existing_custom_types
+                prop.schema, existing_custom_types, schema_name_map
             )
             # Convert to string representation for storage in properties dict
             prop_type_str = _type_to_string(prop_type)
+
+            # Add '?' suffix for optional properties (not in required list)
+            if prop.name not in required_props:
+                prop_type_str += "?"
+
             properties[prop.name] = prop_type_str
     else:
         # For non-object schemas, create a default property
-        default_type = _schema_to_qtype_type(schema, existing_custom_types)
+        default_type = _schema_to_qtype_type(
+            schema, existing_custom_types, schema_name_map
+        )
         default_type_str = _type_to_string(default_type)
         properties["value"] = default_type_str
 
@@ -65,23 +77,45 @@ def _type_to_string(qtype: PrimitiveTypeEnum | CustomType | str) -> str:
 
 
 def _create_custom_type_from_schema(
-    schema: Schema, existing_custom_types: dict[str, CustomType]
+    schema: Schema,
+    existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str],
 ) -> CustomType:
     """Create a CustomType from an Object schema."""
     # Generate a unique ID for this schema-based type
-    type_id = f"schema_{hash(str(schema))}"
+    type_id = None
+
+    schema_hash = hash(str(schema))
+    if schema_hash in schema_name_map:
+        type_id = schema_name_map[schema_hash]
+    else:
+        # make a type id manually
+        if schema.title:
+            # Use title if available, make it lowercase, alphanumeric, snake_case
+            base_id = schema.title.lower().replace(" ", "_").replace("-", "_")
+            # Remove non-alphanumeric characters except underscores
+            type_id = "schema_" + "".join(
+                c for c in base_id if c.isalnum() or c == "_"
+            )
+        else:
+            # Fallback to hash if no title
+            type_id = f"schema_{hash(str(schema))}"
 
     # Check if we already have this type
     if type_id in existing_custom_types:
         return existing_custom_types[type_id]
 
     # Create properties from the schema
-    properties = _schema_to_qtype_properties(schema, existing_custom_types)
+    properties = _schema_to_qtype_properties(
+        schema, existing_custom_types, schema_name_map
+    )
 
     # Create the custom type
     custom_type = CustomType(
         id=type_id,
-        description=schema.description or "Generated from OpenAPI schema",
+        description=schema.description
+        or schema.title
+        or "Generated from OpenAPI schema",
         properties=properties,
     )
 
@@ -92,7 +126,9 @@ def _create_custom_type_from_schema(
 
 
 def _schema_to_qtype_type(
-    schema: Schema, existing_custom_types: dict[str, CustomType]
+    schema: Schema,
+    existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str],
 ) -> PrimitiveTypeEnum | CustomType | str:
     """Recursively convert OpenAPI Schema to QType, handling nested types."""
     match schema.type:
@@ -107,7 +143,7 @@ def _schema_to_qtype_type(
         case DataType.ARRAY:
             if isinstance(schema, Array) and schema.items:
                 item_type = _schema_to_qtype_type(
-                    schema.items, existing_custom_types
+                    schema.items, existing_custom_types, schema_name_map
                 )
                 item_type_str = _type_to_string(item_type)
                 return f"list[{item_type_str}]"
@@ -115,7 +151,7 @@ def _schema_to_qtype_type(
         case DataType.OBJECT:
             # For object types, create a custom type
             return _create_custom_type_from_schema(
-                schema, existing_custom_types
+                schema, existing_custom_types, schema_name_map
             )
         case DataType.NULL:
             return PrimitiveTypeEnum.text  # Default to text for null types
@@ -124,7 +160,9 @@ def _schema_to_qtype_type(
 
 
 def to_variable_type(
-    oas: Response | RequestBody, existing_custom_types: dict[str, CustomType]
+    oas: Response | RequestBody,
+    existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str] | None = None,
 ) -> VariableType | CustomType:
     """
     Convert an OpenAPI Response or RequestBody to a VariableType or CustomType.
@@ -146,7 +184,9 @@ def to_variable_type(
         return PrimitiveTypeEnum.text
 
     # Use the recursive schema conversion function
-    result = _schema_to_qtype_type(schema, existing_custom_types)
+    result = _schema_to_qtype_type(
+        schema, existing_custom_types, schema_name_map
+    )
 
     # If it's a string (like "list[text]"), we need to return it as-is for now
     # The semantic layer will handle string-based type references
@@ -164,6 +204,7 @@ def to_api_tool(
     path: OAPIPath,
     operation: Operation,
     existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str],
 ) -> APITool:
     """Convert an OpenAPI Path and Operation to a Tool."""
     endpoint = server_url.rstrip("/") + path.url
@@ -193,21 +234,23 @@ def to_api_tool(
     if operation.request_body and operation.request_body.content:
         # Create input variable from request body
         input_type = to_variable_type(
-            operation.request_body, existing_custom_types
+            operation.request_body, existing_custom_types, schema_name_map
         )
         # Convert CustomType to string ID for Variable
         if isinstance(input_type, CustomType):
             input_type_value = input_type.id
         else:
             input_type_value = input_type
-        input_var = Variable(id="request_body", type=input_type_value)
+        input_var = Variable(
+            id=tool_id + "_request_body", type=input_type_value
+        )
         inputs.append(input_var)
 
     # Add path and query parameters as inputs
     for param in operation.parameters:
         if param.schema:
             param_type = _schema_to_qtype_type(
-                param.schema, existing_custom_types
+                param.schema, existing_custom_types, schema_name_map
             )
             # Convert to appropriate type for Variable
             if isinstance(param_type, CustomType):
@@ -237,13 +280,15 @@ def to_api_tool(
 
     # If we found a success response, create output variable
     if success_response and success_response.content:
-        output_type = to_variable_type(success_response, existing_custom_types)
+        output_type = to_variable_type(
+            success_response, existing_custom_types, schema_name_map
+        )
         # Convert CustomType to string ID for Variable
         if isinstance(output_type, CustomType):
             output_type_value = output_type.id
         else:
             output_type_value = output_type
-        output_var = Variable(id="response", type=output_type_value)
+        output_var = Variable(id=tool_id + "response", type=output_type_value)
         outputs.append(output_var)
 
     return APITool(
@@ -357,6 +402,14 @@ def tools_from_api(
     existing_custom_types: dict[str, CustomType] = {}
     tools = []
 
+    # Create a mapping from schema hash to their names in the OpenAPI spec
+    # Note: We can't monkey-patch here since the openapi_parser duplicates instances in memory
+    # if they are $ref'd in the content
+    schema_name_map: dict[int, str] = {
+        hash(str(schema)): name.replace(" ", "-").replace("_", "-")
+        for name, schema in specification.schemas.items()
+    }
+
     # Get the default auth provider if available
     default_auth = (
         authorization_providers[0] if authorization_providers else None
@@ -371,6 +424,7 @@ def tools_from_api(
                 path=path,
                 operation=operation,
                 existing_custom_types=existing_custom_types,
+                schema_name_map=schema_name_map,
             )
             tools.append(api_tool)
 

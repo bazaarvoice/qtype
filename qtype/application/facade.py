@@ -35,12 +35,6 @@ class QTypeFacade:
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
-    def load_and_validate(self, path: PathLike) -> DocumentRootType:
-        """Load and validate a document."""
-        logger.info("Document loaded, proceeding to validation")
-        root, _ = self.load_dsl_document(path)
-        return root
-
     def load_semantic_model(
         self, path: PathLike
     ) -> tuple[SemanticApplication, CustomTypeRegistry]:

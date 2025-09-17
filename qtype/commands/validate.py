@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from qtype import dsl
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import LoadError, SemanticError, ValidationError
 
@@ -31,7 +32,9 @@ def main(args: Any) -> None:
 
     try:
         # Use the facade for validation - it will raise exceptions on errors
-        loaded_data = facade.load_and_validate(spec_path)
+        loaded_data, custom_types = facade.load_dsl_document(spec_path)
+        if isinstance(loaded_data, dsl.Application):
+            loaded_data, custom_types = facade.load_semantic_model(spec_path)
         logger.info("✅ Validation successful - document is valid.")
 
         # If printing is requested, load and print the document
@@ -49,9 +52,6 @@ def main(args: Any) -> None:
         sys.exit(1)
     except SemanticError as e:
         logger.error(f"❌ Semantic validation failed: {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"❌ Unexpected error during validation: {e}")
         sys.exit(1)
 
 

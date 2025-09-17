@@ -221,7 +221,7 @@ def _generate_step_node(
             else str(step.format)
         )
         lines.append(
-            f'        {node_id}@{{shape: lean-r, label: "🔍 Decode: {step.id}\\n({format_label})"}}'
+            f'        {node_id}@{{shape: lean-r, label: "🔍 Decode: {step.id} ({format_label})"}}'
         )
     elif isinstance(step, VectorSearch):
         lines.append(
@@ -244,14 +244,14 @@ def _generate_step_node(
     elif isinstance(step, APITool):
         method_label = step.method.upper()
         lines.append(
-            f'        {node_id}@{{shape: bolt, label: "🔌 API: {step.id}\\n({method_label})"}}'
+            f'        {node_id}["⚡ API: {step.id} ({method_label})"]'
         )
         if step.auth:
             auth_id = f"AUTH_{_sanitize_id(step.auth.id)}"
             external_connections.append(f"    {node_id} -.-> {auth_id}")
     elif isinstance(step, PythonFunctionTool):
         lines.append(
-            f'        {node_id}@{{shape: rect, label: "🐍 Python: {step.id}\\n{step.function_name}"}}'
+            f'        {node_id}@{{shape: rect, label: "🐍 Python: {step.id} {step.function_name}"}}'
         )
     elif isinstance(step, Tool):
         lines.append(
@@ -440,7 +440,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
             if isinstance(tool, APITool):
                 method_label = tool.method.upper()
                 lines.append(
-                    f'        {tool_id}@{{shape: bolt, label: "🔌 {tool.id}\\n{method_label}"}}'
+                    f'        {tool_id}["⚡ {tool.id} ({method_label})"]'
                 )
                 if tool.auth:
                     auth_id = f"AUTH_{_sanitize_id(tool.auth.id)}"
