@@ -128,6 +128,9 @@
               "$ref": "#/$defs/APIKeyAuthProvider"
             },
             {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
               "$ref": "#/$defs/AWSAuthProvider"
             },
             {
@@ -159,6 +162,29 @@
           "default": null,
           "description": "Optional HTTP headers to include in the request.",
           "title": "Headers"
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Query parameters for the API request.",
+          "title": "Parameters"
         }
       },
       "required": [
@@ -545,6 +571,9 @@
                     "$ref": "#/$defs/APIKeyAuthProvider"
                   },
                   {
+                    "$ref": "#/$defs/BearerTokenAuthProvider"
+                  },
+                  {
                     "$ref": "#/$defs/AWSAuthProvider"
                   },
                   {
@@ -651,6 +680,9 @@
             "$ref": "#/$defs/APIKeyAuthProvider"
           },
           {
+            "$ref": "#/$defs/BearerTokenAuthProvider"
+          },
+          {
             "$ref": "#/$defs/AWSAuthProvider"
           },
           {
@@ -660,6 +692,34 @@
       },
       "title": "AuthorizationProviderList",
       "type": "array"
+    },
+    "BearerTokenAuthProvider": {
+      "additionalProperties": false,
+      "description": "Bearer token authentication provider.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "bearer_token",
+          "default": "bearer_token",
+          "title": "Type",
+          "type": "string"
+        },
+        "token": {
+          "description": "Bearer token for authentication.",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "token"
+      ],
+      "title": "BearerTokenAuthProvider",
+      "type": "object"
     },
     "Condition": {
       "additionalProperties": false,
@@ -1035,6 +1095,9 @@
               "$ref": "#/$defs/APIKeyAuthProvider"
             },
             {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
               "$ref": "#/$defs/AWSAuthProvider"
             },
             {
@@ -1174,6 +1237,9 @@
           "anyOf": [
             {
               "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
             },
             {
               "$ref": "#/$defs/AWSAuthProvider"
@@ -1808,6 +1874,9 @@
               "$ref": "#/$defs/APIKeyAuthProvider"
             },
             {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
               "$ref": "#/$defs/AWSAuthProvider"
             },
             {
@@ -2196,6 +2265,9 @@
               "$ref": "#/$defs/APIKeyAuthProvider"
             },
             {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
               "$ref": "#/$defs/AWSAuthProvider"
             },
             {
@@ -2315,6 +2387,9 @@
               "$ref": "#/$defs/APIKeyAuthProvider"
             },
             {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
               "$ref": "#/$defs/AWSAuthProvider"
             },
             {
@@ -2431,6 +2506,9 @@
           "anyOf": [
             {
               "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
             },
             {
               "$ref": "#/$defs/AWSAuthProvider"

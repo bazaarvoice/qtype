@@ -12,7 +12,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "openai>=1.93.0",
     "fsspec>=2025.5.1",
-    "pydantic-yaml>=1.5.1",
     "mkdocs-awesome-pages-plugin>=2.10.1",
     "mermaid-py>=0.8.0",
     "pip-system-certs>=5.2",

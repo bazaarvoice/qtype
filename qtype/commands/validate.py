@@ -37,13 +37,6 @@ def main(args: Any) -> None:
             loaded_data, custom_types = facade.load_semantic_model(spec_path)
         logger.info("✅ Validation successful - document is valid.")
 
-        # If printing is requested, load and print the document
-        if args.print:
-            try:
-                print(loaded_data.model_dump_json(indent=2, exclude_none=True))  # type: ignore
-            except Exception as e:
-                logger.warning(f"Could not print document: {e}")
-
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
         sys.exit(1)
@@ -53,6 +46,10 @@ def main(args: Any) -> None:
     except SemanticError as e:
         logger.error(f"❌ Semantic validation failed: {e}")
         sys.exit(1)
+
+    # If printing is requested, load and print the document
+    if args.print:
+        logging.info(facade.convert_document(loaded_data))  # type: ignore
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

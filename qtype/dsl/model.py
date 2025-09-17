@@ -277,6 +277,10 @@ class APITool(Tool):
         default=None,
         description="Optional HTTP headers to include in the request.",
     )
+    parameters: list[Variable | str] | None = Field(
+        default=None,
+        description="Query parameters for the API request.",
+    )
 
 
 class LLMInference(Step):
@@ -398,6 +402,13 @@ class APIKeyAuthProvider(AuthorizationProvider):
     host: str | None = Field(
         default=None, description="Base URL or domain of the provider."
     )
+
+
+class BearerTokenAuthProvider(AuthorizationProvider):
+    """Bearer token authentication provider."""
+
+    type: Literal["bearer_token"] = "bearer_token"
+    token: str = Field(..., description="Bearer token for authentication.")
 
 
 class OAuth2AuthProvider(AuthorizationProvider):
@@ -785,6 +796,7 @@ SourceType = Union[
 # Create a union type for all authorization provider types
 AuthProviderType = Union[
     APIKeyAuthProvider,
+    BearerTokenAuthProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
 ]

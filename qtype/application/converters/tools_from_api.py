@@ -23,6 +23,7 @@ from qtype.dsl.model import (
     APITool,
     AuthorizationProvider,
     AuthProviderType,
+    BearerTokenAuthProvider,
     CustomType,
     OAuth2AuthProvider,
     Variable,
@@ -33,7 +34,7 @@ from qtype.dsl.model import (
 def _schema_to_qtype_properties(
     schema: Schema,
     existing_custom_types: dict[str, CustomType],
-    schema_name_map: dict[int, str] | None = None,
+    schema_name_map: dict[int, str],
 ) -> dict[str, str]:
     """Convert OpenAPI Schema properties to QType CustomType properties."""
     properties = {}
@@ -162,7 +163,7 @@ def _schema_to_qtype_type(
 def to_variable_type(
     oas: Response | RequestBody,
     existing_custom_types: dict[str, CustomType],
-    schema_name_map: dict[int, str] | None = None,
+    schema_name_map: dict[int, str],
 ) -> VariableType | CustomType:
     """
     Convert an OpenAPI Response or RequestBody to a VariableType or CustomType.
@@ -227,7 +228,7 @@ def to_api_tool(
         operation.description
         or operation.summary
         or f"API call to {operation.method.value.upper()} {path.url}"
-    )
+    ).replace("\n", " ")
 
     # Process inputs from request body and parameters
     inputs = []
@@ -247,6 +248,7 @@ def to_api_tool(
         inputs.append(input_var)
 
     # Add path and query parameters as inputs
+    parameters = []
     for param in operation.parameters:
         if param.schema:
             param_type = _schema_to_qtype_type(
@@ -260,7 +262,7 @@ def to_api_tool(
             else:
                 param_type_value = param_type
             param_var = Variable(id=param.name, type=param_type_value)
-            inputs.append(param_var)
+            parameters.append(param_var)
 
     # Process outputs from responses
     outputs = []
@@ -300,6 +302,7 @@ def to_api_tool(
         auth=auth.id if auth else None,  # Use auth ID string instead of object
         inputs=inputs if inputs else None,
         outputs=outputs if outputs else None,
+        parameters=parameters if parameters else None,
     )
 
 
@@ -318,10 +321,9 @@ def to_authorization_provider(
             )
         case SecurityType.HTTP:
             if security.scheme == AuthenticationScheme.BEARER:
-                return APIKeyAuthProvider(
+                return BearerTokenAuthProvider(
                     id=f"{api_name}_{scheme_name}_{security.bearer_format or 'token'}",
-                    api_key="your_bearer_token_here",  # User will need to configure
-                    host=None,
+                    token=f"${{{api_name.upper()}_BEARER}}",  # User will need to configure
                 )
             else:
                 raise ValueError(

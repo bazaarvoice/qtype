@@ -3487,20 +3487,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pydantic-yaml"
-version = "1.5.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "ruamel-yaml" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/9f/c7e5d1d5f25fe1a13042b251b65ae964c55dfe53312eddf4bad29b3c53e2/pydantic_yaml-1.5.1.tar.gz", hash = "sha256:8345ae97ad5861652df571486051a5b051d2abdfc8092ddb0e4e0383e5da9a12", size = 21460, upload-time = "2025-05-25T12:28:19.758Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/10/a0641c97fa7d3b4c664ac3ba7abb2af6eae013671077efcfbf825e860de1/pydantic_yaml-1.5.1-py3-none-any.whl", hash = "sha256:c83953904c4801d15a1b6fbbbe46c37b14cb177f21f9cb6ee5b752d385ce797d", size = 17844, upload-time = "2025-05-25T12:28:18.124Z" },
-]
-
-[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3683,7 +3669,6 @@ dependencies = [
     { name = "openapi3-parser" },
     { name = "pip-system-certs" },
     { name = "pydantic" },
-    { name = "pydantic-yaml" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
 ]
@@ -3763,7 +3748,6 @@ requires-dist = [
     { name = "psycopg2-binary", marker = "extra == 'interpreter'", specifier = ">=2.9.10" },
     { name = "pyathena", extras = ["sqlalchemy"], marker = "extra == 'interpreter'", specifier = ">=3.18.0" },
     { name = "pydantic", specifier = ">=2.11.5" },
-    { name = "pydantic-yaml", specifier = ">=1.5.1" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-magic", marker = "extra == 'interpreter'", specifier = ">=0.4.27" },
     { name = "pyyaml", specifier = ">=6.0.2" },

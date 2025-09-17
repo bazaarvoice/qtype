@@ -78,11 +78,13 @@ class Application(BaseModel):
     flows: list[Flow] = Field(
         [], description="List of flows defined in this application."
     )
-    auths: list[APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider] = (
-        Field(
-            [],
-            description="List of authorization providers used for API access.",
-        )
+    auths: list[
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+    ] = Field(
+        [], description="List of authorization providers used for API access."
     )
     tools: list[Tool] = Field(
         [], description="List of tools available in this application."
@@ -119,10 +121,14 @@ class Index(ImmutableModel):
         {},
         description="Index-specific configuration and connection parameters.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None, description="AuthorizationProvider for accessing the index."
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None, description="AuthorizationProvider for accessing the index."
     )
     name: str = Field(..., description="Name of the index/collection/table.")
 
@@ -131,9 +137,13 @@ class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(None, description="AuthorizationProvider used for model access.")
-    )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(None, description="AuthorizationProvider used for model access.")
     inference_params: dict[str, Any] = Field(
         {},
         description="Optional inference parameters like temperature or max_tokens.",
@@ -169,11 +179,15 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="AuthorizationProvider used to authenticate telemetry data transmission.",
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
@@ -214,6 +228,13 @@ class AWSAuthProvider(AuthorizationProvider):
         None, description="External ID for role assumption."
     )
     region: str | None = Field(None, description="AWS region.")
+
+
+class BearerTokenAuthProvider(AuthorizationProvider):
+    """Bearer token authentication provider."""
+
+    type: Literal["bearer_token"] = Field("bearer_token")
+    token: str = Field(..., description="Bearer token for authentication.")
 
 
 class OAuth2AuthProvider(AuthorizationProvider):
@@ -403,11 +424,15 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for database authentication.",
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for database authentication.",
     )
 
 
@@ -418,14 +443,21 @@ class APITool(Tool):
     method: str = Field(
         "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for API authentication.",
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for API authentication.",
     )
     headers: dict[str, str] = Field(
         {}, description="Optional HTTP headers to include in the request."
+    )
+    parameters: list[Variable] = Field(
+        [], description="Query parameters for the API request."
     )
 
 
