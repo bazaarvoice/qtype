@@ -45,6 +45,24 @@ def _resolve_variable_type(
         return parsed_type
 
     # --- Case 1: The type is a string ---
+    # Check if it's a list type (e.g., "list[text]")
+    if parsed_type.startswith("list[") and parsed_type.endswith("]"):
+        # Extract the element type from "list[element_type]"
+        element_type_str = parsed_type[5:-1]  # Remove "list[" and "]"
+
+        # Recursively resolve the element type
+        element_type = _resolve_variable_type(
+            element_type_str, custom_type_registry
+        )
+
+        # Only allow primitive types for now (no nested lists or custom types)
+        if isinstance(element_type, PrimitiveTypeEnum):
+            return ListType(element_type=element_type)
+        else:
+            raise ValueError(
+                f"List element type must be a primitive type, got: {element_type}"
+            )
+
     # Try to resolve it as a primitive type first.
     try:
         return PrimitiveTypeEnum(parsed_type)
@@ -115,6 +133,36 @@ class ToolParameter(BaseModel):
         default=False, description="Whether this parameter is optional"
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
+        """
+        This validator runs during the main validation pass. It uses the
+        context to resolve string-based type references.
+        """
+        if (
+            isinstance(data, dict)
+            and "type" in data
+            and isinstance(data["type"], str)
+        ):
+            # Get the registry of custom types from the validation context.
+            custom_types = (info.context or {}).get("custom_types", {})
+            resolved = _resolve_variable_type(data["type"], custom_types)
+            data["type"] = resolved
+        return data
+
+
+class ListType(BaseModel):
+    """Represents a list type with a specific element type."""
+
+    element_type: PrimitiveTypeEnum = Field(
+        ..., description="Type of elements in the list"
+    )
+
+    def __str__(self) -> str:
+        """String representation for list type."""
+        return f"list[{self.element_type.value}]"
+
 
 VariableType = (
     PrimitiveTypeEnum
@@ -122,6 +170,7 @@ VariableType = (
     | Type[ChatMessage]
     | Type[ChatContent]
     | Type[BaseModel]
+    | ListType
 )
 
 

@@ -8,6 +8,7 @@ from qtype.application.converters.types import PYTHON_TYPE_TO_PRIMITIVE_TYPE
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     CustomType,
+    ListType,
     PythonFunctionTool,
     ToolParameter,
     VariableType,
@@ -231,6 +232,29 @@ def _map_python_type_to_variable_type(
     Returns:
         VariableType compatible value.
     """
+
+    # Check for generic types like list[str], list[int], etc.
+    origin = get_origin(python_type)
+    if origin is list:
+        # Handle list[T] annotations
+        args = get_args(python_type)
+        if len(args) == 1:
+            element_type_annotation = args[0]
+            # Recursively map the element type
+            element_type = _map_python_type_to_variable_type(
+                element_type_annotation, custom_types
+            )
+            # Only support lists of primitive types for now
+            if isinstance(element_type, PrimitiveTypeEnum):
+                return ListType(element_type=element_type)
+            else:
+                raise ValueError(
+                    f"List element type must be primitive, got: {element_type}"
+                )
+        else:
+            raise ValueError(
+                f"List type must have exactly one type argument, got: {args}"
+            )
 
     if python_type in PYTHON_TYPE_TO_PRIMITIVE_TYPE:
         return PYTHON_TYPE_TO_PRIMITIVE_TYPE[python_type]

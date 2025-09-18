@@ -22,6 +22,7 @@ from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (  # noqa: F401
     CustomType,
     DecoderFormat,
+    ListType,
     PrimitiveTypeEnum,
     StepCardinality,
     StructuralTypeEnum,

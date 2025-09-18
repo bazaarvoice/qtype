@@ -31,3 +31,17 @@ PYTHON_TYPE_TO_PRIMITIVE_TYPE = {
     time: PrimitiveTypeEnum.time,
     # TODO: decide on internal representation for images, video, and audio, or use annotation/hinting
 }
+
+
+def python_type_for_list(element_type: PrimitiveTypeEnum) -> type:
+    """
+    Get the Python list type for a given QType primitive element type.
+
+    Args:
+        element_type: The primitive type of the list elements
+
+    Returns:
+        The corresponding Python list type (e.g., list[str] for text elements)
+    """
+    element_python_type = PRIMITIVE_TO_PYTHON_TYPE[element_type]
+    return list[element_python_type]

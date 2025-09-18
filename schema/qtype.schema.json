@@ -1891,6 +1891,20 @@
       "title": "LLMInference",
       "type": "object"
     },
+    "ListType": {
+      "description": "Represents a list type with a specific element type.",
+      "properties": {
+        "element_type": {
+          "$ref": "#/$defs/PrimitiveTypeEnum",
+          "description": "Type of elements in the list"
+        }
+      },
+      "required": [
+        "element_type"
+      ],
+      "title": "ListType",
+      "type": "object"
+    },
     "Memory": {
       "additionalProperties": false,
       "description": "Session or persistent memory used to store relevant conversation or state data across steps or turns.",
@@ -2491,6 +2505,9 @@
             },
             {},
             {
+              "$ref": "#/$defs/ListType"
+            },
+            {
               "type": "string"
             }
           ],
@@ -2531,6 +2548,9 @@
               "$ref": "#/$defs/PrimitiveTypeEnum"
             },
             {},
+            {
+              "$ref": "#/$defs/ListType"
+            },
             {
               "type": "string"
             }
