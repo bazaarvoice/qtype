@@ -3065,8 +3065,29 @@
       "description": "Represents a list type with a specific element type.",
       "properties": {
         "element_type": {
-          "$ref": "#/$defs/PrimitiveTypeEnum",
-          "description": "Type of elements in the list"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrimitiveTypeEnum"
+            },
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/$defs/qtype_include_tag"
+                },
+                {
+                  "$ref": "#/$defs/qtype_include_raw_tag"
+                },
+                {
+                  "$ref": "#/$defs/qtype_env_var"
+                }
+              ]
+            }
+          ],
+          "description": "Type of elements in the list (primitive type or custom type reference)",
+          "title": "Element Type"
         }
       },
       "required": [
