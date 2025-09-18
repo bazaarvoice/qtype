@@ -244,12 +244,15 @@ def _map_python_type_to_variable_type(
             element_type = _map_python_type_to_variable_type(
                 element_type_annotation, custom_types
             )
-            # Only support lists of primitive types for now
+            # Support lists of both primitive types and custom types
             if isinstance(element_type, PrimitiveTypeEnum):
+                return ListType(element_type=element_type)
+            elif isinstance(element_type, str):
+                # Custom type reference
                 return ListType(element_type=element_type)
             else:
                 raise ValueError(
-                    f"List element type must be primitive, got: {element_type}"
+                    f"List element type must be primitive or custom type, got: {element_type}"
                 )
         else:
             raise ValueError(

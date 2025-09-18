@@ -1,7 +1,5 @@
 """Test list type functionality."""
 
-import pytest
-
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.model import ListType, Variable, _resolve_variable_type
 from qtype.loader import load_document
@@ -36,11 +34,10 @@ def test_resolve_variable_type_list():
     assert isinstance(result, ListType)
     assert result.element_type == PrimitiveTypeEnum.int
 
-    # Test invalid list syntax should raise error
-    with pytest.raises(
-        ValueError, match="List element type must be a primitive type"
-    ):
-        _resolve_variable_type("list[invalid_type]", {})
+    # Test custom type in list should work (returns string reference)
+    result = _resolve_variable_type("list[CustomType]", {})
+    assert isinstance(result, ListType)
+    assert result.element_type == "CustomType"
 
 
 def test_list_type_yaml_loading():

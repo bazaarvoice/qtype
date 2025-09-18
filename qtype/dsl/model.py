@@ -55,12 +55,21 @@ def _resolve_variable_type(
             element_type_str, custom_type_registry
         )
 
-        # Only allow primitive types for now (no nested lists or custom types)
+        # Allow both primitive types and custom types (but no nested lists)
         if isinstance(element_type, PrimitiveTypeEnum):
             return ListType(element_type=element_type)
+        elif isinstance(element_type, str):
+            # This is a custom type reference - store as string for later resolution
+            return ListType(element_type=element_type)
+        elif element_type in DOMAIN_CLASSES.values():
+            # Domain class - store its name as string reference
+            for name, cls in DOMAIN_CLASSES.items():
+                if cls == element_type:
+                    return ListType(element_type=name)
+            return ListType(element_type=str(element_type))
         else:
             raise ValueError(
-                f"List element type must be a primitive type, got: {element_type}"
+                f"List element type must be a primitive type or custom type reference, got: {element_type}"
             )
 
     # Try to resolve it as a primitive type first.
@@ -155,13 +164,17 @@ class ToolParameter(BaseModel):
 class ListType(BaseModel):
     """Represents a list type with a specific element type."""
 
-    element_type: PrimitiveTypeEnum = Field(
-        ..., description="Type of elements in the list"
+    element_type: PrimitiveTypeEnum | str = Field(
+        ...,
+        description="Type of elements in the list (primitive type or custom type reference)",
     )
 
     def __str__(self) -> str:
         """String representation for list type."""
-        return f"list[{self.element_type.value}]"
+        if isinstance(self.element_type, PrimitiveTypeEnum):
+            return f"list[{self.element_type.value}]"
+        else:
+            return f"list[{self.element_type}]"
 
 
 VariableType = (
