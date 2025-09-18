@@ -286,8 +286,8 @@ class APITool(Tool):
     headers: dict[str, str] = Field(
         {}, description="Optional HTTP headers to include in the request."
     )
-    parameters: list[Variable] = Field(
-        [], description="Query parameters for the API request."
+    parameters: dict[str, ToolParameter] = Field(
+        {}, description="Output parameters produced by this tool."
     )
 
 

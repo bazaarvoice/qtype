@@ -50,57 +50,6 @@
           "title": "Id",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
-        },
         "name": {
           "description": "Name of the tool function.",
           "title": "Name",
@@ -110,6 +59,38 @@
           "description": "Description of what the tool does.",
           "title": "Description",
           "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ToolParameter"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input parameters required by this tool.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ToolParameter"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Output parameters produced by this tool.",
+          "title": "Outputs"
         },
         "endpoint": {
           "description": "API endpoint URL to call.",
@@ -166,24 +147,17 @@
         "parameters": {
           "anyOf": [
             {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
+              "additionalProperties": {
+                "$ref": "#/$defs/ToolParameter"
               },
-              "type": "array"
+              "type": "object"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Query parameters for the API request.",
+          "description": "Output parameters produced by this tool.",
           "title": "Parameters"
         }
       },
@@ -787,9 +761,6 @@
               "$ref": "#/$defs/Agent"
             },
             {
-              "$ref": "#/$defs/APITool"
-            },
-            {
               "$ref": "#/$defs/Condition"
             },
             {
@@ -815,9 +786,6 @@
             },
             {
               "$ref": "#/$defs/PromptTemplate"
-            },
-            {
-              "$ref": "#/$defs/PythonFunctionTool"
             },
             {
               "$ref": "#/$defs/SQLSource"
@@ -861,9 +829,6 @@
               "$ref": "#/$defs/Agent"
             },
             {
-              "$ref": "#/$defs/APITool"
-            },
-            {
               "$ref": "#/$defs/Condition"
             },
             {
@@ -889,9 +854,6 @@
             },
             {
               "$ref": "#/$defs/PromptTemplate"
-            },
-            {
-              "$ref": "#/$defs/PythonFunctionTool"
             },
             {
               "$ref": "#/$defs/SQLSource"
@@ -1558,9 +1520,6 @@
                 "$ref": "#/$defs/Agent"
               },
               {
-                "$ref": "#/$defs/APITool"
-              },
-              {
                 "$ref": "#/$defs/Condition"
               },
               {
@@ -1586,9 +1545,6 @@
               },
               {
                 "$ref": "#/$defs/PromptTemplate"
-              },
-              {
-                "$ref": "#/$defs/PythonFunctionTool"
               },
               {
                 "$ref": "#/$defs/SQLSource"
@@ -2105,57 +2061,6 @@
           "title": "Id",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
-        },
         "name": {
           "description": "Name of the tool function.",
           "title": "Name",
@@ -2165,6 +2070,38 @@
           "description": "Description of what the tool does.",
           "title": "Description",
           "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ToolParameter"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input parameters required by this tool.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ToolParameter"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Output parameters produced by this tool.",
+          "title": "Outputs"
         },
         "function_name": {
           "description": "Name of the Python function to call.",
@@ -2433,6 +2370,34 @@
       },
       "title": "ToolList",
       "type": "array"
+    },
+    "ToolParameter": {
+      "description": "Defines a tool input or output parameter with type and optional flag.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrimitiveTypeEnum"
+            },
+            {},
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Type"
+        },
+        "optional": {
+          "default": false,
+          "description": "Whether this parameter is optional",
+          "title": "Optional",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ToolParameter",
+      "type": "object"
     },
     "TypeList": {
       "description": "Schema for a standalone list of type definitions.",
