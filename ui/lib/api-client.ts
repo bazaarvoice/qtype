@@ -59,7 +59,7 @@ export class ApiClient {
   constructor(config?: Partial<ApiClientConfig>) {
     this.config = {
       baseUrl: getBaseUrl(),
-      timeout: 10000, // 10 seconds default timeout
+      timeout: 500000, // 500 seconds default timeout
       ...config,
     };
   }

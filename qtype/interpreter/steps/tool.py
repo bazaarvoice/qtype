@@ -1,6 +1,7 @@
 import importlib
 import logging
-from typing import Any
+import time
+from typing import Any, Callable
 
 import requests
 from pydantic import BaseModel
@@ -46,7 +47,9 @@ def _execute_function_tool(
         ) from e
 
 
-def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
+def _execute_api_tool(
+    tool: APITool, inputs: dict[str, Any], stream_fn: Callable | None = None
+) -> Any:
     """Execute an API tool by making an HTTP request.
 
     Args:
@@ -87,6 +90,13 @@ def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
         body = dump_if_necessary(inputs)
 
     try:
+        if stream_fn:
+            stream_fn(f"Making request to {tool.endpoint}...")
+
+        logging.info(f"Making request to {tool.endpoint}")
+        # Record start time
+        start_time = time.time()
+
         # Make the HTTP request
         response = requests.request(
             method=tool.method.upper(),
@@ -98,6 +108,16 @@ def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
             json=body
             if tool.method.upper() in ["POST", "PUT", "PATCH"]
             else None,
+        )
+
+        # Calculate and log request duration
+        duration = time.time() - start_time
+        if stream_fn:
+            stream_fn(
+                f"Request to {tool.endpoint} completed in {duration:.2f} seconds"
+            )
+        logging.info(
+            f"Request to {tool.endpoint} completed in {duration:.2f} seconds"
         )
 
         # Raise an exception for HTTP error status codes
@@ -112,7 +132,9 @@ def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
         raise InterpreterError(f"Failed to decode JSON response: {e}") from e
 
 
-def execute(step: Invoke, **kwargs: dict[str, Any]) -> list[Variable]:
+def execute(
+    step: Invoke, stream_fn: Callable | None = None, **kwargs: dict[str, Any]
+) -> list[Variable]:
     """Execute an Invoke step.
 
     Args:
@@ -132,14 +154,7 @@ def execute(step: Invoke, **kwargs: dict[str, Any]) -> list[Variable]:
 
     # Build inputs dictionary using input bindings
     tool_inputs = {}
-    for step_input_id, tool_input_name in step.input_bindings.items():
-        # Validate step input exists
-        if step_input_id not in step_inputs_map:
-            raise InterpreterError(
-                f"Step input '{step_input_id}' not found in step inputs"
-            )
-        step_input = step_inputs_map[step_input_id]
-
+    for tool_input_name, step_input_id in step.input_bindings.items():
         # Validate tool parameter exists
         if tool_input_name not in tool_inputs_map:
             raise InterpreterError(
@@ -147,13 +162,20 @@ def execute(step: Invoke, **kwargs: dict[str, Any]) -> list[Variable]:
             )
         tool_param = tool_inputs_map[tool_input_name]
 
-        # Check if input is set
-        if step_input.is_set():
-            tool_inputs[tool_input_name] = step_input.value
-        elif not tool_param.optional:
-            raise InterpreterError(
-                f"Input '{step_input_id}' is required but not set"
+        if step_input_id in step_inputs_map:
+            step_input = step_inputs_map[step_input_id]
+            # Check if input is set
+            if step_input.is_set():
+                tool_inputs[tool_input_name] = step_input.value
+            elif not tool_param.optional:
+                raise InterpreterError(
+                    f"Input '{step_input_id}' is required but not set"
+                )
+        else:
+            logging.warning(
+                f"Step input '{step_input_id}' not found in step inputs, using it as literal for {tool_input_name}"
             )
+            tool_inputs[tool_input_name] = step_input_id
 
     # Execute the tool
     if isinstance(step.tool, PythonFunctionTool):
