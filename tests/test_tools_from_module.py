@@ -99,7 +99,7 @@ def test_tools_from_module_success(temp_module):
             '''Add two numbers.'''
             return a + b
 
-        def greet(name: str) -> str:
+        def greet(name: str, greeting: str = "Hello") -> str:
             return f"Hello, {name}!"
     """,
         "success_module",
@@ -115,7 +115,22 @@ def test_tools_from_module_success(temp_module):
     assert add_tool.description == "Add two numbers."
     assert add_tool.inputs is not None
     assert len(add_tool.inputs) == 2
-    assert add_tool.inputs[0].type == PrimitiveTypeEnum.int  # type: ignore
+    assert "a" in add_tool.inputs
+    assert "b" in add_tool.inputs
+    assert add_tool.inputs["a"].type == PrimitiveTypeEnum.int
+    assert add_tool.inputs["b"].type == PrimitiveTypeEnum.int
+    assert not add_tool.inputs["a"].optional
+    assert not add_tool.inputs["b"].optional
+
+    greet_tool = next(t for t in tools if t.name == "greet")
+    assert greet_tool.inputs is not None
+    assert len(greet_tool.inputs) == 2
+    assert "name" in greet_tool.inputs
+    assert "greeting" in greet_tool.inputs
+    assert greet_tool.inputs["name"].type == PrimitiveTypeEnum.text
+    assert greet_tool.inputs["greeting"].type == PrimitiveTypeEnum.text
+    assert not greet_tool.inputs["name"].optional
+    assert greet_tool.inputs["greeting"].optional
 
 
 def test_tools_from_module_errors():
@@ -191,7 +206,9 @@ def test_create_tool_from_function(mock_func_info, docstring, expected):
     assert tool.description == expected
     assert tool.inputs is not None
     assert len(tool.inputs) == 1
-    assert tool.inputs[0].id == "test_func.x"  # type: ignore
+    assert "x" in tool.inputs
+    assert tool.inputs["x"].type == PrimitiveTypeEnum.text
+    assert not tool.inputs["x"].optional
 
 
 def test_create_tool_no_parameters():
@@ -207,6 +224,10 @@ def test_create_tool_no_parameters():
 
     tool = _create_tool_from_function("no_params", func_info, {})
     assert tool.inputs is None
+    assert tool.outputs is not None
+    assert "result" in tool.outputs
+    assert tool.outputs["result"].type == PrimitiveTypeEnum.text
+    assert not tool.outputs["result"].optional
 
 
 @pytest.mark.parametrize(
