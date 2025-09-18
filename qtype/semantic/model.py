@@ -25,6 +25,7 @@ from qtype.dsl.model import (  # noqa: F401
     PrimitiveTypeEnum,
     StepCardinality,
     StructuralTypeEnum,
+    ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
@@ -46,6 +47,24 @@ class AuthorizationProvider(ImmutableModel):
         ..., description="Unique ID of the authorization configuration."
     )
     type: str = Field(..., description="Authorization method type.")
+
+
+class Tool(BaseModel):
+    """
+    Base class for callable functions or external operations available to the model or as a step in a flow.
+    """
+
+    id: str = Field(..., description="Unique ID of this component.")
+    name: str = Field(..., description="Name of the tool function.")
+    description: str = Field(
+        ..., description="Description of what the tool does."
+    )
+    inputs: dict[str, ToolParameter] = Field(
+        {}, description="Input parameters required by this tool."
+    )
+    outputs: dict[str, ToolParameter] = Field(
+        {}, description="Output parameters produced by this tool."
+    )
 
 
 class Application(BaseModel):
@@ -247,6 +266,42 @@ class OAuth2AuthProvider(AuthorizationProvider):
     scopes: list[str] = Field([], description="OAuth2 scopes required.")
 
 
+class APITool(Tool):
+    """Tool that invokes an API endpoint."""
+
+    endpoint: str = Field(..., description="API endpoint URL to call.")
+    method: str = Field(
+        "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
+    )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for API authentication.",
+    )
+    headers: dict[str, str] = Field(
+        {}, description="Optional HTTP headers to include in the request."
+    )
+    parameters: list[Variable] = Field(
+        [], description="Query parameters for the API request."
+    )
+
+
+class PythonFunctionTool(Tool):
+    """Tool that calls a Python function."""
+
+    function_name: str = Field(
+        ..., description="Name of the Python function to call."
+    )
+    module_path: str = Field(
+        ..., description="Optional module path where the function is defined."
+    )
+
+
 class Condition(Step):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
@@ -327,17 +382,6 @@ class Source(Step):
     cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="Sources always emit 0...N instances of the outputs.",
-    )
-
-
-class Tool(Step, ImmutableModel):
-    """
-    Base class for callable functions or external operations available to the model or as a step in a flow.
-    """
-
-    name: str = Field(..., description="Name of the tool function.")
-    description: str = Field(
-        ..., description="Description of what the tool does."
     )
 
 
@@ -433,42 +477,6 @@ class SQLSource(Source):
     ) = Field(
         None,
         description="Optional AuthorizationProvider for database authentication.",
-    )
-
-
-class APITool(Tool):
-    """Tool that invokes an API endpoint."""
-
-    endpoint: str = Field(..., description="API endpoint URL to call.")
-    method: str = Field(
-        "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
-    )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
-        None,
-        description="Optional AuthorizationProvider for API authentication.",
-    )
-    headers: dict[str, str] = Field(
-        {}, description="Optional HTTP headers to include in the request."
-    )
-    parameters: list[Variable] = Field(
-        [], description="Query parameters for the API request."
-    )
-
-
-class PythonFunctionTool(Tool):
-    """Tool that calls a Python function."""
-
-    function_name: str = Field(
-        ..., description="Name of the Python function to call."
-    )
-    module_path: str = Field(
-        ..., description="Optional module path where the function is defined."
     )
 
 

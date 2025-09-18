@@ -20,6 +20,7 @@ TYPES_TO_IGNORE = {
     "StrictBaseModel",
     "StructuralTypeEnum",
     "TypeDefinition",
+    "ToolParameter",
     "Variable",
     "VariableType",
 }
@@ -127,6 +128,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
                 PrimitiveTypeEnum,
                 StepCardinality,
                 StructuralTypeEnum,
+                ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
             from qtype.semantic.base_types import ImmutableModel

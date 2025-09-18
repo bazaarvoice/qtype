@@ -26,7 +26,7 @@ from qtype.dsl.model import (
     BearerTokenAuthProvider,
     CustomType,
     OAuth2AuthProvider,
-    Variable,
+    ToolParameter,
     VariableType,
 )
 
@@ -67,14 +67,17 @@ def _schema_to_qtype_properties(
     return properties
 
 
-def _type_to_string(qtype: PrimitiveTypeEnum | CustomType | str) -> str:
+def _type_to_string(qtype: PrimitiveTypeEnum | CustomType | str | type) -> str:
     """Convert a QType to its string representation."""
     if isinstance(qtype, PrimitiveTypeEnum):
         return qtype.value
     elif isinstance(qtype, CustomType):
         return qtype.id
+    elif isinstance(qtype, type):
+        # Handle domain types like ChatMessage, Embedding, etc.
+        return qtype.__name__
     else:
-        return qtype  # Already a string
+        return str(qtype)
 
 
 def _create_custom_type_from_schema(
@@ -188,60 +191,48 @@ def to_variable_type(
     return result
 
 
-def create_variables_from_body(
+def create_tool_parameters_from_body(
     oas: Response | RequestBody,
-    variable_prefix: str,
     existing_custom_types: dict[str, CustomType],
     schema_name_map: dict[int, str],
-) -> list[Variable]:
+) -> dict[str, ToolParameter]:
     """
-    Convert an OpenAPI Response or RequestBody to a list of Variables.
+    Convert an OpenAPI Response or RequestBody to a dictionary of ToolParameters.
 
     If the body has only one content type with an Object schema, flatten its properties
-    to individual variables. Otherwise, create a single variable with the body type.
+    to individual parameters. Otherwise, create a single parameter with the body type.
 
     Args:
         oas: The OpenAPI Response or RequestBody object
-        variable_prefix: Prefix for variable IDs
         existing_custom_types: Dictionary of existing custom types
         schema_name_map: Mapping from schema hash to name
 
     Returns:
-        List of Variable objects
+        Dictionary of parameter name to ToolParameter objects
     """
     # Check if we have content to analyze
     if not hasattr(oas, "content") or not oas.content:
-        # No content available, return empty list
-        return []
+        return {}
 
-    # Create variables for each content type
-    variables = []
-    for i, content in enumerate(oas.content):
-        input_type = to_variable_type(
-            content, existing_custom_types, schema_name_map
-        )
+    content = oas.content[0]
+    input_type = to_variable_type(
+        content, existing_custom_types, schema_name_map
+    )
 
-        # Convert CustomType to string ID for Variable
-        if isinstance(input_type, CustomType):
-            input_type_value = input_type.id
-        else:
-            input_type_value = input_type
+    # Convert CustomType to string ID for ToolParameter
+    input_type_value = (
+        input_type.id if isinstance(input_type, CustomType) else input_type
+    )
 
-        # Create variable ID with index
-        var_id = f"{variable_prefix}_body_{i}"
-
-        variables.append(Variable(id=var_id, type=input_type_value))
-
-    # Check if we should flatten: single variable with CustomType
+    # Check if we should flatten: if this is a CustomType that exists
     if (
-        len(variables) == 1
-        and isinstance(variables[0].type, str)
-        and variables[0].type in existing_custom_types
+        isinstance(input_type, CustomType)
+        and input_type.id in existing_custom_types
     ):
-        custom_type = existing_custom_types[variables[0].type]
+        custom_type = existing_custom_types[input_type.id]
 
-        # Flatten the custom type properties to individual variables
-        flattened_variables = []
+        # Flatten the custom type properties to individual parameters
+        flattened_parameters = {}
         for prop_name, prop_type_str in custom_type.properties.items():
             # Check if the property is optional (has '?' suffix)
             is_optional = prop_type_str.endswith("?")
@@ -249,16 +240,17 @@ def create_variables_from_body(
                 prop_type_str.rstrip("?") if is_optional else prop_type_str
             )
 
-            flattened_variables.append(
-                Variable(id=prop_name, type=clean_type, optional=is_optional)
+            flattened_parameters[prop_name] = ToolParameter(
+                type=clean_type, optional=is_optional
             )
 
         # remove the type from existing_custom_types to avoid confusion
-        del existing_custom_types[variables[0].type]
+        del existing_custom_types[input_type.id]
 
-        return flattened_variables
+        return flattened_parameters
 
-    return variables
+    # If not flattening, create a single parameter (e.g., for simple types or arrays)
+    return {"data": ToolParameter(type=input_type_value, optional=False)}
 
 
 def to_api_tool(
@@ -293,57 +285,47 @@ def to_api_tool(
     ).replace("\n", " ")
 
     # Process inputs from request body and parameters
-    inputs = []
+    inputs = {}
     if operation.request_body and operation.request_body.content:
-        # Create input variables from request body using the new function
-        input_vars = create_variables_from_body(
+        # Create input parameters from request body using the new function
+        input_params = create_tool_parameters_from_body(
             operation.request_body,
-            tool_id,
             existing_custom_types,
             schema_name_map,
         )
-        inputs.extend(input_vars)
+        inputs.update(input_params)
 
     # Add path and query parameters as inputs
-    parameters = []
+    parameters = {}
     for param in operation.parameters:
         if param.schema:
             param_type = _schema_to_qtype_type(
                 param.schema, existing_custom_types, schema_name_map
             )
-            # Convert to appropriate type for Variable
-            if isinstance(param_type, CustomType):
-                param_type_value = param_type.id
-            elif isinstance(param_type, str):
-                param_type_value = param_type
-            else:
-                param_type_value = param_type
-            param_var = Variable(id=param.name, type=param_type_value)
-            parameters.append(param_var)
+            # Convert to appropriate type for ToolParameter
+            param_type_value = (
+                param_type.id
+                if isinstance(param_type, CustomType)
+                else param_type
+            )
+            parameters[param.name] = ToolParameter(
+                type=param_type_value, optional=not param.required
+            )
 
     # Process outputs from responses
-    outputs = []
-    # Find the success response (200-299 status codes)
-    success_response = None
-    for response in operation.responses:
-        if response.code and 200 <= response.code < 300:
-            success_response = response
-            break
+    outputs = {}
+    # Find the success response (200-299 status codes) or default response
+    success_response = next(
+        (r for r in operation.responses if r.code and 200 <= r.code < 300),
+        next((r for r in operation.responses if r.is_default), None),
+    )
 
-    # If no explicit success response, try to find the default response
-    if not success_response:
-        for response in operation.responses:
-            if response.is_default:
-                success_response = response
-                break
-
-    # If we found a success response, create output variables
+    # If we found a success response, create output parameters
     if success_response and success_response.content:
-        # Create output variables from response using the new function
-        output_vars = create_variables_from_body(
-            success_response, tool_id, existing_custom_types, schema_name_map
+        output_params = create_tool_parameters_from_body(
+            success_response, existing_custom_types, schema_name_map
         )
-        outputs.extend(output_vars)
+        outputs.update(output_params)
 
     return APITool(
         id=tool_id,
@@ -417,14 +399,16 @@ def tools_from_api(
     Creates tools from an OpenAPI specification.
 
     Args:
-        module_path: The OpenAPI specification path or URL.
+        openapi_spec: The OpenAPI specification path or URL.
 
     Returns:
-        Application: An Application instance containing tools and authorization
-        examples for using the api.
+        Tuple containing:
+        - API name
+        - List of authorization providers
+        - List of API tools
+        - List of custom types
 
     Raises:
-        ImportError: If the OpenAPI spec cannot be loaded.
         ValueError: If no valid endpoints are found in the spec.
     """
 
@@ -435,8 +419,8 @@ def tools_from_api(
         if specification.info and specification.info.title
         else Path(openapi_spec).stem
     )
-    # remove any non alphanumeric characters except hyphens and underscores
-    api_name = "".join(c for c in api_name if c.isalnum() or c in ("-", "_"))
+    # Keep only alphanumeric characters, hyphens, and underscores
+    api_name = "".join(c for c in api_name if c.isalnum() or c in "-_")
 
     # If security is specified, create an authorization provider.
     authorization_providers = [
@@ -444,13 +428,15 @@ def tools_from_api(
         for name, sec in specification.security_schemas.items()
     ]
 
-    if len(specification.servers) > 0:
-        server_url = specification.servers[0].url
-    else:
+    server_url = (
+        specification.servers[0].url
+        if specification.servers
+        else "http://localhost"
+    )
+    if not specification.servers:
         logging.warning(
             "No servers defined in the OpenAPI specification. Using http://localhost as default."
         )
-        server_url = "http://localhost"
 
     # Create tools from the parsed specification
     existing_custom_types: dict[str, CustomType] = {}

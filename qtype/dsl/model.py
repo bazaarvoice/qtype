@@ -78,10 +78,6 @@ class Variable(BaseModel):
             "Type of data expected or produced. Either a CustomType or domain specific type."
         ),
     )
-    optional: bool = Field(
-        default=False,
-        description="Whether this variable is optional (not required).",
-    )
 
     @model_validator(mode="before")
     @classmethod
@@ -109,6 +105,15 @@ class CustomType(StrictBaseModel):
     id: str
     description: str | None = None
     properties: dict[str, str]
+
+
+class ToolParameter(BaseModel):
+    """Defines a tool input or output parameter with type and optional flag."""
+
+    type: VariableType | str
+    optional: bool = Field(
+        default=False, description="Whether this parameter is optional"
+    )
 
 
 VariableType = (
@@ -242,14 +247,23 @@ class Condition(Step):
         return self
 
 
-class Tool(Step, ABC):
+class Tool(StrictBaseModel, ABC):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """
 
+    id: str = Field(..., description="Unique ID of this component.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
         ..., description="Description of what the tool does."
+    )
+    inputs: dict[str, ToolParameter] | None = Field(
+        default=None,
+        description="Input parameters required by this tool.",
+    )
+    outputs: dict[str, ToolParameter] | None = Field(
+        default=None,
+        description="Output parameters produced by this tool.",
     )
 
 
@@ -281,9 +295,9 @@ class APITool(Tool):
         default=None,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: list[Variable | str] | None = Field(
+    parameters: dict[str, ToolParameter] | None = Field(
         default=None,
-        description="Query parameters for the API request.",
+        description="Output parameters produced by this tool.",
     )
 
 
@@ -808,7 +822,6 @@ AuthProviderType = Union[
 # Create a union type for all step types
 StepType = Union[
     Agent,
-    APITool,
     Condition,
     Decoder,
     DocumentSearch,
@@ -818,7 +831,6 @@ StepType = Union[
     IndexUpsert,
     LLMInference,
     PromptTemplate,
-    PythonFunctionTool,
     SQLSource,
     Sink,
     VectorSearch,
