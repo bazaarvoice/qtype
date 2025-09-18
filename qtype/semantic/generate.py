@@ -122,16 +122,17 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             from pydantic import BaseModel, Field, model_validator
 
             # Import enums and type aliases from DSL
-            from qtype.dsl.model import ListType, VariableType  # noqa: F401
             from qtype.dsl.model import (  # noqa: F401
                 CustomType,
                 DecoderFormat,
+                ListType,
                 PrimitiveTypeEnum,
                 StepCardinality,
                 StructuralTypeEnum,
                 ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
+            from qtype.dsl.model import VariableType  # noqa: F401
             from qtype.semantic.base_types import ImmutableModel
 
         """).lstrip()
