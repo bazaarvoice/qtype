@@ -399,15 +399,19 @@ class Decoder(Step):
 
 
 class Invoke(Step):
-    """Invokes a tool with input bindings from step inputs to tool parameters."""
+    """Invokes a tool with input and output bindings."""
 
     tool: ToolType | str = Field(
         ...,
         description="Tool to invoke.",
     )
-    bindings: dict[str, str] = Field(
+    input_bindings: dict[str, str] = Field(
         ...,
         description="Mapping from step input IDs to tool input parameter names.",
+    )
+    output_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from tool output parameter names to step output IDs.",
     )
 
 
