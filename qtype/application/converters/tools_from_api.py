@@ -195,6 +195,7 @@ def create_tool_parameters_from_body(
     oas: Response | RequestBody,
     existing_custom_types: dict[str, CustomType],
     schema_name_map: dict[int, str],
+    default_param_name: str,
 ) -> dict[str, ToolParameter]:
     """
     Convert an OpenAPI Response or RequestBody to a dictionary of ToolParameters.
@@ -206,6 +207,7 @@ def create_tool_parameters_from_body(
         oas: The OpenAPI Response or RequestBody object
         existing_custom_types: Dictionary of existing custom types
         schema_name_map: Mapping from schema hash to name
+        default_param_name: Name to use for non-flattened parameter
 
     Returns:
         Dictionary of parameter name to ToolParameter objects
@@ -250,7 +252,11 @@ def create_tool_parameters_from_body(
         return flattened_parameters
 
     # If not flattening, create a single parameter (e.g., for simple types or arrays)
-    return {"data": ToolParameter(type=input_type_value, optional=False)}
+    return {
+        default_param_name: ToolParameter(
+            type=input_type_value, optional=False
+        )
+    }
 
 
 def to_api_tool(
@@ -292,6 +298,7 @@ def to_api_tool(
             operation.request_body,
             existing_custom_types,
             schema_name_map,
+            default_param_name="request",
         )
         inputs.update(input_params)
 
@@ -323,7 +330,10 @@ def to_api_tool(
     # If we found a success response, create output parameters
     if success_response and success_response.content:
         output_params = create_tool_parameters_from_body(
-            success_response, existing_custom_types, schema_name_map
+            success_response,
+            existing_custom_types,
+            schema_name_map,
+            default_param_name="response",
         )
         outputs.update(output_params)
 
