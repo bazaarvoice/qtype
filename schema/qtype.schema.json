@@ -782,6 +782,9 @@
               "$ref": "#/$defs/IndexUpsert"
             },
             {
+              "$ref": "#/$defs/Invoke"
+            },
+            {
               "$ref": "#/$defs/LLMInference"
             },
             {
@@ -848,6 +851,9 @@
             },
             {
               "$ref": "#/$defs/IndexUpsert"
+            },
+            {
+              "$ref": "#/$defs/Invoke"
             },
             {
               "$ref": "#/$defs/LLMInference"
@@ -1541,6 +1547,9 @@
                 "$ref": "#/$defs/IndexUpsert"
               },
               {
+                "$ref": "#/$defs/Invoke"
+              },
+              {
                 "$ref": "#/$defs/LLMInference"
               },
               {
@@ -1667,6 +1676,107 @@
         "index"
       ],
       "title": "IndexUpsert",
+      "type": "object"
+    },
+    "Invoke": {
+      "additionalProperties": false,
+      "description": "Invokes a tool with input and output bindings.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/APITool"
+            },
+            {
+              "$ref": "#/$defs/PythonFunctionTool"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Tool to invoke.",
+          "title": "Tool"
+        },
+        "input_bindings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from step input IDs to tool input parameter names.",
+          "title": "Input Bindings",
+          "type": "object"
+        },
+        "output_bindings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from tool output parameter names to step output IDs.",
+          "title": "Output Bindings",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "tool",
+        "input_bindings",
+        "output_bindings"
+      ],
+      "title": "Invoke",
       "type": "object"
     },
     "LLMInference": {

@@ -3,89 +3,64 @@ import logging
 from typing import Any
 
 import requests
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from qtype.application.converters.types import PRIMITIVE_TO_PYTHON_TYPE
-from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import (
     APITool,
     BearerTokenAuthProvider,
+    Invoke,
     PythonFunctionTool,
-    Tool,
     Variable,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def _transform_result_to_variable_type(result: Any, variable: Variable) -> Any:
-    """Transform an API result into the expected variable type.
+def _execute_function_tool(
+    tool: PythonFunctionTool, inputs: dict[str, Any]
+) -> Any:
+    """Execute a Python function tool.
 
     Args:
-        result: The raw result from the API call.
-        variable: The variable with type information.
+        tool: The Python function tool to execute.
+        inputs: Dictionary of input parameter names to values.
 
     Returns:
-        The transformed result matching the variable's type.
+        The result from the function call.
 
     Raises:
-        InterpreterError: If the result cannot be converted to the expected type.
+        InterpreterError: If the function cannot be found or executed.
     """
-    var_type = variable.type
-
-    # Handle BaseModel subclasses (including custom types)
-    if isinstance(var_type, type) and issubclass(var_type, BaseModel):
-        try:
-            return var_type.model_validate(result)
-        except ValidationError as e:
+    try:
+        module = importlib.import_module(tool.module_path)
+        function = getattr(module, tool.function_name, None)
+        if function is None:
             raise InterpreterError(
-                f"Failed to convert API result to {var_type.__name__}: {e}. "
-                f"Response body: {result}"
-            ) from e
-
-    # Handle primitive types
-    elif isinstance(var_type, PrimitiveTypeEnum):
-        expected_python_type = PRIMITIVE_TO_PYTHON_TYPE.get(var_type)
-        if expected_python_type is None:
-            raise InterpreterError(
-                f"No Python type mapping found for {var_type}. "
-                f"Response body: {result}"
+                f"Function {tool.function_name} not found in {tool.module_path}"
             )
-
-        if not isinstance(result, expected_python_type):
-            raise InterpreterError(
-                f"Expected {expected_python_type.__name__} for variable '{variable.id}' "
-                f"of type {var_type.value}, got {type(result).__name__}. "
-                f"Response body: {result}"
-            )
-
-        return result
-
-    # Handle other types (fallback)
-    else:
+        return function(**inputs)
+    except Exception as e:
         raise InterpreterError(
-            f"Unsupported variable type {var_type} for variable '{variable.id}'. "
-            f"Response body: {result}"
-        )
+            f"Failed to execute function {tool.function_name}: {e}"
+        ) from e
 
 
-def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
+def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
     """Execute an API tool by making an HTTP request.
 
     Args:
         tool: The API tool to execute.
-        **kwargs: Additional keyword arguments passed as inputs.
+        inputs: Dictionary of input parameter names to values.
 
     Returns:
-        The transformed result(s) ready for assignment to output variables.
-        Returns a dict if multiple outputs, or the transformed value if single output.
+        The result from the API call.
 
     Raises:
         InterpreterError: If the auth provider is not supported or the request fails.
     """
     # Prepare headers
-    headers = tool.headers.copy()
+    headers = tool.headers.copy() if tool.headers else {}
 
     # Handle authentication
     if tool.auth is not None:
@@ -97,24 +72,19 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
                 "Only BearerTokenAuthProvider is currently supported."
             )
 
-    # Prepare query parameters from tool.parameters
-    params = {}
-    for param in tool.parameters:
-        if param.is_set():
-            params[param.id] = param.value
-
-    # prepare the request body from the inputs to the step
+    # Prepare request body
     def dump_if_necessary(value: Any) -> Any:
         if isinstance(value, BaseModel):
             return value.model_dump()
         return value
 
-    if len(tool.inputs) > 0:
-        body = dump_if_necessary(tool.inputs[0].value)
-    else:
-        body = {
-            i.id: dump_if_necessary(i.value) for i in tool.inputs if i.is_set()
-        }
+    # Use inputs for request body
+    body = None
+    if inputs:
+        if len(inputs) == 1:
+            body = dump_if_necessary(next(iter(inputs.values())))
+        else:
+            body = {k: dump_if_necessary(v) for k, v in inputs.items()}
 
     try:
         # Make the HTTP request
@@ -122,9 +92,9 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
             method=tool.method.upper(),
             url=tool.endpoint,
             headers=headers,
-            params=params
-            if tool.method.upper() in ["GET", "DELETE"]
-            else None,
+            params=None
+            if tool.method.upper() in ["POST", "PUT", "PATCH"]
+            else inputs,
             json=body
             if tool.method.upper() in ["POST", "PUT", "PATCH"]
             else None,
@@ -134,33 +104,7 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
         response.raise_for_status()
 
         # Return the decoded JSON response
-        result = response.json()
-
-        # Transform results based on number of outputs
-        if len(tool.outputs) == 1:
-            # Single output: transform the entire result
-            return _transform_result_to_variable_type(result, tool.outputs[0])
-        elif len(tool.outputs) > 1:
-            # Multiple outputs: transform each field from the result dict
-            if not isinstance(result, dict):
-                raise InterpreterError(
-                    f"Expected dict result for multiple outputs, got {type(result).__name__}. "
-                    f"Response body: {result}"
-                )
-            transformed_results = {}
-            for var in tool.outputs:
-                if var.id not in result:
-                    raise InterpreterError(
-                        f"Output variable '{var.id}' not found in API result. "
-                        f"Available keys: {list(result.keys())}. "
-                        f"Response body: {result}"
-                    )
-                transformed_results[var.id] = (
-                    _transform_result_to_variable_type(result[var.id], var)
-                )
-            return transformed_results
-        else:
-            return None
+        return response.json()
 
     except requests.exceptions.RequestException as e:
         raise InterpreterError(f"API request failed: {e}") from e
@@ -168,52 +112,86 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
         raise InterpreterError(f"Failed to decode JSON response: {e}") from e
 
 
-def execute(tool: Tool, **kwargs: dict) -> list[Variable]:
-    """Execute a tool step.
+def execute(step: Invoke, **kwargs: dict[str, Any]) -> list[Variable]:
+    """Execute an Invoke step.
 
     Args:
-        tool: The tool step to execute.
+        step: The Invoke step to execute.
         **kwargs: Additional keyword arguments.
+
+    Returns:
+        List of output variables with their values set.
     """
-    logger.debug(f"Executing tool step: {tool.id} with kwargs: {kwargs}")
-    # Call the function with the provided arguments
-    if any(not inputs.is_set() for inputs in tool.inputs):
-        raise InterpreterError(
-            f"Tool {tool.id} requires all inputs to be set. Missing inputs: {[var.id for var in tool.inputs if not var.is_set()]}"
-        )
+    logger.debug(f"Executing invoke step: {step.id}")
 
-    if isinstance(tool, PythonFunctionTool):
-        # import the function dynamically
-        module = importlib.import_module(tool.module_path)
-        function = getattr(module, tool.function_name, None)
-        if function is None:
+    # Create lookup maps for efficient access
+    step_inputs_map = {var.id: var for var in step.inputs}
+    step_outputs_map = {var.id: var for var in step.outputs}
+    tool_inputs_map = step.tool.inputs or {}
+    tool_outputs_map = step.tool.outputs or {}
+
+    # Build inputs dictionary using input bindings
+    tool_inputs = {}
+    for step_input_id, tool_input_name in step.input_bindings.items():
+        # Validate step input exists
+        if step_input_id not in step_inputs_map:
             raise InterpreterError(
-                f"Function {tool.function_name} not found in {tool.module_path}"
+                f"Step input '{step_input_id}' not found in step inputs"
             )
-        inputs = {var.id: var.value for var in tool.inputs if var.is_set()}
-        results = function(**inputs)
-    elif isinstance(tool, APITool):
-        inputs = {var.id: var.value for var in tool.inputs if var.is_set()}
-        results = _execute_api_tool(tool, **inputs)
-    else:
-        raise InterpreterError(f"Unsupported tool type: {type(tool).__name__}")
+        step_input = step_inputs_map[step_input_id]
 
-    # Handle results (same logic for both tool types)
-    if isinstance(results, dict) and len(tool.outputs) > 1:
-        for var in tool.outputs:
-            if var.id in results:
-                var.value = results[var.id]
-            else:
-                raise InterpreterError(
-                    f"Output variable {var.id} not found in function results."
-                )
-    elif len(tool.outputs) == 1:
-        tool.outputs[0].value = results
-    elif len(tool.outputs) == 0 and results is None:
-        pass  # No outputs to assign, and function returned None
+        # Validate tool parameter exists
+        if tool_input_name not in tool_inputs_map:
+            raise InterpreterError(
+                f"Tool input parameter '{tool_input_name}' not found in tool definition"
+            )
+        tool_param = tool_inputs_map[tool_input_name]
+
+        # Check if input is set
+        if step_input.is_set():
+            tool_inputs[tool_input_name] = step_input.value
+        elif not tool_param.optional:
+            raise InterpreterError(
+                f"Input '{step_input_id}' is required but not set"
+            )
+
+    # Execute the tool
+    if isinstance(step.tool, PythonFunctionTool):
+        result = _execute_function_tool(step.tool, tool_inputs)
+    elif isinstance(step.tool, APITool):
+        result = _execute_api_tool(step.tool, tool_inputs)
     else:
         raise InterpreterError(
-            f"The returned value {results} could not be assigned to outputs {[var.id for var in tool.outputs]}."
+            f"Unsupported tool type: {type(step.tool).__name__}"
         )
 
-    return tool.outputs  # type: ignore[return-value]
+    # Map results to output variables using output bindings
+    for tool_output_name, step_output_id in step.output_bindings.items():
+        # Validate step output exists
+        if step_output_id not in step_outputs_map:
+            raise InterpreterError(
+                f"Step output '{step_output_id}' not found in step outputs"
+            )
+        step_output = step_outputs_map[step_output_id]
+
+        # Validate tool output parameter exists
+        if tool_output_name not in tool_outputs_map:
+            raise InterpreterError(
+                f"Tool output parameter '{tool_output_name}' not found in tool definition"
+            )
+        tool_output_param = tool_outputs_map[tool_output_name]
+
+        # Extract the value from the result
+        if isinstance(result, dict):
+            if tool_output_name in result:
+                step_output.value = result[tool_output_name]
+            elif not tool_output_param.optional:
+                raise InterpreterError(
+                    f"Tool output '{tool_output_name}' not found in result. "
+                    f"Available keys: {list(result.keys())}"
+                )
+        else:
+            # Single output case - use the entire result
+            step_output.value = result
+
+    return step.outputs
