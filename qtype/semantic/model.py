@@ -49,7 +49,7 @@ class AuthorizationProvider(ImmutableModel):
     type: str = Field(..., description="Authorization method type.")
 
 
-class Tool(BaseModel):
+class Tool(ImmutableModel):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """

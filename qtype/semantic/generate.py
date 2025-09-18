@@ -32,6 +32,7 @@ FROZEN_TYPES = {
     "Index",
     "Memory",
     "Model",
+    "Tool",
     "VectorIndex",
 }
 
