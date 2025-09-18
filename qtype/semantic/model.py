@@ -329,6 +329,16 @@ class Decoder(Step):
     )
 
 
+class Invoke(Step):
+    """Invokes a tool with input bindings from step inputs to tool parameters."""
+
+    tool: Tool = Field(..., description="Tool to invoke.")
+    bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from step input IDs to tool input parameter names.",
+    )
+
+
 class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""

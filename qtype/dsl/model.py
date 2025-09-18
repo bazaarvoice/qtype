@@ -398,6 +398,19 @@ class Decoder(Step):
         return self
 
 
+class Invoke(Step):
+    """Invokes a tool with input bindings from step inputs to tool parameters."""
+
+    tool: ToolType | str = Field(
+        ...,
+        description="Tool to invoke.",
+    )
+    bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from step input IDs to tool input parameter names.",
+    )
+
+
 #
 # ---------------- Observability and Authentication Components ----------------
 #
@@ -829,6 +842,7 @@ StepType = Union[
     FileSource,
     Flow,
     IndexUpsert,
+    Invoke,
     LLMInference,
     PromptTemplate,
     SQLSource,
