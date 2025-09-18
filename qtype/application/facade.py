@@ -35,6 +35,16 @@ class QTypeFacade:
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
+    def telemetry(self, spec: SemanticApplication) -> None:
+        if spec.telemetry:
+            logger.info(
+                f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
+            )
+            # Register telemetry if needed
+            from qtype.interpreter.telemetry import register
+
+            register(spec.telemetry, spec.id)
+
     def load_semantic_model(
         self, path: PathLike
     ) -> tuple[SemanticApplication, CustomTypeRegistry]:
@@ -57,6 +67,7 @@ class QTypeFacade:
 
         # Load the semantic application
         semantic_model, type_registry = self.load_semantic_model(path)
+        self.telemetry(semantic_model)
 
         # Find the flow to execute (inlined from _find_flow)
         if flow_name:
