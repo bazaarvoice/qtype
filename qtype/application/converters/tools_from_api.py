@@ -8,7 +8,7 @@ from openapi_parser.enumeration import (
     DataType,
     SecurityType,
 )
-from openapi_parser.specification import Array, Object, Operation
+from openapi_parser.specification import Array, Content, Object, Operation
 from openapi_parser.specification import Path as OAPIPath
 from openapi_parser.specification import (
     RequestBody,
@@ -161,32 +161,21 @@ def _schema_to_qtype_type(
 
 
 def to_variable_type(
-    oas: Response | RequestBody,
+    content: Content,
     existing_custom_types: dict[str, CustomType],
     schema_name_map: dict[int, str],
 ) -> VariableType | CustomType:
     """
-    Convert an OpenAPI Response or RequestBody to a VariableType or CustomType.
+    Convert an OpenAPI Content object to a VariableType or CustomType.
     If it already exists in existing_custom_types, return that instance.
     """
-    # Check if we have content to analyze
-    if not hasattr(oas, "content") or not oas.content:
-        # No content available, default to text
-        return PrimitiveTypeEnum.text
-
-    # Get the first content schema
-    schema = None
-    for content in oas.content:
-        if hasattr(content, "schema") and content.schema:
-            schema = content.schema
-            break
-
-    if schema is None:
+    # Check if we have a schema to analyze
+    if not content.schema:
         return PrimitiveTypeEnum.text
 
     # Use the recursive schema conversion function
     result = _schema_to_qtype_type(
-        schema, existing_custom_types, schema_name_map
+        content.schema, existing_custom_types, schema_name_map
     )
 
     # If it's a string (like "list[text]"), we need to return it as-is for now
@@ -197,6 +186,79 @@ def to_variable_type(
         return PrimitiveTypeEnum.text
 
     return result
+
+
+def create_variables_from_body(
+    oas: Response | RequestBody,
+    variable_prefix: str,
+    existing_custom_types: dict[str, CustomType],
+    schema_name_map: dict[int, str],
+) -> list[Variable]:
+    """
+    Convert an OpenAPI Response or RequestBody to a list of Variables.
+
+    If the body has only one content type with an Object schema, flatten its properties
+    to individual variables. Otherwise, create a single variable with the body type.
+
+    Args:
+        oas: The OpenAPI Response or RequestBody object
+        variable_prefix: Prefix for variable IDs
+        existing_custom_types: Dictionary of existing custom types
+        schema_name_map: Mapping from schema hash to name
+
+    Returns:
+        List of Variable objects
+    """
+    # Check if we have content to analyze
+    if not hasattr(oas, "content") or not oas.content:
+        # No content available, return empty list
+        return []
+
+    # Create variables for each content type
+    variables = []
+    for i, content in enumerate(oas.content):
+        input_type = to_variable_type(
+            content, existing_custom_types, schema_name_map
+        )
+
+        # Convert CustomType to string ID for Variable
+        if isinstance(input_type, CustomType):
+            input_type_value = input_type.id
+        else:
+            input_type_value = input_type
+
+        # Create variable ID with index
+        var_id = f"{variable_prefix}_body_{i}"
+
+        variables.append(Variable(id=var_id, type=input_type_value))
+
+    # Check if we should flatten: single variable with CustomType
+    if (
+        len(variables) == 1
+        and isinstance(variables[0].type, str)
+        and variables[0].type in existing_custom_types
+    ):
+        custom_type = existing_custom_types[variables[0].type]
+
+        # Flatten the custom type properties to individual variables
+        flattened_variables = []
+        for prop_name, prop_type_str in custom_type.properties.items():
+            # Check if the property is optional (has '?' suffix)
+            is_optional = prop_type_str.endswith("?")
+            clean_type = (
+                prop_type_str.rstrip("?") if is_optional else prop_type_str
+            )
+
+            flattened_variables.append(
+                Variable(id=prop_name, type=clean_type, optional=is_optional)
+            )
+
+        # remove the type from existing_custom_types to avoid confusion
+        del existing_custom_types[variables[0].type]
+
+        return flattened_variables
+
+    return variables
 
 
 def to_api_tool(
@@ -233,19 +295,14 @@ def to_api_tool(
     # Process inputs from request body and parameters
     inputs = []
     if operation.request_body and operation.request_body.content:
-        # Create input variable from request body
-        input_type = to_variable_type(
-            operation.request_body, existing_custom_types, schema_name_map
+        # Create input variables from request body using the new function
+        input_vars = create_variables_from_body(
+            operation.request_body,
+            tool_id,
+            existing_custom_types,
+            schema_name_map,
         )
-        # Convert CustomType to string ID for Variable
-        if isinstance(input_type, CustomType):
-            input_type_value = input_type.id
-        else:
-            input_type_value = input_type
-        input_var = Variable(
-            id=tool_id + "_request_body", type=input_type_value
-        )
-        inputs.append(input_var)
+        inputs.extend(input_vars)
 
     # Add path and query parameters as inputs
     parameters = []
@@ -280,18 +337,13 @@ def to_api_tool(
                 success_response = response
                 break
 
-    # If we found a success response, create output variable
+    # If we found a success response, create output variables
     if success_response and success_response.content:
-        output_type = to_variable_type(
-            success_response, existing_custom_types, schema_name_map
+        # Create output variables from response using the new function
+        output_vars = create_variables_from_body(
+            success_response, tool_id, existing_custom_types, schema_name_map
         )
-        # Convert CustomType to string ID for Variable
-        if isinstance(output_type, CustomType):
-            output_type_value = output_type.id
-        else:
-            output_type_value = output_type
-        output_var = Variable(id=tool_id + "response", type=output_type_value)
-        outputs.append(output_var)
+        outputs.extend(output_vars)
 
     return APITool(
         id=tool_id,

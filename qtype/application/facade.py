@@ -110,12 +110,11 @@ class QTypeFacade:
             from qtype.dsl.model import Document
 
             wrapped_document = Document(root=document)
-        import yaml
+        from pydantic_yaml import to_yaml_str
 
-        document_dict = wrapped_document.model_dump(
-            exclude_unset=True, exclude_none=True
+        return to_yaml_str(
+            wrapped_document, exclude_unset=True, exclude_none=True
         )
-        return yaml.dump(document_dict, default_flow_style=False)
 
     def generate_aws_bedrock_models(self) -> list[dict[str, Any]]:
         """

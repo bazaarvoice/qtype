@@ -16,6 +16,7 @@ dependencies = [
     "mermaid-py>=0.8.0",
     "pip-system-certs>=5.2",
     "openapi3-parser>=1.1.21",
+    "pydantic-yaml>=1.6.0",
 ]
 license = "APACHE-2.0"
 license-files = ["LICEN[CS]E*"]

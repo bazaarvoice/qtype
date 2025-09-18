@@ -78,6 +78,10 @@ class Variable(BaseModel):
             "Type of data expected or produced. Either a CustomType or domain specific type."
         ),
     )
+    optional: bool = Field(
+        default=False,
+        description="Whether this variable is optional (not required).",
+    )
 
     @model_validator(mode="before")
     @classmethod
