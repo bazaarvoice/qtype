@@ -89,6 +89,9 @@ class QTypeFacade:
         else:
             from qtype.interpreter.flow import execute_flow
 
+            for var in target_flow.inputs:
+                if var.id in inputs:
+                    var.value = inputs[var.id]
             args = {**kwargs, **inputs}
             return execute_flow(target_flow, **args)
 

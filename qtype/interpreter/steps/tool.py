@@ -97,14 +97,24 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
                 "Only BearerTokenAuthProvider is currently supported."
             )
 
-    # Prepare query parameters from tool.parameters and kwargs
+    # Prepare query parameters from tool.parameters
     params = {}
     for param in tool.parameters:
         if param.is_set():
             params[param.id] = param.value
 
-    # Add any additional parameters from kwargs
-    params.update(kwargs)
+    # prepare the request body from the inputs to the step
+    def dump_if_necessary(value: Any) -> Any:
+        if isinstance(value, BaseModel):
+            return value.model_dump()
+        return value
+
+    if len(tool.inputs) > 0:
+        body = dump_if_necessary(tool.inputs[0].value)
+    else:
+        body = {
+            i.id: dump_if_necessary(i.value) for i in tool.inputs if i.is_set()
+        }
 
     try:
         # Make the HTTP request
@@ -115,7 +125,7 @@ def _execute_api_tool(tool: APITool, **kwargs) -> dict | Any:
             params=params
             if tool.method.upper() in ["GET", "DELETE"]
             else None,
-            json=params
+            json=body
             if tool.method.upper() in ["POST", "PUT", "PATCH"]
             else None,
         )
