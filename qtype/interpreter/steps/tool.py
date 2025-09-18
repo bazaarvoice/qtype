@@ -74,17 +74,17 @@ def _execute_api_tool(tool: APITool, inputs: dict[str, Any]) -> Any:
 
     # Prepare request body
     def dump_if_necessary(value: Any) -> Any:
-        if isinstance(value, BaseModel):
+        # if value is a dictionary, call recursively
+        if isinstance(value, dict):
+            return {k: dump_if_necessary(v) for k, v in value.items()}
+        elif isinstance(value, BaseModel):
             return value.model_dump()
         return value
 
     # Use inputs for request body
     body = None
     if inputs:
-        if len(inputs) == 1:
-            body = dump_if_necessary(next(iter(inputs.values())))
-        else:
-            body = {k: dump_if_necessary(v) for k, v in inputs.items()}
+        body = dump_if_necessary(inputs)
 
     try:
         # Make the HTTP request
