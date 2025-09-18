@@ -104,3 +104,17 @@ You should, however, use features that are available in Python 3.10. Some exampl
     - Use `from __future__ import annotations` for forward references and string annotations
     - Pattern matching with `match`/`case` statements (new in 3.10)
  
+# Virtual Environment
+
+This is a `uv` project, so all commands should be run inside the virtual environment like:
+```uv run (command)```
+
+for example:
+```
+uv run python -c ...
+```
+
+or for unit tests:
+```
+uv run pytest ...
+```

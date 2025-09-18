@@ -16,12 +16,13 @@ TYPES_TO_IGNORE = {
     "DecoderFormat",
     "Document",
     "Flow",
+    "ListType",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
     "StructuralTypeEnum",
     "TypeDefinition",
+    "ToolParameter",
     "Variable",
-    "VariableType",
 }
 
 FROZEN_TYPES = {
@@ -31,6 +32,7 @@ FROZEN_TYPES = {
     "Index",
     "Memory",
     "Model",
+    "Tool",
     "VectorIndex",
 }
 
@@ -120,15 +122,17 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             from pydantic import BaseModel, Field, model_validator
 
             # Import enums and type aliases from DSL
-            from qtype.dsl.model import VariableType  # noqa: F401
             from qtype.dsl.model import (  # noqa: F401
                 CustomType,
                 DecoderFormat,
+                ListType,
                 PrimitiveTypeEnum,
                 StepCardinality,
                 StructuralTypeEnum,
+                ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
+            from qtype.dsl.model import VariableType  # noqa: F401
             from qtype.semantic.base_types import ImmutableModel
 
         """).lstrip()

@@ -35,12 +35,6 @@ class QTypeFacade:
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
-    def load_and_validate(self, path: PathLike) -> DocumentRootType:
-        """Load and validate a document."""
-        logger.info("Document loaded, proceeding to validation")
-        root, _ = self.load_dsl_document(path)
-        return root
-
     def load_semantic_model(
         self, path: PathLike
     ) -> tuple[SemanticApplication, CustomTypeRegistry]:
@@ -95,6 +89,9 @@ class QTypeFacade:
         else:
             from qtype.interpreter.flow import execute_flow
 
+            for var in target_flow.inputs:
+                if var.id in inputs:
+                    var.value = inputs[var.id]
             args = {**kwargs, **inputs}
             return execute_flow(target_flow, **args)
 
@@ -113,22 +110,11 @@ class QTypeFacade:
             from qtype.dsl.model import Document
 
             wrapped_document = Document(root=document)
+        from pydantic_yaml import to_yaml_str
 
-        # Try to use pydantic_yaml first
-        try:
-            from pydantic_yaml import to_yaml_str
-
-            return to_yaml_str(
-                wrapped_document, exclude_unset=True, exclude_none=True
-            )
-        except ImportError:
-            # Fallback to basic YAML if pydantic_yaml is not available
-            import yaml
-
-            document_dict = wrapped_document.model_dump(
-                exclude_unset=True, exclude_none=True
-            )
-            return yaml.dump(document_dict, default_flow_style=False)
+        return to_yaml_str(
+            wrapped_document, exclude_unset=True, exclude_none=True
+        )
 
     def generate_aws_bedrock_models(self) -> list[dict[str, Any]]:
         """

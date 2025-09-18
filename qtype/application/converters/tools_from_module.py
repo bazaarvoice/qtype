@@ -8,8 +8,9 @@ from qtype.application.converters.types import PYTHON_TYPE_TO_PRIMITIVE_TYPE
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     CustomType,
+    ListType,
     PythonFunctionTool,
-    Variable,
+    ToolParameter,
     VariableType,
 )
 
@@ -134,26 +135,23 @@ def _create_tool_from_function(
         else f"Function {func_name}"
     )
 
-    # Create input variables from function parameters
-    input_variables = [
-        Variable(
-            id=func_name + "." + p["name"],
+    # Create input parameters from function parameters
+    inputs = {
+        p["name"]: ToolParameter(
             type=_map_python_type_to_variable_type(p["type"], custom_types),
+            optional=p["default"] != inspect.Parameter.empty,
         )
         for p in func_info["parameters"]
-    ]
+    }
 
-    # Create output variable based on return type
+    # Create output parameter based on return type
     tool_id = func_info["module"] + "." + func_name
 
     output_type = _map_python_type_to_variable_type(
         func_info["return_type"], custom_types
     )
 
-    output_variable = Variable(
-        id=f"{tool_id}.result",
-        type=output_type,
-    )
+    outputs = {"result": ToolParameter(type=output_type, optional=False)}
 
     return PythonFunctionTool(
         id=tool_id,
@@ -161,8 +159,8 @@ def _create_tool_from_function(
         module_path=func_info["module"],
         function_name=func_name,
         description=description,
-        inputs=input_variables if len(input_variables) > 0 else None,  # type: ignore
-        outputs=[output_variable],
+        inputs=inputs if inputs else None,
+        outputs=outputs,
     )
 
 
@@ -234,6 +232,32 @@ def _map_python_type_to_variable_type(
     Returns:
         VariableType compatible value.
     """
+
+    # Check for generic types like list[str], list[int], etc.
+    origin = get_origin(python_type)
+    if origin is list:
+        # Handle list[T] annotations
+        args = get_args(python_type)
+        if len(args) == 1:
+            element_type_annotation = args[0]
+            # Recursively map the element type
+            element_type = _map_python_type_to_variable_type(
+                element_type_annotation, custom_types
+            )
+            # Support lists of both primitive types and custom types
+            if isinstance(element_type, PrimitiveTypeEnum):
+                return ListType(element_type=element_type)
+            elif isinstance(element_type, str):
+                # Custom type reference
+                return ListType(element_type=element_type)
+            else:
+                raise ValueError(
+                    f"List element type must be primitive or custom type, got: {element_type}"
+                )
+        else:
+            raise ValueError(
+                f"List type must have exactly one type argument, got: {args}"
+            )
 
     if python_type in PYTHON_TYPE_TO_PRIMITIVE_TYPE:
         return PYTHON_TYPE_TO_PRIMITIVE_TYPE[python_type]

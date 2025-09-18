@@ -5,94 +5,116 @@ tools:
   function_name: base64_decode
   id: qtype.application.commons.tools.base64_decode
   inputs:
-  - id: base64_decode.data
-    type: text
+    data:
+      optional: false
+      type: text
   module_path: qtype.application.commons.tools
   name: base64_decode
   outputs:
-  - id: qtype.application.commons.tools.base64_decode.result
-    type: file
+    result:
+      optional: false
+      type: file
 - description: Encode bytes to a Base64 string.
   function_name: base64_encode
   id: qtype.application.commons.tools.base64_encode
   inputs:
-  - id: base64_encode.data
-    type: file
+    data:
+      optional: false
+      type: file
   module_path: qtype.application.commons.tools
   name: base64_encode
   outputs:
-  - id: qtype.application.commons.tools.base64_encode.result
-    type: text
+    result:
+      optional: false
+      type: text
 - description: Calculate the difference between two timestamps.
   function_name: calculate_time_difference
   id: qtype.application.commons.tools.calculate_time_difference
   inputs:
-  - id: calculate_time_difference.start_time
-    type: datetime
-  - id: calculate_time_difference.end_time
-    type: datetime
+    end_time:
+      optional: false
+      type: datetime
+    start_time:
+      optional: false
+      type: datetime
   module_path: qtype.application.commons.tools
   name: calculate_time_difference
   outputs:
-  - id: qtype.application.commons.tools.calculate_time_difference.result
-    type: TimeDifferenceResultType
+    result:
+      optional: false
+      type: TimeDifferenceResultType
 - description: Format a timestamp using a custom format string.
   function_name: format_datetime
   id: qtype.application.commons.tools.format_datetime
   inputs:
-  - id: format_datetime.timestamp
-    type: datetime
-  - id: format_datetime.format_string
-    type: text
+    format_string:
+      optional: false
+      type: text
+    timestamp:
+      optional: false
+      type: datetime
   module_path: qtype.application.commons.tools
   name: format_datetime
   outputs:
-  - id: qtype.application.commons.tools.format_datetime.result
-    type: text
+    result:
+      optional: false
+      type: text
 - description: Get the current UTC timestamp.
   function_name: get_current_timestamp
   id: qtype.application.commons.tools.get_current_timestamp
   module_path: qtype.application.commons.tools
   name: get_current_timestamp
   outputs:
-  - id: qtype.application.commons.tools.get_current_timestamp.result
-    type: datetime
+    result:
+      optional: false
+      type: datetime
 - description: Parse a human-readable duration string into seconds.
   function_name: parse_duration_string
   id: qtype.application.commons.tools.parse_duration_string
   inputs:
-  - id: parse_duration_string.duration
-    type: text
+    duration:
+      optional: false
+      type: text
   module_path: qtype.application.commons.tools
   name: parse_duration_string
   outputs:
-  - id: qtype.application.commons.tools.parse_duration_string.result
-    type: int
+    result:
+      optional: false
+      type: int
 - description: Add a specified amount of time from a given timestamp.
   function_name: timedelta
   id: qtype.application.commons.tools.timedelta
   inputs:
-  - id: timedelta.timestamp
-    type: datetime
-  - id: timedelta.days
-    type: int
-  - id: timedelta.seconds
-    type: int
-  - id: timedelta.microseconds
-    type: int
-  - id: timedelta.milliseconds
-    type: int
-  - id: timedelta.minutes
-    type: int
-  - id: timedelta.hours
-    type: int
-  - id: timedelta.weeks
-    type: int
+    days:
+      optional: true
+      type: int
+    hours:
+      optional: true
+      type: int
+    microseconds:
+      optional: true
+      type: int
+    milliseconds:
+      optional: true
+      type: int
+    minutes:
+      optional: true
+      type: int
+    seconds:
+      optional: true
+      type: int
+    timestamp:
+      optional: false
+      type: datetime
+    weeks:
+      optional: true
+      type: int
   module_path: qtype.application.commons.tools
   name: timedelta
   outputs:
-  - id: qtype.application.commons.tools.timedelta.result
-    type: datetime
+    result:
+      optional: false
+      type: datetime
 types:
 - description: Custom type for TimeDifferenceResultType
   id: TimeDifferenceResultType

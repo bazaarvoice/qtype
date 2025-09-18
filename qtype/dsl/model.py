@@ -45,6 +45,33 @@ def _resolve_variable_type(
         return parsed_type
 
     # --- Case 1: The type is a string ---
+    # Check if it's a list type (e.g., "list[text]")
+    if parsed_type.startswith("list[") and parsed_type.endswith("]"):
+        # Extract the element type from "list[element_type]"
+        element_type_str = parsed_type[5:-1]  # Remove "list[" and "]"
+
+        # Recursively resolve the element type
+        element_type = _resolve_variable_type(
+            element_type_str, custom_type_registry
+        )
+
+        # Allow both primitive types and custom types (but no nested lists)
+        if isinstance(element_type, PrimitiveTypeEnum):
+            return ListType(element_type=element_type)
+        elif isinstance(element_type, str):
+            # This is a custom type reference - store as string for later resolution
+            return ListType(element_type=element_type)
+        elif element_type in DOMAIN_CLASSES.values():
+            # Domain class - store its name as string reference
+            for name, cls in DOMAIN_CLASSES.items():
+                if cls == element_type:
+                    return ListType(element_type=name)
+            return ListType(element_type=str(element_type))
+        else:
+            raise ValueError(
+                f"List element type must be a primitive type or custom type reference, got: {element_type}"
+            )
+
     # Try to resolve it as a primitive type first.
     try:
         return PrimitiveTypeEnum(parsed_type)
@@ -107,12 +134,56 @@ class CustomType(StrictBaseModel):
     properties: dict[str, str]
 
 
+class ToolParameter(BaseModel):
+    """Defines a tool input or output parameter with type and optional flag."""
+
+    type: VariableType | str
+    optional: bool = Field(
+        default=False, description="Whether this parameter is optional"
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
+        """
+        This validator runs during the main validation pass. It uses the
+        context to resolve string-based type references.
+        """
+        if (
+            isinstance(data, dict)
+            and "type" in data
+            and isinstance(data["type"], str)
+        ):
+            # Get the registry of custom types from the validation context.
+            custom_types = (info.context or {}).get("custom_types", {})
+            resolved = _resolve_variable_type(data["type"], custom_types)
+            data["type"] = resolved
+        return data
+
+
+class ListType(BaseModel):
+    """Represents a list type with a specific element type."""
+
+    element_type: PrimitiveTypeEnum | str = Field(
+        ...,
+        description="Type of elements in the list (primitive type or custom type reference)",
+    )
+
+    def __str__(self) -> str:
+        """String representation for list type."""
+        if isinstance(self.element_type, PrimitiveTypeEnum):
+            return f"list[{self.element_type.value}]"
+        else:
+            return f"list[{self.element_type}]"
+
+
 VariableType = (
     PrimitiveTypeEnum
     | Type[Embedding]
     | Type[ChatMessage]
     | Type[ChatContent]
     | Type[BaseModel]
+    | ListType
 )
 
 
@@ -238,14 +309,23 @@ class Condition(Step):
         return self
 
 
-class Tool(Step, ABC):
+class Tool(StrictBaseModel, ABC):
     """
     Base class for callable functions or external operations available to the model or as a step in a flow.
     """
 
+    id: str = Field(..., description="Unique ID of this component.")
     name: str = Field(..., description="Name of the tool function.")
     description: str = Field(
         ..., description="Description of what the tool does."
+    )
+    inputs: dict[str, ToolParameter] | None = Field(
+        default=None,
+        description="Input parameters required by this tool.",
+    )
+    outputs: dict[str, ToolParameter] | None = Field(
+        default=None,
+        description="Output parameters produced by this tool.",
     )
 
 
@@ -276,6 +356,10 @@ class APITool(Tool):
     headers: dict[str, str] | None = Field(
         default=None,
         description="Optional HTTP headers to include in the request.",
+    )
+    parameters: dict[str, ToolParameter] | None = Field(
+        default=None,
+        description="Output parameters produced by this tool.",
     )
 
 
@@ -376,6 +460,23 @@ class Decoder(Step):
         return self
 
 
+class Invoke(Step):
+    """Invokes a tool with input and output bindings."""
+
+    tool: ToolType | str = Field(
+        ...,
+        description="Tool to invoke.",
+    )
+    input_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from step input IDs to tool input parameter names.",
+    )
+    output_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from tool output parameter names to step output IDs.",
+    )
+
+
 #
 # ---------------- Observability and Authentication Components ----------------
 #
@@ -398,6 +499,13 @@ class APIKeyAuthProvider(AuthorizationProvider):
     host: str | None = Field(
         default=None, description="Base URL or domain of the provider."
     )
+
+
+class BearerTokenAuthProvider(AuthorizationProvider):
+    """Bearer token authentication provider."""
+
+    type: Literal["bearer_token"] = "bearer_token"
+    token: str = Field(..., description="Bearer token for authentication.")
 
 
 class OAuth2AuthProvider(AuthorizationProvider):
@@ -785,6 +893,7 @@ SourceType = Union[
 # Create a union type for all authorization provider types
 AuthProviderType = Union[
     APIKeyAuthProvider,
+    BearerTokenAuthProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
 ]
@@ -792,7 +901,6 @@ AuthProviderType = Union[
 # Create a union type for all step types
 StepType = Union[
     Agent,
-    APITool,
     Condition,
     Decoder,
     DocumentSearch,
@@ -800,9 +908,9 @@ StepType = Union[
     FileSource,
     Flow,
     IndexUpsert,
+    Invoke,
     LLMInference,
     PromptTemplate,
-    PythonFunctionTool,
     SQLSource,
     Sink,
     VectorSearch,

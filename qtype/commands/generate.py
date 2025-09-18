@@ -84,8 +84,56 @@ def generate_schema(args: argparse.Namespace) -> None:
             'output' attribute specifying the output file path.
     """
     schema = Document.model_json_schema()
+
     # Add the $schema property to indicate JSON Schema version
     schema["$schema"] = "http://json-schema.org/draft-07/schema#"
+
+    # Add custom YAML tag definitions for QType loader features
+    if "$defs" not in schema:
+        schema["$defs"] = {}
+
+    # Define custom YAML tags used by QType loader
+    schema["$defs"]["qtype_include_tag"] = {
+        "type": "string",
+        "pattern": "^!include\\s+.+",
+        "description": "Include external YAML file using QType's !include tag",
+    }
+
+    schema["$defs"]["qtype_include_raw_tag"] = {
+        "type": "string",
+        "pattern": "^!include_raw\\s+.+",
+        "description": "Include raw text file using QType's !include_raw tag",
+    }
+
+    schema["$defs"]["qtype_env_var"] = {
+        "type": "string",
+        "pattern": "^.*\\$\\{[^}:]+(?::[^}]*)?\\}.*$",
+        "description": "String with environment variable substitution using ${VAR_NAME} or ${VAR_NAME:default} syntax",
+    }
+
+    # Add these custom patterns to string types throughout the schema
+    def add_custom_patterns(obj):
+        if isinstance(obj, dict):
+            if obj.get("type") == "string" and "anyOf" not in obj:
+                # Add anyOf to allow either regular strings or custom tag patterns
+                original_obj = obj.copy()
+                obj.clear()
+                obj["anyOf"] = [
+                    original_obj,
+                    {"$ref": "#/$defs/qtype_include_tag"},
+                    {"$ref": "#/$defs/qtype_include_raw_tag"},
+                    {"$ref": "#/$defs/qtype_env_var"},
+                ]
+            else:
+                for value in obj.values():
+                    add_custom_patterns(value)
+        elif isinstance(obj, list):
+            for item in obj:
+                add_custom_patterns(item)
+
+    # Apply custom patterns to the schema
+    add_custom_patterns(schema)
+
     output = json.dumps(schema, indent=2)
     output_path: Optional[str] = getattr(args, "output", None)
     if output_path:

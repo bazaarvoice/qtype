@@ -18,11 +18,11 @@ from qtype.semantic.model import (
     Condition,
     Decoder,
     Flow,
+    Invoke,
     LLMInference,
     PromptTemplate,
     Search,
     Step,
-    Tool,
     Variable,
 )
 
@@ -60,7 +60,7 @@ def execute_step(step: Step, **kwargs: dict[str, Any]) -> list[Variable]:
         return prompt_template.execute(step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, Search):
         return search.execute(step, **kwargs)  # type: ignore[arg-type]
-    elif isinstance(step, Tool):
+    elif isinstance(step, Invoke):
         return tool.execute(step, **kwargs)  # type: ignore[arg-type]
     else:
         # Handle other step types if necessary

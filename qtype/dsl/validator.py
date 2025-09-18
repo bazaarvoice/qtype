@@ -21,7 +21,8 @@ class DuplicateComponentError(QTypeValidationError):
         existing_obj: qtype.dsl.domain_types.StrictBaseModel,
     ):
         super().__init__(
-            f"Duplicate component with ID '{obj_id}' found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
+            f'Duplicate component with ID "{obj_id}" found.'
+            # f"Duplicate component with ID \"{obj_id}\" found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
         )
 
 

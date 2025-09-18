@@ -22,9 +22,11 @@ from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (  # noqa: F401
     CustomType,
     DecoderFormat,
+    ListType,
     PrimitiveTypeEnum,
     StepCardinality,
     StructuralTypeEnum,
+    ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
@@ -46,6 +48,24 @@ class AuthorizationProvider(ImmutableModel):
         ..., description="Unique ID of the authorization configuration."
     )
     type: str = Field(..., description="Authorization method type.")
+
+
+class Tool(ImmutableModel):
+    """
+    Base class for callable functions or external operations available to the model or as a step in a flow.
+    """
+
+    id: str = Field(..., description="Unique ID of this component.")
+    name: str = Field(..., description="Name of the tool function.")
+    description: str = Field(
+        ..., description="Description of what the tool does."
+    )
+    inputs: dict[str, ToolParameter] = Field(
+        {}, description="Input parameters required by this tool."
+    )
+    outputs: dict[str, ToolParameter] = Field(
+        {}, description="Output parameters produced by this tool."
+    )
 
 
 class Application(BaseModel):
@@ -78,11 +98,13 @@ class Application(BaseModel):
     flows: list[Flow] = Field(
         [], description="List of flows defined in this application."
     )
-    auths: list[APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider] = (
-        Field(
-            [],
-            description="List of authorization providers used for API access.",
-        )
+    auths: list[
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+    ] = Field(
+        [], description="List of authorization providers used for API access."
     )
     tools: list[Tool] = Field(
         [], description="List of tools available in this application."
@@ -119,10 +141,14 @@ class Index(ImmutableModel):
         {},
         description="Index-specific configuration and connection parameters.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None, description="AuthorizationProvider for accessing the index."
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None, description="AuthorizationProvider for accessing the index."
     )
     name: str = Field(..., description="Name of the index/collection/table.")
 
@@ -131,9 +157,13 @@ class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(None, description="AuthorizationProvider used for model access.")
-    )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(None, description="AuthorizationProvider used for model access.")
     inference_params: dict[str, Any] = Field(
         {},
         description="Optional inference parameters like temperature or max_tokens.",
@@ -169,11 +199,15 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="AuthorizationProvider used to authenticate telemetry data transmission.",
-        )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
@@ -216,6 +250,13 @@ class AWSAuthProvider(AuthorizationProvider):
     region: str | None = Field(None, description="AWS region.")
 
 
+class BearerTokenAuthProvider(AuthorizationProvider):
+    """Bearer token authentication provider."""
+
+    type: Literal["bearer_token"] = Field("bearer_token")
+    token: str = Field(..., description="Bearer token for authentication.")
+
+
 class OAuth2AuthProvider(AuthorizationProvider):
     """OAuth2 authentication provider."""
 
@@ -224,6 +265,42 @@ class OAuth2AuthProvider(AuthorizationProvider):
     client_secret: str = Field(..., description="OAuth2 client secret.")
     token_url: str = Field(..., description="Token endpoint URL.")
     scopes: list[str] = Field([], description="OAuth2 scopes required.")
+
+
+class APITool(Tool):
+    """Tool that invokes an API endpoint."""
+
+    endpoint: str = Field(..., description="API endpoint URL to call.")
+    method: str = Field(
+        "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
+    )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for API authentication.",
+    )
+    headers: dict[str, str] = Field(
+        {}, description="Optional HTTP headers to include in the request."
+    )
+    parameters: dict[str, ToolParameter] = Field(
+        {}, description="Output parameters produced by this tool."
+    )
+
+
+class PythonFunctionTool(Tool):
+    """Tool that calls a Python function."""
+
+    function_name: str = Field(
+        ..., description="Name of the Python function to call."
+    )
+    module_path: str = Field(
+        ..., description="Optional module path where the function is defined."
+    )
 
 
 class Condition(Step):
@@ -250,6 +327,20 @@ class Decoder(Step):
     format: DecoderFormat = Field(
         DecoderFormat.json,
         description="Format in which the decoder processes data. Defaults to JSON.",
+    )
+
+
+class Invoke(Step):
+    """Invokes a tool with input and output bindings."""
+
+    tool: Tool = Field(..., description="Tool to invoke.")
+    input_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from step input IDs to tool input parameter names.",
+    )
+    output_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from tool output parameter names to step output IDs.",
     )
 
 
@@ -306,17 +397,6 @@ class Source(Step):
     cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="Sources always emit 0...N instances of the outputs.",
-    )
-
-
-class Tool(Step, ImmutableModel):
-    """
-    Base class for callable functions or external operations available to the model or as a step in a flow.
-    """
-
-    name: str = Field(..., description="Name of the tool function.")
-    description: str = Field(
-        ..., description="Description of what the tool does."
     )
 
 
@@ -403,40 +483,15 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for database authentication.",
-        )
-    )
-
-
-class APITool(Tool):
-    """Tool that invokes an API endpoint."""
-
-    endpoint: str = Field(..., description="API endpoint URL to call.")
-    method: str = Field(
-        "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
-    )
-    auth: APIKeyAuthProvider | AWSAuthProvider | OAuth2AuthProvider | None = (
-        Field(
-            None,
-            description="Optional AuthorizationProvider for API authentication.",
-        )
-    )
-    headers: dict[str, str] = Field(
-        {}, description="Optional HTTP headers to include in the request."
-    )
-
-
-class PythonFunctionTool(Tool):
-    """Tool that calls a Python function."""
-
-    function_name: str = Field(
-        ..., description="Name of the Python function to call."
-    )
-    module_path: str = Field(
-        ..., description="Optional module path where the function is defined."
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None,
+        description="Optional AuthorizationProvider for database authentication.",
     )
 
 

@@ -68,9 +68,6 @@ def main(args: Any) -> None:
     except ValidationError as e:
         logger.error(f"❌ Visualization failed: {e}")
         exit(1)
-    except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}")
-        exit(1)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
