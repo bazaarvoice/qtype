@@ -9,7 +9,7 @@ from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     CustomType,
     PythonFunctionTool,
-    Variable,
+    ToolParameter,
     VariableType,
 )
 
@@ -134,26 +134,23 @@ def _create_tool_from_function(
         else f"Function {func_name}"
     )
 
-    # Create input variables from function parameters
-    input_variables = [
-        Variable(
-            id=func_name + "." + p["name"],
+    # Create input parameters from function parameters
+    inputs = {
+        p["name"]: ToolParameter(
             type=_map_python_type_to_variable_type(p["type"], custom_types),
+            optional=p["default"] != inspect.Parameter.empty,
         )
         for p in func_info["parameters"]
-    ]
+    }
 
-    # Create output variable based on return type
+    # Create output parameter based on return type
     tool_id = func_info["module"] + "." + func_name
 
     output_type = _map_python_type_to_variable_type(
         func_info["return_type"], custom_types
     )
 
-    output_variable = Variable(
-        id=f"{tool_id}.result",
-        type=output_type,
-    )
+    outputs = {"result": ToolParameter(type=output_type, optional=False)}
 
     return PythonFunctionTool(
         id=tool_id,
@@ -161,8 +158,8 @@ def _create_tool_from_function(
         module_path=func_info["module"],
         function_name=func_name,
         description=description,
-        inputs=input_variables if len(input_variables) > 0 else None,  # type: ignore
-        outputs=[output_variable],
+        inputs=inputs if inputs else None,
+        outputs=outputs,
     )
 
 
