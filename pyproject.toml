@@ -37,6 +37,7 @@ interpreter = [
     "openinference-instrumentation-llama-index>=4.3.4",
     "pandas>=2.2.3",
     "psycopg2-binary>=2.9.10",
+    "pyarrow>=21.0.0",
     "pyathena[sqlalchemy]>=3.18.0",
     "python-magic>=0.4.27",
     "s3fs>=2025.7.0",
