@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from qtype.dsl.base_types import StepCardinality
@@ -70,6 +71,7 @@ class APIExecutor:
                     StaticFiles(directory=str(ui_dir), html=True),
                     name="ui",
                 )
+                app.get("/")(lambda: RedirectResponse(url="/ui"))
 
         flows = self.definition.flows if self.definition.flows else []
 
