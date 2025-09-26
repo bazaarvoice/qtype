@@ -1,9 +1,16 @@
 import logging
 from typing import Any, Callable
 
+from llama_cloud import MessageRole as LlamaMessageRole
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
-from qtype.dsl.domain_types import ChatMessage, Embedding
+from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.dsl.domain_types import (
+    ChatContent,
+    ChatMessage,
+    Embedding,
+    MessageRole,
+)
 from qtype.interpreter.conversions import (
     from_chat_message,
     to_chat_message,
@@ -95,6 +102,20 @@ def execute(
                 )
             history: list[ChatMessage] = conversation_history
             inputs = [to_chat_message(msg) for msg in history] + inputs
+
+        if li.system_message and inputs[0].role != LlamaMessageRole.SYSTEM:
+            # There is a system prompt we should append
+            # Note system_prompt on the llm doesn't work for chat -- is only used for predict https://github.com/run-llama/llama_index/issues/13983
+            system_message = ChatMessage(
+                role=MessageRole.system,
+                blocks=[
+                    ChatContent(
+                        type=PrimitiveTypeEnum.text,
+                        content=li.system_message,
+                    )
+                ],
+            )
+            inputs = [to_chat_message(system_message)] + inputs
 
         # If the stream function is set, we'll stream the results
         chat_result: ChatResponse
