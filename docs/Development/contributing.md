@@ -50,6 +50,13 @@ Install QType in editable mode so changes to the source code are immediately ref
 uv pip install -e .[interpreter]
 ```
 
+Next, activate the virtaul environment:
+```bash
+source ./venv/bin/activate
+```
+
+You may see `(qtype)` on yout terminal if you are in bash
+
 After installation, you should be able to run the `qtype` command from anywhere:
 
 ```bash
