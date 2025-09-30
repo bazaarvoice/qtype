@@ -10,7 +10,6 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import magic
 import pandas as pd
 
 from qtype.application.facade import QTypeFacade
@@ -20,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 def read_data_from_file(file_path: str) -> pd.DataFrame:
+    import magic
+
     """
     Reads a file into a pandas DataFrame based on its MIME type.
     """

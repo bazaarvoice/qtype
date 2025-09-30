@@ -1,6 +1,5 @@
 import base64
 
-import magic
 import requests
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
@@ -17,6 +16,7 @@ def file_to_content(url: str) -> ChatContent:
     Returns:
         A ChatContent block with type 'file' and the file URL as content.
     """
+    import magic
 
     # Get the bytes from the url.
     if url.startswith("data:"):
