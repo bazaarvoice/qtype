@@ -47,7 +47,7 @@ Install QType in editable mode so changes to the source code are immediately ref
 
 ```bash
 # Install in development mode
-uv pip install -e .[interpreter]
+uv pip install -e '.[interpreter]'
 ```
 
 Next, activate the virtaul environment:
