@@ -5,77 +5,25 @@
       "description": "API key-based authentication provider.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the authorization configuration.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "api_key",
-              "default": "api_key",
-              "title": "Type",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "api_key",
+          "default": "api_key",
+          "title": "Type",
+          "type": "string"
         },
         "api_key": {
-          "anyOf": [
-            {
-              "description": "API key for authentication.",
-              "title": "Api Key",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "API key for authentication.",
+          "title": "Api Key",
+          "type": "string"
         },
         "host": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -98,58 +46,19 @@
       "description": "Tool that invokes an API endpoint.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "name": {
-          "anyOf": [
-            {
-              "description": "Name of the tool function.",
-              "title": "Name",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the tool function.",
+          "title": "Name",
+          "type": "string"
         },
         "description": {
-          "anyOf": [
-            {
-              "description": "Description of what the tool does.",
-              "title": "Description",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Description of what the tool does.",
+          "title": "Description",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -184,41 +93,15 @@
           "title": "Outputs"
         },
         "endpoint": {
-          "anyOf": [
-            {
-              "description": "API endpoint URL to call.",
-              "title": "Endpoint",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "API endpoint URL to call.",
+          "title": "Endpoint",
+          "type": "string"
         },
         "method": {
-          "anyOf": [
-            {
-              "default": "GET",
-              "description": "HTTP method to use (GET, POST, PUT, DELETE, etc.).",
-              "title": "Method",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "default": "GET",
+          "description": "HTTP method to use (GET, POST, PUT, DELETE, etc.).",
+          "title": "Method",
+          "type": "string"
         },
         "auth": {
           "anyOf": [
@@ -235,20 +118,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -262,20 +132,7 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_raw_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_env_var"
-                  }
-                ]
+                "type": "string"
               },
               "type": "object"
             },
@@ -318,59 +175,20 @@
       "description": "AWS authentication provider supporting multiple credential methods.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the authorization configuration.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "aws",
-              "default": "aws",
-              "title": "Type",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "aws",
+          "default": "aws",
+          "title": "Type",
+          "type": "string"
         },
         "access_key_id": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -383,20 +201,7 @@
         "secret_access_key": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -409,20 +214,7 @@
         "session_token": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -435,20 +227,7 @@
         "profile_name": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -461,20 +240,7 @@
         "role_arn": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -487,20 +253,7 @@
         "role_session_name": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -513,20 +266,7 @@
         "external_id": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -539,20 +279,7 @@
         "region": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -574,22 +301,9 @@
       "description": "Defines an agent that can perform tasks and make decisions based on user input and context.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -605,20 +319,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -641,20 +342,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -674,20 +362,7 @@
               "$ref": "#/$defs/Memory"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -706,20 +381,7 @@
               "$ref": "#/$defs/Model"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "The model to use for inference.",
@@ -728,20 +390,7 @@
         "system_message": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -762,20 +411,7 @@
                 "$ref": "#/$defs/PythonFunctionTool"
               },
               {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_raw_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_env_var"
-                  }
-                ]
+                "type": "string"
               }
             ]
           },
@@ -796,40 +432,14 @@
       "description": "Defines a complete QType application specification.\n\nAn Application is the top-level container of the entire\nprogram in a QType YAML file. It serves as the blueprint for your\nAI-powered application, containing all the models, flows, tools, data sources,\nand configuration needed to run your program. Think of it as the main entry\npoint that ties together all components into a cohesive,\nexecutable system.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the application.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the application.",
+          "title": "Id",
+          "type": "string"
         },
         "description": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1062,59 +672,20 @@
       "description": "Bearer token authentication provider.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the authorization configuration.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "bearer_token",
-              "default": "bearer_token",
-              "title": "Type",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "bearer_token",
+          "default": "bearer_token",
+          "title": "Type",
+          "type": "string"
         },
         "token": {
-          "anyOf": [
-            {
-              "description": "Bearer token for authentication.",
-              "title": "Token",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Bearer token for authentication.",
+          "title": "Token",
+          "type": "string"
         }
       },
       "required": [
@@ -1129,22 +700,9 @@
       "description": "Conditional logic gate within a flow. Supports branching logic for execution based on variable values.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -1160,20 +718,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1196,20 +741,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1268,20 +800,7 @@
               "$ref": "#/$defs/VectorSearch"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1297,20 +816,7 @@
               "$ref": "#/$defs/Variable"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1365,20 +871,7 @@
               "$ref": "#/$defs/VectorSearch"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Step to run if condition matches.",
@@ -1397,39 +890,13 @@
       "description": "A simple declaration of a custom data type by the user.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "title": "Id",
+          "type": "string"
         },
         "description": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1441,20 +908,7 @@
         "properties": {
           "type": "object",
           "additionalProperties": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_raw_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_env_var"
-              }
-            ]
+            "type": "string"
           },
           "title": "Properties"
         }
@@ -1471,22 +925,9 @@
       "description": "Defines a step that decodes string data into structured outputs.\n\nIf parsing fails, the step will raise an error and halt execution.\nUse conditional logic in your flow to handle potential parsing errors.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -1502,20 +943,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1538,20 +966,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1578,26 +993,13 @@
       "type": "object"
     },
     "DecoderFormat": {
-      "anyOf": [
-        {
-          "description": "Defines the format in which the decoder step processes data.",
-          "enum": [
-            "json",
-            "xml"
-          ],
-          "title": "DecoderFormat",
-          "type": "string"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "description": "Defines the format in which the decoder step processes data.",
+      "enum": [
+        "json",
+        "xml"
+      ],
+      "title": "DecoderFormat",
+      "type": "string"
     },
     "Document": {
       "anyOf": [
@@ -1637,22 +1039,9 @@
       "description": "Document search index for text-based search (e.g., Elasticsearch, OpenSearch).",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the index.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the index.",
+          "title": "Id",
+          "type": "string"
         },
         "args": {
           "anyOf": [
@@ -1683,20 +1072,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1707,22 +1083,9 @@
           "title": "Auth"
         },
         "name": {
-          "anyOf": [
-            {
-              "description": "Name of the index/collection/table.",
-              "title": "Name",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the index/collection/table.",
+          "title": "Name",
+          "type": "string"
         }
       },
       "required": [
@@ -1737,22 +1100,9 @@
       "description": "Performs document search against a document index.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -1768,20 +1118,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1804,20 +1141,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -1854,20 +1178,7 @@
               "$ref": "#/$defs/VectorIndex"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Index to search against (object or ID reference).",
@@ -1886,22 +1197,9 @@
       "description": "Describes an embedding model configuration, extending the base Model class.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID for the model.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID for the model.",
+          "title": "Id",
+          "type": "string"
         },
         "auth": {
           "anyOf": [
@@ -1918,20 +1216,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1958,20 +1243,7 @@
         "model_id": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -1982,22 +1254,9 @@
           "title": "Model Id"
         },
         "provider": {
-          "anyOf": [
-            {
-              "description": "Name of the provider, e.g., openai or anthropic.",
-              "title": "Provider",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the provider, e.g., openai or anthropic.",
+          "title": "Provider",
+          "type": "string"
         },
         "dimensions": {
           "description": "Dimensionality of the embedding vectors produced by this model.",
@@ -2018,42 +1277,16 @@
       "description": "File sink that writes data to a file using fsspec-compatible URIs.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the data sink.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "const": "one",
-              "default": "one",
-              "description": "Flows always emit exactly one instance of the outputs.",
-              "title": "Cardinality",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -2064,20 +1297,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2100,20 +1320,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2130,20 +1337,7 @@
         "path": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -2165,42 +1359,16 @@
       "description": "File source that reads data from a file using fsspec-compatible URIs.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the data source.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the data source.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "const": "many",
-              "default": "many",
-              "description": "Sources always emit 0...N instances of the outputs.",
-              "title": "Cardinality",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "many",
+          "default": "many",
+          "description": "Sources always emit 0...N instances of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -2211,20 +1379,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2247,20 +1402,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2277,20 +1419,7 @@
         "path": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -2312,22 +1441,9 @@
       "description": "Defines a flow of steps that can be executed in sequence or parallel.\nIf input or output variables are not specified, they are inferred from\nthe first and last step, respectively.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -2343,20 +1459,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2379,20 +1482,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2409,20 +1499,7 @@
         "description": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -2433,26 +1510,13 @@
           "title": "Description"
         },
         "mode": {
-          "anyOf": [
-            {
-              "default": "Complete",
-              "enum": [
-                "Complete",
-                "Chat"
-              ],
-              "title": "Mode",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "default": "Complete",
+          "enum": [
+            "Complete",
+            "Chat"
+          ],
+          "title": "Mode",
+          "type": "string"
         },
         "steps": {
           "description": "List of steps or step IDs.",
@@ -2501,20 +1565,7 @@
                 "$ref": "#/$defs/VectorSearch"
               },
               {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_raw_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_env_var"
-                  }
-                ]
+                "type": "string"
               }
             ]
           },
@@ -2547,42 +1598,16 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the data sink.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "const": "one",
-              "default": "one",
-              "description": "Flows always emit exactly one instance of the outputs.",
-              "title": "Cardinality",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -2593,20 +1618,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2629,20 +1641,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2665,20 +1664,7 @@
               "$ref": "#/$defs/VectorIndex"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Index to upsert into (object or ID reference).",
@@ -2697,22 +1683,9 @@
       "description": "Invokes a tool with input and output bindings.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -2728,20 +1701,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2764,20 +1724,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2800,20 +1747,7 @@
               "$ref": "#/$defs/PythonFunctionTool"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Tool to invoke.",
@@ -2821,20 +1755,7 @@
         },
         "input_bindings": {
           "additionalProperties": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_raw_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_env_var"
-              }
-            ]
+            "type": "string"
           },
           "description": "Mapping from step input IDs to tool input parameter names.",
           "title": "Input Bindings",
@@ -2842,20 +1763,7 @@
         },
         "output_bindings": {
           "additionalProperties": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_include_raw_tag"
-              },
-              {
-                "$ref": "#/$defs/qtype_env_var"
-              }
-            ]
+            "type": "string"
           },
           "description": "Mapping from tool output parameter names to step output IDs.",
           "title": "Output Bindings",
@@ -2876,22 +1784,9 @@
       "description": "Defines a step that performs inference using a language model.\nIt can take input variables and produce output variables based on the model's response.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -2907,20 +1802,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2943,20 +1825,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -2976,20 +1845,7 @@
               "$ref": "#/$defs/Memory"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -3008,20 +1864,7 @@
               "$ref": "#/$defs/Model"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "The model to use for inference.",
@@ -3030,20 +1873,7 @@
         "system_message": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -3070,20 +1900,7 @@
               "$ref": "#/$defs/PrimitiveTypeEnum"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Type of elements in the list (primitive type or custom type reference)",
@@ -3101,22 +1918,9 @@
       "description": "Session or persistent memory used to store relevant conversation or state data across steps or turns.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the memory block.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the memory block.",
+          "title": "Id",
+          "type": "string"
         },
         "token_limit": {
           "default": 100000,
@@ -3148,22 +1952,9 @@
       "description": "Describes a generative model configuration, including provider and model ID.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID for the model.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID for the model.",
+          "title": "Id",
+          "type": "string"
         },
         "auth": {
           "anyOf": [
@@ -3180,20 +1971,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -3220,20 +1998,7 @@
         "model_id": {
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -3244,22 +2009,9 @@
           "title": "Model Id"
         },
         "provider": {
-          "anyOf": [
-            {
-              "description": "Name of the provider, e.g., openai or anthropic.",
-              "title": "Provider",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the provider, e.g., openai or anthropic.",
+          "title": "Provider",
+          "type": "string"
         }
       },
       "required": [
@@ -3289,114 +2041,36 @@
       "description": "OAuth2 authentication provider.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the authorization configuration.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "oauth2",
-              "default": "oauth2",
-              "title": "Type",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "oauth2",
+          "default": "oauth2",
+          "title": "Type",
+          "type": "string"
         },
         "client_id": {
-          "anyOf": [
-            {
-              "description": "OAuth2 client ID.",
-              "title": "Client Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "OAuth2 client ID.",
+          "title": "Client Id",
+          "type": "string"
         },
         "client_secret": {
-          "anyOf": [
-            {
-              "description": "OAuth2 client secret.",
-              "title": "Client Secret",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "OAuth2 client secret.",
+          "title": "Client Secret",
+          "type": "string"
         },
         "token_url": {
-          "anyOf": [
-            {
-              "description": "Token endpoint URL.",
-              "title": "Token Url",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Token endpoint URL.",
+          "title": "Token Url",
+          "type": "string"
         },
         "scopes": {
           "anyOf": [
             {
               "items": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_include_raw_tag"
-                  },
-                  {
-                    "$ref": "#/$defs/qtype_env_var"
-                  }
-                ]
+                "type": "string"
               },
               "type": "array"
             },
@@ -3419,58 +2093,32 @@
       "type": "object"
     },
     "PrimitiveTypeEnum": {
-      "anyOf": [
-        {
-          "description": "Represents the type of data a user or system input can accept within the DSL.",
-          "enum": [
-            "audio",
-            "boolean",
-            "bytes",
-            "date",
-            "datetime",
-            "int",
-            "file",
-            "float",
-            "image",
-            "text",
-            "time",
-            "video"
-          ],
-          "title": "PrimitiveTypeEnum",
-          "type": "string"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "description": "Represents the type of data a user or system input can accept within the DSL.",
+      "enum": [
+        "audio",
+        "boolean",
+        "bytes",
+        "date",
+        "datetime",
+        "int",
+        "file",
+        "float",
+        "image",
+        "text",
+        "time",
+        "video"
+      ],
+      "title": "PrimitiveTypeEnum",
+      "type": "string"
     },
     "PromptTemplate": {
       "additionalProperties": false,
       "description": "Defines a prompt template with a string format and variable bindings.\nThis is used to generate prompts dynamically based on input variables.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -3486,20 +2134,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -3522,20 +2157,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -3550,22 +2172,9 @@
           "title": "Outputs"
         },
         "template": {
-          "anyOf": [
-            {
-              "description": "String template for the prompt with variable placeholders.",
-              "title": "Template",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "String template for the prompt with variable placeholders.",
+          "title": "Template",
+          "type": "string"
         }
       },
       "required": [
@@ -3580,58 +2189,19 @@
       "description": "Tool that calls a Python function.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "name": {
-          "anyOf": [
-            {
-              "description": "Name of the tool function.",
-              "title": "Name",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the tool function.",
+          "title": "Name",
+          "type": "string"
         },
         "description": {
-          "anyOf": [
-            {
-              "description": "Description of what the tool does.",
-              "title": "Description",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Description of what the tool does.",
+          "title": "Description",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -3666,40 +2236,14 @@
           "title": "Outputs"
         },
         "function_name": {
-          "anyOf": [
-            {
-              "description": "Name of the Python function to call.",
-              "title": "Function Name",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the Python function to call.",
+          "title": "Function Name",
+          "type": "string"
         },
         "module_path": {
-          "anyOf": [
-            {
-              "description": "Optional module path where the function is defined.",
-              "title": "Module Path",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Optional module path where the function is defined.",
+          "title": "Module Path",
+          "type": "string"
         }
       },
       "required": [
@@ -3717,42 +2261,16 @@
       "description": "SQL database source that executes queries and emits rows.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the data source.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the data source.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "const": "many",
-              "default": "many",
-              "description": "Sources always emit 0...N instances of the outputs.",
-              "title": "Cardinality",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "many",
+          "default": "many",
+          "description": "Sources always emit 0...N instances of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -3763,20 +2281,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -3799,20 +2304,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -3827,40 +2319,14 @@
           "title": "Outputs"
         },
         "query": {
-          "anyOf": [
-            {
-              "description": "SQL query to execute. Inputs are injected as params.",
-              "title": "Query",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "SQL query to execute. Inputs are injected as params.",
+          "title": "Query",
+          "type": "string"
         },
         "connection": {
-          "anyOf": [
-            {
-              "description": "Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
-              "title": "Connection",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
+          "title": "Connection",
+          "type": "string"
         },
         "auth": {
           "anyOf": [
@@ -3877,20 +2343,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -3914,42 +2367,16 @@
       "description": "Base class for data sinks",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the data sink.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the data sink.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
-          "anyOf": [
-            {
-              "const": "one",
-              "default": "one",
-              "description": "Flows always emit exactly one instance of the outputs.",
-              "title": "Cardinality",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "const": "one",
+          "default": "one",
+          "description": "Flows always emit exactly one instance of the outputs.",
+          "title": "Cardinality",
+          "type": "string"
         },
         "inputs": {
           "anyOf": [
@@ -3960,20 +2387,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -3996,20 +2410,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -4031,49 +2432,23 @@
       "type": "object"
     },
     "StepCardinality": {
-      "anyOf": [
-        {
-          "description": "Does this step emit 1 (one) or 0...N (many) items?",
-          "enum": [
-            "one",
-            "many",
-            "auto"
-          ],
-          "title": "StepCardinality",
-          "type": "string"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "description": "Does this step emit 1 (one) or 0...N (many) items?",
+      "enum": [
+        "one",
+        "many",
+        "auto"
+      ],
+      "title": "StepCardinality",
+      "type": "string"
     },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the telemetry sink configuration.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the telemetry sink configuration.",
+          "title": "Id",
+          "type": "string"
         },
         "auth": {
           "anyOf": [
@@ -4090,20 +2465,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -4114,22 +2476,9 @@
           "title": "Auth"
         },
         "endpoint": {
-          "anyOf": [
-            {
-              "description": "URL endpoint where telemetry data will be sent.",
-              "title": "Endpoint",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "URL endpoint where telemetry data will be sent.",
+          "title": "Endpoint",
+          "type": "string"
         }
       },
       "required": [
@@ -4167,20 +2516,7 @@
               "$ref": "#/$defs/ListType"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "title": "Type"
@@ -4210,22 +2546,9 @@
       "description": "Schema for a variable that can serve as input, output, or parameter within the DSL.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the variable. Referenced in prompts or steps.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the variable. Referenced in prompts or steps.",
+          "title": "Id",
+          "type": "string"
         },
         "type": {
           "anyOf": [
@@ -4237,20 +2560,7 @@
               "$ref": "#/$defs/ListType"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Type of data expected or produced. Either a CustomType or domain specific type.",
@@ -4277,22 +2587,9 @@
       "description": "Vector database index for similarity search using embeddings.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of the index.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of the index.",
+          "title": "Id",
+          "type": "string"
         },
         "args": {
           "anyOf": [
@@ -4323,20 +2620,7 @@
               "$ref": "#/$defs/OAuth2AuthProvider"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             },
             {
               "type": "null"
@@ -4347,22 +2631,9 @@
           "title": "Auth"
         },
         "name": {
-          "anyOf": [
-            {
-              "description": "Name of the index/collection/table.",
-              "title": "Name",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Name of the index/collection/table.",
+          "title": "Name",
+          "type": "string"
         },
         "embedding_model": {
           "anyOf": [
@@ -4370,20 +2641,7 @@
               "$ref": "#/$defs/EmbeddingModel"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Embedding model used to vectorize queries and documents.",
@@ -4403,22 +2661,9 @@
       "description": "Performs vector similarity search against a vector index.",
       "properties": {
         "id": {
-          "anyOf": [
-            {
-              "description": "Unique ID of this component.",
-              "title": "Id",
-              "type": "string"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_include_raw_tag"
-            },
-            {
-              "$ref": "#/$defs/qtype_env_var"
-            }
-          ]
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
         },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
@@ -4434,20 +2679,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -4470,20 +2702,7 @@
                     "$ref": "#/$defs/Variable"
                   },
                   {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_include_raw_tag"
-                      },
-                      {
-                        "$ref": "#/$defs/qtype_env_var"
-                      }
-                    ]
+                    "type": "string"
                   }
                 ]
               },
@@ -4520,20 +2739,7 @@
               "$ref": "#/$defs/VectorIndex"
             },
             {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_include_raw_tag"
-                },
-                {
-                  "$ref": "#/$defs/qtype_env_var"
-                }
-              ]
+              "type": "string"
             }
           ],
           "description": "Index to search against (object or ID reference).",
@@ -4561,58 +2767,19 @@
       "type": "object"
     },
     "qtype_include_tag": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^!include\\s+.+",
-          "description": "Include external YAML file using QType's !include tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "type": "string",
+      "pattern": "^!include\\s+.+",
+      "description": "Include external YAML file using QType's !include tag"
     },
     "qtype_include_raw_tag": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^!include_raw\\s+.+",
-          "description": "Include raw text file using QType's !include_raw tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "type": "string",
+      "pattern": "^!include_raw\\s+.+",
+      "description": "Include raw text file using QType's !include_raw tag"
     },
     "qtype_env_var": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^.*\\$\\{[^}:]+(?::[^}]*)?\\}.*$",
-          "description": "String with environment variable substitution using ${VAR_NAME} or ${VAR_NAME:default} syntax"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_include_raw_tag"
-        },
-        {
-          "$ref": "#/$defs/qtype_env_var"
-        }
-      ]
+      "type": "string",
+      "pattern": "^.*\\$\\{[^}:]+(?::[^}]*)?\\}.*$",
+      "description": "String with environment variable substitution using ${VAR_NAME} or ${VAR_NAME:default} syntax"
     }
   },
   "$ref": "#/$defs/Document",
