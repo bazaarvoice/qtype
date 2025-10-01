@@ -295,8 +295,14 @@ def _generate_step_connections(
                 var_type = str(input_var.type).split(".")[
                     -1
                 ]  # Get the last part after dots
+                var_id_and_type = f"{input_var.id}: {var_type}"
+
+                is_list = (str(var_type).startswith("list[") and str(var_type).endswith("]"))
+                if is_list:
+                    var_id_and_type = f'"{var_id_and_type}"'
+
                 lines.append(
-                    f"        {producer_id} -->|{input_var.id}: {var_type}| {node_id}"
+                    f"        {producer_id} -->|{var_id_and_type}| {node_id}"
                 )
 
     # If no connections were made, create a simple sequential flow
