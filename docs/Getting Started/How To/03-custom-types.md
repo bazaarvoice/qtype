@@ -1,4 +1,4 @@
-# Creating Custom Types
+# Create Custom Types
 
 QType allows you to create custom types for variable inputs and outputs. 
 

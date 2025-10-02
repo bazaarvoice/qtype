@@ -75,8 +75,16 @@ qtype --help
 
 # Validate a sample spec (base package)
 qtype validate examples/hello_world.qtype.yaml
+```
 
+Then, edit `.env` and put in your `OPENAI_KEY`:
+```
+OPENAI_KEY=sk-proj....
+```
+
+and run the example flow:
+```
 # Run a flow (interpreter package only)
-qtype run flow '{"user_message":"Hello, world!"}' examples/hello_world.qtype.yaml
+qtype run -i '{"question":"What is your quest?"}'  examples/hello_world.qtype.yaml
 ```
 

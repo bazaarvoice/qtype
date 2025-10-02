@@ -87,14 +87,16 @@ flows:
   - id: process_question
     steps:
       - id: llm_step
-        model: gpt-4
+        model:
+          id: gpt-4
+          provider: openai
         inputs:
           - user_question  # Reference by ID
         outputs:
           - llm_response   # Reference by ID
-      
+
       - id: format_step
-        template: "Response: {{llm_response}}"
+        template: "Response: {llm_response}"
         inputs:
           - llm_response   # Reuse the same variable
         outputs:
@@ -102,62 +104,6 @@ flows:
 ```
 
 ## Advanced Reference Patterns
-
-### Tools with Complex Configurations
-
-```yaml
-id: tool_reference_example
-
-# Define reusable authorization
-auths:
-  - id: api_auth
-    type: api_key
-    api_key: ${API_KEY}
-
-# Define reusable tools
-tools:
-  - id: weather_api
-    name: get_weather
-    description: Get current weather for a location
-    endpoint: https://api.weather.com/v1/current
-    method: GET
-    auth: api_auth  # Reference auth by ID
-    inputs:
-      - id: location
-        type: text
-    outputs:
-      - id: weather_data
-        type:
-          temperature: number
-          humidity: number
-          conditions: text
-
-  - id: news_api
-    name: get_news
-    description: Get latest news
-    endpoint: https://api.news.com/v1/headlines
-    method: GET
-    auth: api_auth  # Reuse the same auth
-    inputs:
-      - id: category
-        type: text
-    outputs:
-      - id: news_data
-        type: array
-        items:
-          type:
-            title: text
-            summary: text
-
-flows:
-  - id: assistant_flow
-    steps:
-      - id: agent_step
-        tools:
-          - weather_api  # Reference by ID
-          - news_api     # Reference by ID
-        model: gpt-4
-```
 
 ### Custom Types and Complex Data Structures
 
@@ -167,15 +113,13 @@ id: type_reference_example
 # Define reusable custom types
 types:
   - id: Person
-    kind: object
     properties:
       name: text
-      age: integer
+      age: int
       email: text
-  
   - id: PersonList
-    kind: array
-    type: Person  # Reference another custom type
+    properties:
+      items: list[Person]
 
 # Define variables using custom types
 variables:
@@ -193,63 +137,11 @@ flows:
             type: text
         outputs:
           - current_user  # Uses Person type
-      
+
       - id: list_users
         outputs:
           - all_users  # Uses PersonList type
 ```
-
-### Memory and Embedding Models
-
-```yaml
-id: rag_example
-
-# Define reusable components
-auths:
-  - id: openai_auth
-    type: api_key
-    api_key: ${OPENAI_KEY}
-
-models:
-  - id: gpt-4
-    provider: openai
-    auth: openai_auth
-  
-  - id: text_embedding_3_large
-    provider: openai
-    auth: openai_auth
-    dimensions: 3072
-
-memories:
-  - id: chat_memory
-    token_limit: 50000
-    chat_history_token_ratio: 0.8
-
-indexes:
-  - id: knowledge_base
-    name: company_docs
-    embedding_model: text_embedding_3_large  # Reference by ID
-    auth: openai_auth
-
-flows:
-  - id: rag_chat
-    mode: Chat
-    steps:
-      - id: search_step
-        index: knowledge_base  # Reference by ID
-        inputs:
-          - id: query
-            type: text
-      
-      - id: chat_step
-        model: gpt-4          # Reference by ID
-        memory: chat_memory   # Reference by ID
-        system_message: |
-          Use the following context to answer questions:
-          {{search_results}}
-```
-
-> **📖 Related Documentation**: For information about including components from external files, see [File Inclusion and Modular YAML](./file-inclusion.md).
 
 ## Best Practices
 

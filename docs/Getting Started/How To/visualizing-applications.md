@@ -1,4 +1,4 @@
-# Visualizing QType Applications
+# Visualize Application Architecture
 
 QType includes a  visualization feature that automatically generates Mermaid flowchart diagrams from your QType specifications. These visual diagrams help you understand the structure and flow of your AI applications at a glance.
 

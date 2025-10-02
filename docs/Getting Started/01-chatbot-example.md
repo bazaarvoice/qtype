@@ -1,4 +1,4 @@
-# Building A Chatbot with QType
+# Build A Chatbot with QType
 
 This tutorial will walk you through creating a simple chatbot step by step, using the `hello_world_chat.qtype.yaml` example. Along the way, we'll explain the core QType concepts that make it all work.
 
@@ -161,12 +161,12 @@ steps:
         type: ChatMessage
 ```
 
-Here we're defining:
+Here we're defining variables:
 
 - **Input**: `user_message` of type `ChatMessage` - this will receive the user's input
 - **Output**: `response_message` of type `ChatMessage` - this will contain the AI's response
 
-The `ChatMessage` type is a built-in QType type specifically designed for chat applications.
+The `ChatMessage` type is a [Domain Type](./How%20To/domain-types.md) provided specifically for chat applications.
 
 ## The Complete Chatbot
 
@@ -210,10 +210,7 @@ qtype validate hello_world_chat.qtype.yaml
 
 You should see:
 ```bash
-INFO: ✅ Schema validation successful.
-INFO: ✅ Model validation successful.
-INFO: ✅ Language validation successful
-INFO: ✅ Semantic validation successful
+INFO: ✅ Validation successful - document is valid.
 ```
 
 If you get errors, correct them before proceeding.

@@ -1,4 +1,4 @@
-# Building A Pipeline with QType
+# Build A Pipeline with QType
 
 This tutorial walks you through creating and running a simple, stateless "Complete" pipeline step by step using the `hello_world.qtype.yaml` example. Along the way, you'll learn the core QType concepts that make it work and how Complete flows differ from Chat flows.
 
@@ -68,12 +68,12 @@ flows:
             api_key: ${OPENAI_KEY}
         system_message: |
           You are a helpful assistant. Answer the following question:
-          {{question}}
+          {question}
 ```
 
 What’s happening here:
 - `model`: A [Model](../components/Model.md) configuration. We’re using OpenAI with an API key pulled from the `OPENAI_KEY` environment variable.
-- `system_message`: A prompt template. The `{{question}}` placeholder will be replaced with the input value at runtime.
+- `system_message`: A prompt template. The `{question}` placeholder will be replaced with the input value at runtime.
 
 Tip: You can customize model behavior using `inference_params` (for example, `temperature`) inside the `model` block.
 
@@ -111,7 +111,7 @@ flows:
             api_key: ${OPENAI_KEY}
         system_message: |
           You are a helpful assistant. Answer the following question:
-          {{question}}
+          {question}
         inputs:
           - id: question
             type: text
@@ -129,10 +129,7 @@ qtype validate hello_world.qtype.yaml
 Validation checks things like required fields, flow structure, and type rules. You should see:
 
 ```bash
-INFO: ✅ Schema validation successful.
-INFO: ✅ Model validation successful.
-INFO: ✅ Language validation successful
-INFO: ✅ Semantic validation successful
+INFO: ✅ Validation successful - document is valid.
 ```
 
 ## Run the Pipeline Locally
@@ -144,23 +141,16 @@ To execute a flow directly from the CLI, pass JSON inputs:
 qtype run '{"question":"What is QType?"}' hello_world.qtype.yaml
 ```
 
-### As an API
+### Via a Browser
 
 If you have installed the interperter, you can launch it with:
 ```bash
 qtype serve hello_world.qtype.yaml
 ```
 
-and visit [http://localhost:8000/docs](http://localhost:8000/docs) to see the swagger docs.
+and visit [http://localhost:8000/docs](http://localhost:8000/docs) to see the swagger docs
 
-### As a UI
-
-If you have installed the interperter, you can launch it with:
-```bash
-qtype serve hello_world.qtype.yaml
-```
-
-and visit [http://localhost:8000/ui](http://localhost:8000/ui) to execute the flow:
+or visit [http://localhost:8000/ui](http://localhost:8000/ui) to execute the flow:
 
 ![Example UI](./complete_example_ui.png)
 
@@ -168,7 +158,7 @@ and visit [http://localhost:8000/ui](http://localhost:8000/ui) to execute the fl
 
 - Input inference: Because we didn’t declare flow-level `inputs`, QType infers them from the first step (`question`).
 - Output inference: Because we didn’t declare flow-level `outputs`, QType infers them from the last step. `LLMInference` automatically defines a default text output named `llm_inference_step.response`.
-- Templating: The `system_message` uses `{{question}}` to inject the provided input when the step runs.
+- Templating: The `system_message` uses `{question}` to inject the provided input when the step runs.
 
 ## Complete vs Chat Flows
 

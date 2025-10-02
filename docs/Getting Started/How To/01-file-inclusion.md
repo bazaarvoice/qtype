@@ -1,4 +1,4 @@
-# File Inclusion and Modular YAML
+# Include References and use Modular YAML
 
 QType supports including external files in your YAML specifications, allowing you to break large configurations into smaller, manageable modules and reuse common components across multiple applications.
 
@@ -17,41 +17,6 @@ auths: !include common/auth.qtype.yaml
 models: !include common/models.qtype.yaml
 tools: !include common/tools.qtype.yaml
 ## Conditional References
-
-References work seamlessly with conditional logic:
-
-```yaml
-id: conditional_example
-
-tools:
-  - id: email_tool
-    name: send_email
-    description: Send an email
-    # ... tool definition
-  
-  - id: slack_tool
-    name: send_slack
-    description: Send Slack message
-    # ... tool definition
-
-flows:
-  - id: notification_flow
-    steps:
-      - id: check_preference
-        # ... step to get user preference
-      
-      - id: send_notification
-        equals:
-          id: notification_type
-          type: text
-        then:
-          id: email_step
-          tools:
-            - email_tool  # Reference by ID
-        else:
-          id: slack_step
-          tools:
-            - slack_tool  # Reference by ID
 ```
 
 ```yaml
@@ -113,7 +78,7 @@ When answering questions:
 
 ```txt
 # templates/response_format.txt
-Based on the user's question: "{{user_question}}"
+Based on the user's question: "{user_question}s"
 
 Please provide a response in the following format:
 - **Summary**: Brief answer to the question
@@ -362,35 +327,6 @@ flows:
     steps:
       - model: production_gpt4
         system_message: !include_raw prompts/system.txt
-```
-
-### 4. Use Environment Variables for Dynamic Paths
-
-```yaml
-# Load different configurations based on environment
-models: !include models/${QTYPE_ENV:-development}.yaml
-auths: !include auth/${QTYPE_ENV:-development}.yaml
-
-# Load user-specific configurations
-user_settings: !include users/${USER}/settings.yaml
-```
-
-## Error Handling
-
-QType provides clear error messages for file inclusion issues:
-
-```yaml
-# File not found
-models: !include missing-file.yaml
-# Error: Failed to load included file 'missing-file.yaml': [Errno 2] No such file or directory
-
-# Invalid YAML syntax in included file
-tools: !include malformed-tools.yaml  
-# Error: Failed to load included file 'malformed-tools.yaml': while parsing...
-
-# Missing environment variable in included file
-config: !include config-with-missing-vars.yaml
-# Error: Environment variable 'REQUIRED_VAR' is required but not set
 ```
 
 ## Security Considerations

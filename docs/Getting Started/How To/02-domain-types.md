@@ -1,4 +1,4 @@
-# Working with Domain Types
+# Use Domain Types
 
 QType provides several built-in domain types that represent common AI and chat application data structures. 
 
@@ -110,47 +110,4 @@ flows:
         outputs:
           - id: text_embedding
             type: Embedding  # Vector + metadata
-```
-
-### RAG with Embeddings
-
-```yaml
-id: rag_system
-models:
-  - id: embedder
-    provider: openai
-    model_id: text-embedding-3-large
-    dimensions: 3072
-    auth: openai_auth
-
-indexes:
-  - id: knowledge_base
-    name: documents
-    embedding_model: embedder
-
-flows:
-  - id: rag_query
-    steps:
-      - id: search_step
-        index: knowledge_base
-        inputs:
-          - id: query
-            type: text
-        outputs:
-          - id: search_results
-            type: array
-            items:
-              type: Embedding  # Found embeddings with metadata
-      
-      - id: generate_step
-        model: gpt-4
-        system_message: |
-          Use these search results to answer the question:
-          {{search_results}}
-        inputs:
-          - id: user_question
-            type: ChatMessage
-        outputs:
-          - id: rag_response
-            type: ChatMessage
 ```

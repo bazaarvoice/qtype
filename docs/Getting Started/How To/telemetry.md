@@ -1,4 +1,4 @@
-# Observability with Telemetry
+# Observe with Telemetry
 
 QType supports telemetry for all applications out of the box -- simply add the [Telemetry](Concepts/telemetry.md) field to your application.
 

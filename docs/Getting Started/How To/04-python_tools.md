@@ -1,4 +1,4 @@
-# Importing Tools from Python Modules
+# Create Tools from Python Modules
 
 QType allows you to automatically convert Python functions into QType tools. This tutorial will walk you through creating a Python module with functions and converting them into a QType specification that can be used in your applications.
 
@@ -6,8 +6,8 @@ QType allows you to automatically convert Python functions into QType tools. Thi
 
 Before following this tutorial, make sure you understand:
 
-- [Variables and types](../Concepts/variable.md) in QType
-- [Primitive types](../components/PrimitiveTypeEnum.md) 
+- [Variables and types](../../Concepts/variable.md) in QType
+- [Primitive types](../../components/PrimitiveTypeEnum.md) 
 - [Domain types](./domain-types.md)
 - [Custom types](./custom-types.md)
 

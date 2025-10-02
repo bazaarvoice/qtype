@@ -1,4 +1,4 @@
-# Flow Control and Variables
+# Understand Flows and Variables
 
 QType flows orchestrate multi-step processing by connecting steps through shared variables. Understanding how variables flow between steps is essential for building effective AI workflows.
 
@@ -33,7 +33,7 @@ flows:
     steps:
       # Step 1: Create some data
       - id: create_data
-        template: "User input: {{user_question}}"
+        template: "User input: {user_question}"
         inputs:
           - id: user_question
             type: text
@@ -53,7 +53,7 @@ flows:
             
       # Step 3: Format final output
       - id: format_result
-        template: "Final result: {{ai_response}}"
+        template: "Final result: {ai_response}"
         inputs:
           - ai_response  # References output from step2
         outputs:
@@ -84,8 +84,8 @@ flows:
           - original_data   # From step1
           - processed_data  # From step2
         template: |
-          Original: {{original_data}}
-          Processed: {{processed_data}}
+          Original: {original_data}
+          Processed: {processed_data}
 ```
 
 ## Variable Types and Compatibility
@@ -112,62 +112,38 @@ flows:
         # text_data cannot be used here without conversion
 ```
 
-### Type Conversion with Templates
-
-Use PromptTemplate steps to convert between types:
-
-```yaml
-flows:
-  - id: conversion_example
-    steps:
-      - id: produce_text
-        outputs:
-          - id: simple_text
-            type: text
-            
-      # Convert text to structured format
-      - id: structure_data
-        template: |
-          {
-            "role": "user",
-            "blocks": [
-              {
-                "type": "text",
-                "content": "{{simple_text}}"
-              }
-            ]
-          }
-        inputs:
-          - simple_text
-        outputs:
-          - id: structured_message
-            type: ChatMessage
-            
-      - id: use_structured
-        inputs:
-          - structured_message  # Now compatible with ChatMessage
-```
-
 ## Multi-Step Flow Examples
 
 ### Three-Step Processing Chain
 
 ```yaml
 id: processing_chain
+
+# Define reusable components at the application level
+auths:
+  - id: openai_auth
+    type: api_key
+    api_key: ${OPENAI_KEY}
+
+models:
+  - id: gpt-4
+    provider: openai
+    auth: openai_auth  # Reference auth by ID
+
 flows:
   - id: analyze_and_respond
     steps:
       # Step 1: Prepare the input
       - id: prepare_input
         template: |
-          Analyze this user question: {{raw_question}}
+          Analyze this user question: {raw_question}
         inputs:
           - id: raw_question
             type: text
         outputs:
           - id: prepared_prompt
             type: text
-            
+
       # Step 2: Get AI analysis
       - id: analyze
         model: gpt-4
@@ -177,15 +153,15 @@ flows:
         outputs:
           - id: analysis_result
             type: text
-            
+
       # Step 3: Format the final response
       - id: format_response
         template: |
           ## Analysis Results
-          
-          {{analysis_result}}
-          
-          *Generated in response to: {{raw_question}}*
+
+          {analysis_result}
+
+          *Generated in response to: {raw_question}*
         inputs:
           - analysis_result
           - raw_question  # Reusing from step 1
@@ -245,8 +221,8 @@ flows:
             
       - id: personalize_response
         template: |
-          Based on your info: {{user_info}}
-          And your preferences: {{user_preferences}}
+          Based on your info: {user_info}
+          And your preferences: {user_preferences}
           Here's a personalized response...
         inputs:
           - user_info       # From step 1
