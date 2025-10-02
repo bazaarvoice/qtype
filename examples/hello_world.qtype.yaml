@@ -12,21 +12,7 @@ flows:
             api_key: ${OPENAI_KEY}
         system_message: |
           You are a helpful assistant. Answer the following question:
-          {{ question }}
+          {question}
         inputs:
           - id: question
             type: text
-  - id: simple_example2
-    mode: Chat
-    steps:
-      - id: llm_inference_step2
-        model: gpt-4
-        system_message: |
-          You are a helpful assistant. Answer the following question:
-          {{ question2 }}
-        inputs:
-          - id: question2
-            type: ChatMessage
-        outputs: 
-          - id: response2
-            type: ChatMessage

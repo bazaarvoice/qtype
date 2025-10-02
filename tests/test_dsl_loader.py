@@ -35,7 +35,7 @@ flows:
   - id: test_flow
     steps:
       - id: test_step
-        template: "Hello {{ name }}"
+        template: "Hello {name}"
         inputs:
           - id: name
             type: text

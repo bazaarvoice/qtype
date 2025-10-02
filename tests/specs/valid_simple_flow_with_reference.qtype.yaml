@@ -12,7 +12,7 @@ flows:
         template: |
           You are a helpful assistant.
           Answer the following question:
-          {{ user_question }}
+          {user_question}
         inputs:
           - user_question
       - id: llm_inference_step
