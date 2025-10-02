@@ -1,0 +1,42 @@
+flowchart TD
+    subgraph APP ["📱 Application: hello_world"]
+        direction TB
+
+    subgraph FLOW_0 ["💬 Flow: chat_example
+A simple chat flow with OpenAI"]
+        direction LR
+        FLOW_0_START@{shape: circle, label: "▶️ Start"}
+        FLOW_0_S0@{shape: rounded, label: "✨ llm_inference_step"}
+        FLOW_0_START -->|user_message: ChatMessage'>| FLOW_0_S0
+    end
+
+    subgraph RESOURCES ["🔧 Shared Resources"]
+        direction LR
+        AUTH_OPENAI_AUTH@{shape: hex, label: "🔐 openai_auth\nAPI_KEY"}
+        MODEL_GPT_4@{shape: rounded, label: "✨ gpt-4 (openai)" }
+        MODEL_GPT_4 -.->|uses| AUTH_OPENAI_AUTH
+    end
+
+    subgraph TELEMETRY ["📊 Observability"]
+        direction TB
+        TEL_SINK@{shape: curv-trap, label: "📡 hello_world_telemetry\nhttp&colon;//localhost:6006/v1/traces"}
+    end
+
+    end
+
+    FLOW_0_S0 -.->|uses| MODEL_GPT_4
+    FLOW_0_S0 -.->|traces| TEL_SINK
+
+    %% Styling
+    classDef appBox fill:none,stroke:#495057,stroke-width:3px
+    classDef flowBox fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef llmNode fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef modelNode fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef authNode fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef telemetryNode fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef resourceBox fill:#f5f5f5,stroke:#616161,stroke-width:1px
+
+    class APP appBox
+    class FLOW_0 flowBox
+    class RESOURCES resourceBox
+    class TELEMETRY telemetryNode
