@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import shutil
+import subprocess
 import tempfile
 import webbrowser
 from pathlib import Path
@@ -41,26 +43,45 @@ def main(args: Any) -> None:
             logger.info(f"✅ Visualization saved to {output_path}")
 
         if not args.no_display:
-            # Create temporary HTML file and open in browser
-            try:
-                import mermaid as md  # type: ignore[import-untyped]
-
-                mm = md.Mermaid(mermaid_content)
-                html_content = mm._repr_html_()
-
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".html", delete=False, encoding="utf-8"
-                ) as f:
-                    f.write(html_content)
-                    temp_file = f.name
-
-                logger.info(f"Opening visualization in browser: {temp_file}")
-                webbrowser.open(f"file://{temp_file}")
-            except ImportError:
-                logger.warning(
-                    "❌ Mermaid library not installed. Cannot display in browser."
+            # Check if mmdc is available
+            if shutil.which("mmdc") is None:
+                logger.error(
+                    "❌ mmdc command not found. Please install mermaid-cli."
                 )
-                logger.info("Install with: pip install mermaid")
+                logger.info(
+                    "Install with: npm install -g @mermaid-js/mermaid-cli"
+                )
+                exit(1)
+
+            # Create temporary directory and run mmdc from within it
+            try:
+                # Create a temporary directory
+                temp_dir = tempfile.mkdtemp()
+                temp_dir_path = Path(temp_dir)
+
+                # Write mermaid file with simple names in the temp directory
+                mmd_file_path = temp_dir_path / "diagram.mmd"
+                svg_file_path = temp_dir_path / "diagram.svg"
+
+                mmd_file_path.write_text(mermaid_content, encoding="utf-8")
+
+                # Run mmdc from within the temporary directory
+                subprocess.run(
+                    ["mmdc", "-i", "diagram.mmd", "-o", "diagram.svg"],
+                    cwd=temp_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+
+                logger.info(
+                    f"Opening visualization in browser: {svg_file_path}"
+                )
+                webbrowser.open(f"file://{svg_file_path}")
+
+            except subprocess.CalledProcessError as e:
+                logger.error(f"❌ Failed to generate SVG: {e.stderr}")
+                exit(1)
 
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
