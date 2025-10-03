@@ -4,12 +4,8 @@ flows:
     steps:
       - id: llm_inference_step
         model: 
-          id: gpt-4
-          provider: openai
-          auth: 
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
+          id: amazon.nova-lite-v1:0
+          provider: aws-bedrock
         system_message: |
           You are a helpful assistant. Answer the following question:
           {question}
