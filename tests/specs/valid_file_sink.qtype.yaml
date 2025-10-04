@@ -1,11 +1,11 @@
 id: file_sink_test
-description: "Test FileSink with direct path specification"
-
+description: Test FileSink with direct path specification
 flows:
   - id: write_file_flow
     steps:
       - id: write_data
-        path: "s3://my-bucket/output.json"
+        type: FileSource
+        path: s3://my-bucket/output.json
         inputs:
           - id: data
             type: text

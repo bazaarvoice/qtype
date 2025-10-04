@@ -2,16 +2,17 @@ id: app_apitool_auth_ref
 auths:
   - id: auth1
     type: api_key
-    api_key: "SECRET"
+    api_key: SECRET
 tools:
   - id: tool1
-    name: "Echo"
-    description: "Echoes input"
-    endpoint: "https://example.com/echo"
-    method: "POST"
+    name: Echo
+    description: Echoes input
+    endpoint: https://example.com/echo
+    method: POST
     auth: auth1
 flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
+        type: PromptTemplate
+        template: hi

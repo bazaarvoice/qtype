@@ -54,6 +54,7 @@ def sample_flow(mock_step):
     """Create a sample flow with one step."""
     return Flow(
         id="test-flow",
+        type="Flow",
         cardinality=StepCardinality.auto,
         inputs=[],
         outputs=[],
@@ -68,6 +69,7 @@ def flow_with_sink(mock_sink):
     """Create a flow with a sink step."""
     return Flow(
         id="test-flow-sink",
+        type="Flow",
         cardinality=StepCardinality.auto,
         inputs=[],
         outputs=[],
@@ -85,6 +87,7 @@ def multi_step_flow(mock_step, mock_sink):
     step2.cardinality = StepCardinality.one
     return Flow(
         id="test-multi-flow",
+        type="Flow",
         cardinality=StepCardinality.auto,
         inputs=[],
         outputs=[],

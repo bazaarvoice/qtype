@@ -1,18 +1,17 @@
 id: hello_world
-
 flows:
   - id: simple_chat_example
     description: A simple stateful chat flow with AWS Bedrock
     mode: Chat
     steps:
       - id: llm_inference_step
-        memory: 
+        type: LLMInference
+        memory:
           id: chat_memory
-        model: 
+        model:
           id: amazon.nova-lite-v1:0
           provider: aws-bedrock
-        system_message: |
-          You are a helpful assistant.
+        system_message: "You are a helpful assistant."
         inputs:
           - id: user_message
             type: ChatMessage

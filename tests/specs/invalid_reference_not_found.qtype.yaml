@@ -3,6 +3,7 @@ flows:
   - id: flow1
     steps:
       - id: step1
+        type: PromptTemplate
         inputs:
           - missing_var_id
-        template: "Hello"
+        template: Hello

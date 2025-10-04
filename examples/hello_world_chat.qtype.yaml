@@ -5,15 +5,15 @@ flows:
     mode: Chat
     steps:
       - id: llm_inference_step
-        model: 
+        type: LLMInference
+        model:
           id: gpt-4
           provider: openai
-          auth: 
+          auth:
             id: openai_auth
             type: api_key
             api_key: ${OPENAI_KEY}
-        system_message: |
-          You are a helpful assistant.
+        system_message: "You are a helpful assistant."
         inputs:
           - id: user_message
             type: ChatMessage

@@ -305,6 +305,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "Agent",
+          "default": "Agent",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
@@ -704,6 +710,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "Condition",
+          "default": "Condition",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
@@ -758,46 +770,65 @@
         "else": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Agent"
-            },
-            {
-              "$ref": "#/$defs/Condition"
-            },
-            {
-              "$ref": "#/$defs/Decoder"
-            },
-            {
-              "$ref": "#/$defs/DocumentSearch"
-            },
-            {
-              "$ref": "#/$defs/FileSink"
-            },
-            {
-              "$ref": "#/$defs/FileSource"
-            },
-            {
-              "$ref": "#/$defs/Flow"
-            },
-            {
-              "$ref": "#/$defs/IndexUpsert"
-            },
-            {
-              "$ref": "#/$defs/Invoke"
-            },
-            {
-              "$ref": "#/$defs/LLMInference"
-            },
-            {
-              "$ref": "#/$defs/PromptTemplate"
-            },
-            {
-              "$ref": "#/$defs/SQLSource"
-            },
-            {
-              "$ref": "#/$defs/Sink"
-            },
-            {
-              "$ref": "#/$defs/VectorSearch"
+              "discriminator": {
+                "mapping": {
+                  "Agent": "#/$defs/Agent",
+                  "Condition": "#/$defs/Condition",
+                  "Decoder": "#/$defs/Decoder",
+                  "DocumentSearch": "#/$defs/DocumentSearch",
+                  "FileSink": "#/$defs/FileSink",
+                  "FileSource": "#/$defs/FileSource",
+                  "Flow": "#/$defs/Flow",
+                  "IndexUpsert": "#/$defs/IndexUpsert",
+                  "Invoke": "#/$defs/Invoke",
+                  "LLMInference": "#/$defs/LLMInference",
+                  "PromptTemplate": "#/$defs/PromptTemplate",
+                  "SQLSource": "#/$defs/SQLSource",
+                  "VectorSearch": "#/$defs/VectorSearch"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/Agent"
+                },
+                {
+                  "$ref": "#/$defs/Condition"
+                },
+                {
+                  "$ref": "#/$defs/Decoder"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSearch"
+                },
+                {
+                  "$ref": "#/$defs/FileSink"
+                },
+                {
+                  "$ref": "#/$defs/FileSource"
+                },
+                {
+                  "$ref": "#/$defs/Flow"
+                },
+                {
+                  "$ref": "#/$defs/IndexUpsert"
+                },
+                {
+                  "$ref": "#/$defs/Invoke"
+                },
+                {
+                  "$ref": "#/$defs/LLMInference"
+                },
+                {
+                  "$ref": "#/$defs/PromptTemplate"
+                },
+                {
+                  "$ref": "#/$defs/SQLSource"
+                },
+                {
+                  "$ref": "#/$defs/VectorSearch"
+                }
+              ]
             },
             {
               "type": "string"
@@ -829,46 +860,65 @@
         "then": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Agent"
-            },
-            {
-              "$ref": "#/$defs/Condition"
-            },
-            {
-              "$ref": "#/$defs/Decoder"
-            },
-            {
-              "$ref": "#/$defs/DocumentSearch"
-            },
-            {
-              "$ref": "#/$defs/FileSink"
-            },
-            {
-              "$ref": "#/$defs/FileSource"
-            },
-            {
-              "$ref": "#/$defs/Flow"
-            },
-            {
-              "$ref": "#/$defs/IndexUpsert"
-            },
-            {
-              "$ref": "#/$defs/Invoke"
-            },
-            {
-              "$ref": "#/$defs/LLMInference"
-            },
-            {
-              "$ref": "#/$defs/PromptTemplate"
-            },
-            {
-              "$ref": "#/$defs/SQLSource"
-            },
-            {
-              "$ref": "#/$defs/Sink"
-            },
-            {
-              "$ref": "#/$defs/VectorSearch"
+              "discriminator": {
+                "mapping": {
+                  "Agent": "#/$defs/Agent",
+                  "Condition": "#/$defs/Condition",
+                  "Decoder": "#/$defs/Decoder",
+                  "DocumentSearch": "#/$defs/DocumentSearch",
+                  "FileSink": "#/$defs/FileSink",
+                  "FileSource": "#/$defs/FileSource",
+                  "Flow": "#/$defs/Flow",
+                  "IndexUpsert": "#/$defs/IndexUpsert",
+                  "Invoke": "#/$defs/Invoke",
+                  "LLMInference": "#/$defs/LLMInference",
+                  "PromptTemplate": "#/$defs/PromptTemplate",
+                  "SQLSource": "#/$defs/SQLSource",
+                  "VectorSearch": "#/$defs/VectorSearch"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/Agent"
+                },
+                {
+                  "$ref": "#/$defs/Condition"
+                },
+                {
+                  "$ref": "#/$defs/Decoder"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSearch"
+                },
+                {
+                  "$ref": "#/$defs/FileSink"
+                },
+                {
+                  "$ref": "#/$defs/FileSource"
+                },
+                {
+                  "$ref": "#/$defs/Flow"
+                },
+                {
+                  "$ref": "#/$defs/IndexUpsert"
+                },
+                {
+                  "$ref": "#/$defs/Invoke"
+                },
+                {
+                  "$ref": "#/$defs/LLMInference"
+                },
+                {
+                  "$ref": "#/$defs/PromptTemplate"
+                },
+                {
+                  "$ref": "#/$defs/SQLSource"
+                },
+                {
+                  "$ref": "#/$defs/VectorSearch"
+                }
+              ]
             },
             {
               "type": "string"
@@ -927,6 +977,12 @@
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "Decoder",
+          "default": "Decoder",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -1102,6 +1158,12 @@
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DocumentSearch",
+          "default": "DocumentSearch",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -1281,6 +1343,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "FileSink",
+          "default": "FileSink",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "const": "one",
           "default": "one",
@@ -1361,6 +1429,12 @@
         "id": {
           "description": "Unique ID of the data source.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "FileSource",
+          "default": "FileSource",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -1445,6 +1519,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "Flow",
+          "default": "Flow",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "auto",
@@ -1523,46 +1603,65 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/Agent"
-              },
-              {
-                "$ref": "#/$defs/Condition"
-              },
-              {
-                "$ref": "#/$defs/Decoder"
-              },
-              {
-                "$ref": "#/$defs/DocumentSearch"
-              },
-              {
-                "$ref": "#/$defs/FileSink"
-              },
-              {
-                "$ref": "#/$defs/FileSource"
-              },
-              {
-                "$ref": "#/$defs/Flow"
-              },
-              {
-                "$ref": "#/$defs/IndexUpsert"
-              },
-              {
-                "$ref": "#/$defs/Invoke"
-              },
-              {
-                "$ref": "#/$defs/LLMInference"
-              },
-              {
-                "$ref": "#/$defs/PromptTemplate"
-              },
-              {
-                "$ref": "#/$defs/SQLSource"
-              },
-              {
-                "$ref": "#/$defs/Sink"
-              },
-              {
-                "$ref": "#/$defs/VectorSearch"
+                "discriminator": {
+                  "mapping": {
+                    "Agent": "#/$defs/Agent",
+                    "Condition": "#/$defs/Condition",
+                    "Decoder": "#/$defs/Decoder",
+                    "DocumentSearch": "#/$defs/DocumentSearch",
+                    "FileSink": "#/$defs/FileSink",
+                    "FileSource": "#/$defs/FileSource",
+                    "Flow": "#/$defs/Flow",
+                    "IndexUpsert": "#/$defs/IndexUpsert",
+                    "Invoke": "#/$defs/Invoke",
+                    "LLMInference": "#/$defs/LLMInference",
+                    "PromptTemplate": "#/$defs/PromptTemplate",
+                    "SQLSource": "#/$defs/SQLSource",
+                    "VectorSearch": "#/$defs/VectorSearch"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Agent"
+                  },
+                  {
+                    "$ref": "#/$defs/Condition"
+                  },
+                  {
+                    "$ref": "#/$defs/Decoder"
+                  },
+                  {
+                    "$ref": "#/$defs/DocumentSearch"
+                  },
+                  {
+                    "$ref": "#/$defs/FileSink"
+                  },
+                  {
+                    "$ref": "#/$defs/FileSource"
+                  },
+                  {
+                    "$ref": "#/$defs/Flow"
+                  },
+                  {
+                    "$ref": "#/$defs/IndexUpsert"
+                  },
+                  {
+                    "$ref": "#/$defs/Invoke"
+                  },
+                  {
+                    "$ref": "#/$defs/LLMInference"
+                  },
+                  {
+                    "$ref": "#/$defs/PromptTemplate"
+                  },
+                  {
+                    "$ref": "#/$defs/SQLSource"
+                  },
+                  {
+                    "$ref": "#/$defs/VectorSearch"
+                  }
+                ]
               },
               {
                 "type": "string"
@@ -1600,6 +1699,12 @@
         "id": {
           "description": "Unique ID of the data sink.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "IndexUpsert",
+          "default": "IndexUpsert",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -1685,6 +1790,12 @@
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "Invoke",
+          "default": "Invoke",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -1786,6 +1897,12 @@
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "LLMInference",
+          "default": "LLMInference",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {
@@ -2120,6 +2237,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "PromptTemplate",
+          "default": "PromptTemplate",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "$ref": "#/$defs/StepCardinality",
           "default": "one",
@@ -2265,6 +2388,12 @@
           "title": "Id",
           "type": "string"
         },
+        "type": {
+          "const": "SQLSource",
+          "default": "SQLSource",
+          "title": "Type",
+          "type": "string"
+        },
         "cardinality": {
           "const": "many",
           "default": "many",
@@ -2360,75 +2489,6 @@
         "connection"
       ],
       "title": "SQLSource",
-      "type": "object"
-    },
-    "Sink": {
-      "additionalProperties": false,
-      "description": "Base class for data sinks",
-      "properties": {
-        "id": {
-          "description": "Unique ID of the data sink.",
-          "title": "Id",
-          "type": "string"
-        },
-        "cardinality": {
-          "const": "one",
-          "default": "one",
-          "description": "Flows always emit exactly one instance of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "title": "Sink",
       "type": "object"
     },
     "StepCardinality": {
@@ -2663,6 +2723,12 @@
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "VectorSearch",
+          "default": "VectorSearch",
+          "title": "Type",
           "type": "string"
         },
         "cardinality": {

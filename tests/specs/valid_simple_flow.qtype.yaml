@@ -1,18 +1,22 @@
 id: hello_world_app
-description: "A simple hello world application that answers user questions using GPT-4"
-
+description: A simple hello world application that answers user questions using GPT-4
 flows:
   - id: simple_qa_flow
     steps:
       - id: question_prompt_template
-        template: |
-          You are a helpful assistant.
+        type: PromptTemplate
+        template: 'You are a helpful assistant.
+
           Answer the following question:
+
           {user_question}
+
+'
         inputs:
           - id: user_question
             type: text
       - id: llm_inference_step
+        type: LLMInference
         model:
           id: gpt4
           provider: openai
@@ -20,15 +24,14 @@ flows:
           inference_params:
             temperature: 0.7
             max_tokens: 512
-          auth: 
+          auth:
             id: openai_auth
             type: api_key
             api_key: DEADBEEF
-        system_message: "You are a helpful assistant."
+        system_message: You are a helpful assistant.
         inputs:
-          # Prompt templates automatically set the output variable to the template's id + ".prompt" if not specified.
           - question_prompt_template.prompt
-telemetry: 
+telemetry:
   id: telemetry_sink
-  endpoint: "https://localhost:6666/telemetry"
+  endpoint: https://localhost:6666/telemetry
   auth: openai_auth
