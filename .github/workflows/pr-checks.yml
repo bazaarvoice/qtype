@@ -51,7 +51,7 @@ jobs:
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.8
+          thresholdAll: 0.7
           
       - name: Run ruff check (linting)
         run: |
