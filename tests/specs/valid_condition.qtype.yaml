@@ -1,21 +1,24 @@
 id: app_condition_else_ref
-variables: 
+variables:
   - id: test_value
     type: text
 flows:
   - id: f1
     steps:
       - id: cond1
+        type: Condition
         equals: test_value
-        then: 
+        then:
           id: s1
-          template: "hi"
-        else: 
+          type: PromptTemplate
+          template: hi
+        else:
           id: s2
-          template: "bye"
-        inputs: 
+          type: PromptTemplate
+          template: bye
+        inputs:
           - id: var_value
             type: text
-        outputs: 
+        outputs:
           - id: cond1.result
             type: text

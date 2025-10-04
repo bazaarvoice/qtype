@@ -9,14 +9,16 @@ models:
     dimensions: 1536
 indexes:
   - id: v1
-    name: "vecindex"
+    name: vecindex
     embedding_model: emb1
 flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
+        type: PromptTemplate
+        template: hi
       - id: search
+        type: VectorSearch
         index: v1
         default_top_k: 1000
         inputs:

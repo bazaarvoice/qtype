@@ -2038,18 +2038,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mermaid-py"
-version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cb/b6/b5973f5b4b726f8b09e6558f459f0d6b70ee00206aacd873c8ed972a16cf/mermaid_py-0.8.0.tar.gz", hash = "sha256:8ba7853f88c09ebf9c2d355c0ebd1e272e877c9568c10612ae9d0f57245608ef", size = 21229, upload-time = "2025-05-12T14:42:26.354Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/0e/fbcc38fef8ff71e5df09d9d629e8b620fe974709664b81da2774b6debfe2/mermaid_py-0.8.0-py3-none-any.whl", hash = "sha256:dab0463ffe67fb3f13f0058cf5c0c2fa2685136cdc7e4ae3067d8b9d9c9e378a", size = 31741, upload-time = "2025-05-12T14:42:25.04Z" },
-]
-
-[[package]]
 name = "mkdocs"
 version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3677,7 +3665,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "fsspec" },
     { name = "jsonschema" },
-    { name = "mermaid-py" },
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "openai" },
     { name = "openapi3-parser" },
@@ -3701,6 +3688,7 @@ interpreter = [
     { name = "openinference-instrumentation-llama-index" },
     { name = "pandas" },
     { name = "psycopg2-binary" },
+    { name = "pyarrow" },
     { name = "pyathena", extra = ["sqlalchemy"] },
     { name = "python-magic" },
     { name = "s3fs" },
@@ -3753,7 +3741,6 @@ requires-dist = [
     { name = "llama-index-embeddings-openai", marker = "extra == 'interpreter'", specifier = ">=0.3.1" },
     { name = "llama-index-llms-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.3.8" },
     { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.7.4" },
-    { name = "mermaid-py", specifier = ">=0.8.0" },
     { name = "mkdocs-awesome-pages-plugin", specifier = ">=2.10.1" },
     { name = "openai", specifier = ">=1.93.0" },
     { name = "openapi3-parser", specifier = ">=1.1.21" },
@@ -3761,6 +3748,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'interpreter'", specifier = ">=2.2.3" },
     { name = "pip-system-certs", specifier = ">=5.2" },
     { name = "psycopg2-binary", marker = "extra == 'interpreter'", specifier = ">=2.9.10" },
+    { name = "pyarrow", marker = "extra == 'interpreter'", specifier = ">=21.0.0" },
     { name = "pyathena", extras = ["sqlalchemy"], marker = "extra == 'interpreter'", specifier = ">=3.18.0" },
     { name = "pydantic", specifier = ">=2.11.5" },
     { name = "pydantic-yaml", specifier = ">=1.6.0" },

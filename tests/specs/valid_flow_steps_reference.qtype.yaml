@@ -7,11 +7,13 @@ flows:
   - id: f2
     steps:
       - id: s1
-        template: "hi"
-      # decoder step
+        type: PromptTemplate
+        template: hi
       - id: s2
+        type: Decoder
         format: json
-        inputs: [s1.prompt]
+        inputs:
+          - s1.prompt
         outputs:
           - id: o1
             type: text

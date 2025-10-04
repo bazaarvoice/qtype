@@ -2,13 +2,14 @@ id: app_telemetrysink_auth_ref
 auths:
   - id: auth1
     type: api_key
-    api_key: "SECRET"
+    api_key: SECRET
 telemetry:
   id: telemetry1
-  endpoint: "https://localhost:9999/telemetry"
+  endpoint: https://localhost:9999/telemetry
   auth: auth1
 flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
+        type: PromptTemplate
+        template: hi

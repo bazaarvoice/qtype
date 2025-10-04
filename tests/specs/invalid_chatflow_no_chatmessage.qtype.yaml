@@ -1,6 +1,5 @@
 id: invalid_chatflow_app
-description: "A chat flow without any ChatMessage input variables"
-
+description: A chat flow without any ChatMessage input variables
 flows:
   - id: chat_flow
     mode: Chat
@@ -11,6 +10,7 @@ flows:
         type: int
     steps:
       - id: llm_response
+        type: LLMInference
         memory:
           id: chat_memory
           token_limit: 10000
@@ -22,7 +22,7 @@ flows:
             id: openai_auth
             type: api_key
             api_key: DEADBEEF
-        system_message: "You are a helpful assistant."
+        system_message: You are a helpful assistant.
         inputs:
           - user_input
         outputs:

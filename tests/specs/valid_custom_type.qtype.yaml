@@ -3,9 +3,9 @@ types:
   - id: Book
     properties:
       title: text
-      author: Author # <-- this is a forward reference
+      author: Author
       year: int?
-      tags: "list[text]"
+      tags: list[text]
       published: boolean
   - id: Author
     properties:
@@ -16,9 +16,10 @@ flows:
     mode: Complete
     steps:
       - id: prompt_template
-        template: >
-          You are a helpful assistant. Please provide information about the following book:
-          {book}
+        type: PromptTemplate
+        template: 'You are a helpful assistant. Please provide information about the following book: {book}
+
+'
         inputs:
           - id: book
             type: Book

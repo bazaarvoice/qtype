@@ -121,6 +121,7 @@ class Step(BaseModel):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
+    type: str = Field(..., description="Type of the step component.")
     cardinality: StepCardinality = Field(
         StepCardinality.one,
         description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
@@ -306,7 +307,8 @@ class PythonFunctionTool(Tool):
 class Condition(Step):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
-    else_: Step | None = Field(
+    type: Literal["Condition"] = Field("Condition")
+    else_: Step | str | None = Field(
         None,
         description="Optional step to run if condition fails.",
         alias="else",
@@ -314,16 +316,18 @@ class Condition(Step):
     equals: Variable | None = Field(
         None, description="Match condition for equality check."
     )
-    then: Step = Field(..., description="Step to run if condition matches.")
+    then: Step | str = Field(
+        ..., description="Step to run if condition matches."
+    )
 
 
 class Decoder(Step):
     """Defines a step that decodes string data into structured outputs.
 
     If parsing fails, the step will raise an error and halt execution.
-    Use conditional logic in your flow to handle potential parsing errors.
-    """
+    Use conditional logic in your flow to handle potential parsing errors."""
 
+    type: Literal["Decoder"] = Field("Decoder")
     format: DecoderFormat = Field(
         DecoderFormat.json,
         description="Format in which the decoder processes data. Defaults to JSON.",
@@ -333,6 +337,7 @@ class Decoder(Step):
 class Invoke(Step):
     """Invokes a tool with input and output bindings."""
 
+    type: Literal["Invoke"] = Field("Invoke")
     tool: Tool = Field(..., description="Tool to invoke.")
     input_bindings: dict[str, str] = Field(
         ...,
@@ -348,6 +353,7 @@ class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
+    type: Literal["LLMInference"] = Field("LLMInference")
     memory: Memory | None = Field(
         None,
         description="Memory object to retain context across interactions.",
@@ -363,6 +369,7 @@ class PromptTemplate(Step):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
 
+    type: Literal["PromptTemplate"] = Field("PromptTemplate")
     template: str = Field(
         ...,
         description="String template for the prompt with variable placeholders.",
@@ -427,6 +434,7 @@ class EmbeddingModel(Model):
 class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
+    type: Literal["Agent"] = Field("Agent")
     tools: list[Tool] = Field(
         ..., description="List of tools available to the agent."
     )
@@ -435,12 +443,13 @@ class Agent(LLMInference):
 class DocumentSearch(Search):
     """Performs document search against a document index."""
 
-    pass
+    type: Literal["DocumentSearch"] = Field("DocumentSearch")
 
 
 class VectorSearch(Search):
     """Performs vector similarity search against a vector index."""
 
+    type: Literal["VectorSearch"] = Field("VectorSearch")
     default_top_k: int | None = Field(
         50,
         description="Number of top results to retrieve if not provided in the inputs.",
@@ -450,6 +459,7 @@ class VectorSearch(Search):
 class FileSink(Sink):
     """File sink that writes data to a file using fsspec-compatible URIs."""
 
+    type: Literal["FileSink"] = Field("FileSink")
     path: str | None = Field(
         None,
         description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
@@ -459,6 +469,7 @@ class FileSink(Sink):
 class IndexUpsert(Sink):
     """Semantic version of IndexUpsert."""
 
+    type: Literal["IndexUpsert"] = Field("IndexUpsert")
     index: Index = Field(
         ..., description="Index to upsert into (object or ID reference)."
     )
@@ -467,6 +478,7 @@ class IndexUpsert(Sink):
 class FileSource(Source):
     """File source that reads data from a file using fsspec-compatible URIs."""
 
+    type: Literal["FileSource"] = Field("FileSource")
     path: str | None = Field(
         None,
         description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
@@ -476,6 +488,7 @@ class FileSource(Source):
 class SQLSource(Source):
     """SQL database source that executes queries and emits rows."""
 
+    type: Literal["SQLSource"] = Field("SQLSource")
     query: str = Field(
         ..., description="SQL query to execute. Inputs are injected as params."
     )

@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from enum import Enum
-from typing import Any, Literal, Type, Union
+from typing import Annotated, Any, Literal, Type, Union
 
 from pydantic import (
     BaseModel,
@@ -247,6 +247,7 @@ class Step(StrictBaseModel, ABC):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
+    type: str = Field(..., description="Type of the step component.")
     cardinality: StepCardinality = Field(
         default=StepCardinality.one,
         description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
@@ -264,6 +265,7 @@ class PromptTemplate(Step):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
 
+    type: Literal["PromptTemplate"] = "PromptTemplate"
     template: str = Field(
         ...,
         description="String template for the prompt with variable placeholders.",
@@ -286,6 +288,7 @@ class PromptTemplate(Step):
 class Condition(Step):
     """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
 
+    type: Literal["Condition"] = "Condition"
     # TODO: Add support for more complex conditions
     else_: StepType | str | None = Field(
         default=None,
@@ -367,6 +370,7 @@ class LLMInference(Step):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
+    type: Literal["LLMInference"] = "LLMInference"
     memory: Memory | str | None = Field(
         default=None,
         description="Memory object to retain context across interactions.",
@@ -392,6 +396,9 @@ class LLMInference(Step):
 class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
+    type: Literal["Agent"] = "Agent"
+    """Defines an agent that can perform tasks and make decisions based on user input and context."""
+
     tools: list[ToolType | str] = Field(
         ..., description="List of tools available to the agent."
     )
@@ -400,9 +407,9 @@ class Agent(LLMInference):
 class Flow(Step):
     """Defines a flow of steps that can be executed in sequence or parallel.
     If input or output variables are not specified, they are inferred from
-    the first and last step, respectively.
-    """
+    the first and last step, respectively."""
 
+    type: Literal["Flow"] = "Flow"
     description: str | None = Field(
         default=None, description="Optional description of the flow."
     )
@@ -430,8 +437,9 @@ class Decoder(Step):
     """Defines a step that decodes string data into structured outputs.
 
     If parsing fails, the step will raise an error and halt execution.
-    Use conditional logic in your flow to handle potential parsing errors.
-    """
+    Use conditional logic in your flow to handle potential parsing errors."""
+
+    type: Literal["Decoder"] = "Decoder"
 
     format: DecoderFormat = Field(
         DecoderFormat.json,
@@ -462,6 +470,8 @@ class Decoder(Step):
 
 class Invoke(Step):
     """Invokes a tool with input and output bindings."""
+
+    type: Literal["Invoke"] = "Invoke"
 
     tool: ToolType | str = Field(
         ...,
@@ -680,6 +690,7 @@ class Source(Step):
 class SQLSource(Source):
     """SQL database source that executes queries and emits rows."""
 
+    type: Literal["SQLSource"] = "SQLSource"
     query: str = Field(
         ..., description="SQL query to execute. Inputs are injected as params."
     )
@@ -705,6 +716,7 @@ class SQLSource(Source):
 class FileSource(Source):
     """File source that reads data from a file using fsspec-compatible URIs."""
 
+    type: Literal["FileSource"] = "FileSource"
     path: str | None = Field(
         default=None,
         description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
@@ -749,6 +761,7 @@ class Sink(Step):
 class FileSink(Sink):
     """File sink that writes data to a file using fsspec-compatible URIs."""
 
+    type: Literal["FileSink"] = "FileSink"
     path: str | None = Field(
         default=None,
         description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
@@ -808,6 +821,7 @@ class Index(StrictBaseModel, ABC):
 
 
 class IndexUpsert(Sink):
+    type: Literal["IndexUpsert"] = "IndexUpsert"
     index: IndexType | str = Field(
         ..., description="Index to upsert into (object or ID reference)."
     )
@@ -843,6 +857,7 @@ class Search(Step, ABC):
 class VectorSearch(Search):
     """Performs vector similarity search against a vector index."""
 
+    type: Literal["VectorSearch"] = "VectorSearch"
     default_top_k: int | None = Field(
         default=50,
         description="Number of top results to retrieve if not provided in the inputs.",
@@ -864,6 +879,8 @@ class VectorSearch(Search):
 
 class DocumentSearch(Search):
     """Performs document search against a document index."""
+
+    type: Literal["DocumentSearch"] = "DocumentSearch"
 
     @model_validator(mode="after")
     def set_default_inputs_outputs(self) -> "DocumentSearch":
@@ -899,21 +916,23 @@ AuthProviderType = Union[
 ]
 
 # Create a union type for all step types
-StepType = Union[
-    Agent,
-    Condition,
-    Decoder,
-    DocumentSearch,
-    FileSink,
-    FileSource,
-    Flow,
-    IndexUpsert,
-    Invoke,
-    LLMInference,
-    PromptTemplate,
-    SQLSource,
-    Sink,
-    VectorSearch,
+StepType = Annotated[
+    Union[
+        Agent,
+        Condition,
+        Decoder,
+        DocumentSearch,
+        FileSink,
+        FileSource,
+        Flow,
+        IndexUpsert,
+        Invoke,
+        LLMInference,
+        PromptTemplate,
+        SQLSource,
+        VectorSearch,
+    ],
+    Field(discriminator="type"),
 ]
 
 # Create a union type for all index types
