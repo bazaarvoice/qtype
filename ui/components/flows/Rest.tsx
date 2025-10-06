@@ -9,8 +9,8 @@
 import { useState } from 'react'
 import { type FlowInfo, apiClient, ApiClientError } from '@/lib/api-client'
 import type { FlowInputValues, ResponseData } from '@/types/flow'
-import FlowInputs from './flow-inputs'
-import FlowResponse from './flow-response'
+import FlowInputs from '../flow-inputs'
+import FlowResponse from '../flow-response'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -18,7 +18,7 @@ interface FlowProps {
   flow: FlowInfo
 }
 
-export default function Flow({ flow }: FlowProps) {
+function RestFlow({ flow }: FlowProps) {
   const [inputs, setInputs] = useState<FlowInputValues>({})
   const [isExecuting, setIsExecuting] = useState(false)
   const [responseData, setResponseData] = useState<ResponseData | null>(null)
@@ -38,7 +38,6 @@ export default function Flow({ flow }: FlowProps) {
       setResponseData(responseData)
     } catch (err) {
       if (err instanceof ApiClientError) {
-        // Use the formatted error message from ApiClientError
         setError(err.message)
       } else {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -64,13 +63,11 @@ export default function Flow({ flow }: FlowProps) {
         )}
       </div>
 
-      {/* Flow Inputs */}
       <FlowInputs
         requestSchema={flow.requestSchema || null}
         onInputChange={handleInputChange}
       />
 
-      {/* Response Section */}
       <div>
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -92,7 +89,6 @@ export default function Flow({ flow }: FlowProps) {
         )}
       </div>
 
-      {/* Execute Button */}
       <div className="mt-6 pt-4 border-t">
         <Button
           disabled={isExecuting}
@@ -106,3 +102,5 @@ export default function Flow({ flow }: FlowProps) {
     </div>
   )
 }
+
+export { RestFlow }

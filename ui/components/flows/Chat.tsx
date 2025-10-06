@@ -20,13 +20,9 @@ import { type FileAttachment } from '@/types/flow'
 import MessageBubble from '@/components/chat/MessageBubble'
 import AttachmentDisplay from '@/components/chat/AttachmentDisplay'
 
-interface ChatFlowProps {
-  flow: FlowInfo
-}
-
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 
-export default function ChatFlow({ flow }: ChatFlowProps) {
+function ChatFlow({ path, name, description }: FlowInfo) {
   const [conversationId, setConversationId] = useState(() => generateId())
   const [input, setInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([])
@@ -37,14 +33,13 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const transport = useMemo(() => new DefaultChatTransport({
-    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
-  }), [flow.path])
+    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${path}`,
+  }), [path])
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
     id: conversationId,
     transport,
     onFinish: () => {
-      // Clear the last submission on successful completion
       setLastSubmission(null)
     }
   })
@@ -180,9 +175,9 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
-              {flow.name}
+              {name}
             </CardTitle>
-            {flow.description && <CardDescription>{flow.description}</CardDescription>}
+            {description && <CardDescription>{description}</CardDescription>}
           </div>
           <Button
             variant="outline"
@@ -283,3 +278,5 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     </Card>
   )
 }
+
+export { ChatFlow }
