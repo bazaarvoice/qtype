@@ -67,7 +67,7 @@ def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
             extract_text=default_chat_extract_text,
         )
         return create_streaming_response(formatter)
-    
+
     app.post(
         f"/flows/{flow_id}/chat/stream",
         tags=["chat"],

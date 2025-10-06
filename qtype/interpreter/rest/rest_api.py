@@ -13,7 +13,7 @@ from qtype.interpreter.typing import (
     create_input_type_model,
     create_output_type_model,
 )
-from qtype.semantic.model import Application, Flow
+from qtype.semantic.model import Flow
 
 
 def create_rest_flow_endpoint(app: FastAPI, flow: Flow) -> None:

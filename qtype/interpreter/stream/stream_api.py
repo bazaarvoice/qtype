@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
-from pydantic import BaseModel
 
 from qtype.interpreter.flow import execute_flow
 from qtype.interpreter.streaming_helpers import create_streaming_generator
