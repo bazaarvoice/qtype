@@ -7,12 +7,12 @@
 'use client'
 
 import { useState } from 'react'
-import { type FlowInfo, apiClient, ApiClientError } from '@/lib/api-client'
-import type { FlowInputValues, ResponseData } from '@/types/flow'
-import FlowInputs from '../flow-inputs'
-import FlowResponse from '../flow-response'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { type FlowInfo, apiClient, ApiClientError } from '@/lib/apiClient'
+import type { FlowInputValues, ResponseData } from '@/types/Flow'
+import FlowInputs from '../FlowInputs'
+import FlowResponse from '../FlowResponse'
+import { Button } from '@/components/ui/Button'
+import { Alert, AlertDescription } from '@/components/ui/Alert'
 
 interface FlowProps {
   flow: FlowInfo

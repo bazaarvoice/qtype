@@ -8,7 +8,7 @@
 
 import type { OpenAPIV3_1 } from 'openapi-types'
 import { extractRequestSchema, extractResponseSchema } from './utils'
-import type { SchemaProperty, FlowInputValues, ResponseData } from '../types/flow'
+import type { SchemaProperty, FlowInputValues, ResponseData } from '../types/Flow'
 
 // Use the official OpenAPI spec type
 export type OpenAPISpec = OpenAPIV3_1.Document

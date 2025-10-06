@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { type FlowInfo, apiClient, ApiClientError } from '@/lib/api-client'
-import FlowInputs from '../flow-inputs'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { type FlowInfo, apiClient, ApiClientError } from '@/lib/apiClient'
+import FlowInputs from '../FlowInputs'
+import { Button } from '@/components/ui/Button'
+import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { useCompletion } from '@ai-sdk/react'
 import { ScrollArea } from '@radix-ui/react-scroll-area'
 
 import { MarkdownContainer } from '../MarkdownContainer'
 
-import type { FlowInputValues } from '@/types/flow'
+import type { FlowInputValues } from '@/types/Flow'
 
 function StreamFlow({ path, name, description, requestSchema }: FlowInfo) {
   const [inputs, setInputs] = useState<FlowInputValues>({})

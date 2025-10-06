@@ -6,10 +6,10 @@
 
 'use client'
 
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { MarkdownContainer } from './MarkdownContainer'
 
-import type { SchemaProperty, ResponseData } from '../types/flow'
+import type { SchemaProperty, ResponseData } from '../types/Flow'
 interface FlowResponseProps {
   responseSchema?: SchemaProperty | null
   responseData?: ResponseData

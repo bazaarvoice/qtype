@@ -6,8 +6,8 @@
 
 'use client'
 
-import { Switch } from '@/components/ui/switch'
-import type { SchemaProperty, FlowInputValue } from '../../types/flow'
+import { Switch } from '@/components/ui/Switch'
+import type { SchemaProperty, FlowInputValue } from '../../types/Flow'
 
 interface BooleanInputProps {
   name: string

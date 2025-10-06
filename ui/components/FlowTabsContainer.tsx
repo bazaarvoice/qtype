@@ -1,12 +1,12 @@
-import { extractFlowsFromSpec } from "@/lib/api-client"
+import { extractFlowsFromSpec } from "@/lib/apiClient"
 import { useOpenApiSpec } from "@/lib/hooks/use-api"
-import { OpenAPISpec } from "@/types/flow"
+import { OpenAPISpec } from "@/types/Flow"
 import { TabsContainer } from '@/components/ui/TabsContainer'
 import { Tabs } from "./Tabs"
 import { TabsContent } from '@/components/ui/TabsContainer'
 import { StreamFlow, ChatFlow } from './flows'
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { AlertCircle } from 'lucide-react'
 
 const FLOW_ERROR_TITLE = 'Failed to load flows'

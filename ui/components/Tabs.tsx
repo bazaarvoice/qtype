@@ -1,7 +1,7 @@
 'use client'
 
 import { TabsList, TabsTrigger } from '@/components/ui/TabsContainer'
-import type { FlowInfo } from '@/lib/api-client'
+import type { FlowInfo } from '@/lib/apiClient'
 
 interface FlowProps {
     flows: FlowInfo[];
