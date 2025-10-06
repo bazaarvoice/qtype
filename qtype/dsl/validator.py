@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union, get_args, get_origin
+from typing import Annotated, Any, Dict, Union, get_args, get_origin
 
 import qtype.dsl.base_types as base_types
 import qtype.dsl.domain_types
@@ -297,6 +297,15 @@ def _is_union(type: Any) -> bool:
     Indicates if the provided type is a Union type.
     """
     origin = get_origin(type)
+
+    # Handle Annotated types - extract the underlying type
+    if origin is Annotated:
+        # For Annotated[Union[...], ...], get the Union part
+        args = get_args(type)
+        if args:
+            type = args[0]
+            origin = get_origin(type)
+
     return origin is Union or (
         hasattr(type, "__class__") and type.__class__.__name__ == "UnionType"
     )
@@ -311,7 +320,27 @@ def _is_reference_type(field_type: Any) -> bool:
     if _is_union(field_type):
         args = get_args(field_type)
         has_str = any(arg is str for arg in args)
-        has_dsl_type = any(_is_dsl_type(arg) for arg in args)
+
+        # Check for DSL types, including those wrapped in Annotated
+        has_dsl_type = False
+        for arg in args:
+            if _is_dsl_type(arg):
+                has_dsl_type = True
+                break
+            elif get_origin(arg) is Annotated:
+                # Check if the Annotated type contains a Union of DSL types
+                annotated_args = get_args(arg)
+                if annotated_args:
+                    inner_type = annotated_args[0]
+                    if get_origin(inner_type) is Union:
+                        inner_union_args = get_args(inner_type)
+                        if any(
+                            _is_dsl_type(inner_arg)
+                            for inner_arg in inner_union_args
+                        ):
+                            has_dsl_type = True
+                            break
+
         return has_str and has_dsl_type
     else:
         return False

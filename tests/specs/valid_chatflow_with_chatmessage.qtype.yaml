@@ -1,6 +1,5 @@
 id: valid_chatflow_app
-description: "A valid chat flow with a ChatMessage input variable"
-
+description: A valid chat flow with a ChatMessage input variable
 flows:
   - id: chat_flow
     mode: Chat
@@ -9,6 +8,7 @@ flows:
         type: ChatMessage
     steps:
       - id: llm_response
+        type: LLMInference
         model:
           id: gpt4
           provider: openai
@@ -17,7 +17,7 @@ flows:
             id: openai_auth
             type: api_key
             api_key: DEADBEEF
-        system_message: "You are a helpful assistant."
+        system_message: You are a helpful assistant.
         memory:
           id: chat_memory
           token_limit: 10000

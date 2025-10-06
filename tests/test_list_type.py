@@ -117,6 +117,7 @@ flows:
   - result
   steps:
   - id: dummy_step
+    type: PromptTemplate
     template: "Processing URLs: {urls}"
     inputs:
     - urls

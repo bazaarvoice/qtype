@@ -1,12 +1,12 @@
 id: valid_type_list_reference
 types:
   - id: ChatBlock
-    description: "A block of chat content."
+    description: A block of chat content.
     properties:
       content_type: text
       content: list[ChatBlock]
   - id: ChatMessage
-    description: "A type for testing purposes."
+    description: A type for testing purposes.
     properties:
       role: text
       content: ChatBlock

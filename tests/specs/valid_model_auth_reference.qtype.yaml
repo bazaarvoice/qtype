@@ -10,9 +10,10 @@ models:
 auths:
   - id: auth1
     type: api_key
-    api_key: "SECRET"
+    api_key: SECRET
 flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
+        type: PromptTemplate
+        template: hi

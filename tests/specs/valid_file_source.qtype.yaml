@@ -1,11 +1,8 @@
 id: file_source_test
-description: "Test FileSource with direct path specification"
-
+description: Test FileSource with direct path specification
 flows:
   - id: read_file_flow
     steps:
       - id: read_data
-        path: "s3://my-bucket/data.json"
-        outputs:
-          - id: content
-            type: text
+        type: FileSource
+        path: s3://my-bucket/data.json

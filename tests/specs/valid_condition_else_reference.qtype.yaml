@@ -1,5 +1,5 @@
 id: app_condition_else_ref
-variables: 
+variables:
   - id: s1.prompt
     type: text
   - id: cond1.result
@@ -8,13 +8,19 @@ flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
-        outputs: [s1.prompt]
+        type: PromptTemplate
+        template: hi
+        outputs:
+          - s1.prompt
       - id: s2
-        template: "bye"
+        type: PromptTemplate
+        template: bye
       - id: cond1
+        type: Condition
         equals: s1.prompt
         then: s1
         else: s2
-        inputs: [s1.prompt]
-        outputs: [cond1.result]
+        inputs:
+          - s1.prompt
+        outputs:
+          - cond1.result

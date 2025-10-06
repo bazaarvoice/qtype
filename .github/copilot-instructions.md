@@ -118,3 +118,7 @@ or for unit tests:
 ```
 uv run pytest ...
 ```
+
+## UI Layer Guidelines
+
+* Use the shadcn component library. The shadcn tool(s)/MCP server is available to finding components and their details.

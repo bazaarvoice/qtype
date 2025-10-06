@@ -8,16 +8,18 @@ models:
       max_tokens: 100
 tools:
   - id: tool1
-    name: "Echo"
-    description: "Echoes input"
-    endpoint: "https://example.com/echo"
-    method: "POST"
+    name: Echo
+    description: Echoes input
+    endpoint: https://example.com/echo
+    method: POST
     auth: null
 flows:
   - id: f1
     steps:
       - id: agent1
+        type: Agent
         model: m1
-        tools: [tool1]
+        tools:
+          - tool1
         inputs: []
         outputs: []

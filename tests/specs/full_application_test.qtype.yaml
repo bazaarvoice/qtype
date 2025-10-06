@@ -1,16 +1,16 @@
 id: test_app
-description: "A test application with all fields populated."
+description: A test application with all fields populated.
 memories:
   - id: mem1
 types:
   - id: CustomType
-    description: "A type for testing purposes."
+    description: A type for testing purposes.
     properties:
       role: text
 models:
   - id: model1
     provider: openai
-    model_id: "gpt-4"
+    model_id: gpt-4
     inference_params:
       temperature: 0.7
       max_tokens: 256
@@ -26,47 +26,48 @@ flows:
       - var1
     steps:
       - id: step1
+        type: Agent
         inputs:
           - var1
         outputs:
           - var1
         model: model1
         memory: mem1
-        system_message: "Test system message."
+        system_message: Test system message.
         tools:
           - tool1
 auths:
   - id: auth1
     type: api_key
-    api_key: "secret-key"
-    host: "https://api.example.com"
+    api_key: secret-key
+    host: https://api.example.com
 tools:
   - id: tool1
-    name: "Test Tool"
-    description: "A tool for testing."
-    endpoint: "https://api.example.com/test"
-    method: "POST"
+    name: Test Tool
+    description: A tool for testing.
+    endpoint: https://api.example.com/test
+    method: POST
     auth: auth1
     headers:
-      Content-Type: "application/json"
+      Content-Type: application/json
 indexes:
   - id: index1
-    name: "Test Index"
+    name: Test Index
     embedding_model: embed1
     args:
-      param: "value"
+      param: value
     auth: auth1
 telemetry:
   id: telemetry1
-  endpoint: "https://telemetry.example.com"
+  endpoint: https://telemetry.example.com
   auth: auth1
 references:
   - id: ref1
     models:
-    - id: embed1
-      provider: openai
-      dimensions: 768
-      model_id: "text-embedding-ada-002"
-      auth: auth1
-      inference_params:
-        temperature: 0.1
+      - id: embed1
+        provider: openai
+        dimensions: 768
+        model_id: text-embedding-ada-002
+        auth: auth1
+        inference_params:
+          temperature: 0.1

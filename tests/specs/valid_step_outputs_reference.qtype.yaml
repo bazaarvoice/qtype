@@ -6,5 +6,7 @@ flows:
   - id: f1
     steps:
       - id: s1
-        template: "hi"
-        outputs: [var1]
+        type: PromptTemplate
+        template: hi
+        outputs:
+          - var1

@@ -3,7 +3,7 @@ import inspect
 import subprocess
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import networkx as nx
 
@@ -201,11 +201,21 @@ def format_with_ruff(file_path: str) -> None:
     subprocess.run(["isort", file_path], check=True)
 
 
+def _get_union_args(type_annotation):
+    """Extract union args from a type, handling Annotated types."""
+    if get_origin(type_annotation) is Annotated:
+        # For Annotated[Union[...], ...], get the Union part
+        union_type = get_args(type_annotation)[0]
+        return get_args(union_type)
+    else:
+        return get_args(type_annotation)
+
+
 DSL_ONLY_UNION_TYPES = {
-    get_args(dsl.ToolType): "Tool",
-    get_args(dsl.StepType): "Step",
-    get_args(dsl.IndexType): "Index",
-    get_args(dsl.ModelType): "Model",
+    _get_union_args(dsl.ToolType): "Tool",
+    _get_union_args(dsl.StepType): "Step",
+    _get_union_args(dsl.IndexType): "Index",
+    _get_union_args(dsl.ModelType): "Model",
 }
 
 
@@ -262,6 +272,12 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
     # Handle Union types (including | syntax)
     origin = get_origin(field_type)
     args = get_args(field_type)
+
+    # Handle Annotated types - extract the underlying type
+    if origin is Annotated:
+        # For Annotated[SomeType, ...], we want to process SomeType
+        if args:
+            return dsl_to_semantic_type_name(args[0])
 
     if origin is Union or (
         hasattr(field_type, "__class__")

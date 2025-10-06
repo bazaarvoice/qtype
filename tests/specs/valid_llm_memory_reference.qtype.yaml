@@ -12,8 +12,9 @@ flows:
   - id: f1
     steps:
       - id: llm1
+        type: LLMInference
         model: m1
         memory: mem1
-        system_message: "hi"
+        system_message: hi
         inputs: []
         outputs: []
