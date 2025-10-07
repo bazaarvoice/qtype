@@ -27,6 +27,7 @@ Homepage = "https://github.com/bazaarvoice/qtype"
 interpreter = [
     "arize-phoenix-otel>=0.12.1",
     "boto3>=1.34.0",
+    "docling>=2.55.1",
     "fastapi>=0.116.1",
     "llama-index-embeddings-bedrock>=0.5.2",
     "llama-index-embeddings-openai>=0.3.1",
