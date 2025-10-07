@@ -14,7 +14,7 @@ from qtype.interpreter.flow import execute_flow
 from qtype.interpreter.streaming_helpers import create_streaming_generator
 from qtype.semantic.model import Flow
 
-from qtype.interpreter.stream.utils.init import (
+from qtype.interpreter.stream.utils import (
     build_vercel_ai_formatter,
     create_streaming_response,
     error_streaming_response,
