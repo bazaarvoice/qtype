@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { OpenAPIV3_1 } from "openapi-types"
-import { SchemaProperty, OpenAPISpec } from "../types/flow"
+import { SchemaProperty, OpenAPISpec } from "../types/Flow"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

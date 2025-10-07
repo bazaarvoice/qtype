@@ -8,7 +8,7 @@
 
 import type { OpenAPIV3_1 } from 'openapi-types'
 import { extractRequestSchema, extractResponseSchema } from './utils'
-import type { SchemaProperty, FlowInputValues, ResponseData } from '../types/flow'
+import type { SchemaProperty, FlowInputValues, ResponseData } from '../types/Flow'
 
 // Use the official OpenAPI spec type
 export type OpenAPISpec = OpenAPIV3_1.Document
@@ -268,14 +268,13 @@ export function extractFlowsFromSpec(spec: OpenAPISpec): FlowInfo[] {
       const methodData = pathData[method] as OpenAPIV3_1.OperationObject | undefined
       if (!methodData) return
       
-      // Check if this is a flow endpoint (has 'flow' tag or path starts with /flows/)
       const isFlow =
         path.startsWith('/flows/') ||
         methodData.tags?.includes('flow')
+      const isStreamFlow = path.endsWith('/stream') && isFlow
 
-      if (isFlow) {
-        // Determine flow mode based on path pattern
-        const isChatFlow = path.endsWith('/chat')
+      if (isStreamFlow) {
+        const isChatFlow = path.includes('/chat')
         const mode: 'Complete' | 'Chat' = isChatFlow ? 'Chat' : 'Complete'
         
         // Extract raw flow name from path

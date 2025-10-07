@@ -6,14 +6,14 @@
 
 'use client'
 
-import TextInput from './inputs/text-input'
-import BooleanInput from './inputs/boolean-input'
-import NumberInput from './inputs/number-input'
-import DatePickerInput from './inputs/date-picker-input'
-import TimeInput from './inputs/time-input'
-import DateTimeInput from './inputs/datetime-input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import type { SchemaProperty, FlowInputValue } from '@/types/flow'
+import TextInput from './inputs/TextInput'
+import BooleanInput from './inputs/BooleanInput'
+import NumberInput from './inputs/NumberInput'
+import DatePickerInput from './inputs/DatePickerInput'
+import TimeInput from './inputs/TimeInput'
+import DateTimeInput from './inputs/DatetimeInput'
+import { Alert, AlertDescription } from '@/components/ui/Alert'
+import type { SchemaProperty, FlowInputValue } from '@/types/Flow'
 
 interface FlowInputProps {
   name: string

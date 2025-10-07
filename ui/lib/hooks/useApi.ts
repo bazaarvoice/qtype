@@ -8,7 +8,7 @@
 'use client'
 
 import useSWR from 'swr'
-import { apiClient, fetchOpenApiSpec, checkApiHealth, OpenAPISpec, ApiClientError } from '../api-client'
+import { apiClient, fetchOpenApiSpec, checkApiHealth, OpenAPISpec, ApiClientError } from '../apiClient'
 export function useOpenApiSpec() {
   const { data, error, isLoading, mutate } = useSWR<OpenAPISpec, ApiClientError>(
     '/openapi.json',

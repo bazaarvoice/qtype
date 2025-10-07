@@ -7,8 +7,8 @@
 'use client'
 
 import { useState } from 'react'
-import FlowInput from './flow-input'
-import type { SchemaProperty, FlowInputValues, FlowInputValue } from '../types/flow'
+import FlowInput from './FlowInput'
+import type { SchemaProperty, FlowInputValues, FlowInputValue } from '../types/Flow'
 
 interface FlowInputsProps {
   requestSchema: SchemaProperty | null

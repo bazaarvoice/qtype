@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect } from "react";
-import { useOpenApiSpec } from "@/lib/hooks/use-api";
-import FlowTabs from "@/components/flow-tabs";
+import { useOpenApiSpec } from "@/lib/hooks/useApi";
+import { FlowTabsContainer } from "@/components/FlowTabsContainer";
 
 export default function Home() {
   const { spec, isLoading } = useOpenApiSpec();
@@ -32,8 +32,8 @@ export default function Home() {
             </p>
           )}
         </div>
-
-        <FlowTabs />
+        
+        <FlowTabsContainer />
 
       </main>
     </div>
