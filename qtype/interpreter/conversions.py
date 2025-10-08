@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from typing import Any
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -14,14 +15,76 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.exceptions import InterpreterError
-from qtype.semantic.model import DocumentSplitter, Model
+from qtype.semantic.model import DocumentSplitter, Index, Model
 
 from .resource_cache import cached_resource
+
+
+def to_llama_document(doc: RAGDocument) -> LlamaDocument:
+    """Convert a RAGDocument to a LlamaDocument."""
+    from llama_index.core.schema import MediaResource
+
+    # Prepare metadata, adding file_name and uri if available
+    metadata = doc.metadata.copy() if doc.metadata else {}
+    if doc.file_name:
+        metadata["file_name"] = doc.file_name
+    if doc.uri:
+        metadata["url"] = (
+            doc.uri
+        )  # url is more commonly used in LlamaIndex metadata
+
+    # Default text content
+    text = ""
+    if isinstance(doc.content, str):
+        text = doc.content
+
+    # Handle different content types
+    if doc.type == PrimitiveTypeEnum.text:
+        # Text content - store as text field
+        return LlamaDocument(text=text, doc_id=doc.file_id, metadata=metadata)
+    elif doc.type == PrimitiveTypeEnum.image and isinstance(
+        doc.content, bytes
+    ):
+        # Image content - store in image_resource
+        return LlamaDocument(
+            text=text,  # Keep text empty or use as description
+            doc_id=doc.file_id,
+            metadata=metadata,
+            image_resource=MediaResource(data=doc.content),
+        )
+    elif doc.type == PrimitiveTypeEnum.audio and isinstance(
+        doc.content, bytes
+    ):
+        # Audio content - store in audio_resource
+        return LlamaDocument(
+            text=text,
+            doc_id=doc.file_id,
+            metadata=metadata,
+            audio_resource=MediaResource(data=doc.content),
+        )
+    elif doc.type == PrimitiveTypeEnum.video and isinstance(
+        doc.content, bytes
+    ):
+        # Video content - store in video_resource
+        return LlamaDocument(
+            text=text,
+            doc_id=doc.file_id,
+            metadata=metadata,
+            video_resource=MediaResource(data=doc.content),
+        )
+    else:
+        # Fallback for other types - store as text
+        return LlamaDocument(
+            text=str(doc.content) if doc.content else "",
+            doc_id=doc.file_id,
+            metadata=metadata,
+        )
 
 
 def from_llama_document(doc: LlamaDocument) -> RAGDocument:
@@ -135,6 +198,31 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
         raise InterpreterError(
             f"Unsupported model provider: {model.provider}."
         )
+
+
+@cached_resource
+def to_vector_store(index: Index) -> BasePydanticVectorStore:
+    """Convert a qtype Index to a LlamaIndex vector store."""
+    full_module_path = "llama_index.core.vector_stores" + index.args.get(
+        "module", "SimpleVectorStore"
+    )
+    class_name = full_module_path.split(".")[-1]
+    # Dynamically import the reader module
+    try:
+        reader_module = importlib.import_module(full_module_path)
+        reader_class = getattr(reader_module, class_name)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(
+            f"Failed to import reader class '{class_name}' from '{full_module_path}': {e}"
+        ) from e
+
+    args = index.args.copy()
+    if "module" in args:
+        del args["module"]
+
+    index = reader_class(**args)
+
+    return index
 
 
 @cached_resource
