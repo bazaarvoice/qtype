@@ -5,16 +5,16 @@ import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/Button"
+import { Calendar } from "@/components/ui/Calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/Popover"
+import { Input } from "@/components/ui/Input"
 
-import type { SchemaProperty, FlowInputValue } from '../../types/flow'
+import type { SchemaProperty, FlowInputValue } from '../../types/Flow'
 
 interface DateTimeInputProps {
   name: string

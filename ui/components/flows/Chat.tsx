@@ -10,23 +10,19 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Send, Bot, Loader2, MessageSquarePlus, Paperclip} from 'lucide-react'
-import { apiClient, type FlowInfo } from '@/lib/api-client'
-import { type FileAttachment } from '@/types/flow'
+import { apiClient, type FlowInfo } from '@/lib/apiClient'
+import { type FileAttachment } from '@/types/Flow'
 import MessageBubble from '@/components/chat/MessageBubble'
 import AttachmentDisplay from '@/components/chat/AttachmentDisplay'
 
-interface ChatFlowProps {
-  flow: FlowInfo
-}
-
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 
-export default function ChatFlow({ flow }: ChatFlowProps) {
+function ChatFlow({ path, name, description }: FlowInfo) {
   const [conversationId, setConversationId] = useState(() => generateId())
   const [input, setInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([])
@@ -37,14 +33,13 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const transport = useMemo(() => new DefaultChatTransport({
-    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${flow.path}`,
-  }), [flow.path])
+    api: `${apiClient.getBaseUrl().replace(/\/$/, '')}${path}`,
+  }), [path])
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
     id: conversationId,
     transport,
     onFinish: () => {
-      // Clear the last submission on successful completion
       setLastSubmission(null)
     }
   })
@@ -180,9 +175,9 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
-              {flow.name}
+              {name}
             </CardTitle>
-            {flow.description && <CardDescription>{flow.description}</CardDescription>}
+            {description && <CardDescription>{description}</CardDescription>}
           </div>
           <Button
             variant="outline"
@@ -283,3 +278,5 @@ export default function ChatFlow({ flow }: ChatFlowProps) {
     </Card>
   )
 }
+
+export { ChatFlow }

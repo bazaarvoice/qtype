@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Input } from "@/components/ui/input"
-import type { SchemaProperty, FlowInputValue } from '../../types/flow'
+import { Input } from "@/components/ui/Input"
+import type { SchemaProperty, FlowInputValue } from '../../types/Flow'
 
 interface TimeInputProps {
   name: string
