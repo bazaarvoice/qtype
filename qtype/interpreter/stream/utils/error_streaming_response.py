@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from fastapi.responses import StreamingResponse
 
-from qtype.interpreter.stream.chat.vercel import (
-    ErrorChunk,
-)
+from qtype.interpreter.stream.chat.vercel import ErrorChunk
 
 
 def error_streaming_response(message: str) -> StreamingResponse:

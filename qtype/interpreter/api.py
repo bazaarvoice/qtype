@@ -7,15 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from qtype.interpreter.rest.rest_api import create_rest_flow_endpoint
+from qtype.interpreter.stream.stream_api import create_stream_flow_endpoint
 from qtype.semantic.model import Application
 
-
-from qtype.interpreter.rest.rest_api import (
-    create_rest_flow_endpoint,
-)
-from qtype.interpreter.stream.stream_api import (
-    create_stream_flow_endpoint
-)
 
 class APIExecutor:
     """API executor for QType definitions with dynamic endpoint generation."""

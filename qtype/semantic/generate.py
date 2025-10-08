@@ -1,6 +1,7 @@
 import argparse
 import inspect
 import subprocess
+from enum import Enum
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
@@ -290,7 +291,11 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
         # Format literal values
         literal_values = []
         for arg in args:
-            if isinstance(arg, str):
+            if isinstance(arg, Enum):
+                # Handle enum values - use the actual enum value, not string representation
+                # Since StepCardinality inherits from str, we need to check Enum first
+                literal_values.append(f'"{arg.value}"')
+            elif isinstance(arg, str):
                 literal_values.append(f'"{arg}"')
             else:
                 literal_values.append(str(arg))
@@ -417,8 +422,6 @@ def create_field_definition(
 
     # Handle default values
     # Check for PydanticUndefined (required field)
-    from enum import Enum
-
     from pydantic_core import PydanticUndefined
 
     if field_default is PydanticUndefined or field_default is ...:

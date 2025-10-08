@@ -6,20 +6,20 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.domain_types import ChatMessage, MessageRole
-from qtype.interpreter.stream.chat.ui_request_to_domain_type import ui_request_to_domain_type
-from qtype.interpreter.stream.chat.vercel import (
-    ChatRequest,
-)
 from qtype.interpreter.flow import execute_flow
-from qtype.interpreter.streaming_helpers import create_streaming_generator
-from qtype.semantic.model import Flow
-
+from qtype.interpreter.stream.chat.ui_request_to_domain_type import (
+    ui_request_to_domain_type,
+)
+from qtype.interpreter.stream.chat.vercel import ChatRequest
 from qtype.interpreter.stream.utils import (
     build_vercel_ai_formatter,
     create_streaming_response,
-    error_streaming_response,
     default_chat_extract_text,
+    error_streaming_response,
 )
+from qtype.interpreter.streaming_helpers import create_streaming_generator
+from qtype.semantic.model import Flow
+
 
 def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
     """
@@ -33,6 +33,7 @@ def create_chat_flow_endpoint(app: FastAPI, flow: Flow) -> None:
         flow: The Flow to create an endpoint for
     """
     flow_id = flow.id
+
     async def handle_chat_data(request: ChatRequest) -> StreamingResponse:
         """Handle chat requests for the specific flow."""
         try:

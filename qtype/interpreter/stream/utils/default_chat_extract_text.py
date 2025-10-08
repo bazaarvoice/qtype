@@ -4,6 +4,7 @@ from typing import Any
 
 from qtype.dsl.domain_types import ChatMessage
 
+
 def default_chat_extract_text(message: Any) -> str:
     """
     Default extractor for ChatMessage or generic objects.

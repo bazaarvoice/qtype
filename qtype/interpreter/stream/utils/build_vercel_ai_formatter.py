@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import uuid
-from concurrent.futures import Future
 from collections.abc import Callable, Generator, Iterable
+from concurrent.futures import Future
 from typing import Any
 
 from qtype.interpreter.stream.chat.vercel import (
@@ -44,7 +44,9 @@ def build_vercel_ai_formatter(
         try:
             content = extract_text(message)
         except Exception as exc:  # Defensive; continue streaming
-            logger.debug("Failed extracting text from message: %s", exc, exc_info=True)
+            logger.debug(
+                "Failed extracting text from message: %s", exc, exc_info=True
+            )
             continue
 
         if not content or not content.strip():

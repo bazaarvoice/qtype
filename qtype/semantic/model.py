@@ -334,6 +334,54 @@ class Decoder(Step):
     )
 
 
+class DocToTextConverter(Step):
+    """Defines a step to convert raw documents (e.g., PDF, DOCX) loaded by a DocumentSource into plain text
+    using an external tool like Docling or LlamaParse for pre-processing before chunking.
+    The input and output are both RAGDocument, but the output after processing with have content of type markdown.
+    """
+
+    type: Literal["DocToTextConverter"] = Field("DocToTextConverter")
+    cardinality: Literal["one"] = Field(
+        StepCardinality.one,
+        description="Consumes one document and produces one processed text output.",
+    )
+
+
+class DocumentEmbedder(Step):
+    """Embeds document chunks using a specified embedding model."""
+
+    type: Literal["DocumentEmbedder"] = Field("DocumentEmbedder")
+    cardinality: Literal["many"] = Field(
+        StepCardinality.many,
+        description="Consumes one chunk and emits one embedded chunk.",
+    )
+    model: EmbeddingModel = Field(
+        ..., description="Embedding model to use for vectorization."
+    )
+
+
+class DocumentSplitter(Step):
+    """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
+
+    type: Literal["DocumentSplitter"] = Field("DocumentSplitter")
+    cardinality: Literal["many"] = Field(
+        StepCardinality.many,
+        description="Consumes one document and emits 0...N nodes/chunks.",
+    )
+    splitter_name: str = Field(
+        "SentenceSplitter",
+        description="Name of the LlamaIndex TextSplitter class.",
+    )
+    chunk_size: int = Field(1024, description="Size of each chunk.")
+    chunk_overlap: int = Field(
+        20, description="Overlap between consecutive chunks."
+    )
+    args: dict[str, Any] = Field(
+        {},
+        description="Additional arguments specific to the chosen splitter class.",
+    )
+
+
 class Invoke(Step):
     """Invokes a tool with input and output bindings."""
 
@@ -472,6 +520,37 @@ class IndexUpsert(Sink):
     type: Literal["IndexUpsert"] = Field("IndexUpsert")
     index: Index = Field(
         ..., description="Index to upsert into (object or ID reference)."
+    )
+
+
+class DocumentSource(Source):
+    """A source of documents that will be used in retrieval augmented generation.
+    It uses LlamaIndex readers to load one or more raw Documents
+    from a specified path or system (e.g., Google Drive, web page).
+    See https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers
+    """
+
+    type: Literal["DocumentSource"] = Field("DocumentSource")
+    cardinality: Literal["many"] = Field(
+        StepCardinality.many,
+        description="A DocumentSource always emits 0...N instances of documents.",
+    )
+    reader_module: str = Field(
+        ...,
+        description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+    )
+    args: dict[str, Any] = Field(
+        {},
+        description="Reader-specific arguments to pass to the LlamaIndex constructor.",
+    )
+    auth: (
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | AWSAuthProvider
+        | OAuth2AuthProvider
+        | None
+    ) = Field(
+        None, description="AuthorizationProvider for accessing the source."
     )
 
 

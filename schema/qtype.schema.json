@@ -775,7 +775,10 @@
                   "Agent": "#/$defs/Agent",
                   "Condition": "#/$defs/Condition",
                   "Decoder": "#/$defs/Decoder",
+                  "DocToTextConverter": "#/$defs/DocToTextConverter",
                   "DocumentSearch": "#/$defs/DocumentSearch",
+                  "DocumentSource": "#/$defs/DocumentSource",
+                  "DocumentSplitter": "#/$defs/DocumentSplitter",
                   "FileSink": "#/$defs/FileSink",
                   "FileSource": "#/$defs/FileSource",
                   "Flow": "#/$defs/Flow",
@@ -799,7 +802,16 @@
                   "$ref": "#/$defs/Decoder"
                 },
                 {
+                  "$ref": "#/$defs/DocToTextConverter"
+                },
+                {
                   "$ref": "#/$defs/DocumentSearch"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSplitter"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSource"
                 },
                 {
                   "$ref": "#/$defs/FileSink"
@@ -865,7 +877,10 @@
                   "Agent": "#/$defs/Agent",
                   "Condition": "#/$defs/Condition",
                   "Decoder": "#/$defs/Decoder",
+                  "DocToTextConverter": "#/$defs/DocToTextConverter",
                   "DocumentSearch": "#/$defs/DocumentSearch",
+                  "DocumentSource": "#/$defs/DocumentSource",
+                  "DocumentSplitter": "#/$defs/DocumentSplitter",
                   "FileSink": "#/$defs/FileSink",
                   "FileSource": "#/$defs/FileSource",
                   "Flow": "#/$defs/Flow",
@@ -889,7 +904,16 @@
                   "$ref": "#/$defs/Decoder"
                 },
                 {
+                  "$ref": "#/$defs/DocToTextConverter"
+                },
+                {
                   "$ref": "#/$defs/DocumentSearch"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSplitter"
+                },
+                {
+                  "$ref": "#/$defs/DocumentSource"
                 },
                 {
                   "$ref": "#/$defs/FileSink"
@@ -1056,6 +1080,81 @@
       ],
       "title": "DecoderFormat",
       "type": "string"
+    },
+    "DocToTextConverter": {
+      "additionalProperties": false,
+      "description": "Defines a step to convert raw documents (e.g., PDF, DOCX) loaded by a DocumentSource into plain text\nusing an external tool like Docling or LlamaParse for pre-processing before chunking.\nThe input and output are both RAGDocument, but the output after processing with have content of type markdown.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DocToTextConverter",
+          "default": "DocToTextConverter",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "one",
+          "default": "one",
+          "description": "Consumes one document and produces one processed text output.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "DocToTextConverter",
+      "type": "object"
     },
     "Document": {
       "anyOf": [
@@ -1252,6 +1351,233 @@
         "index"
       ],
       "title": "DocumentSearch",
+      "type": "object"
+    },
+    "DocumentSource": {
+      "additionalProperties": false,
+      "description": "A source of documents that will be used in retrieval augmented generation.\nIt uses LlamaIndex readers to load one or more raw Documents\nfrom a specified path or system (e.g., Google Drive, web page).\nSee https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the data source.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DocumentSource",
+          "default": "DocumentSource",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "many",
+          "default": "many",
+          "description": "A DocumentSource always emits 0...N instances of documents.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "reader_module": {
+          "description": "Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+          "title": "Reader Module",
+          "type": "string"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reader-specific arguments to pass to the LlamaIndex constructor.",
+          "title": "Args"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/APIKeyAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/BearerTokenAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "$ref": "#/$defs/OAuth2AuthProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AuthorizationProvider for accessing the source.",
+          "title": "Auth"
+        }
+      },
+      "required": [
+        "id",
+        "reader_module"
+      ],
+      "title": "DocumentSource",
+      "type": "object"
+    },
+    "DocumentSplitter": {
+      "additionalProperties": false,
+      "description": "Configuration for chunking/splitting documents into embeddable nodes/chunks.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DocumentSplitter",
+          "default": "DocumentSplitter",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "many",
+          "default": "many",
+          "description": "Consumes one document and emits 0...N nodes/chunks.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Variable"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Variable where output is stored.",
+          "title": "Outputs"
+        },
+        "splitter_name": {
+          "default": "SentenceSplitter",
+          "description": "Name of the LlamaIndex TextSplitter class.",
+          "title": "Splitter Name",
+          "type": "string"
+        },
+        "chunk_size": {
+          "default": 1024,
+          "description": "Size of each chunk.",
+          "title": "Chunk Size",
+          "type": "integer"
+        },
+        "chunk_overlap": {
+          "default": 20,
+          "description": "Overlap between consecutive chunks.",
+          "title": "Chunk Overlap",
+          "type": "integer"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional arguments specific to the chosen splitter class.",
+          "title": "Args"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "DocumentSplitter",
       "type": "object"
     },
     "EmbeddingModel": {
@@ -1608,7 +1934,10 @@
                     "Agent": "#/$defs/Agent",
                     "Condition": "#/$defs/Condition",
                     "Decoder": "#/$defs/Decoder",
+                    "DocToTextConverter": "#/$defs/DocToTextConverter",
                     "DocumentSearch": "#/$defs/DocumentSearch",
+                    "DocumentSource": "#/$defs/DocumentSource",
+                    "DocumentSplitter": "#/$defs/DocumentSplitter",
                     "FileSink": "#/$defs/FileSink",
                     "FileSource": "#/$defs/FileSource",
                     "Flow": "#/$defs/Flow",
@@ -1632,7 +1961,16 @@
                     "$ref": "#/$defs/Decoder"
                   },
                   {
+                    "$ref": "#/$defs/DocToTextConverter"
+                  },
+                  {
                     "$ref": "#/$defs/DocumentSearch"
+                  },
+                  {
+                    "$ref": "#/$defs/DocumentSplitter"
+                  },
+                  {
+                    "$ref": "#/$defs/DocumentSource"
                   },
                   {
                     "$ref": "#/$defs/FileSink"

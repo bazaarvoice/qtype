@@ -3,10 +3,13 @@ from typing import Any, Tuple
 
 import pandas as pd
 
+from qtype.interpreter.batch.doc_splitter import execute_document_splitter
+from qtype.interpreter.batch.document_source import execute_document_source
 from qtype.interpreter.batch.file_sink_source import (
     execute_file_sink,
     execute_file_source,
 )
+from qtype.interpreter.batch.index_upsert import execute_index_upsert
 from qtype.interpreter.batch.sql_source import execute_sql_source
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.interpreter.batch.utils import (
@@ -18,9 +21,13 @@ from qtype.interpreter.exceptions import InterpreterError
 from qtype.semantic.model import (
     Condition,
     Decoder,
+    DocToTextConverter,
+    DocumentSource,
+    DocumentSplitter,
     FileSink,
     FileSource,
     Flow,
+    IndexUpsert,
     PromptTemplate,
     Search,
     SQLSource,
@@ -28,7 +35,14 @@ from qtype.semantic.model import (
     Tool,
 )
 
-SINGLE_WRAP_STEPS = {Decoder, Condition, PromptTemplate, Search, Tool}
+SINGLE_WRAP_STEPS = {
+    Decoder,
+    DocToTextConverter,
+    Condition,
+    PromptTemplate,
+    Search,
+    Tool,
+}
 
 
 def batch_execute_step(
@@ -57,12 +71,18 @@ def batch_execute_step(
         from qtype.interpreter.batch.flow import batch_execute_flow
 
         return batch_execute_flow(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, DocumentSource):
+        return execute_document_source(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, DocumentSplitter):
+        return execute_document_splitter(step, inputs, batch_config, **kwargs)
     elif isinstance(step, SQLSource):
         return execute_sql_source(step, inputs, batch_config, **kwargs)
     elif isinstance(step, FileSource):
         return execute_file_source(step, inputs, batch_config, **kwargs)
     elif isinstance(step, FileSink):
         return execute_file_sink(step, inputs, batch_config, **kwargs)
+    elif isinstance(step, IndexUpsert):
+        return execute_index_upsert(step, inputs, batch_config, **kwargs)
     elif type(step) in SINGLE_WRAP_STEPS:
         return batch_iterator(
             f=partial(single_step_adapter, step=step),

@@ -19,7 +19,13 @@ from qtype.dsl.base_types import (
     StepCardinality,
     StrictBaseModel,
 )
-from qtype.dsl.domain_types import ChatContent, ChatMessage, Embedding
+from qtype.dsl.domain_types import (
+    ChatContent,
+    ChatMessage,
+    Embedding,
+    RAGChunk,
+    RAGDocument,
+)
 
 
 class StructuralTypeEnum(str, Enum):
@@ -183,6 +189,8 @@ VariableType = (
     | Type[ChatMessage]
     | Type[ChatContent]
     | Type[BaseModel]
+    | Type[RAGDocument]
+    | Type[RAGChunk]
     | ListType
 )
 
@@ -805,6 +813,199 @@ class FileSink(Sink):
 #
 
 
+class DocumentSource(Source):
+    """A source of documents that will be used in retrieval augmented generation.
+    It uses LlamaIndex readers to load one or more raw Documents
+    from a specified path or system (e.g., Google Drive, web page).
+    See https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers
+    """
+
+    type: Literal["DocumentSource"] = "DocumentSource"
+    cardinality: Literal[StepCardinality.many] = Field(
+        default=StepCardinality.many,
+        description="A DocumentSource always emits 0...N instances of documents.",
+    )
+
+    reader_module: str = Field(
+        ...,
+        description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+    )
+    args: dict[str, Any] | None = Field(
+        default=None,
+        description="Reader-specific arguments to pass to the LlamaIndex constructor.",
+    )
+    auth: AuthProviderType | str | None = Field(
+        default=None,
+        description="AuthorizationProvider for accessing the source.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "DocumentSource":
+        """Set default output variable."""
+        if self.outputs is None or not len(self.outputs):
+            # Outputting a domain object representing the raw document (metadata + text)
+            self.outputs = [
+                Variable(id=f"{self.id}.output_document", type=RAGDocument)
+            ]
+
+        # Ensure there is exactly one output variable and it's RAGDocument type
+        if len(self.outputs) != 1 or (
+            isinstance(self.outputs[0], Variable)
+            and self.outputs[0].type != RAGDocument
+        ):
+            raise ValueError(
+                "DocumentSource steps must have exactly one output variable of type 'RAGDocument'."
+            )
+        return self
+
+
+class DocToTextConverter(Step):
+    """Defines a step to convert raw documents (e.g., PDF, DOCX) loaded by a DocumentSource into plain text
+    using an external tool like Docling or LlamaParse for pre-processing before chunking.
+    The input and output are both RAGDocument, but the output after processing with have content of type markdown.
+    """
+
+    type: Literal["DocToTextConverter"] = "DocToTextConverter"
+    cardinality: Literal[StepCardinality.one] = Field(
+        default=StepCardinality.one,
+        description="Consumes one document and produces one processed text output.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "DocToTextConverter":
+        """Set default input/output variables."""
+        if self.inputs is None or not len(self.inputs):
+            self.inputs = [
+                Variable(id=f"{self.id}.input_document", type=RAGDocument)
+            ]
+        # Ensure there is exactly one input variable and it's RAGDocument type
+        if len(self.inputs) != 1 or (
+            isinstance(self.inputs[0], Variable)
+            and self.inputs[0].type != RAGDocument
+        ):
+            raise ValueError(
+                "DocToTextConverter steps must have exactly one input variable of type 'RAGDocument'."
+            )
+
+        if self.outputs is None or not len(self.outputs):
+            self.outputs = [
+                Variable(
+                    id=f"{self.id}.output_document",
+                    type=RAGDocument,
+                )
+            ]
+
+        # Ensure there is exactly one output variable and it's RAGDocument type
+        if len(self.outputs) != 1 or (
+            isinstance(self.outputs[0], Variable)
+            and self.outputs[0].type != RAGDocument
+        ):
+            raise ValueError(
+                "DocumentSource steps must have exactly one output variable of type 'RAGDocument'."
+            )
+        return self
+
+
+class DocumentSplitter(Step):
+    """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
+
+    type: Literal["DocumentSplitter"] = "DocumentSplitter"
+    cardinality: Literal[StepCardinality.many] = Field(
+        default=StepCardinality.many,
+        description="Consumes one document and emits 0...N nodes/chunks.",
+    )
+
+    splitter_name: str = Field(
+        default="SentenceSplitter",
+        description="Name of the LlamaIndex TextSplitter class.",
+    )
+    chunk_size: int = Field(default=1024, description="Size of each chunk.")
+    chunk_overlap: int = Field(
+        default=20, description="Overlap between consecutive chunks."
+    )
+    args: dict[str, Any] | None = Field(
+        default=None,
+        description="Additional arguments specific to the chosen splitter class.",
+    )
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "DocumentSplitter":
+        if not self.inputs or not len(self.inputs):
+            self.inputs = [
+                Variable(id=f"{self.id}.input_doc", type=RAGDocument)
+            ]
+        # Ensure there is exactly one input variable and it's RAGDocument type
+        if len(self.inputs) != 1 or (
+            isinstance(self.inputs[0], Variable)
+            and self.inputs[0].type != RAGDocument
+        ):
+            raise ValueError(
+                "DocumentSplitter steps must have exactly one input variable of type 'RAGDocument'."
+            )
+
+        if self.outputs is None or not len(self.outputs):
+            # Output uses the domain-level `Embedding` type, which represents a vectorizable chunk.
+            self.outputs = [
+                Variable(id=f"{self.id}.output_chunk", type=RAGChunk)
+            ]
+
+        # Ensure there is exactly one output variable and it's RAGChunk type
+        if len(self.outputs) != 1 or (
+            isinstance(self.outputs[0], Variable)
+            and self.outputs[0].type != RAGChunk
+        ):
+            raise ValueError(
+                "DocumentSplitter steps must have exactly one output variable of type 'RAGChunk'."
+            )
+
+        return self
+
+
+class DocumentEmbedder(Step):
+    """Embeds document chunks using a specified embedding model."""
+
+    type: Literal["DocumentEmbedder"] = "DocumentEmbedder"
+    cardinality: Literal[StepCardinality.many] = Field(
+        default=StepCardinality.many,
+        description="Consumes one chunk and emits one embedded chunk.",
+    )
+    model: EmbeddingModel | str = Field(
+        ..., description="Embedding model to use for vectorization."
+    )
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "DocumentEmbedder":
+        if not self.inputs or not len(self.inputs):
+            self.inputs = [
+                Variable(id=f"{self.id}.input_chunk", type=RAGChunk)
+            ]
+        # Ensure there is exactly one input variable and it's RAGChunk type
+        if len(self.inputs) != 1 or (
+            isinstance(self.inputs[0], Variable)
+            and self.inputs[0].type != RAGChunk
+        ):
+            raise ValueError(
+                "DocumentEmbedder steps must have exactly one input variable of type 'RAGChunk'."
+            )
+
+        if self.outputs is None or not len(self.outputs):
+            # Output uses the domain-level `Embedding` type, which represents a vectorizable chunk.
+            self.outputs = [
+                Variable(id=f"{self.id}.output_chunk", type=RAGChunk)
+            ]
+
+        # Ensure there is exactly one output variable and it's RAGChunk type
+        if len(self.outputs) != 1 or (
+            isinstance(self.outputs[0], Variable)
+            and self.outputs[0].type != RAGChunk
+        ):
+            raise ValueError(
+                "DocumentEmbedder steps must have exactly one output variable of type 'RAGChunk'."
+            )
+
+        return self
+
+
 class Index(StrictBaseModel, ABC):
     """Base class for searchable indexes that can be queried by search steps."""
 
@@ -825,6 +1026,31 @@ class IndexUpsert(Sink):
     index: IndexType | str = Field(
         ..., description="Index to upsert into (object or ID reference)."
     )
+
+    @model_validator(mode="after")
+    def set_default_outputs(self) -> "IndexUpsert":
+        # Ensure there is only one input variable and it's either a RAGChunk (for vector indexes) or a RAGDocument (for document indexes)
+        if not self.inputs or len(self.inputs) != 1:
+            raise ValueError(
+                "IndexUpsert must have exactly one input variable."
+            )
+        if isinstance(self.index, VectorIndex):
+            if not (
+                isinstance(self.inputs[0], Variable)
+                and self.inputs[0].type == RAGChunk
+            ):
+                raise ValueError(
+                    "IndexUpsert input variable must be of type 'RAGChunk' for vector indexes."
+                )
+        elif isinstance(self.index, DocumentIndex):
+            if not (
+                isinstance(self.inputs[0], Variable)
+                and self.inputs[0].type == RAGDocument
+            ):
+                raise ValueError(
+                    "IndexUpsert input variable must be of type 'RAGDocument' for document indexes."
+                )
+        return self
 
 
 class VectorIndex(Index):
@@ -903,6 +1129,7 @@ ToolType = Union[
 
 # Create a union type for all source types
 SourceType = Union[
+    DocumentSource,
     FileSource,
     SQLSource,
 ]
@@ -921,7 +1148,10 @@ StepType = Annotated[
         Agent,
         Condition,
         Decoder,
+        DocToTextConverter,
         DocumentSearch,
+        DocumentSplitter,
+        DocumentSource,
         FileSink,
         FileSource,
         Flow,
