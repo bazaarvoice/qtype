@@ -347,6 +347,19 @@ class DocToTextConverter(Step):
     )
 
 
+class DocumentEmbedder(Step):
+    """Embeds document chunks using a specified embedding model."""
+
+    type: Literal["DocumentEmbedder"] = Field("DocumentEmbedder")
+    cardinality: Literal["StepCardinality.many"] = Field(
+        StepCardinality.many,
+        description="Consumes one chunk and emits one embedded chunk.",
+    )
+    model: EmbeddingModel = Field(
+        ..., description="Embedding model to use for vectorization."
+    )
+
+
 class DocumentSplitter(Step):
     """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
 

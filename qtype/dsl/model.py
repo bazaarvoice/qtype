@@ -961,6 +961,51 @@ class DocumentSplitter(Step):
         return self
 
 
+class DocumentEmbedder(Step):
+    """Embeds document chunks using a specified embedding model."""
+
+    type: Literal["DocumentEmbedder"] = "DocumentEmbedder"
+    cardinality: Literal[StepCardinality.many] = Field(
+        default=StepCardinality.many,
+        description="Consumes one chunk and emits one embedded chunk.",
+    )
+    model: EmbeddingModel | str = Field(
+        ..., description="Embedding model to use for vectorization."
+    )
+
+    @model_validator(mode="after")
+    def set_default_inputs_outputs(self) -> "DocumentEmbedder":
+        if not self.inputs or not len(self.inputs):
+            self.inputs = [
+                Variable(id=f"{self.id}.input_chunk", type=RAGChunk)
+            ]
+        # Ensure there is exactly one input variable and it's RAGChunk type
+        if len(self.inputs) != 1 or (
+            isinstance(self.inputs[0], Variable)
+            and self.inputs[0].type != RAGChunk
+        ):
+            raise ValueError(
+                "DocumentEmbedder steps must have exactly one input variable of type 'RAGChunk'."
+            )
+
+        if self.outputs is None or not len(self.outputs):
+            # Output uses the domain-level `Embedding` type, which represents a vectorizable chunk.
+            self.outputs = [
+                Variable(id=f"{self.id}.output_chunk", type=RAGChunk)
+            ]
+
+        # Ensure there is exactly one output variable and it's RAGChunk type
+        if len(self.outputs) != 1 or (
+            isinstance(self.outputs[0], Variable)
+            and self.outputs[0].type != RAGChunk
+        ):
+            raise ValueError(
+                "DocumentEmbedder steps must have exactly one output variable of type 'RAGChunk'."
+            )
+
+        return self
+
+
 class Index(StrictBaseModel, ABC):
     """Base class for searchable indexes that can be queried by search steps."""
 

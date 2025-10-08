@@ -8,6 +8,7 @@ from qtype.interpreter.steps import (
     agent,
     condition,
     decoder,
+    document_embedder,
     llm_inference,
     prompt_template,
     search,
@@ -17,6 +18,8 @@ from qtype.semantic.model import (
     Agent,
     Condition,
     Decoder,
+    DocToTextConverter,
+    DocumentEmbedder,
     Flow,
     Invoke,
     LLMInference,
@@ -25,6 +28,8 @@ from qtype.semantic.model import (
     Step,
     Variable,
 )
+
+from .steps.doc_to_text import execute_doc_to_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +55,10 @@ def execute_step(step: Step, **kwargs: dict[str, Any]) -> list[Variable]:
         return condition.execute(condition=step, **kwargs)
     elif isinstance(step, Decoder):
         return decoder.execute(step=step, **kwargs)  # type: ignore[arg-type]
+    elif isinstance(step, DocToTextConverter):
+        return execute_doc_to_text(converter=step, **kwargs)  # type: ignore[arg-type]
+    elif isinstance(step, DocumentEmbedder):
+        return document_embedder.execute(embedder=step, **kwargs)  # type: ignore[arg-type]
     elif isinstance(step, Flow):
         from .flow import execute_flow
 

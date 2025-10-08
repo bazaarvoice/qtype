@@ -71,6 +71,10 @@ class RAGDocument(StrictBaseModel):
     metadata: dict[str, Any] | None = Field(
         None, description="Optional metadata associated with the document."
     )
+    type: PrimitiveTypeEnum = Field(
+        ...,
+        description="The type of the document content (e.g., 'text', 'image').",
+    )
 
 
 class RAGChunk(StrictBaseModel):
