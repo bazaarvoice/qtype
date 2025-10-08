@@ -36,25 +36,22 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     """Convert a qtype Model to a LlamaIndex Model."""
 
-    print(f"Converting model: {model}")
-
     if model.provider == "aws-bedrock":
         from llama_index.llms.bedrock_converse import (
             BedrockConverse,
         )
+
         if model.auth:
             with aws(model.auth) as session:
-                brv: BaseLLM = BedrockConverse(
-                    model=model.model_id if model.model_id else model.id,
-                    system_prompt=system_prompt,
-                    botocore_session=session._session,
-                    **(model.inference_params or {}),
-                )
-                return brv
+                session = session._session
+        else:
+            session = None
+  
         brv: BaseLLM = BedrockConverse(
-        model=model.model_id if model.model_id else model.id,
-        system_prompt=system_prompt,
-        **(model.inference_params if model.inference_params else {}),
+            botocore_session=session,
+            model=model.model_id if model.model_id else model.id,
+            system_prompt=system_prompt,
+            **(model.inference_params if model.inference_params else {}),
         )
         return brv
     elif model.provider == "openai":
