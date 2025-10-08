@@ -5,7 +5,7 @@ from pathlib import Path
 from qtype import loader
 from qtype.semantic import model as ir
 
-TEST_DIR = Path(__file__).parent / "specs"
+TEST_DIR = Path(__file__).parent.parent / "specs"
 
 
 def test_resolver_full_application() -> None:

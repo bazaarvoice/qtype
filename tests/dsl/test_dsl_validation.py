@@ -9,7 +9,7 @@ import pytest
 from qtype import dsl, loader
 from qtype.dsl import validator
 
-TEST_DIR = Path(__file__).parent / "specs"
+TEST_DIR = Path(__file__).parent.parent / "specs"
 
 
 def run_validation(yaml_path: Path) -> dsl.Application:

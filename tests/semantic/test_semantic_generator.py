@@ -42,7 +42,10 @@ def test_generate_semantic_model_matches_existing():
 
         # Read the existing semantic model content
         existing_model_path = (
-            Path(__file__).parent.parent / "qtype" / "semantic" / "model.py"
+            Path(__file__).parent.parent.parent
+            / "qtype"
+            / "semantic"
+            / "model.py"
         )
         assert existing_model_path.exists(), (
             "Existing semantic model file not found"
