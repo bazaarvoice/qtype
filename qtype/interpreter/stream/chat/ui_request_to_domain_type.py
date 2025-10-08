@@ -3,10 +3,7 @@ from __future__ import annotations
 from qtype.dsl.base_types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
 from qtype.interpreter.stream.chat.file_conversions import file_to_content
-from qtype.interpreter.stream.chat.vercel import (
-    ChatRequest,
-    UIMessage,
-)
+from qtype.interpreter.stream.chat.vercel import ChatRequest, UIMessage
 
 
 def ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:

@@ -341,7 +341,7 @@ class DocToTextConverter(Step):
     """
 
     type: Literal["DocToTextConverter"] = Field("DocToTextConverter")
-    cardinality: Literal["StepCardinality.one"] = Field(
+    cardinality: Literal["one"] = Field(
         StepCardinality.one,
         description="Consumes one document and produces one processed text output.",
     )
@@ -351,7 +351,7 @@ class DocumentEmbedder(Step):
     """Embeds document chunks using a specified embedding model."""
 
     type: Literal["DocumentEmbedder"] = Field("DocumentEmbedder")
-    cardinality: Literal["StepCardinality.many"] = Field(
+    cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="Consumes one chunk and emits one embedded chunk.",
     )
@@ -364,7 +364,7 @@ class DocumentSplitter(Step):
     """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
 
     type: Literal["DocumentSplitter"] = Field("DocumentSplitter")
-    cardinality: Literal["StepCardinality.many"] = Field(
+    cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="Consumes one document and emits 0...N nodes/chunks.",
     )
@@ -439,7 +439,7 @@ class Sink(Step):
     """Base class for data sinks"""
 
     id: str = Field(..., description="Unique ID of the data sink.")
-    cardinality: Literal["StepCardinality.one"] = Field(
+    cardinality: Literal["one"] = Field(
         StepCardinality.one,
         description="Flows always emit exactly one instance of the outputs.",
     )
@@ -449,7 +449,7 @@ class Source(Step):
     """Base class for data sources"""
 
     id: str = Field(..., description="Unique ID of the data source.")
-    cardinality: Literal["StepCardinality.many"] = Field(
+    cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="Sources always emit 0...N instances of the outputs.",
     )
@@ -531,7 +531,7 @@ class DocumentSource(Source):
     """
 
     type: Literal["DocumentSource"] = Field("DocumentSource")
-    cardinality: Literal["StepCardinality.many"] = Field(
+    cardinality: Literal["many"] = Field(
         StepCardinality.many,
         description="A DocumentSource always emits 0...N instances of documents.",
     )

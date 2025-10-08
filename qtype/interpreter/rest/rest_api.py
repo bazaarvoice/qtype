@@ -125,6 +125,7 @@ def create_rest_flow_endpoint(app: FastAPI, flow: Flow) -> None:
         f"/flows/{flow_id}/rest",
         tags=["flow"],
         summary=f"Invoke {flow_id} flow (REST)",
-        description=flow.description or "Handle a REST request for the specific flow.",
+        description=flow.description
+        or "Handle a REST request for the specific flow.",
         response_model=ResponseModel,
     )(execute_flow_endpoint)
