@@ -1,0 +1,11 @@
+- id: user_input
+  type: text
+
+- id: processed_data
+  type: text
+
+- id: result_count
+  type: int
+
+- id: is_valid
+  type: boolean

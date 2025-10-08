@@ -1,0 +1,12 @@
+- id: gpt4_model
+  type: Model
+  provider: openai
+  model_id: gpt-4
+
+- id: embedding_model
+  type: EmbeddingModel
+  provider: openai
+  model_id: text-embedding-3-small
+  dimensions: 1536
+  inference_params:
+    batch_size: 100

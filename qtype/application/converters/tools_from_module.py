@@ -5,7 +5,7 @@ from typing import Any, Type, Union, get_args, get_origin
 from pydantic import BaseModel
 
 from qtype.application.converters.types import PYTHON_TYPE_TO_PRIMITIVE_TYPE
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     CustomType,
     ListType,
@@ -159,7 +159,7 @@ def _create_tool_from_function(
         module_path=func_info["module"],
         function_name=func_name,
         description=description,
-        inputs=inputs if inputs else None,
+        inputs=inputs,
         outputs=outputs,
     )
 

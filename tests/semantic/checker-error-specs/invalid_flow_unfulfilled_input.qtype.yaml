@@ -1,0 +1,37 @@
+# Flow step references an input variable that is not fulfilled
+id: test_app
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+flows:
+  - id: test_flow
+    variables:
+      - id: user_input
+        type: text
+      - id: prompt_output
+        type: text
+      - id: llm_output
+        type: text
+      - id: unfulfilled_var
+        type: text
+    inputs:
+      - user_input
+    outputs:
+      - llm_output
+    steps:
+      - id: prompt_step
+        type: PromptTemplate
+        template: "Hello {user_input}"
+        inputs:
+          - user_input
+        outputs:
+          - prompt_output
+      - id: llm_step
+        type: LLMInference
+        model: test_model
+        inputs:
+          - prompt_output
+          - unfulfilled_var  # This variable is never fulfilled
+        outputs:
+          - llm_output

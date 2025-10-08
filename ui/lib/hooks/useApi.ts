@@ -12,6 +12,36 @@ import useSWR from "swr";
 import { apiClient, fetchOpenApiSpec, checkApiHealth } from "../apiClient";
 
 import type { OpenAPISpec, ApiClientError } from "../apiClient";
+import type { FlowMetadata } from "@/types";
+
+/**
+ * Hook for fetching flow metadata from /flows endpoint
+ *
+ * @returns SWR response with flows data, loading state, and error
+ */
+export function useFlows() {
+  const { data, error, isLoading, mutate } = useSWR<
+    FlowMetadata[],
+    ApiClientError
+  >("/flows", () => apiClient.getFlows(), {
+    // Revalidate every 5 minutes in case flows change
+    refreshInterval: 5 * 60 * 1000,
+    // Don't revalidate on window focus for flows (they change infrequently)
+    revalidateOnFocus: false,
+    // Retry failed requests up to 3 times
+    errorRetryCount: 3,
+    // Use exponential backoff for retries
+    errorRetryInterval: 5000,
+  });
+
+  return {
+    flows: data,
+    isLoading,
+    error,
+    refresh: mutate,
+  };
+}
+
 export function useOpenApiSpec() {
   const { data, error, isLoading, mutate } = useSWR<
     OpenAPISpec,

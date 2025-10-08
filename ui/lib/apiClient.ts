@@ -180,12 +180,19 @@ export class ApiClient {
   }
 
   /**
+   * Fetches flow metadata from the /flows endpoint
+   */
+  async getFlows(): Promise<import("@/types").FlowMetadata[]> {
+    return this.get<import("@/types").FlowMetadata[]>("/flows");
+  }
+
+  /**
    * Health check method to verify API connectivity
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     try {
-      // Try to fetch the OpenAPI spec as a basic health check
-      await this.getOpenApiSpec();
+      // Try to fetch the flows metadata as a basic health check
+      await this.getFlows();
       return {
         status: "healthy",
         timestamp: new Date().toISOString(),

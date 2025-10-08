@@ -1,0 +1,17 @@
+id: file_writer_input_test
+description: Test FileWriter with path from input variable
+flows:
+  - type: Flow
+    id: write_file_flow
+    variables:
+      - id: data
+        type: text
+    inputs:
+      - data
+    steps:
+      - id: write_data
+        type: FileWriter
+        path: 
+          uri: s3://my-bucket/output.json
+        inputs:
+          - data

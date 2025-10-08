@@ -9,13 +9,11 @@ import pandas as pd
 from pydantic import BaseModel
 
 from qtype.base.logging import get_logger
-from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
-from qtype.dsl.base_types import StepCardinality
+from qtype.base.types import CustomTypeRegistry, PathLike
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
-from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
-from qtype.semantic.model import Variable
+from qtype.semantic.model import DocumentType as SemanticDocumentType
 
 logger = get_logger("application.facade")
 
@@ -30,13 +28,13 @@ class QTypeFacade:
 
     def load_dsl_document(
         self, path: PathLike
-    ) -> tuple[DocumentRootType, CustomTypeRegistry]:
-        from qtype.loader import load_document
+    ) -> tuple[DocumentType, CustomTypeRegistry]:
+        from qtype.dsl.loader import load_document
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
-    def telemetry(self, spec: SemanticApplication) -> None:
-        if spec.telemetry:
+    def telemetry(self, spec: SemanticDocumentType) -> None:
+        if isinstance(spec, SemanticApplication) and spec.telemetry:
             logger.info(
                 f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
             )
@@ -47,29 +45,40 @@ class QTypeFacade:
 
     def load_semantic_model(
         self, path: PathLike
-    ) -> tuple[SemanticApplication, CustomTypeRegistry]:
+    ) -> tuple[SemanticDocumentType, CustomTypeRegistry]:
         """Load a document and return the resolved semantic model."""
-        from qtype.loader import load
+        from qtype.semantic.loader import load
 
         content = Path(path).read_text(encoding="utf-8")
         return load(content)
 
-    def execute_workflow(
+    async def execute_workflow(
         self,
         path: PathLike,
         inputs: dict | pd.DataFrame,
         flow_name: str | None = None,
-        batch_config: BatchConfig | None = None,
         **kwargs: Any,
-    ) -> pd.DataFrame | list[Variable]:
-        """Execute a complete workflow from document to results."""
+    ) -> pd.DataFrame:
+        """
+        Execute a complete workflow from document to results.
+
+        Args:
+            path: Path to the QType specification file
+            inputs: Dictionary of input values or DataFrame for batch
+            flow_name: Optional name of flow to execute
+            **kwargs: Additional dependencies for execution
+
+        Returns:
+            DataFrame with results (one row per input)
+        """
         logger.info(f"Executing workflow from {path}")
 
         # Load the semantic application
         semantic_model, type_registry = self.load_semantic_model(path)
+        assert isinstance(semantic_model, SemanticApplication)
         self.telemetry(semantic_model)
 
-        # Find the flow to execute (inlined from _find_flow)
+        # Find the flow to execute
         if flow_name:
             target_flow = None
             for flow in semantic_model.flows:
@@ -83,34 +92,48 @@ class QTypeFacade:
                 target_flow = semantic_model.flows[0]
             else:
                 raise ValueError("No flows found in application")
-        if target_flow.cardinality == StepCardinality.many:
-            if isinstance(inputs, dict):
-                inputs = pd.DataFrame([inputs])
-            if not isinstance(inputs, pd.DataFrame):
-                raise ValueError(
-                    "Input must be a DataFrame for flows with 'many' cardinality"
-                )
-            from qtype.interpreter.batch.flow import batch_execute_flow
 
-            batch_config = batch_config or BatchConfig()
-            results, errors = batch_execute_flow(
-                target_flow, inputs, batch_config, **kwargs
-            )  # type: ignore
-            return results
+        # Convert inputs to DataFrame (normalize single dict to 1-row DataFrame)
+        if isinstance(inputs, dict):
+            input_df = pd.DataFrame([inputs])
+        elif isinstance(inputs, pd.DataFrame):
+            input_df = inputs
         else:
-            from qtype.interpreter.flow import execute_flow
+            raise ValueError(
+                f"Inputs must be dict or DataFrame, got {type(inputs)}"
+            )
 
-            for var in target_flow.inputs:
-                if var.id in inputs:
-                    var.value = inputs[var.id]
-            args = {**kwargs, **inputs}
-            return execute_flow(target_flow, **args)
+        # Create session
+        from qtype.interpreter.converters import (
+            dataframe_to_flow_messages,
+            flow_messages_to_dataframe,
+        )
+        from qtype.interpreter.types import Session
+
+        session = Session(
+            session_id=kwargs.pop("session_id", "default"),
+            conversation_history=kwargs.pop("conversation_history", []),
+        )
+
+        # Convert DataFrame to FlowMessages
+        initial_messages = dataframe_to_flow_messages(input_df, session)
+
+        # Execute the flow
+        from qtype.interpreter.flow import run_flow
+
+        results = await run_flow(target_flow, initial_messages, **kwargs)
+
+        # Convert results back to DataFrame
+        results_df = flow_messages_to_dataframe(results, target_flow)
+
+        return results_df
 
     def visualize_application(self, path: PathLike) -> str:
         """Visualize an application as Mermaid diagram."""
         from qtype.semantic.visualize import visualize_application
 
         semantic_model, _ = self.load_semantic_model(path)
+        assert isinstance(semantic_model, SemanticApplication)
         return visualize_application(semantic_model)
 
     def convert_document(self, document: DocumentType) -> str:

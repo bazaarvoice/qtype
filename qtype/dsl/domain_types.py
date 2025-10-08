@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import Field
 
-from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
+from qtype.base.types import PrimitiveTypeEnum, StrictBaseModel
 
 
 class Embedding(StrictBaseModel):
@@ -92,4 +92,18 @@ class RAGChunk(StrictBaseModel):
     )
     metadata: dict[str, Any] | None = Field(
         None, description="Optional metadata associated with the chunk."
+    )
+
+
+class AggregateStats(StrictBaseModel):
+    """A standard, built-in representation of aggregate statistics."""
+
+    num_successful: int = Field(
+        ..., description="The count of successful messages processed."
+    )
+    num_failed: int = Field(
+        ..., description="The count of failed messages processed."
+    )
+    num_total: int = Field(
+        ..., description="The total count of messages processed."
     )

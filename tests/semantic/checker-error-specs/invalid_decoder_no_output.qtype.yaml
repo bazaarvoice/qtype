@@ -1,0 +1,16 @@
+# Decoder must have at least one output - no outputs
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: text_input
+        type: text
+    inputs:
+      - text_input
+    steps:
+      - id: decoder1
+        type: Decoder
+        format: json
+        inputs:
+          - text_input
+        outputs: []

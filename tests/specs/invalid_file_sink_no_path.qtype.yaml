@@ -1,11 +1,15 @@
 id: invalid_file_sink_test
 description: Test FileSink with no path field or input variable - should fail validation
 flows:
-  - id: write_file_flow
+  - type: Flow
+    id: write_file_flow
+    variables:
+      - id: data
+        type: text
+    inputs:
+      - data
     steps:
       - id: write_data
-        type: FileSource
-        path: null
+        type: FileWriter
         inputs:
-          - id: data
-            type: text
+          - data

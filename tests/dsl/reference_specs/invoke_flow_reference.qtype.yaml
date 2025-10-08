@@ -1,0 +1,20 @@
+# Test spec for InvokeFlow.flow reference resolution
+
+id: test_invoke_flow
+
+flows:
+  - id: target_flow
+    type: Flow
+    steps:
+      - id: dummy_step
+        type: PromptTemplate
+        template: "Test"
+
+  - id: main_flow
+    type: Flow
+    steps:
+      - id: invoke_step
+        type: InvokeFlow
+        flow: target_flow  # String should be resolved to Reference[Flow]
+        input_bindings: {}
+        output_bindings: {}

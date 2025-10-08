@@ -1,0 +1,14 @@
+# Flow must have at least one step - no steps
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: input
+        type: text
+      - id: output
+        type: text
+    inputs:
+      - input
+    outputs:
+      - output
+    steps: []

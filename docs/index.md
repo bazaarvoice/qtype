@@ -13,35 +13,45 @@ pip install qtype[interpreter]
 Create a file `hello_world.qtype.yaml` that answers a question:
 ```yaml
 id: hello_world
+
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+
 flows:
-  - id: chat_example
+  - type: Flow
+    id: chat_example
     description: A simple chat flow with OpenAI
-    mode: Chat
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response
     steps:
-      - id: llm_inference_step
-        model: 
-          id: gpt-4
-          provider: openai
-          auth: 
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
-        system_message: |
-          You are a helpful assistant.
+      - type: LLMInference
+        id: llm_inference_step
+        model: gpt-4
+        system_message: "You are a helpful assistant."
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - user_message
         outputs:
-          - id: response
-            type: ChatMessage
+          - response
 ```
 
-Put your openai api key into your `.env` file:
+Put your OpenAI API key into your `.env` file:
 ```
-echo "OPENAI_KEY=sk...." >> .env
+echo "OPENAI_API_KEY=sk-..." >> .env
 ```
 
-Validate it's semantic correctness:
+Validate its semantic correctness:
 
 ```bash
 qtype validate hello_world.qtype.yaml 
@@ -59,7 +69,7 @@ INFO: ✅ Semantic validation successful
 Launch the interpreter:
 
 ```bash
-qtype serve hello_world.qtype.yaml`
+qtype serve hello_world.qtype.yaml
 ```
 
 

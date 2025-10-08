@@ -1,50 +1,109 @@
 # Flow
 
-A flow defines a sequence of [Steps](Steps/index.md) that work together to accomplish a specific task or workflow. Flows are the primary orchestration mechanism in QType, allowing you to chain multiple operations such as LLM inference, tool calls, data processing, and conditional logic into coherent, reusable workflows.
+A flow defines a sequence of [Steps](Steps/index.md) that work together to accomplish a specific task or workflow. Flows are the primary orchestration mechanism in QType, allowing you to chain multiple operations such as LLM inference, tool calls, and data processing into coherent, reusable workflows.
 
-Flows themselves are steps, meaning they can be nested within other flows to create complex, hierarchical workflows. This composability allows you to build modular applications where common patterns can be extracted into reusable flow components.
+Flows can be invoked from other flows using the [InvokeFlow](../components/InvokeFlow.md) step, enabling composability where common patterns can be extracted into reusable flow components.
+
+## Key Principles
+
+### Explicit Variable Declarations
+
+All variables used within a flow **must be declared** in the `variables` section of the flow. This creates a clear "data contract" for the flow, making it easier to understand what data flows through each step.
+
+```yaml
+flows:
+  - type: Flow
+    id: my_flow
+    variables:
+      - id: user_query
+        type: text
+      - id: response
+        type: text
+    # ... steps reference these variables
+```
+
+### Reference by ID
+
+Steps reference variables by their ID (as strings). The variable must be declared in the flow's `variables` section.
+
+```yaml
+steps:
+  - id: my_step
+    type: LLMInference
+    inputs:
+      - user_query  # References the variable declared above
+    outputs:
+      - response
+```
 
 ## Rules and Behaviors
 
 - **Unique IDs**: Each flow must have a unique `id` within the application. Duplicate flow IDs will result in a validation error.
-- **Required Steps**: Flows must contain at least one step. Empty flows will result in a `FlowHasNoStepsError` validation error.
-- **Input Inference**: If `inputs` are not explicitly defined, they are automatically inferred from the inputs of the first step in the flow.
-- **Output Inference**: If `outputs` are not explicitly defined, they are automatically inferred from the outputs of the last step in the flow.
+- **Required Steps**: Flows must contain at least one step. Empty flows will result in a validation error.
+- **Required Variables**: All variables used in step inputs/outputs must be declared in the flow's `variables` section.
+- **Input Specification**: The `inputs` field lists which variables serve as the flow's inputs (by referencing their IDs).
+- **Output Specification**: The `outputs` field lists which variables serve as the flow's outputs (by referencing their IDs).
 - **Step References**: Steps can be referenced by ID (string) or embedded as inline objects within the flow definition.
 - **Sequential Execution**: Steps within a flow are executed in the order they appear in the `steps` list.
 
 --8<-- "components/Flow.md"
 
-## Related Concepts
+## Flow Interface
 
-Flows orchestrate [Step](Steps/index.md) components to create workflows. Any step type can be included in a flow, including other flows for nested workflows.
+Flows define their interaction pattern using the `interface` field, which specifies how the flow should be hosted and what kind of user experience it provides.
 
-# Flow Modes
+### Complete Flows
 
-## Complete Flows
+Complete flows (`type: Complete`) are stateless executions that accept input values and produce output values. Think of them like data pipelines or functions.
 
-The default mode for a flow is 'Complete'. These are stateless executions -- think of them like data pipelines. They will accept input values and produce output values.
+```yaml
+flows:
+  - type: Flow
+    id: my_flow
+    interface:
+      type: Complete
+    variables:
+      - id: input_data
+        type: text
+      - id: output_data
+        type: text
+    inputs:
+      - input_data
+    outputs:
+      - output_data
+```
 
+**Interpreter Behavior**: The interpreter hosts each complete flow as an HTTP endpoint where you can POST the input values and receive the output values.
 
-### Intepreter Behavior
+### Conversational Flows
 
-The interpreter hosts each complete flow as an endpoint where you can post the input values and it returns the output values of your declared output variables.
+Conversational flows (`type: Conversational`) enable interactive, multi-turn conversations. They have specific requirements:
 
-## Chat Flows
+**Requirements:**
+* Must have at least one input variable of type `ChatMessage`
+* Must have exactly one output variable of type `ChatMessage`
 
-Chat flows are a more restrictive, but defining one enables unique behavior in the interpreter.
+**Session Management**: The `interface.session_inputs` field allows you to specify which variables should persist across conversation turns:
 
-### Restrictions:
-* Chat flows must have at least one input variable of type `ChatMessage`.
-* Chat flows may only have one output variable and it must be of type `ChatMessage`.
+```yaml
+flows:
+  - type: Flow
+    id: doc_chat_flow
+    interface:
+      type: Conversational
+      session_inputs:
+        - document_content  # This variable persists across turns
+    variables:
+      - id: document_content
+        type: text
+      - id: user_message
+        type: ChatMessage
+      - id: ai_response
+        type: ChatMessage
+```
 
-`qtype validate` will check for these conditions.
-
-### Intepreter Behavior
-The interpreter hosts each chat flow as an endpoint that ends in `/chat`.
-
-The endpoint supports Vercel's [ai-sdk](https://ai-sdk.dev/).
-
-The UI will detect the chat flows, and surface a conversation experience.
-
-Chat flows can be _stateful_ or _stateless_. If the llm inference step in the chat flow has [Memory](memory.md), then it is stateful. Otherwise, it is stateless. In both casses the UI sends the entire conversation to the api with each new message, but the stateful behavior will truncate it based on the memory settings.
+**Interpreter Behavior**: 
+- The interpreter hosts conversational flows as endpoints ending in `/chat`
+- Supports Vercel's [ai-sdk](https://ai-sdk.dev/)
+- The UI automatically detects conversational flows and provides a chat interface
+- Conversational flows can be stateful or stateless depending on whether LLM inference steps use [Memory](memory.md)

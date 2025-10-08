@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from .base_types import *  # noqa: F403
-from .domain_types import *  # noqa: F403
-from .model import *  # noqa: F403
+# Import all public symbols from submodules
+# The star import is intentional here - it's controlled by __all__ in each module
+from qtype.base.types import Reference  # noqa: F401
 
-# Note: Validation logic has been moved to qtype.semantic package
-# to avoid circular dependencies
+from .domain_types import *  # noqa: F403, F401
+from .model import *  # noqa: F403, F401

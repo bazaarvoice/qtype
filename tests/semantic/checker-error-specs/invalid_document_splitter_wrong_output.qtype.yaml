@@ -1,0 +1,21 @@
+# DocumentSplitter must have exactly one RAGChunk output - wrong type
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: doc_input
+        type: RAGDocument
+      - id: result
+        type: RAGDocument
+    inputs:
+      - doc_input
+    outputs:
+      - result
+    steps:
+      - id: splitter1
+        type: DocumentSplitter
+        chunk_size: 1000
+        inputs:
+          - doc_input
+        outputs:
+          - result

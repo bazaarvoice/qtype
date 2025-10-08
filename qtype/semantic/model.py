@@ -13,11 +13,18 @@ Types are ignored since they should reflect dsl directly, which is type checked.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from functools import partial
+from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
-# Import enums and type aliases from DSL
+# Import enums, mixins, and type aliases
+from qtype.base.types import (  # noqa: F401
+    BatchableStepMixin,
+    BatchConfig,
+    ConcurrencyConfig,
+    ConcurrentStepMixin,
+)
 from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (  # noqa: F401
     CustomType,
@@ -25,7 +32,6 @@ from qtype.dsl.model import (  # noqa: F401
     ListType,
     PrimitiveTypeEnum,
     StepCardinality,
-    StructuralTypeEnum,
     ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
@@ -61,10 +67,31 @@ class Tool(ImmutableModel):
         ..., description="Description of what the tool does."
     )
     inputs: dict[str, ToolParameter] = Field(
-        {}, description="Input parameters required by this tool."
+        default_factory=dict,
+        description="Input parameters required by this tool.",
     )
     outputs: dict[str, ToolParameter] = Field(
-        {}, description="Output parameters produced by this tool."
+        default_factory=dict,
+        description="Output parameters produced by this tool.",
+    )
+
+
+class Step(BaseModel):
+    """Base class for components that take inputs and produce outputs."""
+
+    id: str = Field(..., description="Unique ID of this component.")
+    type: str = Field(..., description="Type of the step component.")
+    cardinality: StepCardinality = Field(
+        StepCardinality.one,
+        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
+    )
+    inputs: list[Variable] = Field(
+        default_factory=list,
+        description="References to the variables required by this step.",
+    )
+    outputs: list[Variable] = Field(
+        default_factory=list,
+        description="References to the variables where output is stored.",
     )
 
 
@@ -84,54 +111,48 @@ class Application(BaseModel):
         None, description="Optional description of the application."
     )
     memories: list[Memory] = Field(
-        [], description="List of memory definitions used in this application."
+        default_factory=list,
+        description="List of memory definitions used in this application.",
     )
     models: list[Model] = Field(
-        [], description="List of models used in this application."
+        default_factory=list,
+        description="List of models used in this application.",
     )
     types: list[CustomType] = Field(
-        [], description="List of custom types defined in this application."
-    )
-    variables: list[Variable] = Field(
-        [], description="List of variables used in this application."
+        default_factory=list,
+        description="List of custom types defined in this application.",
     )
     flows: list[Flow] = Field(
-        [], description="List of flows defined in this application."
+        default_factory=list,
+        description="List of flows defined in this application.",
     )
-    auths: list[
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-    ] = Field(
-        [], description="List of authorization providers used for API access."
+    auths: list[AuthorizationProvider] = Field(
+        default_factory=list,
+        description="List of authorization providers used for API access.",
     )
     tools: list[Tool] = Field(
-        [], description="List of tools available in this application."
+        default_factory=list,
+        description="List of tools available in this application.",
     )
     indexes: list[Index] = Field(
-        [], description="List of indexes available for search operations."
+        default_factory=list,
+        description="List of indexes available for search operations.",
     )
     telemetry: TelemetrySink | None = Field(
         None, description="Optional telemetry sink for observability."
     )
 
 
-class Step(BaseModel):
-    """Base class for components that take inputs and produce outputs."""
+class AuthorizationProviderList(BaseModel):
+    """Schema for a standalone list of authorization providers."""
 
-    id: str = Field(..., description="Unique ID of this component.")
-    type: str = Field(..., description="Type of the step component.")
-    cardinality: StepCardinality = Field(
-        StepCardinality.one,
-        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
-    )
-    inputs: list[Variable] = Field(
-        [], description="Input variables required by this step."
-    )
-    outputs: list[Variable] = Field(
-        [], description="Variable where output is stored."
-    )
+    root: list[AuthorizationProvider] = Field(...)
+
+
+class ConstantPath(BaseModel):
+    """Semantic version of ConstantPath."""
+
+    uri: str = Field(..., description="A constant Fsspec URI.")
 
 
 class Index(ImmutableModel):
@@ -139,16 +160,10 @@ class Index(ImmutableModel):
 
     id: str = Field(..., description="Unique ID of the index.")
     args: dict[str, Any] = Field(
-        {},
+        default_factory=dict,
         description="Index-specific configuration and connection parameters.",
     )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
+    auth: AuthorizationProvider | None = Field(
         None, description="AuthorizationProvider for accessing the index."
     )
     name: str = Field(..., description="Name of the index/collection/table.")
@@ -157,16 +172,13 @@ class Index(ImmutableModel):
 class Model(ImmutableModel):
     """Describes a generative model configuration, including provider and model ID."""
 
+    type: Literal["Model"] = Field("Model")
     id: str = Field(..., description="Unique ID for the model.")
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(None, description="AuthorizationProvider used for model access.")
+    auth: AuthorizationProvider | None = Field(
+        None, description="AuthorizationProvider used for model access."
+    )
     inference_params: dict[str, Any] = Field(
-        {},
+        default_factory=dict,
         description="Optional inference parameters like temperature or max_tokens.",
     )
     model_id: str | None = Field(
@@ -175,6 +187,47 @@ class Model(ImmutableModel):
     )
     provider: str = Field(
         ..., description="Name of the provider, e.g., openai or anthropic."
+    )
+
+
+class Flow(BaseModel):
+    """Defines a flow of steps that can be executed in sequence or parallel.
+    If input or output variables are not specified, they are inferred from
+    the first and last step, respectively."""
+
+    id: str = Field(..., description="Unique ID of the flow.")
+    type: Literal["Flow"] = Field("Flow")
+    description: str | None = Field(
+        None, description="Optional description of the flow."
+    )
+    steps: list[Step | Step] = Field(
+        default_factory=list,
+        description="List of steps or references to steps",
+    )
+    interface: FlowInterface | None = Field(None)
+    variables: list[Variable] = Field(
+        default_factory=list,
+        description="List of variables available at the application scope.",
+    )
+    inputs: list[Variable] = Field(
+        default_factory=list,
+        description="Input variables required by this step.",
+    )
+    outputs: list[Variable] = Field(
+        default_factory=list, description="Resulting variables"
+    )
+
+
+class FlowInterface(BaseModel):
+    """
+    Defines the public-facing contract for a Flow, guiding the UI
+    and session management.
+    """
+
+    type: Literal["Complete", "Conversational"] = Field("Complete")
+    session_inputs: list[Variable] = Field(
+        default_factory=list,
+        description="A list of input variable IDs that are set once and then persisted across a session.",
     )
 
 
@@ -194,25 +247,43 @@ class Memory(ImmutableModel):
     )
 
 
+class ModelList(BaseModel):
+    """Schema for a standalone list of models."""
+
+    root: list[Model] = Field(...)
+
+
 class TelemetrySink(BaseModel):
     """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
 
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
+    auth: AuthorizationProvider | None = Field(
         None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
+
+
+class ToolList(BaseModel):
+    """Schema for a standalone list of tools."""
+
+    root: list[Tool] = Field(...)
+
+
+class TypeList(BaseModel):
+    """Schema for a standalone list of type definitions."""
+
+    root: list[CustomType] = Field(...)
+
+
+class VariableList(BaseModel):
+    """Schema for a standalone list of variables."""
+
+    root: list[Variable] = Field(...)
 
 
 class APIKeyAuthProvider(AuthorizationProvider):
@@ -265,37 +336,37 @@ class OAuth2AuthProvider(AuthorizationProvider):
     client_id: str = Field(..., description="OAuth2 client ID.")
     client_secret: str = Field(..., description="OAuth2 client secret.")
     token_url: str = Field(..., description="Token endpoint URL.")
-    scopes: list[str] = Field([], description="OAuth2 scopes required.")
+    scopes: list[str] = Field(
+        default_factory=list, description="OAuth2 scopes required."
+    )
 
 
 class APITool(Tool):
     """Tool that invokes an API endpoint."""
 
+    type: Literal["APITool"] = Field("APITool")
     endpoint: str = Field(..., description="API endpoint URL to call.")
     method: str = Field(
         "GET", description="HTTP method to use (GET, POST, PUT, DELETE, etc.)."
     )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
+    auth: AuthorizationProvider | None = Field(
         None,
         description="Optional AuthorizationProvider for API authentication.",
     )
     headers: dict[str, str] = Field(
-        {}, description="Optional HTTP headers to include in the request."
+        default_factory=dict,
+        description="Optional HTTP headers to include in the request.",
     )
     parameters: dict[str, ToolParameter] = Field(
-        {}, description="Output parameters produced by this tool."
+        default_factory=dict,
+        description="Output parameters produced by this tool.",
     )
 
 
 class PythonFunctionTool(Tool):
     """Tool that calls a Python function."""
 
+    type: Literal["PythonFunctionTool"] = Field("PythonFunctionTool")
     function_name: str = Field(
         ..., description="Name of the Python function to call."
     )
@@ -304,20 +375,17 @@ class PythonFunctionTool(Tool):
     )
 
 
-class Condition(Step):
-    """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
+class Aggregate(Step):
+    """
+    A terminal step that consumes an entire input stream and produces a single
+    summary message with success/error counts.
+    """
 
-    type: Literal["Condition"] = Field("Condition")
-    else_: Step | str | None = Field(
-        None,
-        description="Optional step to run if condition fails.",
-        alias="else",
-    )
-    equals: Variable | None = Field(
-        None, description="Match condition for equality check."
-    )
-    then: Step | str = Field(
-        ..., description="Step to run if condition matches."
+    type: Literal["Aggregate"] = Field("Aggregate")
+    cardinality: Literal[StepCardinality.one] = Field(StepCardinality.one)
+    outputs: list[Variable] = Field(
+        default_factory=list,
+        description="References to the variables for the output. There should be one and only one output with type AggregateStats",
     )
 
 
@@ -334,24 +402,20 @@ class Decoder(Step):
     )
 
 
-class DocToTextConverter(Step):
+class DocToTextConverter(Step, ConcurrentStepMixin):
     """Defines a step to convert raw documents (e.g., PDF, DOCX) loaded by a DocumentSource into plain text
     using an external tool like Docling or LlamaParse for pre-processing before chunking.
     The input and output are both RAGDocument, but the output after processing with have content of type markdown.
     """
 
     type: Literal["DocToTextConverter"] = Field("DocToTextConverter")
-    cardinality: Literal["one"] = Field(
-        StepCardinality.one,
-        description="Consumes one document and produces one processed text output.",
-    )
 
 
-class DocumentEmbedder(Step):
+class DocumentEmbedder(Step, ConcurrentStepMixin):
     """Embeds document chunks using a specified embedding model."""
 
     type: Literal["DocumentEmbedder"] = Field("DocumentEmbedder")
-    cardinality: Literal["many"] = Field(
+    cardinality: Literal[StepCardinality.many] = Field(
         StepCardinality.many,
         description="Consumes one chunk and emits one embedded chunk.",
     )
@@ -360,11 +424,11 @@ class DocumentEmbedder(Step):
     )
 
 
-class DocumentSplitter(Step):
+class DocumentSplitter(Step, ConcurrentStepMixin):
     """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
 
     type: Literal["DocumentSplitter"] = Field("DocumentSplitter")
-    cardinality: Literal["many"] = Field(
+    cardinality: Literal[StepCardinality.many] = Field(
         StepCardinality.many,
         description="Consumes one document and emits 0...N nodes/chunks.",
     )
@@ -377,34 +441,59 @@ class DocumentSplitter(Step):
         20, description="Overlap between consecutive chunks."
     )
     args: dict[str, Any] = Field(
-        {},
+        default_factory=dict,
         description="Additional arguments specific to the chosen splitter class.",
     )
 
 
-class Invoke(Step):
-    """Invokes a tool with input and output bindings."""
+class InvokeEmbedding(Step, ConcurrentStepMixin):
+    """Defines a step that generates embeddings using an embedding model.
+    It takes input variables and produces output variables containing the embeddings."""
 
-    type: Literal["Invoke"] = Field("Invoke")
-    tool: Tool = Field(..., description="Tool to invoke.")
+    type: Literal["InvokeEmbedding"] = Field("InvokeEmbedding")
+    model: EmbeddingModel = Field(
+        ..., description="The embedding model to use."
+    )
+
+
+class InvokeFlow(Step):
+    """Invokes a flow with input and output bindings."""
+
+    type: Literal["InvokeFlow"] = Field("InvokeFlow")
+    flow: Flow = Field(..., description="Flow to invoke.")
     input_bindings: dict[str, str] = Field(
         ...,
-        description="Mapping from step input IDs to tool input parameter names.",
+        description="Mapping from variable references to flow input variable IDs.",
     )
     output_bindings: dict[str, str] = Field(
         ...,
-        description="Mapping from tool output parameter names to step output IDs.",
+        description="Mapping from variable references to flow output variable IDs.",
     )
 
 
-class LLMInference(Step):
+class InvokeTool(Step, ConcurrentStepMixin):
+    """Invokes a tool with input and output bindings."""
+
+    type: Literal["InvokeTool"] = Field("InvokeTool")
+    tool: Tool = Field(..., description="Tool to invoke.")
+    input_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from variable references to tool input parameter names.",
+    )
+    output_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from variable references to tool output parameter names.",
+    )
+
+
+class LLMInference(Step, ConcurrentStepMixin):
     """Defines a step that performs inference using a language model.
     It can take input variables and produce output variables based on the model's response."""
 
     type: Literal["LLMInference"] = Field("LLMInference")
     memory: Memory | None = Field(
         None,
-        description="Memory object to retain context across interactions.",
+        description="A reference to a Memory object to retain context across interactions.",
     )
     model: Model = Field(..., description="The model to use for inference.")
     system_message: str | None = Field(
@@ -428,20 +517,11 @@ class Search(Step):
     """Base class for search operations against indexes."""
 
     filters: dict[str, Any] = Field(
-        {}, description="Optional filters to apply during search."
+        default_factory=dict,
+        description="Optional filters to apply during search.",
     )
     index: Index = Field(
         ..., description="Index to search against (object or ID reference)."
-    )
-
-
-class Sink(Step):
-    """Base class for data sinks"""
-
-    id: str = Field(..., description="Unique ID of the data sink.")
-    cardinality: Literal["one"] = Field(
-        StepCardinality.one,
-        description="Flows always emit exactly one instance of the outputs.",
     )
 
 
@@ -449,21 +529,28 @@ class Source(Step):
     """Base class for data sources"""
 
     id: str = Field(..., description="Unique ID of the data source.")
-    cardinality: Literal["many"] = Field(
+    cardinality: Literal[StepCardinality.many] = Field(
         StepCardinality.many,
         description="Sources always emit 0...N instances of the outputs.",
     )
 
 
+class Writer(Step, BatchableStepMixin):
+    """Base class for things that write data in batches."""
+
+    id: str = Field(..., description="Unique ID of the data writer.")
+
+
 class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
-    pass
+    type: Literal["DocumentIndex"] = Field("DocumentIndex")
 
 
 class VectorIndex(Index):
     """Vector database index for similarity search using embeddings."""
 
+    type: Literal["VectorIndex"] = Field("VectorIndex")
     embedding_model: EmbeddingModel = Field(
         ...,
         description="Embedding model used to vectorize queries and documents.",
@@ -473,6 +560,7 @@ class VectorIndex(Index):
 class EmbeddingModel(Model):
     """Describes an embedding model configuration, extending the base Model class."""
 
+    type: Literal["EmbeddingModel"] = Field("EmbeddingModel")
     dimensions: int = Field(
         ...,
         description="Dimensionality of the embedding vectors produced by this model.",
@@ -484,42 +572,24 @@ class Agent(LLMInference):
 
     type: Literal["Agent"] = Field("Agent")
     tools: list[Tool] = Field(
-        ..., description="List of tools available to the agent."
+        default_factory=list,
+        description="List of tools available to the agent.",
     )
 
 
-class DocumentSearch(Search):
+class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = Field("DocumentSearch")
 
 
-class VectorSearch(Search):
+class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = Field("VectorSearch")
     default_top_k: int | None = Field(
         50,
         description="Number of top results to retrieve if not provided in the inputs.",
-    )
-
-
-class FileSink(Sink):
-    """File sink that writes data to a file using fsspec-compatible URIs."""
-
-    type: Literal["FileSink"] = Field("FileSink")
-    path: str | None = Field(
-        None,
-        description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
-    )
-
-
-class IndexUpsert(Sink):
-    """Semantic version of IndexUpsert."""
-
-    type: Literal["IndexUpsert"] = Field("IndexUpsert")
-    index: Index = Field(
-        ..., description="Index to upsert into (object or ID reference)."
     )
 
 
@@ -531,25 +601,15 @@ class DocumentSource(Source):
     """
 
     type: Literal["DocumentSource"] = Field("DocumentSource")
-    cardinality: Literal["many"] = Field(
-        StepCardinality.many,
-        description="A DocumentSource always emits 0...N instances of documents.",
-    )
     reader_module: str = Field(
         ...,
         description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
     )
     args: dict[str, Any] = Field(
-        {},
+        default_factory=dict,
         description="Reader-specific arguments to pass to the LlamaIndex constructor.",
     )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
+    auth: AuthorizationProvider | None = Field(
         None, description="AuthorizationProvider for accessing the source."
     )
 
@@ -558,9 +618,9 @@ class FileSource(Source):
     """File source that reads data from a file using fsspec-compatible URIs."""
 
     type: Literal["FileSource"] = Field("FileSource")
-    path: str | None = Field(
-        None,
-        description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+    path: ConstantPath | Variable = Field(
+        ...,
+        description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
 
 
@@ -575,40 +635,40 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
-    auth: (
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | AWSAuthProvider
-        | OAuth2AuthProvider
-        | None
-    ) = Field(
+    auth: AuthorizationProvider | None = Field(
         None,
         description="Optional AuthorizationProvider for database authentication.",
     )
 
 
-class Flow(Step):
-    """Defines a flow of steps that can be executed in sequence or parallel.
-    If input or output variables are not specified, they are inferred from
-    the first and last step, respectively.
-    """
+class FileWriter(Writer, BatchableStepMixin):
+    """File writer that writes data to a file using fsspec-compatible URIs."""
 
-    description: str | None = Field(
-        None, description="Optional description of the flow."
+    type: Literal["FileWriter"] = Field("FileWriter")
+    path: ConstantPath | Variable = Field(
+        ...,
+        description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
-    cardinality: StepCardinality = Field(
-        StepCardinality.auto,
-        description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
+    batch_config: BatchConfig = Field(
+        default_factory=partial(BatchConfig, batch_size=9223372036854775807),
+        description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
     )
-    mode: Literal["Complete", "Chat"] = Field("Complete")
-    steps: list[Step] = Field(..., description="List of steps or step IDs.")
 
-    @model_validator(mode="after")
-    def infer_cardinality(self) -> "Flow":
-        if self.cardinality == StepCardinality.auto:
-            self.cardinality = StepCardinality.one
-            for step in self.steps:
-                if step.cardinality == StepCardinality.many:
-                    self.cardinality = StepCardinality.many
-                    break
-        return self
+
+class IndexUpsert(Writer):
+    """Semantic version of IndexUpsert."""
+
+    type: Literal["IndexUpsert"] = Field("IndexUpsert")
+    index: Index = Field(
+        ..., description="Index to upsert into (object or ID reference)."
+    )
+
+
+DocumentType = Union[
+    Application,
+    AuthorizationProviderList,
+    ModelList,
+    ToolList,
+    TypeList,
+    VariableList,
+]

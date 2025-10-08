@@ -7,14 +7,22 @@ import { useState, useCallback } from "react";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { apiClient, ApiClientError } from "@/lib/apiClient";
+import { formatFlowName } from "@/components/FlowTabsContainer";
 
 import FlowInputs from "../FlowInputs";
 import { MarkdownContainer } from "../MarkdownContainer";
 
-import type { FlowInfo } from "@/lib/apiClient";
-import type { FlowInputValues } from "@/types";
+import type { FlowMetadata, FlowInputValues } from "@/types";
 
-function StreamFlow({ path, name, description, requestSchema }: FlowInfo) {
+interface StreamFlowProps {
+  flow: FlowMetadata;
+}
+
+function StreamFlow({ flow }: StreamFlowProps) {
+  const path = flow.endpoints.stream;
+  const name = formatFlowName(flow.id);
+  const description = flow.description;
+  const requestSchema = flow.input_schema as any;
   const [inputs, setInputs] = useState<FlowInputValues>({});
   const [error, setError] = useState<string | null>(null);
 

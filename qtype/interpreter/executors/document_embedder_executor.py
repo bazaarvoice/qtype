@@ -1,0 +1,77 @@
+from typing import AsyncIterator
+
+from qtype.dsl.domain_types import Embedding, RAGChunk
+from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.conversions import to_embedding_model
+from qtype.interpreter.types import FlowMessage
+from qtype.semantic.model import DocumentEmbedder
+
+
+class DocumentEmbedderExecutor(StepExecutor):
+    """Executor for DocumentEmbedder steps."""
+
+    def __init__(self, step: DocumentEmbedder, **dependencies):
+        super().__init__(step, **dependencies)
+        if not isinstance(step, DocumentEmbedder):
+            raise ValueError(
+                (
+                    "DocumentEmbedderExecutor can only execute "
+                    "DocumentEmbedder steps."
+                )
+            )
+        self.step: DocumentEmbedder = step
+        # Initialize the embedding model once for the executor
+        self.embedding_model = to_embedding_model(self.step.model)
+
+    async def process_message(
+        self,
+        message: FlowMessage,
+    ) -> AsyncIterator[FlowMessage]:
+        """Process a single FlowMessage for the DocumentEmbedder step.
+
+        Args:
+            message: The FlowMessage to process.
+        Yields:
+            FlowMessage with embedded chunk.
+        """
+        input_id = self.step.inputs[0].id
+        output_id = self.step.outputs[0].id
+
+        try:
+            # Get the input chunk
+            chunk = message.variables.get(input_id)
+            if not isinstance(chunk, RAGChunk):
+                raise ValueError(
+                    (
+                        f"Input variable '{input_id}' must be a RAGChunk, "
+                        f"got {type(chunk)}"
+                    )
+                )
+
+            # Generate embedding for the chunk content
+            vector = self.embedding_model.get_text_embedding(
+                text=chunk.content
+            )
+
+            # Create an Embedding object
+            embedding = Embedding(
+                vector=vector,
+                source_text=chunk.content,
+                metadata=chunk.metadata,
+            )
+
+            # Create the output chunk with the embedding
+            embedded_chunk = RAGChunk(
+                content=chunk.content,
+                chunk_id=chunk.chunk_id,
+                document_id=chunk.document_id,
+                embedding=embedding,
+                metadata=chunk.metadata,
+            )
+
+            # Yield the result
+            yield message.copy_with_variables({output_id: embedded_chunk})
+
+        except Exception as e:
+            message.set_error(self.step.id, e)
+            yield message

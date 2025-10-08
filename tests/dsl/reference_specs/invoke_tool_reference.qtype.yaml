@@ -1,0 +1,20 @@
+# Test spec for InvokeTool.tool reference resolution
+
+id: test_invoke_tool
+
+tools:
+  - type: PythonFunctionTool
+    id: test_tool
+    name: TestTool
+    description: Test tool for invocation
+    function_name: test_func
+    module_path: test.module
+
+flows:
+  - id: test_flow
+    steps:
+      - id: invoke_step
+        type: InvokeTool
+        tool: test_tool  # String should be resolved to Reference[ToolType]
+        input_bindings: {}
+        output_bindings: {}

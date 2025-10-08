@@ -1,0 +1,16 @@
+# Decoder must have exactly one text input - no inputs
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: result
+        type: integer
+    outputs:
+      - result
+    steps:
+      - id: decoder1
+        type: Decoder
+        format: json
+        inputs: []
+        outputs:
+          - result
