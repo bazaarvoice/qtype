@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     TextBlock,
 )
+from qtype.interpreter.auth.aws import aws
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
@@ -156,14 +157,19 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     """Convert a qtype Model to a LlamaIndex Model."""
 
-    if model.provider in "aws-bedrock":
-        # BedrockConverse requires a model_id and system_prompt
-        # Inference params can be passed as additional kwargs
-        from llama_index.llms.bedrock_converse import (  # type: ignore[import]
+    if model.provider == "aws-bedrock":
+        from llama_index.llms.bedrock_converse import (
             BedrockConverse,
         )
 
+        if model.auth:
+            with aws(model.auth) as session:
+                session = session._session
+        else:
+            session = None
+  
         brv: BaseLLM = BedrockConverse(
+            botocore_session=session,
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
