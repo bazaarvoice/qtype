@@ -125,15 +125,6 @@ def _update_maps_with_embedded_objects(
             # note inputs
             _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore
 
-        if isinstance(obj, dsl.Condition):
-            # Conditions have inputs and outputs
-            _update_map_with_unique_check(lookup_map, [obj.then, obj.else_])  # type: ignore
-            _update_map_with_unique_check(lookup_map, [obj.equals])  # type: ignore
-            if obj.then and isinstance(obj.then, dsl.Step):
-                _update_maps_with_embedded_objects(lookup_map, [obj.then])
-            if obj.else_ and isinstance(obj.else_, dsl.Step):
-                _update_maps_with_embedded_objects(lookup_map, [obj.else_])
-
         if isinstance(obj, dsl.APITool):
             # API tools have inputs and outputs
             _update_map_with_unique_check(lookup_map, [obj.auth])  # type: ignore

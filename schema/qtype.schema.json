@@ -106,16 +106,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -322,7 +313,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -336,7 +327,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -345,7 +336,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -359,13 +350,13 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "memory": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Memory"
+              "$ref": "#/$defs/Reference_Memory_"
             },
             {
               "type": "string"
@@ -375,16 +366,13 @@
             }
           ],
           "default": null,
-          "description": "Memory object to retain context across interactions.",
+          "description": "A reference to a Memory object to retain context across interactions.",
           "title": "Memory"
         },
         "model": {
           "anyOf": [
             {
-              "$ref": "#/$defs/EmbeddingModel"
-            },
-            {
-              "$ref": "#/$defs/Model"
+              "$ref": "#/$defs/Reference_Union_EmbeddingModel__Model__"
             },
             {
               "type": "string"
@@ -411,10 +399,7 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/APITool"
-              },
-              {
-                "$ref": "#/$defs/PythonFunctionTool"
+                "$ref": "#/$defs/Reference_Union_APITool__PythonFunctionTool__"
               },
               {
                 "type": "string"
@@ -523,7 +508,7 @@
             }
           ],
           "default": null,
-          "description": "List of variables used in this application.",
+          "description": "List of variables available at the application scope.",
           "title": "Variables"
         },
         "flows": {
@@ -701,264 +686,6 @@
       "title": "BearerTokenAuthProvider",
       "type": "object"
     },
-    "Condition": {
-      "additionalProperties": false,
-      "description": "Conditional logic gate within a flow. Supports branching logic for execution based on variable values.",
-      "properties": {
-        "id": {
-          "description": "Unique ID of this component.",
-          "title": "Id",
-          "type": "string"
-        },
-        "type": {
-          "const": "Condition",
-          "default": "Condition",
-          "title": "Type",
-          "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
-        },
-        "else": {
-          "anyOf": [
-            {
-              "discriminator": {
-                "mapping": {
-                  "Agent": "#/$defs/Agent",
-                  "Condition": "#/$defs/Condition",
-                  "Decoder": "#/$defs/Decoder",
-                  "DocToTextConverter": "#/$defs/DocToTextConverter",
-                  "DocumentSearch": "#/$defs/DocumentSearch",
-                  "DocumentSource": "#/$defs/DocumentSource",
-                  "DocumentSplitter": "#/$defs/DocumentSplitter",
-                  "FileSink": "#/$defs/FileSink",
-                  "FileSource": "#/$defs/FileSource",
-                  "Flow": "#/$defs/Flow",
-                  "IndexUpsert": "#/$defs/IndexUpsert",
-                  "Invoke": "#/$defs/Invoke",
-                  "LLMInference": "#/$defs/LLMInference",
-                  "PromptTemplate": "#/$defs/PromptTemplate",
-                  "SQLSource": "#/$defs/SQLSource",
-                  "VectorSearch": "#/$defs/VectorSearch"
-                },
-                "propertyName": "type"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/Agent"
-                },
-                {
-                  "$ref": "#/$defs/Condition"
-                },
-                {
-                  "$ref": "#/$defs/Decoder"
-                },
-                {
-                  "$ref": "#/$defs/DocToTextConverter"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSearch"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSplitter"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSource"
-                },
-                {
-                  "$ref": "#/$defs/FileSink"
-                },
-                {
-                  "$ref": "#/$defs/FileSource"
-                },
-                {
-                  "$ref": "#/$defs/Flow"
-                },
-                {
-                  "$ref": "#/$defs/IndexUpsert"
-                },
-                {
-                  "$ref": "#/$defs/Invoke"
-                },
-                {
-                  "$ref": "#/$defs/LLMInference"
-                },
-                {
-                  "$ref": "#/$defs/PromptTemplate"
-                },
-                {
-                  "$ref": "#/$defs/SQLSource"
-                },
-                {
-                  "$ref": "#/$defs/VectorSearch"
-                }
-              ]
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional step to run if condition fails.",
-          "title": "Else"
-        },
-        "equals": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Variable"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Match condition for equality check.",
-          "title": "Equals"
-        },
-        "then": {
-          "anyOf": [
-            {
-              "discriminator": {
-                "mapping": {
-                  "Agent": "#/$defs/Agent",
-                  "Condition": "#/$defs/Condition",
-                  "Decoder": "#/$defs/Decoder",
-                  "DocToTextConverter": "#/$defs/DocToTextConverter",
-                  "DocumentSearch": "#/$defs/DocumentSearch",
-                  "DocumentSource": "#/$defs/DocumentSource",
-                  "DocumentSplitter": "#/$defs/DocumentSplitter",
-                  "FileSink": "#/$defs/FileSink",
-                  "FileSource": "#/$defs/FileSource",
-                  "Flow": "#/$defs/Flow",
-                  "IndexUpsert": "#/$defs/IndexUpsert",
-                  "Invoke": "#/$defs/Invoke",
-                  "LLMInference": "#/$defs/LLMInference",
-                  "PromptTemplate": "#/$defs/PromptTemplate",
-                  "SQLSource": "#/$defs/SQLSource",
-                  "VectorSearch": "#/$defs/VectorSearch"
-                },
-                "propertyName": "type"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/Agent"
-                },
-                {
-                  "$ref": "#/$defs/Condition"
-                },
-                {
-                  "$ref": "#/$defs/Decoder"
-                },
-                {
-                  "$ref": "#/$defs/DocToTextConverter"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSearch"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSplitter"
-                },
-                {
-                  "$ref": "#/$defs/DocumentSource"
-                },
-                {
-                  "$ref": "#/$defs/FileSink"
-                },
-                {
-                  "$ref": "#/$defs/FileSource"
-                },
-                {
-                  "$ref": "#/$defs/Flow"
-                },
-                {
-                  "$ref": "#/$defs/IndexUpsert"
-                },
-                {
-                  "$ref": "#/$defs/Invoke"
-                },
-                {
-                  "$ref": "#/$defs/LLMInference"
-                },
-                {
-                  "$ref": "#/$defs/PromptTemplate"
-                },
-                {
-                  "$ref": "#/$defs/SQLSource"
-                },
-                {
-                  "$ref": "#/$defs/VectorSearch"
-                }
-              ]
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Step to run if condition matches.",
-          "title": "Then"
-        }
-      },
-      "required": [
-        "id",
-        "then"
-      ],
-      "title": "Condition",
-      "type": "object"
-    },
     "CustomType": {
       "additionalProperties": false,
       "description": "A simple declaration of a custom data type by the user.",
@@ -1020,7 +747,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1034,7 +761,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1043,7 +770,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1057,7 +784,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "format": {
@@ -1109,7 +836,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1123,7 +850,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1132,7 +859,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1146,7 +873,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         }
       },
@@ -1189,6 +916,94 @@
       "description": "Schema for any valid QType document structure.\n\nThis allows validation of standalone lists of components, individual components,\nor full QType application specs. Supports modular composition and reuse.",
       "title": "Document"
     },
+    "DocumentEmbedder": {
+      "additionalProperties": false,
+      "description": "Embeds document chunks using a specified embedding model.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DocumentEmbedder",
+          "default": "DocumentEmbedder",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "const": "many",
+          "default": "many",
+          "description": "Consumes one chunk and emits one embedded chunk.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Reference_Variable_"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "References to the variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Reference_Variable_"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "References to the variables where output is stored.",
+          "title": "Outputs"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reference_EmbeddingModel_"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Embedding model to use for vectorization.",
+          "title": "Model"
+        }
+      },
+      "required": [
+        "id",
+        "model"
+      ],
+      "title": "DocumentEmbedder",
+      "type": "object"
+    },
     "DocumentIndex": {
       "additionalProperties": false,
       "description": "Document search index for text-based search (e.g., Elasticsearch, OpenSearch).",
@@ -1215,16 +1030,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -1276,7 +1082,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1290,7 +1096,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1299,7 +1105,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1313,7 +1119,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "filters": {
@@ -1333,10 +1139,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DocumentIndex"
-            },
-            {
-              "$ref": "#/$defs/VectorIndex"
+              "$ref": "#/$defs/Reference_Union_DocumentIndex__VectorIndex__"
             },
             {
               "type": "string"
@@ -1381,7 +1184,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1395,7 +1198,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1404,7 +1207,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1418,7 +1221,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "reader_module": {
@@ -1443,16 +1246,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -1501,7 +1295,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1515,7 +1309,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1524,7 +1318,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1538,7 +1332,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "splitter_name": {
@@ -1592,16 +1386,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -1688,7 +1473,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1702,7 +1487,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1711,7 +1496,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1725,25 +1510,18 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "path": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "fsspec-compatible URI to write to. If None, expects 'path' input variable.",
-          "title": "Path"
+          "description": "Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+          "title": "Path",
+          "type": "string"
         }
       },
       "required": [
-        "id"
+        "id",
+        "path"
       ],
       "title": "FileSink",
       "type": "object"
@@ -1776,7 +1554,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1790,7 +1568,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -1799,7 +1577,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -1813,25 +1591,18 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "path": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "fsspec-compatible URI to read from. If None, expects 'path' input variable.",
-          "title": "Path"
+          "description": "Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+          "title": "Path",
+          "type": "string"
         }
       },
       "required": [
-        "id"
+        "id",
+        "path"
       ],
       "title": "FileSource",
       "type": "object"
@@ -1841,7 +1612,7 @@
       "description": "Defines a flow of steps that can be executed in sequence or parallel.\nIf input or output variables are not specified, they are inferred from\nthe first and last step, respectively.",
       "properties": {
         "id": {
-          "description": "Unique ID of this component.",
+          "description": "Unique ID of the flow.",
           "title": "Id",
           "type": "string"
         },
@@ -1850,57 +1621,6 @@
           "default": "Flow",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "auto",
-          "description": "The cardinality of the flow, inferred from its steps when set to 'auto'."
-        },
-        "inputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Input variables required by this step.",
-          "title": "Inputs"
-        },
-        "outputs": {
-          "anyOf": [
-            {
-              "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/Variable"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Variable where output is stored.",
-          "title": "Outputs"
         },
         "description": {
           "anyOf": [
@@ -1915,26 +1635,17 @@
           "description": "Optional description of the flow.",
           "title": "Description"
         },
-        "mode": {
-          "default": "Complete",
-          "enum": [
-            "Complete",
-            "Chat"
-          ],
-          "title": "Mode",
-          "type": "string"
-        },
         "steps": {
-          "description": "List of steps or step IDs.",
+          "description": "List of steps or references to steps",
           "items": {
             "anyOf": [
               {
                 "discriminator": {
                   "mapping": {
                     "Agent": "#/$defs/Agent",
-                    "Condition": "#/$defs/Condition",
                     "Decoder": "#/$defs/Decoder",
                     "DocToTextConverter": "#/$defs/DocToTextConverter",
+                    "DocumentEmbedder": "#/$defs/DocumentEmbedder",
                     "DocumentSearch": "#/$defs/DocumentSearch",
                     "DocumentSource": "#/$defs/DocumentSource",
                     "DocumentSplitter": "#/$defs/DocumentSplitter",
@@ -1942,7 +1653,8 @@
                     "FileSource": "#/$defs/FileSource",
                     "Flow": "#/$defs/Flow",
                     "IndexUpsert": "#/$defs/IndexUpsert",
-                    "Invoke": "#/$defs/Invoke",
+                    "InvokeFlow": "#/$defs/InvokeFlow",
+                    "InvokeTool": "#/$defs/InvokeTool",
                     "LLMInference": "#/$defs/LLMInference",
                     "PromptTemplate": "#/$defs/PromptTemplate",
                     "SQLSource": "#/$defs/SQLSource",
@@ -1955,13 +1667,13 @@
                     "$ref": "#/$defs/Agent"
                   },
                   {
-                    "$ref": "#/$defs/Condition"
-                  },
-                  {
                     "$ref": "#/$defs/Decoder"
                   },
                   {
                     "$ref": "#/$defs/DocToTextConverter"
+                  },
+                  {
+                    "$ref": "#/$defs/DocumentEmbedder"
                   },
                   {
                     "$ref": "#/$defs/DocumentSearch"
@@ -1985,7 +1697,10 @@
                     "$ref": "#/$defs/IndexUpsert"
                   },
                   {
-                    "$ref": "#/$defs/Invoke"
+                    "$ref": "#/$defs/InvokeFlow"
+                  },
+                  {
+                    "$ref": "#/$defs/InvokeTool"
                   },
                   {
                     "$ref": "#/$defs/LLMInference"
@@ -2002,18 +1717,94 @@
                 ]
               },
               {
-                "type": "string"
+                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__FileSink__FileSource__Flow__IndexUpsert__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
               }
             ]
           },
           "title": "Steps",
           "type": "array"
+        },
+        "interface": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FlowInterface"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Variable"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Input variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Variable"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resulting variables",
+          "title": "Outputs"
         }
       },
       "required": [
         "id"
       ],
       "title": "Flow",
+      "type": "object"
+    },
+    "FlowInterface": {
+      "additionalProperties": false,
+      "description": "Defines the public-facing contract for a Flow, guiding the UI\nand session management.",
+      "properties": {
+        "type": {
+          "default": "Complete",
+          "enum": [
+            "Complete",
+            "Conversational"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "session_inputs": {
+          "default": [],
+          "description": "A list of input variable IDs that are set once and then persisted across a session.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Session Inputs",
+          "type": "array"
+        }
+      },
+      "title": "FlowInterface",
       "type": "object"
     },
     "IndexList": {
@@ -2058,7 +1849,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2072,7 +1863,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -2081,7 +1872,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2095,16 +1886,13 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DocumentIndex"
-            },
-            {
-              "$ref": "#/$defs/VectorIndex"
+              "$ref": "#/$defs/Reference_Union_DocumentIndex__VectorIndex__"
             },
             {
               "type": "string"
@@ -2121,9 +1909,9 @@
       "title": "IndexUpsert",
       "type": "object"
     },
-    "Invoke": {
+    "InvokeFlow": {
       "additionalProperties": false,
-      "description": "Invokes a tool with input and output bindings.",
+      "description": "Invokes a flow with input and output bindings.",
       "properties": {
         "id": {
           "description": "Unique ID of this component.",
@@ -2131,8 +1919,8 @@
           "type": "string"
         },
         "type": {
-          "const": "Invoke",
-          "default": "Invoke",
+          "const": "InvokeFlow",
+          "default": "InvokeFlow",
           "title": "Type",
           "type": "string"
         },
@@ -2147,7 +1935,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2161,7 +1949,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -2170,7 +1958,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2184,16 +1972,117 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
+          "title": "Outputs"
+        },
+        "flow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reference_Flow_"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Flow to invoke.",
+          "title": "Flow"
+        },
+        "input_bindings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from variable references to flow input variable IDs.",
+          "title": "Input Bindings",
+          "type": "object"
+        },
+        "output_bindings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from variable references to flow output variable IDs.",
+          "title": "Output Bindings",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "flow",
+        "input_bindings",
+        "output_bindings"
+      ],
+      "title": "InvokeFlow",
+      "type": "object"
+    },
+    "InvokeTool": {
+      "additionalProperties": false,
+      "description": "Invokes a tool with input and output bindings.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "InvokeTool",
+          "default": "InvokeTool",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Reference_Variable_"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "References to the variables required by this step.",
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Reference_Variable_"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "tool": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APITool"
-            },
-            {
-              "$ref": "#/$defs/PythonFunctionTool"
+              "$ref": "#/$defs/Reference_Union_APITool__PythonFunctionTool__"
             },
             {
               "type": "string"
@@ -2206,7 +2095,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Mapping from step input IDs to tool input parameter names.",
+          "description": "Mapping from variable references to tool input parameter names.",
           "title": "Input Bindings",
           "type": "object"
         },
@@ -2214,7 +2103,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Mapping from tool output parameter names to step output IDs.",
+          "description": "Mapping from variable references to tool output parameter names.",
           "title": "Output Bindings",
           "type": "object"
         }
@@ -2225,7 +2114,7 @@
         "input_bindings",
         "output_bindings"
       ],
-      "title": "Invoke",
+      "title": "InvokeTool",
       "type": "object"
     },
     "LLMInference": {
@@ -2254,7 +2143,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2268,7 +2157,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -2277,7 +2166,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2291,13 +2180,13 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "memory": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Memory"
+              "$ref": "#/$defs/Reference_Memory_"
             },
             {
               "type": "string"
@@ -2307,16 +2196,13 @@
             }
           ],
           "default": null,
-          "description": "Memory object to retain context across interactions.",
+          "description": "A reference to a Memory object to retain context across interactions.",
           "title": "Memory"
         },
         "model": {
           "anyOf": [
             {
-              "$ref": "#/$defs/EmbeddingModel"
-            },
-            {
-              "$ref": "#/$defs/Model"
+              "$ref": "#/$defs/Reference_Union_EmbeddingModel__Model__"
             },
             {
               "type": "string"
@@ -2414,16 +2300,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -2592,7 +2469,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2606,7 +2483,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -2615,7 +2492,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2629,7 +2506,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "template": {
@@ -2717,6 +2594,146 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "Reference_Annotated_Union_Agent__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__FileSink__FileSource__Flow__IndexUpsert__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Annotated[Union[Agent, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, FileSink, FileSource, Flow, IndexUpsert, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "type": "object"
+    },
+    "Reference_AuthorizationProvider_": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[AuthorizationProvider]",
+      "type": "object"
+    },
+    "Reference_EmbeddingModel_": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[EmbeddingModel]",
+      "type": "object"
+    },
+    "Reference_Flow_": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Flow]",
+      "type": "object"
+    },
+    "Reference_Memory_": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Memory]",
+      "type": "object"
+    },
+    "Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Union[APIKeyAuthProvider, BearerTokenAuthProvider, AWSAuthProvider, OAuth2AuthProvider]]",
+      "type": "object"
+    },
+    "Reference_Union_APITool__PythonFunctionTool__": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Union[APITool, PythonFunctionTool]]",
+      "type": "object"
+    },
+    "Reference_Union_DocumentIndex__VectorIndex__": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Union[DocumentIndex, VectorIndex]]",
+      "type": "object"
+    },
+    "Reference_Union_EmbeddingModel__Model__": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Union[EmbeddingModel, Model]]",
+      "type": "object"
+    },
+    "Reference_Variable_": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[Variable]",
+      "type": "object"
+    },
     "SQLSource": {
       "additionalProperties": false,
       "description": "SQL database source that executes queries and emits rows.",
@@ -2745,7 +2762,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2759,7 +2776,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -2768,7 +2785,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -2782,7 +2799,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "query": {
@@ -2798,16 +2815,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -2833,8 +2841,7 @@
       "description": "Does this step emit 1 (one) or 0...N (many) items?",
       "enum": [
         "one",
-        "many",
-        "auto"
+        "many"
       ],
       "title": "StepCardinality",
       "type": "string"
@@ -2851,16 +2858,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_AuthorizationProvider_"
             },
             {
               "type": "string"
@@ -2941,6 +2939,7 @@
       "type": "array"
     },
     "Variable": {
+      "additionalProperties": false,
       "description": "Schema for a variable that can serve as input, output, or parameter within the DSL.",
       "properties": {
         "id": {
@@ -3006,16 +3005,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/APIKeyAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/BearerTokenAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/AWSAuthProvider"
-            },
-            {
-              "$ref": "#/$defs/OAuth2AuthProvider"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
@@ -3036,7 +3026,7 @@
         "embedding_model": {
           "anyOf": [
             {
-              "$ref": "#/$defs/EmbeddingModel"
+              "$ref": "#/$defs/Reference_EmbeddingModel_"
             },
             {
               "type": "string"
@@ -3080,7 +3070,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -3094,7 +3084,7 @@
             }
           ],
           "default": null,
-          "description": "Input variables required by this step.",
+          "description": "References to the variables required by this step.",
           "title": "Inputs"
         },
         "outputs": {
@@ -3103,7 +3093,7 @@
               "items": {
                 "anyOf": [
                   {
-                    "$ref": "#/$defs/Variable"
+                    "$ref": "#/$defs/Reference_Variable_"
                   },
                   {
                     "type": "string"
@@ -3117,7 +3107,7 @@
             }
           ],
           "default": null,
-          "description": "Variable where output is stored.",
+          "description": "References to the variables where output is stored.",
           "title": "Outputs"
         },
         "filters": {
@@ -3137,10 +3127,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DocumentIndex"
-            },
-            {
-              "$ref": "#/$defs/VectorIndex"
+              "$ref": "#/$defs/Reference_Union_DocumentIndex__VectorIndex__"
             },
             {
               "type": "string"
