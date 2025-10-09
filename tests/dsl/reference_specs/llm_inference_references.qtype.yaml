@@ -7,7 +7,8 @@ memories:
     token_limit: 50000
 
 models:
-  - id: test_model
+  - type: Model
+    id: test_model
     provider: openai
     model_id: gpt-4
 

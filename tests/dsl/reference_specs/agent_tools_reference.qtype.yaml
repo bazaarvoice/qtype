@@ -3,17 +3,20 @@
 id: test_agent_tools
 
 models:
-  - id: test_model
+  - type: Model
+    id: test_model
     provider: openai
     model_id: gpt-4
 
 tools:
-  - id: tool_one
+  - type: PythonFunctionTool
+    id: tool_one
     name: ToolOne
     description: First test tool
     function_name: tool_one_func
     module_path: test.module
-  - id: tool_two
+  - type: PythonFunctionTool
+    id: tool_two
     name: ToolTwo
     description: Second test tool
     function_name: tool_two_func

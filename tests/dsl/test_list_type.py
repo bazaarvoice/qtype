@@ -54,6 +54,7 @@ variables:
 tools:
 - id: test_tool
   name: test
+  type: APITool
   description: Test tool with list parameters
   endpoint: https://api.example.com/test
   method: POST

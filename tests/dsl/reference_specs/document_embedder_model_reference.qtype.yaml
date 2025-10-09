@@ -3,7 +3,8 @@
 id: test_document_embedder
 
 models:
-  - id: embedding_model
+  - type: EmbeddingModel
+    id: embedding_model
     provider: openai
     model_id: text-embedding-3-small
     dimensions: 1536

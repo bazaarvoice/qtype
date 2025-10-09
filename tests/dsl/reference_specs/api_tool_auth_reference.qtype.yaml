@@ -8,7 +8,8 @@ auths:
     api_key: test_api_secret
 
 tools:
-  - id: test_api_tool
+  - type: APITool
+    id: test_api_tool
     name: TestAPI
     description: Test API tool
     endpoint: https://api.example.com/test

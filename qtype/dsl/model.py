@@ -191,6 +191,7 @@ VariableType = (
 class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
 
+    type: Literal["Model"] = "Model"
     id: str = Field(..., description="Unique ID for the model.")
     auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
@@ -213,6 +214,7 @@ class Model(StrictBaseModel):
 class EmbeddingModel(Model):
     """Describes an embedding model configuration, extending the base Model class."""
 
+    type: Literal["EmbeddingModel"] = "EmbeddingModel"
     dimensions: int = Field(
         ...,
         description="Dimensionality of the embedding vectors produced by this model.",
@@ -297,6 +299,7 @@ class Tool(StrictBaseModel, ABC):
 class PythonFunctionTool(Tool):
     """Tool that calls a Python function."""
 
+    type: Literal["PythonFunctionTool"] = "PythonFunctionTool"
     function_name: str = Field(
         ..., description="Name of the Python function to call."
     )
@@ -309,6 +312,7 @@ class PythonFunctionTool(Tool):
 class APITool(Tool):
     """Tool that invokes an API endpoint."""
 
+    type: Literal["APITool"] = "APITool"
     endpoint: str = Field(..., description="API endpoint URL to call.")
     method: str = Field(
         default="GET",
@@ -820,6 +824,7 @@ class IndexUpsert(Sink):
 class VectorIndex(Index):
     """Vector database index for similarity search using embeddings."""
 
+    type: Literal["VectorIndex"] = "VectorIndex"
     embedding_model: Reference[EmbeddingModel] | str = Field(
         ...,
         description="Embedding model used to vectorize queries and documents.",
@@ -829,6 +834,7 @@ class VectorIndex(Index):
 class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
+    type: Literal["DocumentIndex"] = "DocumentIndex"
     # TODO: add anything that is needed for document search indexes
     pass
 
@@ -861,9 +867,12 @@ class DocumentSearch(Search):
 
 
 # Create a union type for all tool types
-ToolType = Union[
-    APITool,
-    PythonFunctionTool,
+ToolType = Annotated[
+    Union[
+        APITool,
+        PythonFunctionTool,
+    ],
+    Field(discriminator="type"),
 ]
 
 # Create a union type for all source types
@@ -906,15 +915,21 @@ StepType = Annotated[
 ]
 
 # Create a union type for all index types
-IndexType = Union[
-    DocumentIndex,
-    VectorIndex,
+IndexType = Annotated[
+    Union[
+        DocumentIndex,
+        VectorIndex,
+    ],
+    Field(discriminator="type"),
 ]
 
 # Create a union type for all model types
-ModelType = Union[
-    EmbeddingModel,
-    Model,
+ModelType = Annotated[
+    Union[
+        EmbeddingModel,
+        Model,
+    ],
+    Field(discriminator="type"),
 ]
 
 #

@@ -8,13 +8,15 @@ auths:
     api_key: index_secret_key
 
 models:
-  - id: embedding_model
+  - type: EmbeddingModel
+    id: embedding_model
     provider: openai
     model_id: text-embedding-3-small
     dimensions: 1536
 
 indexes:
-  - id: test_vector_index
+  - type: VectorIndex
+    id: test_vector_index
     name: my_vector_collection
     auth: index_auth  # String should be resolved to Reference[AuthProviderType]
     embedding_model: embedding_model  # String should be resolved to Reference[EmbeddingModel]

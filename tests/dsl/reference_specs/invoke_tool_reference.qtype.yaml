@@ -3,7 +3,8 @@
 id: test_invoke_tool
 
 tools:
-  - id: test_tool
+  - type: PythonFunctionTool
+    id: test_tool
     name: TestTool
     description: Test tool for invocation
     function_name: test_func

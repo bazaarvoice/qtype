@@ -3,13 +3,15 @@
 id: test_vector_search
 
 models:
-  - id: embedding_model
+  - type: EmbeddingModel
+    id: embedding_model
     provider: openai
     model_id: text-embedding-3-small
     dimensions: 1536
 
 indexes:
-  - id: search_index
+  - type: VectorIndex
+    id: search_index
     name: my_search_collection
     embedding_model: embedding_model
 

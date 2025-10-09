@@ -3,13 +3,15 @@
 id: test_index_upsert
 
 models:
-  - id: embedding_model
+  - type: EmbeddingModel
+    id: embedding_model
     provider: openai
     model_id: text-embedding-3-small
     dimensions: 1536
 
 indexes:
-  - id: test_index
+  - type: VectorIndex
+    id: test_index
     name: my_collection
     embedding_model: embedding_model
 

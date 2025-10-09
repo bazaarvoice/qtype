@@ -8,13 +8,15 @@ auths:
     api_key: test_secret_key
 
 models:
-  - id: test_embedding_model
+  - type: EmbeddingModel
+    id: test_embedding_model
     provider: openai
     model_id: text-embedding-ada-002
     dimensions: 1536
 
 indexes:
-  - id: test_index
+  - type: VectorIndex
+    id: test_index
     name: test-index
     embedding_model: test_embedding_model
     auth: test_auth  # String should resolve to Reference[AuthProviderType]
