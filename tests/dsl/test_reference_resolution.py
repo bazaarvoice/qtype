@@ -361,3 +361,76 @@ class TestVectorSearchReferenceResolution:
 
         assert isinstance(step.index, Reference)
         assert step.index.ref == "search_index"
+
+
+class TestCombinedReferenceResolution:
+    """Test files that combine multiple reference types in one spec."""
+
+    def test_llm_inference_combined_references(self) -> None:
+        """Test that LLMInference.model and .memory both resolve in same spec."""
+        app = load_test_spec("llm_inference_references.qtype.yaml")
+
+        assert app.flows is not None
+        flow = app.flows[0]
+        step = flow.steps[0]
+        assert isinstance(step, dsl.LLMInference)
+
+        # Both model and memory should be References
+        assert isinstance(step.model, Reference)
+        assert step.model.ref == "test_model"
+
+        assert step.memory is not None
+        assert isinstance(step.memory, Reference)
+        assert step.memory.ref == "test_memory"
+
+    def test_step_inputs_outputs_combined_references(self) -> None:
+        """Test that Step.inputs and .outputs both resolve in same spec."""
+        app = load_test_spec("step_inputs_outputs_reference.qtype.yaml")
+
+        assert app.flows is not None
+        flow = app.flows[0]
+        step = flow.steps[0]
+        assert isinstance(step, dsl.Step)
+
+        # Both inputs and outputs should have References
+        assert step.inputs is not None
+        assert len(step.inputs) == 1
+        assert isinstance(step.inputs[0], Reference)
+        assert step.inputs[0].ref == "input_var"
+
+        assert step.outputs is not None
+        assert len(step.outputs) == 1
+        assert isinstance(step.outputs[0], Reference)
+        assert step.outputs[0].ref == "output_var"
+
+    def test_vector_index_combined_references(self) -> None:
+        """Test that VectorIndex.auth and .embedding_model both resolve in same spec."""
+        app = load_test_spec("vector_index_references.qtype.yaml")
+
+        assert app.indexes is not None
+        assert len(app.indexes) == 1
+        index = app.indexes[0]
+        assert isinstance(index, dsl.VectorIndex)
+
+        # Both auth and embedding_model should be References
+        assert index.auth is not None
+        assert isinstance(index.auth, Reference)
+        assert index.auth.ref == "index_auth"
+
+        assert isinstance(index.embedding_model, Reference)
+        assert index.embedding_model.ref == "embedding_model"
+
+    def test_flow_interface_session_inputs_multiple_references(self) -> None:
+        """Test that FlowInterface.session_inputs with multiple strings all resolve."""
+        app = load_test_spec("flow_interface_session_inputs.qtype.yaml")
+
+        assert app.flows is not None
+        flow = app.flows[0]
+        assert flow.interface is not None
+
+        # Should have 2 session_inputs, both References
+        assert len(flow.interface.session_inputs) == 2
+        assert isinstance(flow.interface.session_inputs[0], Reference)
+        assert flow.interface.session_inputs[0].ref == "user_name"
+        assert isinstance(flow.interface.session_inputs[1], Reference)
+        assert flow.interface.session_inputs[1].ref == "user_email"
