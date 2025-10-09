@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from qtype.loader import (
+from qtype.dsl.loader import (
     _resolve_path,
     _StringStream,
     load_yaml,
@@ -648,7 +648,7 @@ class TestLoaderEdgeCases:
         test_file = TestHelpers.create_temp_file(
             temp_dir, "test.yaml", "name: Test"
         )
-        with patch("qtype.loader.url_to_fs", side_effect=ValueError):
+        with patch("qtype.dsl.loader.url_to_fs", side_effect=ValueError):
             result = load_yaml(str(test_file))
             if isinstance(result, dict):
                 assert result["name"] == "Test"

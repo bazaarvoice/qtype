@@ -31,7 +31,7 @@ class QTypeFacade:
     def load_dsl_document(
         self, path: PathLike
     ) -> tuple[DocumentRootType, CustomTypeRegistry]:
-        from qtype.loader import load_document
+        from qtype.dsl.loader import load_document
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
@@ -49,7 +49,7 @@ class QTypeFacade:
         self, path: PathLike
     ) -> tuple[SemanticApplication, CustomTypeRegistry]:
         """Load a document and return the resolved semantic model."""
-        from qtype.loader import load
+        from qtype.semantic.loader import load
 
         content = Path(path).read_text(encoding="utf-8")
         return load(content)

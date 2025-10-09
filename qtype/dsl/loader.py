@@ -19,9 +19,6 @@ from qtype.base.types import CustomTypeRegistry
 from qtype.dsl import model as dsl
 from qtype.dsl.custom_types import build_dynamic_types
 from qtype.dsl.types import DocumentRootType
-from qtype.dsl.validator import validate
-from qtype.semantic.model import Application
-from qtype.semantic.resolver import resolve
 
 
 class _StringStream:
@@ -243,6 +240,7 @@ def load_yaml_from_string(
 
     Args:
         content: The YAML content to load.
+        original_uri: Optional URI of the original file for relative path resolution.
 
     Returns:
         The parsed YAML data with includes resolved and environment variables substituted.
@@ -343,7 +341,7 @@ def _list_dynamic_types_from_document(
         loaded_yaml: The parsed YAML data containing type definitions.
 
     Returns:
-        A registry of dynamically created Pydantic BaseModel classes.
+        A list of dynamic type definitions.
     """
     rv = []
 
@@ -369,7 +367,20 @@ def _list_dynamic_types_from_document(
 
 
 def load_document(content: str) -> tuple[DocumentRootType, CustomTypeRegistry]:
-    """Load a QType YAML file, validate it, and return the resolved root."""
+    """
+    Load a QType YAML file and return the DSL document root.
+
+    Args:
+        content: Either a fsspec uri/file path to load, or a string containing YAML content.
+
+    Returns:
+        A tuple of (DocumentRootType, CustomTypeRegistry).
+
+    Raises:
+        ValueError: If a required environment variable is not found.
+        FileNotFoundError: If the YAML file or included files don't exist.
+        yaml.YAMLError: If the YAML file is malformed.
+    """
     yaml_data = load_yaml(content)
     dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
     dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
@@ -378,14 +389,3 @@ def load_document(content: str) -> tuple[DocumentRootType, CustomTypeRegistry]:
     )
     root = _resolve_root(document)
     return root, dynamic_types_registry
-
-
-def load(content: str) -> tuple[Application, CustomTypeRegistry]:
-    """Load a QType YAML file, validate it, and return the resolved root."""
-    root, dynamic_types_registry = load_document(content)
-    if not isinstance(root, dsl.Application):
-        raise ValueError(
-            f"Root document is not an Application, found {type(root)}."
-        )
-    root = validate(root)
-    return resolve(root), dynamic_types_registry

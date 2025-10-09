@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from qtype.loader import load
+from qtype.semantic.loader import load
 from qtype.semantic.visualize import visualize_application
 
 
