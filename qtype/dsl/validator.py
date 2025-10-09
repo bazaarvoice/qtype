@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Dict, Union, get_args, get_origin
 
-import qtype.dsl.base_types as base_types
+import qtype.base.types as base_types
 import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 

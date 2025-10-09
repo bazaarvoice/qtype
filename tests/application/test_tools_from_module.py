@@ -20,7 +20,7 @@ from qtype.application.converters.tools_from_module import (
     _pydantic_to_custom_types,
     tools_from_module,
 )
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import PythonFunctionTool
 
 

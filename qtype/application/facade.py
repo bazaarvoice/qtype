@@ -9,10 +9,10 @@ import pandas as pd
 from pydantic import BaseModel
 
 from qtype.base.logging import get_logger
-from qtype.base.types import CustomTypeRegistry, DocumentRootType, PathLike
-from qtype.dsl.base_types import StepCardinality
+from qtype.base.types import CustomTypeRegistry, PathLike, StepCardinality
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
+from qtype.dsl.types import DocumentRootType
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
 from qtype.semantic.model import Variable

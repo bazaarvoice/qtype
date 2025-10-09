@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from .base_types import *  # noqa: F403
 from .domain_types import *  # noqa: F403
 from .model import *  # noqa: F403
 

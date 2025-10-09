@@ -14,7 +14,7 @@ from pydantic import (
 )
 
 import qtype.dsl.domain_types as domain_types
-from qtype.dsl.base_types import (
+from qtype.base.types import (
     PrimitiveTypeEnum,
     Reference,
     StepCardinality,

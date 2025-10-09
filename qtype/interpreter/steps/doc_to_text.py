@@ -3,7 +3,7 @@ from io import BytesIO
 from docling.document_converter import DocumentConverter
 from docling_core.types.io import DocumentStream
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import RAGDocument
 from qtype.semantic.model import DocToTextConverter, Variable
 

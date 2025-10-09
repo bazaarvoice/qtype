@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from qtype import dsl, loader
-from qtype.dsl.base_types import Reference
+from qtype.base.types import Reference
 
 # Path to the reference test specs
 REFERENCE_SPECS_DIR = Path(__file__).parent / "reference_specs"

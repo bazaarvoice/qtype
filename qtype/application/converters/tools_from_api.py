@@ -17,7 +17,7 @@ from openapi_parser.specification import (
     Security,
 )
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     APIKeyAuthProvider,
     APITool,

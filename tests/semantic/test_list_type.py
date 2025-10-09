@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 from qtype.application.facade import QTypeFacade
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.semantic.model import ListType as SemanticListType
 
 

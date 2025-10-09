@@ -15,9 +15,10 @@ import yaml
 from dotenv import load_dotenv
 from fsspec.core import url_to_fs  # type: ignore[import-untyped]
 
-from qtype.base.types import CustomTypeRegistry, DocumentRootType
+from qtype.base.types import CustomTypeRegistry
 from qtype.dsl import model as dsl
 from qtype.dsl.custom_types import build_dynamic_types
+from qtype.dsl.types import DocumentRootType
 from qtype.dsl.validator import validate
 from qtype.semantic.model import Application
 from qtype.semantic.resolver import resolve

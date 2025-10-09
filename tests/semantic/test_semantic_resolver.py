@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from qtype import loader
+from qtype.dsl import loader
 from qtype.semantic import model as ir
 
 TEST_DIR = Path(__file__).parent.parent / "specs"

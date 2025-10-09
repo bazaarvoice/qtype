@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 
-from qtype.dsl.base_types import StepCardinality
+from qtype.base.types import StepCardinality
 from qtype.interpreter.batch.flow import batch_execute_flow
 from qtype.interpreter.batch.types import BatchConfig, ErrorMode
 from qtype.interpreter.flow import execute_flow

@@ -5,7 +5,7 @@ from typing import Any, Type, Union, get_args, get_origin
 from pydantic import BaseModel
 
 from qtype.application.converters.types import PYTHON_TYPE_TO_PRIMITIVE_TYPE
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     CustomType,
     ListType,

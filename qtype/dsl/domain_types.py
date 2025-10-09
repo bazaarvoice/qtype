@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import Field
 
-from qtype.dsl.base_types import PrimitiveTypeEnum, StrictBaseModel
+from qtype.base.types import PrimitiveTypeEnum, StrictBaseModel
 
 
 class Embedding(StrictBaseModel):

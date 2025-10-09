@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Type, Union, get_args, get_origin
 
 import qtype.dsl.model as dsl
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 
 
 def _format_type_name(field_type: Any) -> str:

@@ -6,8 +6,8 @@ from typing import Callable
 
 import pytest
 
-from qtype import dsl, loader
-from qtype.dsl import validator
+from qtype import dsl
+from qtype.dsl import loader, validator
 
 TEST_DIR = Path(__file__).parent.parent / "specs"
 

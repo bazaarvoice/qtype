@@ -1,6 +1,6 @@
 """Test list type functionality."""
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import ListType, Variable, _resolve_variable_type
 from qtype.loader import load_document
 

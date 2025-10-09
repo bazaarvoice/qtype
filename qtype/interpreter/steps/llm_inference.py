@@ -4,7 +4,7 @@ from typing import Any, Callable
 from llama_cloud import MessageRole as LlamaMessageRole
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import (
     ChatContent,
     ChatMessage,
