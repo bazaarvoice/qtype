@@ -1,0 +1,19 @@
+# Test spec for Flow.steps reference resolution
+
+id: test_flow_steps
+
+flows:
+  - id: reusable_step
+    type: Flow
+    steps:
+      - id: prompt_step
+        type: PromptTemplate
+        template: "Test prompt"
+
+  - id: main_flow
+    type: Flow
+    steps:
+      - id: inline_step
+        type: PromptTemplate
+        template: "Inline prompt"
+      - prompt_step  # String should be resolved to Reference[StepType]

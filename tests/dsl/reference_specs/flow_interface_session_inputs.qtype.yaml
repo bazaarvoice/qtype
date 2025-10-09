@@ -1,0 +1,21 @@
+# Test spec for FlowInterface.session_inputs reference resolution
+
+id: test_flow_interface
+
+variables:
+  - id: user_name
+    type: text
+  - id: user_email
+    type: text
+
+flows:
+  - id: test_flow
+    interface:
+      type: Conversational
+      session_inputs:
+        - user_name  # Strings should be resolved to Reference[Variable]
+        - user_email
+    steps:
+      - id: dummy_step
+        type: PromptTemplate
+        template: "Hello"

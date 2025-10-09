@@ -1,0 +1,16 @@
+# Test spec for Step.outputs reference resolution
+
+id: test_step_outputs
+
+variables:
+  - id: output_var
+    type: text
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_step
+        type: PromptTemplate
+        template: "Hello"
+        outputs:
+          - output_var  # String should resolve to Reference[Variable]

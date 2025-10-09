@@ -1,0 +1,17 @@
+# Test spec for SQLSource.auth reference resolution
+
+id: test_sql_source_auth
+
+auths:
+  - id: db_auth
+    type: api_key
+    api_key: db_secret_key
+
+flows:
+  - id: test_flow
+    steps:
+      - id: sql_step
+        type: SQLSource
+        query: "SELECT * FROM users"
+        connection: "postgresql://localhost/testdb"
+        auth: db_auth  # String should be resolved to Reference[AuthProviderType]

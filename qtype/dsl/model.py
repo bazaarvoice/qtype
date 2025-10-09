@@ -333,7 +333,7 @@ class LLMInference(Step):
     It can take input variables and produce output variables based on the model's response."""
 
     type: Literal["LLMInference"] = "LLMInference"
-    memory: Reference[Memory] | None = Field(
+    memory: Reference[Memory] | str | None = Field(
         default=None,
         description="A reference to a Memory object to retain context across interactions.",
     )
@@ -392,7 +392,7 @@ class FlowInterface(StrictBaseModel):
     type: Literal["Complete", "Conversational"] = "Complete"
 
     # 2. Declares which inputs are "sticky" and persisted in the session
-    session_inputs: list[Reference[Variable]] = Field(
+    session_inputs: list[Reference[Variable] | str] = Field(
         [],
         description="A list of input variable IDs that are set once and then persisted across a session.",
     )
@@ -887,6 +887,7 @@ StepType = Annotated[
         Agent,
         Decoder,
         DocToTextConverter,
+        DocumentEmbedder,
         DocumentSearch,
         DocumentSplitter,
         DocumentSource,
@@ -894,6 +895,7 @@ StepType = Annotated[
         FileSource,
         Flow,
         IndexUpsert,
+        InvokeFlow,
         InvokeTool,
         LLMInference,
         PromptTemplate,
