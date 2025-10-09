@@ -25,7 +25,6 @@ from qtype.dsl.model import (  # noqa: F401
     ListType,
     PrimitiveTypeEnum,
     StepCardinality,
-    StructuralTypeEnum,
     ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
@@ -597,7 +596,7 @@ class Flow(Step):
         None, description="Optional description of the flow."
     )
     cardinality: StepCardinality = Field(
-        StepCardinality.auto,
+        StepCardinality.many,
         description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
     )
     mode: Literal["Complete", "Chat"] = Field("Complete")

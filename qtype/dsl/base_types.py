@@ -3,8 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Generic, TypeVar, Union, get_args, get_origin
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic_core import ValidationInfo
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # ---------------- Shared Base Types and Enums ----------------
 
@@ -49,23 +48,22 @@ class StrictBaseModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    @field_validator("*", mode="before")  # type: ignore
+    @model_validator(mode="before")
     @classmethod
-    def normalize_string_references(cls, v: Any, info: ValidationInfo) -> Any:
+    def normalize_string_references(cls, data: Any) -> Any:
         """
-        A generic validator that runs on all fields. It checks if the field's
-        type annotation is a Union that includes a Reference type and a string.
-        If so, and if the input value is a string, it automatically wraps it
-        in a Reference object.
+        Normalize string references to Reference objects before validation.
 
-        Also handles list[Reference[T] | str] | None by transforming each string
-        element in the list.
+        This validator processes all fields in the model data (except 'type'
+        which is used as a discriminator) and transforms:
+        - `field: "ref_id"` -> `field: {"$ref": "ref_id"}`
+        - `field: ["ref1", "ref2"]` -> `field: [{"$ref": "ref1"}, {"$ref": "ref2"}]`
 
-        Note: Skips 'type' field as it's used as a discriminator in some models.
+        This only applies to fields that are typed as Union[Reference[T], str]
+        or list[Union[Reference[T], str]].
         """
-        # Skip the 'type' field as it's used as a discriminator
-        if info.field_name == "type":  # type: ignore
-            return v
+        if not isinstance(data, dict):
+            return data
 
         # Helper function to check if a type is a Union with Reference and str
         def is_ref_str_union(annotation: Any) -> bool:
@@ -79,39 +77,50 @@ class StrictBaseModel(BaseModel):
             )
             return has_str and has_ref
 
-        # 1. Handle list[Reference[T] | str] | None case
-        if isinstance(v, list):
-            origin = get_origin(info.annotation)
-            if origin is list:
-                # Get the inner type of the list
-                inner_args = get_args(info.annotation)
-                if inner_args and is_ref_str_union(inner_args[0]):
-                    # Transform each string in the list to a Reference
-                    return [
-                        {"$ref": item} if isinstance(item, str) else item
-                        for item in v
-                    ]
-            # If it's a list but not a list[Union[Reference, str]], handle as Union[list, None]
-            elif origin is Union:
-                # Check if any arg is list[Union[Reference, str]]
-                for arg in get_args(info.annotation):
-                    if get_origin(arg) is list:
-                        inner_args = get_args(arg)
-                        if inner_args and is_ref_str_union(inner_args[0]):
-                            return [
-                                {"$ref": item}
-                                if isinstance(item, str)
-                                else item
-                                for item in v
-                            ]
-            return v
+        # Get the field annotations from the class
+        annotations = getattr(cls, "__annotations__", {})
 
-        # 2. Handle direct Union[Reference[T], str] case (existing behavior)
-        if not isinstance(v, str):
-            return v
+        # Process each field in the data
+        for field_name, field_value in data.items():
+            # Skip the 'type' field as it's used as a discriminator
+            if field_name == "type":
+                continue
 
-        if is_ref_str_union(info.annotation):
-            return {"$ref": v}
+            # Skip if field is not in annotations
+            if field_name not in annotations:
+                continue
 
-        # 3. Otherwise, return the value as-is.
-        return v
+            annotation = annotations[field_name]
+
+            # Handle list[Reference[T] | str] | None case
+            if isinstance(field_value, list):
+                origin = get_origin(annotation)
+                if origin is list:
+                    # Get the inner type of the list
+                    inner_args = get_args(annotation)
+                    if inner_args and is_ref_str_union(inner_args[0]):
+                        # Transform each string in the list to a Reference
+                        data[field_name] = [
+                            {"$ref": item} if isinstance(item, str) else item
+                            for item in field_value
+                        ]
+                # Handle Union[list[Union[Reference, str]], None]
+                elif origin is Union:
+                    # Check if any arg is list[Union[Reference, str]]
+                    for arg in get_args(annotation):
+                        if get_origin(arg) is list:
+                            inner_args = get_args(arg)
+                            if inner_args and is_ref_str_union(inner_args[0]):
+                                data[field_name] = [
+                                    {"$ref": item}
+                                    if isinstance(item, str)
+                                    else item
+                                    for item in field_value
+                                ]
+                                break
+
+            # Handle direct Union[Reference[T], str] case
+            elif isinstance(field_value, str) and is_ref_str_union(annotation):
+                data[field_name] = {"$ref": field_value}
+
+        return data

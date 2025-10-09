@@ -20,7 +20,6 @@ TYPES_TO_IGNORE = {
     "ListType",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
-    "StructuralTypeEnum",
     "TypeDefinition",
     "ToolParameter",
     "Variable",
@@ -129,7 +128,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
                 ListType,
                 PrimitiveTypeEnum,
                 StepCardinality,
-                StructuralTypeEnum,
                 ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
