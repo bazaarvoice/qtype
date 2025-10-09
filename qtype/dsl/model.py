@@ -16,6 +16,7 @@ from pydantic import (
 import qtype.dsl.domain_types as domain_types
 from qtype.dsl.base_types import (
     PrimitiveTypeEnum,
+    Reference,
     StepCardinality,
     StrictBaseModel,
 )
@@ -26,14 +27,6 @@ from qtype.dsl.domain_types import (
     RAGChunk,
     RAGDocument,
 )
-
-
-class StructuralTypeEnum(str, Enum):
-    """Represents a structured type that can be used in the DSL."""
-
-    object = "object"
-    array = "array"
-
 
 DOMAIN_CLASSES = {
     name: obj
@@ -199,7 +192,7 @@ class Model(StrictBaseModel):
     """Describes a generative model configuration, including provider and model ID."""
 
     id: str = Field(..., description="Unique ID for the model.")
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider used for model access.",
     )
@@ -260,12 +253,13 @@ class Step(StrictBaseModel, ABC):
         default=StepCardinality.one,
         description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
     )
-    inputs: list[Variable | str] | None = Field(
+    inputs: list[Reference[Variable] | str] | None = Field(
         default=None,
-        description="Input variables required by this step.",
+        description="References to the variables required by this step.",
     )
-    outputs: list[Variable | str] | None = Field(
-        default=None, description="Variable where output is stored."
+    outputs: list[Reference[Variable] | str] | None = Field(
+        default=None,
+        description="References to the variables where output is stored.",
     )
 
 
@@ -278,46 +272,6 @@ class PromptTemplate(Step):
         ...,
         description="String template for the prompt with variable placeholders.",
     )
-
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> "PromptTemplate":
-        """Set default output variable if none provided."""
-        if self.outputs is None:
-            self.outputs = [
-                Variable(id=f"{self.id}.prompt", type=PrimitiveTypeEnum.text)
-            ]
-        if len(self.outputs) != 1:
-            raise ValueError(
-                "PromptTemplate steps must have exactly one output variable -- the result of applying the template."
-            )
-        return self
-
-
-class Condition(Step):
-    """Conditional logic gate within a flow. Supports branching logic for execution based on variable values."""
-
-    type: Literal["Condition"] = "Condition"
-    # TODO: Add support for more complex conditions
-    else_: StepType | str | None = Field(
-        default=None,
-        alias="else",
-        description="Optional step to run if condition fails.",
-    )
-    equals: Variable | str | None = Field(
-        default=None, description="Match condition for equality check."
-    )
-    then: StepType | str = Field(
-        ..., description="Step to run if condition matches."
-    )
-
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> "Condition":
-        """Set default output variable if none provided."""
-        if not self.inputs or len(self.inputs) != 1:
-            raise ValueError(
-                "Condition steps must have exactly one input variable."
-            )
-        return self
 
 
 class Tool(StrictBaseModel, ABC):
@@ -360,7 +314,7 @@ class APITool(Tool):
         default="GET",
         description="HTTP method to use (GET, POST, PUT, DELETE, etc.).",
     )
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="Optional AuthorizationProvider for API authentication.",
     )
@@ -379,26 +333,17 @@ class LLMInference(Step):
     It can take input variables and produce output variables based on the model's response."""
 
     type: Literal["LLMInference"] = "LLMInference"
-    memory: Memory | str | None = Field(
+    memory: Reference[Memory] | None = Field(
         default=None,
-        description="Memory object to retain context across interactions.",
+        description="A reference to a Memory object to retain context across interactions.",
     )
-    model: ModelType | str = Field(
+    model: Reference[ModelType] | str = Field(
         ..., description="The model to use for inference."
     )
     system_message: str | None = Field(
         default=None,
         description="Optional system message to set the context for the model.",
     )
-
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> "LLMInference":
-        """Set default output variable if none provided."""
-        if self.outputs is None:
-            self.outputs = [
-                Variable(id=f"{self.id}.response", type=PrimitiveTypeEnum.text)
-            ]
-        return self
 
 
 class Agent(LLMInference):
@@ -407,12 +352,12 @@ class Agent(LLMInference):
     type: Literal["Agent"] = "Agent"
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
-    tools: list[ToolType | str] = Field(
+    tools: list[Reference[ToolType] | str] = Field(
         ..., description="List of tools available to the agent."
     )
 
 
-class Flow(Step):
+class Flow(StrictBaseModel):
     """Defines a flow of steps that can be executed in sequence or parallel.
     If input or output variables are not specified, they are inferred from
     the first and last step, respectively."""
@@ -421,16 +366,34 @@ class Flow(Step):
     description: str | None = Field(
         default=None, description="Optional description of the flow."
     )
-
-    cardinality: StepCardinality = Field(
-        default=StepCardinality.auto,
-        description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
+    steps: list[StepType | Reference[StepType]] = Field(
+        default_factory=list,
+        description="List of steps or references to steps",
     )
 
-    mode: Literal["Complete", "Chat"] = "Complete"
+    interface: FlowInterface | None = Field(None)
+    inputs: list[Variable] | None = Field(
+        default=None,
+        description="Input variables required by this step.",
+    )
+    outputs: list[Variable] | None = Field(
+        default=None, description="Resulting variables"
+    )
 
-    steps: list[StepType | str] = Field(
-        default_factory=list, description="List of steps or step IDs."
+
+class FlowInterface(BaseModel):
+    """
+    Defines the public-facing contract for a Flow, guiding the UI
+    and session management.
+    """
+
+    # 1. Tells the UI how to render this flow
+    type: Literal["Complete", "Conversational"] = "Complete"
+
+    # 2. Declares which inputs are "sticky" and persisted in the session
+    session_inputs: list[Reference[Variable]] = Field(
+        [],
+        description="A list of input variable IDs that are set once and then persisted across a session.",
     )
 
 
@@ -454,44 +417,42 @@ class Decoder(Step):
         description="Format in which the decoder processes data. Defaults to JSON.",
     )
 
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> "Decoder":
-        """Set default output variable if none provided."""
 
-        if (
-            self.inputs is None
-            or len(self.inputs) != 1
-            or (
-                isinstance(self.inputs[0], Variable)
-                and self.inputs[0].type != PrimitiveTypeEnum.text
-            )
-        ):
-            raise ValueError(
-                f"Decoder steps must have exactly one input variable of type 'text'. Found: {self.inputs}"
-            )
-        if self.outputs is None:
-            raise ValueError(
-                "Decoder steps must have at least one output variable defined."
-            )
-        return self
-
-
-class Invoke(Step):
+class InvokeTool(Step):
     """Invokes a tool with input and output bindings."""
 
-    type: Literal["Invoke"] = "Invoke"
+    type: Literal["InvokeTool"] = "InvokeTool"
 
-    tool: ToolType | str = Field(
+    tool: Reference[ToolType] | str = Field(
         ...,
         description="Tool to invoke.",
     )
     input_bindings: dict[str, str] = Field(
         ...,
-        description="Mapping from step input IDs to tool input parameter names.",
+        description="Mapping from variable references to tool input parameter names.",
     )
     output_bindings: dict[str, str] = Field(
         ...,
-        description="Mapping from tool output parameter names to step output IDs.",
+        description="Mapping from variable references to tool output parameter names.",
+    )
+
+
+class InvokeFlow(Step):
+    """Invokes a flow with input and output bindings."""
+
+    type: Literal["InvokeFlow"] = "InvokeFlow"
+
+    flow: Reference[Flow] | str = Field(
+        ...,
+        description="Flow to invoke.",
+    )
+    input_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from variable references to flow input variable IDs.",
+    )
+    output_bindings: dict[str, str] = Field(
+        ...,
+        description="Mapping from variable references to flow output variable IDs.",
     )
 
 
@@ -603,7 +564,7 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthorizationProvider] | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
@@ -646,7 +607,8 @@ class Application(StrictBaseModel):
         description="List of custom types defined in this application.",
     )
     variables: list[Variable] | None = Field(
-        default=None, description="List of variables used in this application."
+        default=None,
+        description="List of variables available at the application scope.",
     )
 
     # Orchestration
@@ -706,60 +668,26 @@ class SQLSource(Source):
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="Optional AuthorizationProvider for database authentication.",
     )
-
-    @model_validator(mode="after")
-    def validate_sql_source(self) -> "SQLSource":
-        """Validate SQL source configuration."""
-        if self.outputs is None:
-            raise ValueError(
-                "SQLSource must define output variables that match the result columns."
-            )
-        return self
 
 
 class FileSource(Source):
     """File source that reads data from a file using fsspec-compatible URIs."""
 
     type: Literal["FileSource"] = "FileSource"
-    path: str | None = Field(
-        default=None,
-        description="fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+    path: str = Field(
+        default=...,
+        description="Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
     )
-
-    @model_validator(mode="after")
-    def validate_file_source(self) -> "FileSource":
-        """Validate that either path is specified or 'path' input variable exists."""
-        if self.path is None:
-            # Check if 'path' input variable exists
-            if self.inputs is None:
-                raise ValueError(
-                    "FileSource must either specify 'path' field or have a 'path' input variable."
-                )
-
-            path_input_exists = any(
-                (isinstance(inp, Variable) and inp.id == "path")
-                or (isinstance(inp, str) and inp == "path")
-                for inp in self.inputs
-            )
-
-            if not path_input_exists:
-                raise ValueError(
-                    "FileSource must either specify 'path' field or have a 'path' input variable."
-                )
-
-        return self
 
 
 class Sink(Step):
     """Base class for data sinks"""
 
     id: str = Field(..., description="Unique ID of the data sink.")
-    # Remove cardinality field - it's always one for sinks
-    # ...existing code...
     cardinality: Literal[StepCardinality.one] = Field(
         default=StepCardinality.one,
         description="Flows always emit exactly one instance of the outputs.",
@@ -770,42 +698,10 @@ class FileSink(Sink):
     """File sink that writes data to a file using fsspec-compatible URIs."""
 
     type: Literal["FileSink"] = "FileSink"
-    path: str | None = Field(
-        default=None,
-        description="fsspec-compatible URI to write to. If None, expects 'path' input variable.",
+    path: str = Field(
+        default=...,
+        description="Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
     )
-
-    @model_validator(mode="after")
-    def validate_file_sink(self) -> "FileSink":
-        """Validate that either path is specified or 'path' input variable exists."""
-        # Ensure user does not set any output variables
-        if self.outputs is not None and len(self.outputs) > 0:
-            raise ValueError(
-                "FileSink outputs are automatically generated. Do not specify outputs."
-            )
-
-        # Automatically set the output variable
-        self.outputs = [Variable(id=f"{self.id}-file-uri", type="text")]
-
-        if self.path is None:
-            # Check if 'path' input variable exists
-            if self.inputs is None:
-                raise ValueError(
-                    "FileSink must either specify 'path' field or have a 'path' input variable."
-                )
-
-            path_input_exists = any(
-                (isinstance(inp, Variable) and inp.id == "path")
-                or (isinstance(inp, str) and inp == "path")
-                for inp in self.inputs
-            )
-
-            if not path_input_exists:
-                raise ValueError(
-                    "FileSink must either specify 'path' field or have a 'path' input variable."
-                )
-
-        return self
 
 
 #
@@ -834,29 +730,10 @@ class DocumentSource(Source):
         default=None,
         description="Reader-specific arguments to pass to the LlamaIndex constructor.",
     )
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider for accessing the source.",
     )
-
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> "DocumentSource":
-        """Set default output variable."""
-        if self.outputs is None or not len(self.outputs):
-            # Outputting a domain object representing the raw document (metadata + text)
-            self.outputs = [
-                Variable(id=f"{self.id}.output_document", type=RAGDocument)
-            ]
-
-        # Ensure there is exactly one output variable and it's RAGDocument type
-        if len(self.outputs) != 1 or (
-            isinstance(self.outputs[0], Variable)
-            and self.outputs[0].type != RAGDocument
-        ):
-            raise ValueError(
-                "DocumentSource steps must have exactly one output variable of type 'RAGDocument'."
-            )
-        return self
 
 
 class DocToTextConverter(Step):
@@ -870,40 +747,6 @@ class DocToTextConverter(Step):
         default=StepCardinality.one,
         description="Consumes one document and produces one processed text output.",
     )
-
-    @model_validator(mode="after")
-    def set_default_inputs_outputs(self) -> "DocToTextConverter":
-        """Set default input/output variables."""
-        if self.inputs is None or not len(self.inputs):
-            self.inputs = [
-                Variable(id=f"{self.id}.input_document", type=RAGDocument)
-            ]
-        # Ensure there is exactly one input variable and it's RAGDocument type
-        if len(self.inputs) != 1 or (
-            isinstance(self.inputs[0], Variable)
-            and self.inputs[0].type != RAGDocument
-        ):
-            raise ValueError(
-                "DocToTextConverter steps must have exactly one input variable of type 'RAGDocument'."
-            )
-
-        if self.outputs is None or not len(self.outputs):
-            self.outputs = [
-                Variable(
-                    id=f"{self.id}.output_document",
-                    type=RAGDocument,
-                )
-            ]
-
-        # Ensure there is exactly one output variable and it's RAGDocument type
-        if len(self.outputs) != 1 or (
-            isinstance(self.outputs[0], Variable)
-            and self.outputs[0].type != RAGDocument
-        ):
-            raise ValueError(
-                "DocumentSource steps must have exactly one output variable of type 'RAGDocument'."
-            )
-        return self
 
 
 class DocumentSplitter(Step):
@@ -928,38 +771,6 @@ class DocumentSplitter(Step):
         description="Additional arguments specific to the chosen splitter class.",
     )
 
-    @model_validator(mode="after")
-    def set_default_inputs_outputs(self) -> "DocumentSplitter":
-        if not self.inputs or not len(self.inputs):
-            self.inputs = [
-                Variable(id=f"{self.id}.input_doc", type=RAGDocument)
-            ]
-        # Ensure there is exactly one input variable and it's RAGDocument type
-        if len(self.inputs) != 1 or (
-            isinstance(self.inputs[0], Variable)
-            and self.inputs[0].type != RAGDocument
-        ):
-            raise ValueError(
-                "DocumentSplitter steps must have exactly one input variable of type 'RAGDocument'."
-            )
-
-        if self.outputs is None or not len(self.outputs):
-            # Output uses the domain-level `Embedding` type, which represents a vectorizable chunk.
-            self.outputs = [
-                Variable(id=f"{self.id}.output_chunk", type=RAGChunk)
-            ]
-
-        # Ensure there is exactly one output variable and it's RAGChunk type
-        if len(self.outputs) != 1 or (
-            isinstance(self.outputs[0], Variable)
-            and self.outputs[0].type != RAGChunk
-        ):
-            raise ValueError(
-                "DocumentSplitter steps must have exactly one output variable of type 'RAGChunk'."
-            )
-
-        return self
-
 
 class DocumentEmbedder(Step):
     """Embeds document chunks using a specified embedding model."""
@@ -969,41 +780,9 @@ class DocumentEmbedder(Step):
         default=StepCardinality.many,
         description="Consumes one chunk and emits one embedded chunk.",
     )
-    model: EmbeddingModel | str = Field(
+    model: Reference[EmbeddingModel] | str = Field(
         ..., description="Embedding model to use for vectorization."
     )
-
-    @model_validator(mode="after")
-    def set_default_inputs_outputs(self) -> "DocumentEmbedder":
-        if not self.inputs or not len(self.inputs):
-            self.inputs = [
-                Variable(id=f"{self.id}.input_chunk", type=RAGChunk)
-            ]
-        # Ensure there is exactly one input variable and it's RAGChunk type
-        if len(self.inputs) != 1 or (
-            isinstance(self.inputs[0], Variable)
-            and self.inputs[0].type != RAGChunk
-        ):
-            raise ValueError(
-                "DocumentEmbedder steps must have exactly one input variable of type 'RAGChunk'."
-            )
-
-        if self.outputs is None or not len(self.outputs):
-            # Output uses the domain-level `Embedding` type, which represents a vectorizable chunk.
-            self.outputs = [
-                Variable(id=f"{self.id}.output_chunk", type=RAGChunk)
-            ]
-
-        # Ensure there is exactly one output variable and it's RAGChunk type
-        if len(self.outputs) != 1 or (
-            isinstance(self.outputs[0], Variable)
-            and self.outputs[0].type != RAGChunk
-        ):
-            raise ValueError(
-                "DocumentEmbedder steps must have exactly one output variable of type 'RAGChunk'."
-            )
-
-        return self
 
 
 class Index(StrictBaseModel, ABC):
@@ -1014,7 +793,7 @@ class Index(StrictBaseModel, ABC):
         default=None,
         description="Index-specific configuration and connection parameters.",
     )
-    auth: AuthProviderType | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider for accessing the index.",
     )
@@ -1023,7 +802,7 @@ class Index(StrictBaseModel, ABC):
 
 class IndexUpsert(Sink):
     type: Literal["IndexUpsert"] = "IndexUpsert"
-    index: IndexType | str = Field(
+    index: Reference[IndexType] | str = Field(
         ..., description="Index to upsert into (object or ID reference)."
     )
 
@@ -1034,29 +813,13 @@ class IndexUpsert(Sink):
             raise ValueError(
                 "IndexUpsert must have exactly one input variable."
             )
-        if isinstance(self.index, VectorIndex):
-            if not (
-                isinstance(self.inputs[0], Variable)
-                and self.inputs[0].type == RAGChunk
-            ):
-                raise ValueError(
-                    "IndexUpsert input variable must be of type 'RAGChunk' for vector indexes."
-                )
-        elif isinstance(self.index, DocumentIndex):
-            if not (
-                isinstance(self.inputs[0], Variable)
-                and self.inputs[0].type == RAGDocument
-            ):
-                raise ValueError(
-                    "IndexUpsert input variable must be of type 'RAGDocument' for document indexes."
-                )
         return self
 
 
 class VectorIndex(Index):
     """Vector database index for similarity search using embeddings."""
 
-    embedding_model: EmbeddingModel | str = Field(
+    embedding_model: Reference[EmbeddingModel] | str = Field(
         ...,
         description="Embedding model used to vectorize queries and documents.",
     )
@@ -1075,7 +838,7 @@ class Search(Step, ABC):
     filters: dict[str, Any] | None = Field(
         default=None, description="Optional filters to apply during search."
     )
-    index: IndexType | str = Field(
+    index: Reference[IndexType] | str = Field(
         ..., description="Index to search against (object or ID reference)."
     )
 
@@ -1089,36 +852,11 @@ class VectorSearch(Search):
         description="Number of top results to retrieve if not provided in the inputs.",
     )
 
-    @model_validator(mode="after")
-    def set_default_inputs_outputs(self) -> "VectorSearch":
-        """Set default input and output variables if none provided."""
-        if self.inputs is None:
-            self.inputs = [
-                Variable(id="top_k", type=PrimitiveTypeEnum.int),
-                Variable(id="query", type=PrimitiveTypeEnum.text),
-            ]
-
-        if self.outputs is None:
-            self.outputs = [Variable(id=f"{self.id}.results", type=Embedding)]
-        return self
-
 
 class DocumentSearch(Search):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = "DocumentSearch"
-
-    @model_validator(mode="after")
-    def set_default_inputs_outputs(self) -> "DocumentSearch":
-        """Set default input and output variables if none provided."""
-        if self.inputs is None:
-            self.inputs = [Variable(id="query", type=PrimitiveTypeEnum.text)]
-
-        if self.outputs is None:
-            self.outputs = [
-                Variable(id=f"{self.id}.results", type=PrimitiveTypeEnum.text)
-            ]
-        return self
 
 
 # Create a union type for all tool types
@@ -1146,7 +884,6 @@ AuthProviderType = Union[
 StepType = Annotated[
     Union[
         Agent,
-        Condition,
         Decoder,
         DocToTextConverter,
         DocumentSearch,
@@ -1156,7 +893,7 @@ StepType = Annotated[
         FileSource,
         Flow,
         IndexUpsert,
-        Invoke,
+        InvokeTool,
         LLMInference,
         PromptTemplate,
         SQLSource,
