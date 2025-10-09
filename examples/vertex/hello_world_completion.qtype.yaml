@@ -1,0 +1,17 @@
+id: hello_world
+flows:
+  - id: simple_example
+    steps:
+      - id: llm_inference_step
+        type: LLMInference
+        model:
+          id: gemini-2.0-flash
+          provider: gcp-vertex
+        system_message:
+          "You are a helpful assistant. Answer the following question:
+          {question}
+          "
+        inputs:
+          - id: question
+            type: text
+
