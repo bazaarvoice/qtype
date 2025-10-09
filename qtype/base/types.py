@@ -63,7 +63,7 @@ ReferenceT = TypeVar("ReferenceT")
 class Reference(BaseModel, Generic[ReferenceT]):
     """Represents a reference to another component by its ID."""
 
-    model_config = PydanticConfigDict(extra="forbid")
+    # model_config = PydanticConfigDict(extra="forbid")
 
     ref: str = Field(..., alias="$ref")
 

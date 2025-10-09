@@ -197,8 +197,8 @@ class Model(StrictBaseModel):
         default=None,
         description="AuthorizationProvider used for model access.",
     )
-    inference_params: dict[str, Any] | None = Field(
-        default=None,
+    inference_params: dict[str, Any] = Field(
+        default_factory=dict,
         description="Optional inference parameters like temperature or max_tokens.",
     )
     model_id: str | None = Field(
@@ -255,12 +255,12 @@ class Step(StrictBaseModel, ABC):
         default=StepCardinality.one,
         description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
     )
-    inputs: list[Reference[Variable] | str] | None = Field(
-        default=None,
+    inputs: list[Reference[Variable] | str] = Field(
+        default_factory=list,
         description="References to the variables required by this step.",
     )
-    outputs: list[Reference[Variable] | str] | None = Field(
-        default=None,
+    outputs: list[Reference[Variable] | str] = Field(
+        default_factory=list,
         description="References to the variables where output is stored.",
     )
 
@@ -286,12 +286,12 @@ class Tool(StrictBaseModel, ABC):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: dict[str, ToolParameter] | None = Field(
-        default=None,
+    inputs: dict[str, ToolParameter] = Field(
+        default_factory=dict,
         description="Input parameters required by this tool.",
     )
-    outputs: dict[str, ToolParameter] | None = Field(
-        default=None,
+    outputs: dict[str, ToolParameter] = Field(
+        default_factory=dict,
         description="Output parameters produced by this tool.",
     )
 
@@ -322,12 +322,12 @@ class APITool(Tool):
         default=None,
         description="Optional AuthorizationProvider for API authentication.",
     )
-    headers: dict[str, str] | None = Field(
-        default=None,
+    headers: dict[str, str] = Field(
+        default_factory=dict,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: dict[str, ToolParameter] | None = Field(
-        default=None,
+    parameters: dict[str, ToolParameter] = Field(
+        default_factory=dict,
         description="Output parameters produced by this tool.",
     )
 
@@ -354,10 +354,10 @@ class Agent(LLMInference):
     """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
     type: Literal["Agent"] = "Agent"
-    """Defines an agent that can perform tasks and make decisions based on user input and context."""
 
     tools: list[Reference[ToolType] | str] = Field(
-        ..., description="List of tools available to the agent."
+        default_factory=list,
+        description="List of tools available to the agent.",
     )
 
 
@@ -376,13 +376,13 @@ class Flow(StrictBaseModel):
         description="List of steps or references to steps",
     )
 
-    interface: FlowInterface | None = Field(None)
-    inputs: list[Variable] | None = Field(
-        default=None,
+    interface: FlowInterface | None = Field(default=None)
+    inputs: list[Variable] = Field(
+        default_factory=list,
         description="Input variables required by this step.",
     )
-    outputs: list[Variable] | None = Field(
-        default=None, description="Resulting variables"
+    outputs: list[Variable] = Field(
+        default_factory=list, description="Resulting variables"
     )
 
 
@@ -397,7 +397,7 @@ class FlowInterface(StrictBaseModel):
 
     # 2. Declares which inputs are "sticky" and persisted in the session
     session_inputs: list[Reference[Variable] | str] = Field(
-        [],
+        default_factory=list,
         description="A list of input variable IDs that are set once and then persisted across a session.",
     )
 
@@ -499,8 +499,8 @@ class OAuth2AuthProvider(AuthorizationProvider):
     client_id: str = Field(..., description="OAuth2 client ID.")
     client_secret: str = Field(..., description="OAuth2 client secret.")
     token_url: str = Field(..., description="Token endpoint URL.")
-    scopes: list[str] | None = Field(
-        default=None, description="OAuth2 scopes required."
+    scopes: list[str] = Field(
+        default_factory=list, description="OAuth2 scopes required."
     )
 
 
@@ -541,7 +541,7 @@ class AWSAuthProvider(AuthorizationProvider):
     region: str | None = Field(default=None, description="AWS region.")
 
     @model_validator(mode="after")
-    def validate_aws_auth(self) -> "AWSAuthProvider":
+    def validate_aws_auth(self) -> AWSAuthProvider:
         """Validate AWS authentication configuration."""
         # At least one auth method must be specified
         has_keys = self.access_key_id and self.secret_access_key
@@ -600,38 +600,40 @@ class Application(StrictBaseModel):
     )
 
     # Core components
-    memories: list[Memory] | None = Field(
-        default=None,
+    memories: list[Memory] = Field(
+        default_factory=list,
         description="List of memory definitions used in this application.",
     )
-    models: list[ModelType] | None = Field(
-        default=None, description="List of models used in this application."
+    models: list[ModelType] = Field(
+        default_factory=list,
+        description="List of models used in this application.",
     )
-    types: list[CustomType] | None = Field(
-        default=None,
+    types: list[CustomType] = Field(
+        default_factory=list,
         description="List of custom types defined in this application.",
     )
-    variables: list[Variable] | None = Field(
-        default=None,
+    variables: list[Variable] = Field(
+        default_factory=list,
         description="List of variables available at the application scope.",
     )
 
     # Orchestration
-    flows: list[Flow] | None = Field(
-        default=None, description="List of flows defined in this application."
+    flows: list[Flow] = Field(
+        default_factory=list,
+        description="List of flows defined in this application.",
     )
 
     # External integrations
-    auths: list[AuthProviderType] | None = Field(
-        default=None,
+    auths: list[AuthProviderType] = Field(
+        default_factory=list,
         description="List of authorization providers used for API access.",
     )
-    tools: list[ToolType] | None = Field(
-        default=None,
+    tools: list[ToolType] = Field(
+        default_factory=list,
         description="List of tools available in this application.",
     )
-    indexes: list[IndexType] | None = Field(
-        default=None,
+    indexes: list[IndexType] = Field(
+        default_factory=list,
         description="List of indexes available for search operations.",
     )
 
@@ -641,8 +643,8 @@ class Application(StrictBaseModel):
     )
 
     # Extensibility
-    references: list[Document] | None = Field(
-        default=None,
+    references: list[Document] = Field(
+        default_factory=list,
         description="List of other q-type documents you may use. This allows modular composition and reuse of components across applications.",
     )
 
@@ -731,8 +733,8 @@ class DocumentSource(Source):
         ...,
         description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
     )
-    args: dict[str, Any] | None = Field(
-        default=None,
+    args: dict[str, Any] = Field(
+        default_factory=dict,
         description="Reader-specific arguments to pass to the LlamaIndex constructor.",
     )
     auth: Reference[AuthProviderType] | str | None = Field(
@@ -771,8 +773,8 @@ class DocumentSplitter(Step):
     chunk_overlap: int = Field(
         default=20, description="Overlap between consecutive chunks."
     )
-    args: dict[str, Any] | None = Field(
-        default=None,
+    args: dict[str, Any] = Field(
+        default_factory=dict,
         description="Additional arguments specific to the chosen splitter class.",
     )
 
@@ -794,8 +796,8 @@ class Index(StrictBaseModel, ABC):
     """Base class for searchable indexes that can be queried by search steps."""
 
     id: str = Field(..., description="Unique ID of the index.")
-    args: dict[str, Any] | None = Field(
-        default=None,
+    args: dict[str, Any] = Field(
+        default_factory=dict,
         description="Index-specific configuration and connection parameters.",
     )
     auth: Reference[AuthProviderType] | str | None = Field(
@@ -812,7 +814,7 @@ class IndexUpsert(Sink):
     )
 
     @model_validator(mode="after")
-    def set_default_outputs(self) -> "IndexUpsert":
+    def set_default_outputs(self) -> IndexUpsert:
         # Ensure there is only one input variable and it's either a RAGChunk (for vector indexes) or a RAGDocument (for document indexes)
         if not self.inputs or len(self.inputs) != 1:
             raise ValueError(
@@ -842,8 +844,9 @@ class DocumentIndex(Index):
 class Search(Step, ABC):
     """Base class for search operations against indexes."""
 
-    filters: dict[str, Any] | None = Field(
-        default=None, description="Optional filters to apply during search."
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional filters to apply during search.",
     )
     index: Reference[IndexType] | str = Field(
         ..., description="Index to search against (object or ID reference)."
