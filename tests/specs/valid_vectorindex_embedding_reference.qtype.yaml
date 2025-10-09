@@ -1,4 +1,7 @@
 id: app_vectorindex_embedding_ref
+variables:
+  - id: prompt
+    type: text
 models:
   - type: EmbeddingModel
     id: emb1

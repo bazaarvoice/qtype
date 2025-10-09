@@ -1,7 +1,4 @@
 id: app_step_inputs_ref
-variables:
-  - id: var1
-    type: text
 flows:
   - type: Flow
     id: f1

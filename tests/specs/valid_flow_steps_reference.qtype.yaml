@@ -1,4 +1,7 @@
 id: app_flow_steps_ref
+variables:
+  - id: prompt
+    type: text
 flows:
   - type: Flow
     id: f2

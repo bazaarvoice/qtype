@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Type
+from typing import Dict, Type
 
 from pydantic import BaseModel
 
@@ -57,9 +57,7 @@ class FlowHasNoStepsError(QTypeValidationError):
 
 
 def _update_map_with_unique_check(
-    current_map: Dict[
-        Tuple[Type, str], qtype.dsl.domain_types.StrictBaseModel
-    ],
+    current_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
     new_objects: list[qtype.dsl.domain_types.StrictBaseModel],
 ) -> None:
     """
@@ -81,8 +79,7 @@ def _update_map_with_unique_check(
             # This is a special case where we do not want to add the string itself.
             continue
         # Note: There is no current abstraction for the `id` field, so we assume it exists.
-        type_key = type(obj)
-        obj_id = (type_key, obj.id)  # type: ignore[attr-defined]
+        obj_id = obj.id  # type: ignore[attr-defined]
         # If the object already exists in the map, we check if it is the same object.
         # If it is not the same object, we raise an error.
         # This ensures that we do not have duplicate components with the same ID.
@@ -93,7 +90,7 @@ def _update_map_with_unique_check(
 
 
 def _update_maps_with_embedded_objects(
-    lookup_map: Dict[Tuple[Type, str], qtype.dsl.domain_types.StrictBaseModel],
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
     embedded_objects: list[qtype.dsl.domain_types.StrictBaseModel],
 ) -> None:
     """
@@ -108,13 +105,15 @@ def _update_maps_with_embedded_objects(
         if isinstance(obj, dsl.Flow):
             _update_map_with_unique_check(lookup_map, [obj])
             _update_map_with_unique_check(lookup_map, obj.steps or [])  # type: ignore
+            _update_map_with_unique_check(lookup_map, obj.inputs or [])  # type: ignore
+            _update_map_with_unique_check(lookup_map, obj.outputs or [])  # type: ignore
 
 
 def _build_lookup_maps(
     dsl_application: dsl.Application,
-    lookup_map: Dict[Tuple[Type, str], qtype.dsl.domain_types.StrictBaseModel]
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel]
     | None = None,
-) -> Dict[Tuple[Type, str], qtype.dsl.domain_types.StrictBaseModel]:
+) -> Dict[str, qtype.dsl.domain_types.StrictBaseModel]:
     """
     Build lookup map for all objects in the DSL Application.
     This function creates a dictionary of id -> component, where each key is a
@@ -150,36 +149,48 @@ def _build_lookup_maps(
         if isinstance(ref, dsl.Application):
             _build_lookup_maps(ref, lookup_map)
 
-    lookup_map[(type(dsl_application), dsl_application.id)] = dsl_application
+    lookup_map[dsl_application.id] = dsl_application
 
     return lookup_map
 
 
 def _resolve_all_references(
     model: BaseModel,
-    lookup_map: Dict[Tuple[Type, str], qtype.dsl.domain_types.StrictBaseModel],
+    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
 ):
     """Walks a Pydantic model tree and resolves all Reference objects."""
+
+    def resolve_reference(ref: str, type_hint: Type) -> BaseModel:
+        resolved_obj = lookup_map.get(ref)
+        if resolved_obj is None:
+            raise ReferenceNotFoundError(ref, str(type_hint))
+        return resolved_obj
+
     for field_name, field_value in model.__iter__():
         if isinstance(field_value, base_types.Reference):
-            # We found a reference! Let's resolve it.
-            field_type = type(field_value).__pydantic_generic_metadata__[
-                "args"
-            ][0]
-            resolved_obj = lookup_map.get((type(field_type), field_value.ref))
-            if resolved_obj is None:
-                raise ReferenceNotFoundError(field_value.ref, str(field_type))
-            setattr(model, field_name, resolved_obj)
+            setattr(
+                model,
+                field_name,
+                resolve_reference(field_value.ref, type(field_value)),
+            )
 
         elif isinstance(field_value, BaseModel):
             # Recurse into nested models
             _resolve_all_references(field_value, lookup_map)
 
-        elif isinstance(field_value, list):
+        elif isinstance(field_value, list) and len(field_value) > 0:
             # Recurse into lists
-            for item in field_value:
-                if isinstance(item, BaseModel):
+            for i, item in enumerate(field_value):
+                if isinstance(item, base_types.Reference):
+                    field_value[i] = resolve_reference(item.ref, type(item))
+                elif isinstance(item, BaseModel):
                     _resolve_all_references(item, lookup_map)
+        elif isinstance(field_value, dict):
+            for k, v in field_value.items():
+                if isinstance(v, base_types.Reference):
+                    field_value[k] = resolve_reference(v.ref, type(v))
+                elif isinstance(v, BaseModel):
+                    _resolve_all_references(v, lookup_map)
 
 
 def validate(

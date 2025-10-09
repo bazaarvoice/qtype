@@ -1,7 +1,7 @@
 id: hello_world_app
 description: A simple hello world application that answers user questions using GPT-4
 variables:
-  - id: user_question
+  - id: prompt
     type: text
 models:
   - type: Model

@@ -21,6 +21,8 @@ flows:
       - id: user_question
         type: text
     outputs:
+      - id: prompt
+        type: text
       - id: ai_response
         type: text
     steps:

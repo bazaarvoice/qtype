@@ -4,11 +4,31 @@ import glob
 from pathlib import Path
 
 import pytest
+from pydantic import BaseModel
 
 from qtype import dsl
 from qtype.dsl import loader, validator
 
 TEST_DIR = Path(__file__).parent.parent / "specs"
+
+
+# There should be no instances of Reference left in the validated model
+def has_reference(model: BaseModel) -> bool:
+    if isinstance(model, dsl.Reference):
+        return True
+    if isinstance(model, BaseModel):
+        for _, field_value in model.__iter__():
+            if has_reference(field_value):
+                return True
+    elif isinstance(model, list):
+        for item in model:
+            if has_reference(item):
+                return True
+    elif isinstance(model, dict):
+        for item in model.values():
+            if has_reference(item):
+                return True
+    return False
 
 
 def run_validation(yaml_path: Path) -> dsl.Application:
@@ -18,70 +38,52 @@ def run_validation(yaml_path: Path) -> dsl.Application:
     )
     if not isinstance(model, dsl.Application):
         raise TypeError(f"Expected Application, got {type(model)}")
-    return validator.validate(model)
+    app = validator.validate(model)
+    assert not has_reference(app), "There are unresolved Reference instances"
+    return app
 
 
 @pytest.mark.parametrize(
     "yaml_file",
-    [
-        Path(f).name
-        for f in glob.glob(str(TEST_DIR / "valid_file_source.qtype.yaml"))
-    ],
-    # [Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))],
+    [Path(f).name for f in glob.glob(str(TEST_DIR / "valid_*.qtype.yaml"))],
 )
 def test_valid_dsl_files(yaml_file: str) -> None:
     """Test that valid DSL YAML files pass validation."""
     yaml_path = TEST_DIR / yaml_file
     # should not throw an exception
-    app = run_validation(yaml_path)
-
-    # verify that all Nonable components are empty lists
-    if not app.auths:
-        assert app.auths == []
-    if not app.models:
-        assert app.models == []
-    if not app.indexes:
-        assert app.indexes == []
-    if not app.tools:
-        assert app.tools == []
-    if not app.flows:
-        assert app.flows == []
-    if not app.variables:
-        assert app.variables == []
-    if not app.references:
-        assert app.references == []
+    run_validation(yaml_path)
 
 
-# @pytest.mark.parametrize(
-#     "yaml_file,expected_exception",
-#     [
-#         ("invalid_repeat_ids.qtype.yaml", validator.DuplicateComponentError),
-#         ("invalid_flow_no_steps.qtype.yaml", validator.FlowHasNoStepsError),
-#         (
-#             "invalid_reference_not_found.qtype.yaml",
-#             validator.ReferenceNotFoundError,
-#         ),
-#         (
-#             "invalid_chatflow_no_chatmessage.qtype.yaml",
-#             validator.QTypeValidationError,
-#         ),
-#         (
-#             "invalid_file_source_no_path.qtype.yaml",
-#             ValueError,
-#         ),
-#         (
-#             "invalid_file_sink_no_path.qtype.yaml",
-#             ValueError,
-#         ),
-#     ],
-# )
-# def test_invalid_dsl_files(
-#     yaml_file: str, expected_exception: type[Exception]
-# ) -> None:
-#     """Test that invalid DSL YAML files raise the expected exception."""
-#     yaml_path = TEST_DIR / yaml_file
-#     with pytest.raises(expected_exception):
-#         run_validation(yaml_path)
+@pytest.mark.parametrize(
+    "yaml_file,expected_exception",
+    [
+        ("invalid_repeat_ids.qtype.yaml", validator.DuplicateComponentError),
+        # ("invalid_flow_no_steps.qtype.yaml", validator.FlowHasNoStepsError),
+        (
+            "invalid_reference_not_found.qtype.yaml",
+            validator.ReferenceNotFoundError,
+        ),
+        # (
+        #     "invalid_chatflow_no_chatmessage.qtype.yaml",
+        #     validator.QTypeValidationError,
+        # ),
+        (
+            "invalid_file_source_no_path.qtype.yaml",
+            ValueError,
+        ),
+        (
+            "invalid_file_sink_no_path.qtype.yaml",
+            ValueError,
+        ),
+    ],
+)
+def test_invalid_dsl_files(
+    yaml_file: str, expected_exception: type[Exception]
+) -> None:
+    """Test that invalid DSL YAML files raise the expected exception."""
+    yaml_path = TEST_DIR / yaml_file
+    with pytest.raises(expected_exception):
+        run_validation(yaml_path)
 
 
 # @pytest.mark.parametrize(
