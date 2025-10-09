@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import types
+import typing
 from enum import Enum
 from typing import Any, Generic, TypeVar, Union, get_args, get_origin
 
@@ -43,6 +45,55 @@ class Reference(BaseModel, Generic[ReferenceT]):
     ref: str = Field(..., alias="$ref")
 
 
+def _contains_reference_and_str(type_hint: Any) -> bool:
+    """Check if type contains both Reference and str in a union."""
+    # Get union args (handles Union, | syntax, and Optional)
+    origin = get_origin(type_hint)
+    if origin not in (Union, None) and not isinstance(
+        type_hint, types.UnionType
+    ):
+        return False
+
+    args = get_args(type_hint)
+    if not args:
+        return False
+
+    has_str = str in args
+    has_ref = any(
+        get_origin(arg) is Reference
+        or (hasattr(arg, "__mro__") and Reference in arg.__mro__)
+        for arg in args
+    )
+    return has_str and has_ref
+
+
+def _should_transform_field(type_hint: Any) -> tuple[bool, bool]:
+    """
+    Check if field should be transformed.
+    Returns: (should_transform, is_list)
+    """
+    # Check direct union: Reference[T] | str
+    if _contains_reference_and_str(type_hint):
+        return True, False
+
+    # Check list of union: list[Reference[T] | str]
+    origin = get_origin(type_hint)
+    if origin is list:
+        args = get_args(type_hint)
+        if args and _contains_reference_and_str(args[0]):
+            return True, True
+
+    # Check optional list: list[Reference[T] | str] | None
+    if origin is Union or isinstance(type_hint, types.UnionType):
+        for arg in get_args(type_hint):
+            if get_origin(arg) is list:
+                inner_args = get_args(arg)
+                if inner_args and _contains_reference_and_str(inner_args[0]):
+                    return True, True
+
+    return False, False
+
+
 class StrictBaseModel(BaseModel):
     """Base model with extra fields forbidden."""
 
@@ -54,73 +105,35 @@ class StrictBaseModel(BaseModel):
         """
         Normalize string references to Reference objects before validation.
 
-        This validator processes all fields in the model data (except 'type'
-        which is used as a discriminator) and transforms:
+        Transforms:
         - `field: "ref_id"` -> `field: {"$ref": "ref_id"}`
         - `field: ["ref1", "ref2"]` -> `field: [{"$ref": "ref1"}, {"$ref": "ref2"}]`
 
-        This only applies to fields that are typed as Union[Reference[T], str]
-        or list[Union[Reference[T], str]].
+        Only applies to fields typed as `Reference[T] | str` or `list[Reference[T] | str]`.
         """
         if not isinstance(data, dict):
             return data
 
-        # Helper function to check if a type is a Union with Reference and str
-        def is_ref_str_union(annotation: Any) -> bool:
-            if get_origin(annotation) is not Union:
-                return False
-            args = get_args(annotation)
-            has_str = str in args
-            has_ref = any(
-                hasattr(arg, "__name__") and arg.__name__ == "Reference"
-                for arg in args
-            )
-            return has_str and has_ref
+        # Get type hints (evaluates ForwardRefs)
+        hints = typing.get_type_hints(cls)
 
-        # Get the field annotations from the class
-        annotations = getattr(cls, "__annotations__", {})
-
-        # Process each field in the data
+        # Transform fields
         for field_name, field_value in data.items():
-            # Skip the 'type' field as it's used as a discriminator
-            if field_name == "type":
+            if field_name == "type" or field_name not in hints:
                 continue
 
-            # Skip if field is not in annotations
-            if field_name not in annotations:
+            should_transform, is_list = _should_transform_field(
+                hints[field_name]
+            )
+            if not should_transform:
                 continue
 
-            annotation = annotations[field_name]
-
-            # Handle list[Reference[T] | str] | None case
-            if isinstance(field_value, list):
-                origin = get_origin(annotation)
-                if origin is list:
-                    # Get the inner type of the list
-                    inner_args = get_args(annotation)
-                    if inner_args and is_ref_str_union(inner_args[0]):
-                        # Transform each string in the list to a Reference
-                        data[field_name] = [
-                            {"$ref": item} if isinstance(item, str) else item
-                            for item in field_value
-                        ]
-                # Handle Union[list[Union[Reference, str]], None]
-                elif origin is Union:
-                    # Check if any arg is list[Union[Reference, str]]
-                    for arg in get_args(annotation):
-                        if get_origin(arg) is list:
-                            inner_args = get_args(arg)
-                            if inner_args and is_ref_str_union(inner_args[0]):
-                                data[field_name] = [
-                                    {"$ref": item}
-                                    if isinstance(item, str)
-                                    else item
-                                    for item in field_value
-                                ]
-                                break
-
-            # Handle direct Union[Reference[T], str] case
-            elif isinstance(field_value, str) and is_ref_str_union(annotation):
+            if is_list and isinstance(field_value, list):
+                data[field_name] = [
+                    {"$ref": item} if isinstance(item, str) else item
+                    for item in field_value
+                ]
+            elif not is_list and isinstance(field_value, str):
                 data[field_name] = {"$ref": field_value}
 
         return data

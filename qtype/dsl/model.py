@@ -91,7 +91,7 @@ def _resolve_variable_type(
     return parsed_type
 
 
-class Variable(BaseModel):
+class Variable(StrictBaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
     id: str = Field(
@@ -362,6 +362,7 @@ class Flow(StrictBaseModel):
     If input or output variables are not specified, they are inferred from
     the first and last step, respectively."""
 
+    id: str = Field(..., description="Unique ID of the flow.")
     type: Literal["Flow"] = "Flow"
     description: str | None = Field(
         default=None, description="Optional description of the flow."
@@ -381,7 +382,7 @@ class Flow(StrictBaseModel):
     )
 
 
-class FlowInterface(BaseModel):
+class FlowInterface(StrictBaseModel):
     """
     Defines the public-facing contract for a Flow, guiding the UI
     and session management.
