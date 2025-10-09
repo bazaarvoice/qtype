@@ -1,6 +1,7 @@
 id: app_with_missing_reference
 flows:
-  - id: flow1
+  - type: Flow
+    id: flow1
     steps:
       - id: step1
         type: PromptTemplate

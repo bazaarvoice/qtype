@@ -1,6 +1,7 @@
 id: app_llm_memory_ref
 models:
-  - id: m1
+  - type: Model
+    id: m1
     provider: openai
     model_id: gpt-4
     inference_params:
@@ -9,12 +10,11 @@ models:
 memories:
   - id: mem1
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
     steps:
       - id: llm1
         type: LLMInference
         model: m1
         memory: mem1
         system_message: hi
-        inputs: []
-        outputs: []

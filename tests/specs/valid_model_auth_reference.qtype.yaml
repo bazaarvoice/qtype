@@ -1,6 +1,7 @@
 id: app_model_auth_ref
 models:
-  - id: m1
+  - type: Model
+    id: m1
     provider: openai
     auth: auth1
     model_id: gpt-4
@@ -8,11 +9,12 @@ models:
       temperature: 0.5
       max_tokens: 100
 auths:
-  - id: auth1
-    type: api_key
+  - type: api_key
+    id: auth1
     api_key: SECRET
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
     steps:
       - id: s1
         type: PromptTemplate

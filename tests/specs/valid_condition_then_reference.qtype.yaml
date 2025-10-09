@@ -1,26 +1,21 @@
-id: app_condition_then_ref
+# REMOVED: Conditional branching has been removed from the DSL as per dsl_changes.md #8
+# This file is kept for reference but the test should be disabled or removed
+id: app_condition_then_ref_removed
+description: Conditions are no longer supported in the DSL
 variables:
-  - id: s1.prompt
+  - id: s1_prompt
     type: text
-  - id: cond1.result
+  - id: result
     type: text
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
+    outputs:
+      - id: result
+        type: text
     steps:
-      - id: s1
-        type: PromptTemplate
-        template: hi
-        outputs:
-          - s1.prompt
       - id: s2
         type: PromptTemplate
         template: bye
-      - id: cond1
-        type: Condition
-        equals: s1.prompt
-        then: s2
-        else: s1
-        inputs:
-          - s1.prompt
         outputs:
-          - cond1.result
+          - result
