@@ -16,6 +16,7 @@ dependencies = [
     "pip-system-certs>=5.2",
     "openapi3-parser>=1.1.21",
     "pydantic-yaml>=1.6.0",
+    "google-cloud-aiplatform>=1.120.0",
 ]
 license = "APACHE-2.0"
 license-files = ["LICEN[CS]E*"]
@@ -43,6 +44,7 @@ interpreter = [
     "s3fs>=2025.7.0",
     "sqlalchemy>=2.0.42",
     "uvicorn[standard]>=0.35.0",
+    "llama-index-llms-vertex>=0.6.1",
 ]
 
 [dependency-groups]
