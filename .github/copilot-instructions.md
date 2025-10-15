@@ -73,9 +73,14 @@ The architecture establishes clear layers with controlled dependencies:
     - Sort imports alphabetically within each group
     - Use `from` imports for specific items when appropriate
     - Place `from __future__ import annotations` at the very top
-    - **CRITICAL**: Use separate import lines, NOT comma-separated imports
-      - WRONG: `from qtype.semantic import checker, model as ir, resolver`
-      - RIGHT: `from qtype.semantic import checker` then `from qtype.semantic import model as ir` then `from qtype.semantic import resolver`
+    - **CRITICAL**: Import formatting rules:
+      - When importing multiple items from the SAME module WITHOUT aliases: use comma-separated on ONE line
+        * WRONG: `from qtype.dsl.model import ListType` then `from qtype.dsl.model import Variable`
+        * RIGHT: `from qtype.dsl.model import ListType, Variable, _resolve_variable_type`
+      - When importing with aliases or complex operations: use separate lines
+        * WRONG: `from qtype.semantic import checker, model as ir, resolver`
+        * RIGHT: `from qtype.semantic import checker` then `from qtype.semantic import model as ir` then `from qtype.semantic import resolver`
+      - Rule of thumb: Simple imports from same module = one line with commas; aliases or complexity = separate lines
     
     ## ruff compliance:
     - Follow all ruff default rules and error codes (line-length = 79, target py310)

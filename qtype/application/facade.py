@@ -14,6 +14,7 @@ from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
+from qtype.semantic.model import DocumentType as SemanticDocumentType
 from qtype.semantic.model import Variable
 
 logger = get_logger("application.facade")
@@ -34,8 +35,8 @@ class QTypeFacade:
 
         return load_document(Path(path).read_text(encoding="utf-8"))
 
-    def telemetry(self, spec: SemanticApplication) -> None:
-        if spec.telemetry:
+    def telemetry(self, spec: SemanticDocumentType) -> None:
+        if isinstance(spec, SemanticApplication) and spec.telemetry:
             logger.info(
                 f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
             )
@@ -46,7 +47,7 @@ class QTypeFacade:
 
     def load_semantic_model(
         self, path: PathLike
-    ) -> tuple[SemanticApplication, CustomTypeRegistry]:
+    ) -> tuple[SemanticDocumentType, CustomTypeRegistry]:
         """Load a document and return the resolved semantic model."""
         from qtype.semantic.loader import load
 
@@ -66,6 +67,7 @@ class QTypeFacade:
 
         # Load the semantic application
         semantic_model, type_registry = self.load_semantic_model(path)
+        assert isinstance(semantic_model, SemanticApplication)
         self.telemetry(semantic_model)
 
         # Find the flow to execute (inlined from _find_flow)
