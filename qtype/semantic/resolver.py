@@ -9,8 +9,9 @@ are resolved to actual object references.
 import logging
 from typing import Any
 
+from pydantic import BaseModel
+
 import qtype.base.types as base_types
-import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 import qtype.semantic.model as ir
 from qtype.base.exceptions import SemanticError
@@ -50,14 +51,16 @@ def _resolve_forward_ref(field_type: Any) -> Any:
 
 
 def to_semantic_ir(
-    dslobj: qtype.dsl.domain_types.StrictBaseModel,
+    dslobj: BaseModel,
     symbol_table: dict[str, Any],
 ) -> Any:
     """
-    Convert a DSL QTypeSpec object to its semantic intermediate representation (IR).
+    Convert a DSL object to its semantic intermediate representation (IR).
+
+    Handles both regular BaseModel types and RootModel types (like *List documents).
 
     Args:
-        dsl: The DSL QTypeSpec object to convert.
+        dslobj: The DSL object to convert (StrictBaseModel or RootModel).
 
     Returns:
         ir.Application: The semantic IR representation of the DSL object.
@@ -99,26 +102,38 @@ def to_semantic_ir(
         return dslobj
 
 
-def resolve(application: dsl.Application) -> ir.Application:
+def resolve(document: dsl.DocumentType) -> ir.DocumentType:
     """
-    Resolve a DSL Application into its semantic intermediate representation.
+    Resolve a DSL Document into its semantic intermediate representation.
 
-    This function transforms the DSL Application into its IR equivalent,
-    resolving all ID references to actual object references.
+    This function transforms any DSL DocumentType (Application, ModelList, etc.)
+    into its IR equivalent, resolving all ID references to actual object references.
 
     Args:
-        application: The DSL Application to transform
+        document: The DSL Document to transform (Application or any *List type)
 
     Returns:
-        dsl.Application: The resolved IR application
+        ir.DocumentType: The resolved IR document
     """
-    # Next, we'll build up the semantic representation.
+    # Build up the semantic representation.
     # This will create a map of all objects by their ID, ensuring that we can resolve
     # references to actual objects.
-    result = to_semantic_ir(application, {})
-    if not isinstance(result, ir.Application):
+    result = to_semantic_ir(document, {})
+
+    # Verify the result is one of the valid DocumentType variants
+    if not isinstance(
+        result,
+        (
+            ir.Application,
+            ir.AuthorizationProviderList,
+            ir.ModelList,
+            ir.ToolList,
+            ir.TypeList,
+            ir.VariableList,
+        ),
+    ):
         raise SemanticError(
-            "The root object must be an Application, but got: "
+            f"The root object must be a valid DocumentType, but got: "
             f"{type(result).__name__}"
         )
     return result

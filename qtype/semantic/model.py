@@ -13,9 +13,9 @@ Types are ignored since they should reflect dsl directly, which is type checked.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
@@ -580,3 +580,63 @@ class SQLSource(Source):
         None,
         description="Optional AuthorizationProvider for database authentication.",
     )
+
+
+#
+# ---------------- Document Flexibility Shapes ----------------
+# The following shapes let users define a set of flexible document structures
+#
+
+
+class AuthorizationProviderList(
+    RootModel[
+        list[
+            APIKeyAuthProvider
+            | BearerTokenAuthProvider
+            | OAuth2AuthProvider
+            | AWSAuthProvider
+        ]
+    ]
+):
+    """Semantic IR for a standalone list of authorization providers."""
+
+    root: list[
+        APIKeyAuthProvider
+        | BearerTokenAuthProvider
+        | OAuth2AuthProvider
+        | AWSAuthProvider
+    ]
+
+
+class ModelList(RootModel[list[Model | EmbeddingModel]]):
+    """Semantic IR for a standalone list of models."""
+
+    root: list[Model | EmbeddingModel]
+
+
+class ToolList(RootModel[list[APITool | PythonFunctionTool]]):
+    """Semantic IR for a standalone list of tools."""
+
+    root: list[APITool | PythonFunctionTool]
+
+
+class TypeList(RootModel[list[CustomType]]):
+    """Semantic IR for a standalone list of type definitions."""
+
+    root: list[CustomType]
+
+
+class VariableList(RootModel[list[Variable]]):
+    """Semantic IR for a standalone list of variables."""
+
+    root: list[Variable]
+
+
+DocumentType = Union[
+    Application,
+    AuthorizationProviderList,
+    ModelList,
+    ToolList,
+    TypeList,
+    VariableList,
+]
