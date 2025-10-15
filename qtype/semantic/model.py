@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field
 
 # Import enums and type aliases from DSL
 from qtype.dsl.model import VariableType  # noqa: F401
@@ -110,6 +110,12 @@ class Application(BaseModel):
     telemetry: TelemetrySink | None = Field(
         None, description="Optional telemetry sink for observability."
     )
+
+
+class AuthorizationProviderList(BaseModel):
+    """Schema for a standalone list of authorization providers."""
+
+    root: list[AuthorizationProvider] = Field(...)
 
 
 class ConstantPath(BaseModel):
@@ -219,6 +225,12 @@ class Memory(ImmutableModel):
     )
 
 
+class ModelList(BaseModel):
+    """Schema for a standalone list of models."""
+
+    root: list[Model] = Field(...)
+
+
 class TelemetrySink(BaseModel):
     """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
 
@@ -232,6 +244,24 @@ class TelemetrySink(BaseModel):
     endpoint: str = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
+
+
+class ToolList(BaseModel):
+    """Schema for a standalone list of tools."""
+
+    root: list[Tool] = Field(...)
+
+
+class TypeList(BaseModel):
+    """Schema for a standalone list of type definitions."""
+
+    root: list[CustomType] = Field(...)
+
+
+class VariableList(BaseModel):
+    """Schema for a standalone list of variables."""
+
+    root: list[Variable] = Field(...)
 
 
 class APIKeyAuthProvider(AuthorizationProvider):
@@ -580,56 +610,6 @@ class SQLSource(Source):
         None,
         description="Optional AuthorizationProvider for database authentication.",
     )
-
-
-#
-# ---------------- Document Flexibility Shapes ----------------
-# The following shapes let users define a set of flexible document structures
-#
-
-
-class AuthorizationProviderList(
-    RootModel[
-        list[
-            APIKeyAuthProvider
-            | BearerTokenAuthProvider
-            | OAuth2AuthProvider
-            | AWSAuthProvider
-        ]
-    ]
-):
-    """Semantic IR for a standalone list of authorization providers."""
-
-    root: list[
-        APIKeyAuthProvider
-        | BearerTokenAuthProvider
-        | OAuth2AuthProvider
-        | AWSAuthProvider
-    ]
-
-
-class ModelList(RootModel[list[Model | EmbeddingModel]]):
-    """Semantic IR for a standalone list of models."""
-
-    root: list[Model | EmbeddingModel]
-
-
-class ToolList(RootModel[list[APITool | PythonFunctionTool]]):
-    """Semantic IR for a standalone list of tools."""
-
-    root: list[APITool | PythonFunctionTool]
-
-
-class TypeList(RootModel[list[CustomType]]):
-    """Semantic IR for a standalone list of type definitions."""
-
-    root: list[CustomType]
-
-
-class VariableList(RootModel[list[Variable]]):
-    """Semantic IR for a standalone list of variables."""
-
-    root: list[Variable]
 
 
 DocumentType = Union[

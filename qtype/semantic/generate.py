@@ -94,7 +94,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             cls.__module__ == dsl.__name__
             and not name.startswith("_")
             and name not in TYPES_TO_IGNORE
-            and not name.endswith("List")
         ):
             dsl_classes.append((name, cls))
 
@@ -133,9 +132,9 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             dedent("""
             from __future__ import annotations
 
-            from typing import Any, Literal
+            from typing import Any, Literal, Union
 
-            from pydantic import BaseModel, Field, model_validator
+            from pydantic import BaseModel, Field, RootModel
 
             # Import enums and type aliases from DSL
             from qtype.dsl.model import (  # noqa: F401
@@ -167,6 +166,20 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
 
         # Write classes
         f.write("\n\n".join(generated))
+
+        # Write the DocumentType
+        f.write(
+            dedent("""\n\n
+                DocumentType = Union[
+                    Application,
+                    AuthorizationProviderList,
+                    ModelList,
+                    ToolList,
+                    TypeList,
+                    VariableList,
+                ]
+                       """)
+        )
 
     # Format the file with Ruff
     format_with_ruff(str(output_path))
