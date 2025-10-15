@@ -16,11 +16,13 @@ from qtype.semantic.model import (
     LLMInference,
     PromptTemplate,
     SQLSource,
+    Step,
     VectorSearch,
 )
 
 #
-# This file contains rules for the lanugage that are evaluated after it is loaded into the semantic representation
+# This file contains rules for the language that are evaluated after
+# it is loaded into the semantic representation
 #
 
 
@@ -37,15 +39,126 @@ class QTypeSemanticError(QTypeValidationError):
     pass
 
 
+# ---- Helper Functions for Common Validation Patterns ----
+
+
+def _validate_exact_input_count(
+    step: Step, expected: int, input_type=None
+) -> None:
+    """
+    Validate a step has exactly the expected number of inputs.
+
+    Args:
+        step: The step to validate
+        expected: Expected number of inputs
+        input_type: Optional expected type for the inputs (PrimitiveTypeEnum or type)
+
+    Raises:
+        QTypeSemanticError: If validation fails
+    """
+    if len(step.inputs) != expected:
+        raise QTypeSemanticError(
+            (
+                f"{step.type} step '{step.id}' must have exactly "
+                f"{expected} input variable(s), found {len(step.inputs)}."
+            )
+        )
+
+    if input_type is not None and len(step.inputs) > 0:
+        actual_type = step.inputs[0].type
+        if actual_type != input_type:
+            type_name = (
+                input_type.__name__
+                if hasattr(input_type, "__name__")
+                else str(input_type)
+            )
+            raise QTypeSemanticError(
+                (
+                    f"{step.type} step '{step.id}' input must be of type "
+                    f"'{type_name}', found '{actual_type}'."
+                )
+            )
+
+
+def _validate_exact_output_count(
+    step: Step, expected: int, output_type=None
+) -> None:
+    """
+    Validate a step has exactly the expected number of outputs.
+
+    Args:
+        step: The step to validate
+        expected: Expected number of outputs
+        output_type: Optional expected type for the outputs (PrimitiveTypeEnum or type)
+
+    Raises:
+        QTypeSemanticError: If validation fails
+    """
+    if len(step.outputs) != expected:
+        raise QTypeSemanticError(
+            (
+                f"{step.type} step '{step.id}' must have exactly "
+                f"{expected} output variable(s), found {len(step.outputs)}."
+            )
+        )
+
+    if output_type is not None and len(step.outputs) > 0:
+        actual_type = step.outputs[0].type
+        if actual_type != output_type:
+            type_name = (
+                output_type.__name__
+                if hasattr(output_type, "__name__")
+                else str(output_type)
+            )
+            raise QTypeSemanticError(
+                (
+                    f"{step.type} step '{step.id}' output must be of type "
+                    f"'{type_name}', found '{actual_type}'."
+                )
+            )
+
+
+def _validate_min_output_count(step: Step, minimum: int) -> None:
+    """
+    Validate a step has at least the minimum number of outputs.
+
+    Args:
+        step: The step to validate
+        minimum: Minimum number of outputs required
+
+    Raises:
+        QTypeSemanticError: If validation fails
+    """
+    if len(step.outputs) < minimum:
+        raise QTypeSemanticError(
+            (
+                f"{step.type} step '{step.id}' must have at least "
+                f"{minimum} output variable(s)."
+            )
+        )
+
+
+def _validate_input_output_types_match(
+    step: Step, input_type: type, output_type: type
+) -> None:
+    """
+    Validate a step has matching input and output types.
+
+    Args:
+        step: The step to validate
+        input_type: Expected input type
+        output_type: Expected output type
+
+    Raises:
+        QTypeSemanticError: If validation fails
+    """
+    _validate_exact_input_count(step, 1, input_type)
+    _validate_exact_output_count(step, 1, output_type)
+
+
 def _validate_prompt_template(t: PromptTemplate) -> None:
-    if len(t.outputs) != 1:
-        raise QTypeSemanticError(
-            f"PromptTemplate {t.id} must have exactly one output, found {len(t.outputs)}."
-        )
-    if t.outputs[0].type != PrimitiveTypeEnum.text:
-        raise QTypeSemanticError(
-            f"PromptTemplate {t.id} output must be of type 'text', found {t.outputs[0].type}."
-        )
+    """Validate PromptTemplate has exactly one text output."""
+    _validate_exact_output_count(t, 1, PrimitiveTypeEnum.text)
 
 
 def _validate_aws_auth(a: AWSAuthProvider) -> None:
@@ -70,147 +183,61 @@ def _validate_aws_auth(a: AWSAuthProvider) -> None:
 
 def _validate_llm_inference(step: LLMInference) -> None:
     """Validate LLMInference step has exactly one text output."""
-    if len(step.outputs) != 1:
-        raise QTypeSemanticError(
-            f"LLMInference step '{step.id}' must have exactly one output variable, found {len(step.outputs)}."
-        )
-    if step.outputs[0].type != PrimitiveTypeEnum.text:
-        raise QTypeSemanticError(
-            f"LLMInference step '{step.id}' output must be of type 'text', found '{step.outputs[0].type}'."
-        )
+    _validate_exact_output_count(step, 1, PrimitiveTypeEnum.text)
 
 
 def _validate_decoder(step: Decoder) -> None:
     """Validate Decoder step has exactly one text input and at least one output."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"Decoder step '{step.id}' must have exactly one input variable of type 'text'. Found: {step.inputs}"
-        )
-    if step.inputs[0].type != PrimitiveTypeEnum.text:
-        raise QTypeSemanticError(
-            f"Decoder step '{step.id}' input must be of type 'text', found '{step.inputs[0].type}'."
-        )
-    if len(step.outputs) == 0:
-        raise QTypeSemanticError(
-            f"Decoder step '{step.id}' must have at least one output variable."
-        )
+    _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
+    _validate_min_output_count(step, 1)
 
 
 def _validate_sql_source(step: SQLSource) -> None:
     """Validate SQLSource has output variables defined."""
-    if len(step.outputs) == 0:
-        raise QTypeSemanticError(
-            f"SQLSource step '{step.id}' must define output variables that match the result columns."
-        )
+    _validate_min_output_count(step, 1)
 
 
 def _validate_document_source(step: DocumentSource) -> None:
     """Validate DocumentSource has exactly one RAGDocument output."""
-    if len(step.outputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentSource step '{step.id}' must have exactly one output variable, found {len(step.outputs)}."
-        )
-    if step.outputs[0].type != RAGDocument:
-        raise QTypeSemanticError(
-            f"DocumentSource step '{step.id}' output must be of type 'RAGDocument', found '{step.outputs[0].type}'."
-        )
+    _validate_exact_output_count(step, 1, RAGDocument)
 
 
 def _validate_doc_to_text_converter(step: DocToTextConverter) -> None:
     """Validate DocToTextConverter has exactly one RAGDocument input and output."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"DocToTextConverter step '{step.id}' must have exactly one input variable, found {len(step.inputs)}."
-        )
-    if step.inputs[0].type != RAGDocument:
-        raise QTypeSemanticError(
-            f"DocToTextConverter step '{step.id}' input must be of type 'RAGDocument', found '{step.inputs[0].type}'."
-        )
-    if len(step.outputs) != 1:
-        raise QTypeSemanticError(
-            f"DocToTextConverter step '{step.id}' must have exactly one output variable, found {len(step.outputs)}."
-        )
-    if step.outputs[0].type != RAGDocument:
-        raise QTypeSemanticError(
-            f"DocToTextConverter step '{step.id}' output must be of type 'RAGDocument', found '{step.outputs[0].type}'."
-        )
+    _validate_input_output_types_match(step, RAGDocument, RAGDocument)
 
 
 def _validate_document_splitter(step: DocumentSplitter) -> None:
     """Validate DocumentSplitter has exactly one RAGDocument input and one RAGChunk output."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentSplitter step '{step.id}' must have exactly one input variable, found {len(step.inputs)}."
-        )
-    if step.inputs[0].type != RAGDocument:
-        raise QTypeSemanticError(
-            f"DocumentSplitter step '{step.id}' input must be of type 'RAGDocument', found '{step.inputs[0].type}'."
-        )
-    if len(step.outputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentSplitter step '{step.id}' must have exactly one output variable, found {len(step.outputs)}."
-        )
-    if step.outputs[0].type != RAGChunk:
-        raise QTypeSemanticError(
-            f"DocumentSplitter step '{step.id}' output must be of type 'RAGChunk', found '{step.outputs[0].type}'."
-        )
+    _validate_input_output_types_match(step, RAGDocument, RAGChunk)
 
 
 def _validate_document_embedder(step: DocumentEmbedder) -> None:
     """Validate DocumentEmbedder has exactly one RAGChunk input and output."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentEmbedder step '{step.id}' must have exactly one input variable, found {len(step.inputs)}."
-        )
-    if step.inputs[0].type != RAGChunk:
-        raise QTypeSemanticError(
-            f"DocumentEmbedder step '{step.id}' input must be of type 'RAGChunk', found '{step.inputs[0].type}'."
-        )
-    if len(step.outputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentEmbedder step '{step.id}' must have exactly one output variable, found {len(step.outputs)}."
-        )
-    if step.outputs[0].type != RAGChunk:
-        raise QTypeSemanticError(
-            f"DocumentEmbedder step '{step.id}' output must be of type 'RAGChunk', found '{step.outputs[0].type}'."
-        )
+    _validate_input_output_types_match(step, RAGChunk, RAGChunk)
 
 
 def _validate_index_upsert(step: IndexUpsert) -> None:
     """Validate IndexUpsert has exactly one input of type RAGChunk or RAGDocument."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"IndexUpsert step '{step.id}' must have exactly one input variable, found {len(step.inputs)}."
-        )
+    _validate_exact_input_count(step, 1)
     input_type = step.inputs[0].type
     if input_type not in (RAGChunk, RAGDocument):
         raise QTypeSemanticError(
-            f"IndexUpsert step '{step.id}' input must be of type 'RAGChunk' or 'RAGDocument', found '{input_type}'."
+            (
+                f"IndexUpsert step '{step.id}' input must be of type "
+                f"'RAGChunk' or 'RAGDocument', found '{input_type}'."
+            )
         )
 
 
 def _validate_vector_search(step: VectorSearch) -> None:
     """Validate VectorSearch has exactly one text input for the query."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"VectorSearch step '{step.id}' must have exactly one text input variable for the query, found {len(step.inputs)}."
-        )
-    if step.inputs[0].type != PrimitiveTypeEnum.text:
-        raise QTypeSemanticError(
-            f"VectorSearch step '{step.id}' input must be of type 'text', found '{step.inputs[0].type}'."
-        )
+    _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
 
 
 def _validate_document_search(step: DocumentSearch) -> None:
     """Validate DocumentSearch has exactly one text input for the query."""
-    if len(step.inputs) != 1:
-        raise QTypeSemanticError(
-            f"DocumentSearch step '{step.id}' must have exactly one text input variable for the query, found {len(step.inputs)}."
-        )
-    if step.inputs[0].type != PrimitiveTypeEnum.text:
-        raise QTypeSemanticError(
-            f"DocumentSearch step '{step.id}' input must be of type 'text', found '{step.inputs[0].type}'."
-        )
+    _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
 
 
 def _validate_flow(flow: Flow) -> None:

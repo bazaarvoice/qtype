@@ -42,12 +42,38 @@ class ComponentNotFoundError(QTypeValidationError):
 class ReferenceNotFoundError(QTypeValidationError):
     """Raised when a reference is not found in the lookup map."""
 
-    def __init__(self, reference: str, type_hint: str | None = None):
-        msg = (
-            f"Reference '{reference}' not found in lookup map."
-            if type_hint is None
-            else f"Reference '{reference}' not found in lookup map for type '{type_hint}'."
-        )
+    def __init__(
+        self,
+        reference: str,
+        type_hint: str | None = None,
+        available_refs: list[str] | None = None,
+    ):
+        if type_hint:
+            msg = (
+                f"Reference '{reference}' not found for type '{type_hint}'.\n"
+            )
+        else:
+            msg = f"Reference '{reference}' not found.\n"
+
+        # Add helpful suggestions if we have available references
+        if available_refs:
+            # Find similar names
+            similar = [
+                ref
+                for ref in available_refs
+                if reference.lower() in ref.lower()
+                or ref.lower() in reference.lower()
+            ]
+            if similar:
+                msg += f"Did you mean one of these? {', '.join(similar[:5])}"
+            elif len(available_refs) <= 10:
+                msg += f"Available references: {', '.join(available_refs)}"
+            else:
+                msg += (
+                    f"There are {len(available_refs)} available "
+                    "references. Check your spelling."
+                )
+
         super().__init__(msg)
 
 
@@ -194,56 +220,125 @@ def _build_lookup_maps(
     return lookup_map
 
 
+def _resolve_reference(
+    ref: str, type_hint: Type, lookup_map: Dict[str, Any]
+) -> Any:
+    """
+    Resolve a single reference string to its object.
+
+    Args:
+        ref: The reference ID to resolve
+        type_hint: Type hint for better error messages
+        lookup_map: Map of component IDs to objects
+
+    Returns:
+        The resolved object
+
+    Raises:
+        ReferenceNotFoundError: If the reference cannot be found
+    """
+    resolved_obj = lookup_map.get(ref)
+    if resolved_obj is None:
+        available_refs = list(lookup_map.keys())
+        raise ReferenceNotFoundError(ref, str(type_hint), available_refs)
+    return resolved_obj
+
+
+def _resolve_rootmodel_references(
+    model: RootModel, lookup_map: Dict[str, Any]
+) -> None:
+    """
+    Resolve references in a RootModel (list-based documents).
+
+    Args:
+        model: RootModel instance to resolve
+        lookup_map: Map of component IDs to objects
+    """
+    root_list = model.root  # type: ignore
+    if not isinstance(root_list, list):
+        return
+
+    for i, item in enumerate(root_list):
+        match item:
+            case base_types.Reference():
+                root_list[i] = _resolve_reference(
+                    item.ref, type(item), lookup_map
+                )
+            case BaseModel():
+                _resolve_all_references(item, lookup_map)
+
+
+def _resolve_list_references(
+    field_value: list, lookup_map: Dict[str, Any]
+) -> None:
+    """
+    Resolve references within a list field.
+
+    Args:
+        field_value: List to process
+        lookup_map: Map of component IDs to objects
+    """
+    for i, item in enumerate(field_value):
+        match item:
+            case base_types.Reference():
+                field_value[i] = _resolve_reference(
+                    item.ref, type(item), lookup_map
+                )
+            case BaseModel():
+                _resolve_all_references(item, lookup_map)
+
+
+def _resolve_dict_references(
+    field_value: dict, lookup_map: Dict[str, Any]
+) -> None:
+    """
+    Resolve references within a dict field.
+
+    Args:
+        field_value: Dict to process
+        lookup_map: Map of component IDs to objects
+    """
+    for k, v in field_value.items():
+        match v:
+            case base_types.Reference():
+                field_value[k] = _resolve_reference(v.ref, type(v), lookup_map)
+            case BaseModel():
+                _resolve_all_references(v, lookup_map)
+
+
 def _resolve_all_references(
     model: BaseModel,
     lookup_map: Dict[str, Any],
-):
-    """Walks a Pydantic model tree and resolves all Reference objects."""
+) -> None:
+    """
+    Walk a Pydantic model tree and resolve all Reference objects.
 
-    def resolve_reference(ref: str, type_hint: Type) -> Any:
-        resolved_obj = lookup_map.get(ref)
-        if resolved_obj is None:
-            raise ReferenceNotFoundError(ref, str(type_hint))
-        return resolved_obj
-
+    Args:
+        model: The model to process
+        lookup_map: Map of component IDs to objects
+    """
     # Check if this is a RootModel (list-based document like ModelList, ToolList, etc.)
     if isinstance(model, RootModel):
-        # For RootModel, __iter__() yields the items directly, not (name, value) tuples
-        root_list = model.root  # type: ignore
-        if isinstance(root_list, list):
-            for i, item in enumerate(root_list):
-                if isinstance(item, base_types.Reference):
-                    root_list[i] = resolve_reference(item.ref, type(item))
-                elif isinstance(item, BaseModel):
-                    _resolve_all_references(item, lookup_map)
+        _resolve_rootmodel_references(model, lookup_map)
         return
 
     # For regular BaseModel types, iterate over fields
     for field_name, field_value in model.__iter__():
-        if isinstance(field_value, base_types.Reference):
-            setattr(
-                model,
-                field_name,
-                resolve_reference(field_value.ref, type(field_value)),
-            )
-
-        elif isinstance(field_value, BaseModel):
-            # Recurse into nested models
-            _resolve_all_references(field_value, lookup_map)
-
-        elif isinstance(field_value, list) and len(field_value) > 0:
-            # Recurse into lists
-            for i, item in enumerate(field_value):
-                if isinstance(item, base_types.Reference):
-                    field_value[i] = resolve_reference(item.ref, type(item))
-                elif isinstance(item, BaseModel):
-                    _resolve_all_references(item, lookup_map)
-        elif isinstance(field_value, dict):
-            for k, v in field_value.items():
-                if isinstance(v, base_types.Reference):
-                    field_value[k] = resolve_reference(v.ref, type(v))
-                elif isinstance(v, BaseModel):
-                    _resolve_all_references(v, lookup_map)
+        match field_value:
+            case base_types.Reference():
+                setattr(
+                    model,
+                    field_name,
+                    _resolve_reference(
+                        field_value.ref, type(field_value), lookup_map
+                    ),
+                )
+            case BaseModel():
+                _resolve_all_references(field_value, lookup_map)
+            case list() if len(field_value) > 0:
+                _resolve_list_references(field_value, lookup_map)
+            case dict():
+                _resolve_dict_references(field_value, lookup_map)
 
 
 def link(document: dsl.DocumentType) -> dsl.DocumentType:

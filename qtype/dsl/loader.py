@@ -85,6 +85,108 @@ class _YamlLoader(yaml.SafeLoader):
             self._current_path = str(Path.cwd())
 
 
+class EnvVarHandler:
+    """Handles environment variable substitution in YAML values."""
+
+    @staticmethod
+    def substitute(value: str) -> str:
+        """
+        Substitute environment variables in a string.
+
+        Supports ${VAR_NAME} or ${VAR_NAME:default} syntax.
+
+        Args:
+            value: The string containing environment variable references
+
+        Returns:
+            String with environment variables substituted
+
+        Raises:
+            ValueError: If a required environment variable is not found
+        """
+        # Pattern to match ${VAR_NAME} or ${VAR_NAME:default}
+        pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
+
+        def replace_env_var(match: re.Match[str]) -> str:
+            var_name = match.group(1)
+            default_value = match.group(2)
+
+            env_value = os.getenv(var_name)
+
+            if env_value is not None:
+                return env_value
+            elif default_value is not None:
+                return default_value
+            else:
+                msg = (
+                    f"Environment variable '{var_name}' is "
+                    "required but not set"
+                )
+                raise ValueError(msg)
+
+        return re.sub(pattern, replace_env_var, value)
+
+
+class IncludeHandler:
+    """Handles file inclusion in YAML documents."""
+
+    @staticmethod
+    def load_yaml_file(file_path: str, current_path: str) -> Any:
+        """
+        Load and parse a YAML file with environment variable substitution.
+
+        Args:
+            file_path: The file path/URL to load
+            current_path: The current file path for relative resolution
+
+        Returns:
+            Parsed YAML data from the included file
+
+        Raises:
+            FileNotFoundError: If the included file doesn't exist
+            yaml.YAMLError: If the included file is malformed YAML
+        """
+        resolved_path = _resolve_path(current_path, file_path)
+
+        try:
+            with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
+                content = f.read()  # type: ignore[misc]
+
+                # Create a string stream with the resolved path for nested includes
+                stream = _StringStream(content, resolved_path)
+                return yaml.load(stream, Loader=_YamlLoader)
+        except ValueError:
+            # Re-raise ValueError (e.g., missing environment variables)
+            raise
+        except Exception as e:
+            msg = f"Failed to load included file '{resolved_path}': {e}"
+            raise FileNotFoundError(msg) from e
+
+    @staticmethod
+    def load_raw_file(file_path: str, current_path: str) -> str:
+        """
+        Load a raw text file.
+
+        Args:
+            file_path: The file path/URL to load
+            current_path: The current file path for relative resolution
+
+        Returns:
+            Raw text content of the included file
+
+        Raises:
+            FileNotFoundError: If the included file doesn't exist
+        """
+        resolved_path = _resolve_path(current_path, file_path)
+
+        try:
+            with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
+                return f.read()  # type: ignore[no-any-return]
+        except Exception as e:
+            msg = f"Failed to load included file '{resolved_path}': {e}"
+            raise FileNotFoundError(msg) from e
+
+
 def _env_var_constructor(loader: _YamlLoader, node: yaml.ScalarNode) -> str:
     """
     Constructor for environment variable substitution.
@@ -100,25 +202,7 @@ def _env_var_constructor(loader: _YamlLoader, node: yaml.ScalarNode) -> str:
         ValueError: If a required environment variable is not found.
     """
     value = loader.construct_scalar(node)
-
-    # Pattern to match ${VAR_NAME} or ${VAR_NAME:default}
-    pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
-
-    def replace_env_var(match: re.Match[str]) -> str:
-        var_name = match.group(1)
-        default_value = match.group(2)
-
-        env_value = os.getenv(var_name)
-
-        if env_value is not None:
-            return env_value
-        elif default_value is not None:
-            return default_value
-        else:
-            msg = f"Environment variable '{var_name}' is required but not set"
-            raise ValueError(msg)
-
-    return re.sub(pattern, replace_env_var, value)
+    return EnvVarHandler.substitute(value)
 
 
 def _include_file_constructor(
@@ -139,23 +223,7 @@ def _include_file_constructor(
         yaml.YAMLError: If the included file is malformed YAML.
     """
     file_path = loader.construct_scalar(node)
-
-    # Resolve relative paths/URLs relative to the current file
-    resolved_path = _resolve_path(loader._current_path, file_path)
-
-    try:
-        with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
-            content = f.read()  # type: ignore[misc]
-
-            # Create a string stream with the resolved path for nested includes
-            stream = _StringStream(content, resolved_path)
-            return yaml.load(stream, Loader=_YamlLoader)
-    except ValueError:
-        # Re-raise ValueError (e.g., missing environment variables) without wrapping
-        raise
-    except Exception as e:
-        msg = f"Failed to load included file '{resolved_path}': {e}"
-        raise FileNotFoundError(msg) from e
+    return IncludeHandler.load_yaml_file(file_path, loader._current_path)
 
 
 def _include_raw_constructor(
@@ -175,16 +243,94 @@ def _include_raw_constructor(
         FileNotFoundError: If the included file doesn't exist.
     """
     file_path = loader.construct_scalar(node)
+    return IncludeHandler.load_raw_file(file_path, loader._current_path)
 
-    # Resolve relative paths/URLs relative to the current file
-    resolved_path = _resolve_path(loader._current_path, file_path)
 
-    try:
-        with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
-            return f.read()  # type: ignore[no-any-return]
-    except Exception as e:
-        msg = f"Failed to load included file '{resolved_path}': {e}"
-        raise FileNotFoundError(msg) from e
+class PathResolver:
+    """Handles path resolution for different URI schemes and local paths."""
+
+    @staticmethod
+    def is_absolute(path: str) -> bool:
+        """
+        Check if a path is absolute.
+
+        Args:
+            path: The path to check
+
+        Returns:
+            True if the path is absolute (has scheme or starts with /)
+        """
+        parsed = urlparse(path)
+        return bool(parsed.scheme) or path.startswith("/")
+
+    @staticmethod
+    def is_url(path: str) -> bool:
+        """
+        Check if a path is a URL.
+
+        Args:
+            path: The path to check
+
+        Returns:
+            True if the path has a URL scheme
+        """
+        parsed = urlparse(path)
+        return bool(parsed.scheme)
+
+    @staticmethod
+    def resolve_url(base_url: str, target_path: str) -> str:
+        """
+        Resolve a target path relative to a base URL.
+
+        Args:
+            base_url: The base URL
+            target_path: The target path to resolve
+
+        Returns:
+            The resolved URL
+        """
+        return urljoin(base_url, target_path)
+
+    @staticmethod
+    def resolve_local(base_path: str, target_path: str) -> str:
+        """
+        Resolve a target path relative to a local base path.
+
+        Args:
+            base_path: The base local path
+            target_path: The target path to resolve
+
+        Returns:
+            The resolved local path
+        """
+        base_path_obj = Path(base_path)
+        if base_path_obj.is_dir():
+            base_dir = base_path_obj
+        else:
+            base_dir = base_path_obj.parent
+        return str(base_dir / target_path)
+
+    @classmethod
+    def resolve(cls, current_path: str, target_path: str) -> str:
+        """
+        Resolve a target path relative to the current file path.
+
+        Args:
+            current_path: The path/URL of the current file
+            target_path: The target path/URL to resolve
+
+        Returns:
+            The resolved absolute path/URL
+        """
+        # If target is already absolute, use as-is
+        if cls.is_absolute(target_path):
+            return target_path
+
+        # Check if current path is a URL
+        if cls.is_url(current_path):
+            return cls.resolve_url(current_path, target_path)
+        else:
+            return cls.resolve_local(current_path, target_path)
 
 
 def _resolve_path(current_path: str, target_path: str) -> str:
@@ -198,25 +344,7 @@ def _resolve_path(current_path: str, target_path: str) -> str:
     Returns:
         The resolved absolute path/URL.
     """
-    # If target is already absolute (has scheme or starts with /), use as-is
-    parsed_target = urlparse(target_path)
-    if parsed_target.scheme or target_path.startswith("/"):
-        return target_path
-
-    # Check if current path is a URL
-    parsed_current = urlparse(current_path)
-    if parsed_current.scheme:
-        # Current is a URL, use urljoin for proper URL resolution
-        return urljoin(current_path, target_path)
-    else:
-        # Current is a local path, resolve relative to its directory
-        current_path_obj = Path(current_path)
-        if current_path_obj.is_dir():
-            current_dir = current_path_obj
-        else:
-            # If it's a directory or doesn't exist yet, use it as-is
-            current_dir = current_path_obj.parent
-        return str(current_dir / target_path)
+    return PathResolver.resolve(current_path, target_path)
 
 
 def _load_env_files(directories: list[Path]) -> None:

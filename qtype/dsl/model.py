@@ -35,60 +35,161 @@ DOMAIN_CLASSES = {
 }
 
 
+def _resolve_list_type(
+    element_type_str: str, custom_type_registry: dict[str, Type[BaseModel]]
+) -> ListType:
+    """
+    Resolve a list element type and return a ListType.
+
+    Args:
+        element_type_str: The element type string (e.g., "text", "ChatMessage")
+        custom_type_registry: Registry of custom types
+
+    Returns:
+        ListType with resolved element type
+
+    Raises:
+        ValueError: If element type is invalid for lists
+    """
+    # Recursively resolve the element type
+    element_type = _resolve_variable_type(
+        element_type_str, custom_type_registry
+    )
+
+    # Allow both primitive types and custom types (but no nested lists)
+    if isinstance(element_type, PrimitiveTypeEnum):
+        return ListType(element_type=element_type)
+    elif isinstance(element_type, str):
+        # This is a custom type reference - store as string for later resolution
+        return ListType(element_type=element_type)
+    elif element_type in DOMAIN_CLASSES.values():
+        # Domain class - store its name as string reference
+        for name, cls in DOMAIN_CLASSES.items():
+            if cls == element_type:
+                return ListType(element_type=name)
+        return ListType(element_type=str(element_type))
+    else:
+        raise ValueError(
+            (
+                "List element type must be a primitive or custom type "
+                f"reference, got: {element_type}"
+            )
+        )
+
+
+def _resolve_primitive_type(type_str: str) -> PrimitiveTypeEnum | None:
+    """
+    Try to resolve a string as a primitive type.
+
+    Args:
+        type_str: The type string to resolve
+
+    Returns:
+        PrimitiveTypeEnum if it matches, None otherwise
+    """
+    try:
+        return PrimitiveTypeEnum(type_str)
+    except ValueError:
+        return None
+
+
+def _resolve_domain_type(type_str: str) -> Type[BaseModel] | None:
+    """
+    Try to resolve a string as a built-in domain entity class.
+
+    Args:
+        type_str: The type string to resolve
+
+    Returns:
+        Domain class if found, None otherwise
+    """
+    return DOMAIN_CLASSES.get(type_str)
+
+
+def _resolve_custom_type(
+    type_str: str, custom_type_registry: dict[str, Type[BaseModel]]
+) -> Type[BaseModel] | None:
+    """
+    Try to resolve a string as a custom type from the registry.
+
+    Args:
+        type_str: The type string to resolve
+        custom_type_registry: Registry of custom types
+
+    Returns:
+        Custom type class if found, None otherwise
+    """
+    return custom_type_registry.get(type_str)
+
+
 def _resolve_variable_type(
     parsed_type: Any, custom_type_registry: dict[str, Type[BaseModel]]
 ) -> Any:
-    """Resolve a type string to its corresponding PrimitiveTypeEnum or return as is."""
+    """
+    Resolve a type to its corresponding representation.
+
+    Handles primitive types, list types, domain types, and custom types.
+
+    Args:
+        parsed_type: The type to resolve (can be string or already resolved)
+        custom_type_registry: Registry of dynamically created custom types
+
+    Returns:
+        Resolved type (PrimitiveTypeEnum, ListType, domain class, or string)
+    """
     # If the type is already resolved or is a structured definition, pass it through.
     if not isinstance(parsed_type, str):
         return parsed_type
 
-    # --- Case 1: The type is a string ---
     # Check if it's a list type (e.g., "list[text]")
     if parsed_type.startswith("list[") and parsed_type.endswith("]"):
-        # Extract the element type from "list[element_type]"
         element_type_str = parsed_type[5:-1]  # Remove "list[" and "]"
+        return _resolve_list_type(element_type_str, custom_type_registry)
 
-        # Recursively resolve the element type
-        element_type = _resolve_variable_type(
-            element_type_str, custom_type_registry
-        )
+    # Try to resolve as primitive type
+    primitive = _resolve_primitive_type(parsed_type)
+    if primitive is not None:
+        return primitive
 
-        # Allow both primitive types and custom types (but no nested lists)
-        if isinstance(element_type, PrimitiveTypeEnum):
-            return ListType(element_type=element_type)
-        elif isinstance(element_type, str):
-            # This is a custom type reference - store as string for later resolution
-            return ListType(element_type=element_type)
-        elif element_type in DOMAIN_CLASSES.values():
-            # Domain class - store its name as string reference
-            for name, cls in DOMAIN_CLASSES.items():
-                if cls == element_type:
-                    return ListType(element_type=name)
-            return ListType(element_type=str(element_type))
-        else:
-            raise ValueError(
-                f"List element type must be a primitive type or custom type reference, got: {element_type}"
-            )
+    # Try to resolve as built-in domain entity class
+    domain = _resolve_domain_type(parsed_type)
+    if domain is not None:
+        return domain
 
-    # Try to resolve it as a primitive type first.
-    try:
-        return PrimitiveTypeEnum(parsed_type)
-    except ValueError:
-        pass  # Not a primitive, continue to the next check.
+    # Try to resolve as custom type
+    custom = _resolve_custom_type(parsed_type, custom_type_registry)
+    if custom is not None:
+        return custom
 
-    # Try to resolve it as a built-in Domain Entity class.
-    # (Assuming domain_types and inspect are defined elsewhere)
-    if parsed_type in DOMAIN_CLASSES:
-        return DOMAIN_CLASSES[parsed_type]
-
-    # Check the registry of dynamically created custom types
-    if parsed_type in custom_type_registry:
-        return custom_type_registry[parsed_type]
-
-    # If it's not a primitive or a known domain entity, return it as a string.
-    # This assumes it might be another custom type.
+    # If it's not any known type, return it as a string.
+    # This assumes it might be a forward reference to a custom type.
     return parsed_type
+
+
+def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
+    """
+    Shared validator for resolving 'type' fields in models.
+
+    This validator resolves string-based type references using the custom
+    type registry from the validation context.
+
+    Args:
+        data: The data dict being validated
+        info: Pydantic validation info containing context
+
+    Returns:
+        Updated data dict with resolved type field
+    """
+    if (
+        isinstance(data, dict)
+        and "type" in data
+        and isinstance(data["type"], str)
+    ):
+        # Get the registry of custom types from the validation context.
+        custom_types = (info.context or {}).get("custom_types", {})
+        resolved = _resolve_variable_type(data["type"], custom_types)
+        data["type"] = resolved
+    return data
 
 
 class Variable(StrictBaseModel):
@@ -108,21 +209,8 @@ class Variable(StrictBaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
-        """
-        This validator runs during the main validation pass. It uses the
-        context to resolve string-based type references.
-        """
-        if (
-            isinstance(data, dict)
-            and "type" in data
-            and isinstance(data["type"], str)
-        ):
-            # Get the registry of custom types from the validation context.
-            custom_types = (info.context or {}).get("custom_types", {})
-            resolved = _resolve_variable_type(data["type"], custom_types)
-            # {'id': 'user_message', 'type': 'ChatMessage'}
-            data["type"] = resolved
-        return data
+        """Resolve string-based type references using the shared validator."""
+        return _resolve_type_field_validator(data, info)
 
 
 class CustomType(StrictBaseModel):
@@ -144,20 +232,8 @@ class ToolParameter(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
-        """
-        This validator runs during the main validation pass. It uses the
-        context to resolve string-based type references.
-        """
-        if (
-            isinstance(data, dict)
-            and "type" in data
-            and isinstance(data["type"], str)
-        ):
-            # Get the registry of custom types from the validation context.
-            custom_types = (info.context or {}).get("custom_types", {})
-            resolved = _resolve_variable_type(data["type"], custom_types)
-            data["type"] = resolved
-        return data
+        """Resolve string-based type references using the shared validator."""
+        return _resolve_type_field_validator(data, info)
 
 
 class ListType(BaseModel):
