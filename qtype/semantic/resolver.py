@@ -9,15 +9,44 @@ are resolved to actual object references.
 import logging
 from typing import Any
 
+import qtype.base.types as base_types
 import qtype.dsl.domain_types
 import qtype.dsl.model as dsl
 import qtype.semantic.model as ir
 from qtype.base.exceptions import SemanticError
-from qtype.dsl.validator import _is_dsl_type, _resolve_forward_ref
 
 logger = logging.getLogger(__name__)
 
 FIELDS_TO_IGNORE = {"Application.references"}
+
+
+def _is_dsl_type(type_obj: Any) -> bool:
+    """Check if a type is a DSL type that should be converted to semantic."""
+    if not hasattr(type_obj, "__name__"):
+        return False
+
+    # Check if it's defined in the DSL module
+    return (
+        hasattr(type_obj, "__module__")
+        and (
+            type_obj.__module__ == dsl.__name__
+            or type_obj.__module__ == base_types.__name__
+        )
+        and not type_obj.__name__.startswith("_")
+    )
+
+
+def _resolve_forward_ref(field_type: Any) -> Any:
+    """
+    Resolve a ForwardRef type to its actual type.
+    This is used to handle cases where the type is a string that refers to a class.
+    """
+    if hasattr(field_type, "__forward_arg__"):
+        # Extract the string from ForwardRef and process it
+        forward_ref_str = field_type.__forward_arg__
+        # Use eval to get the actual type from the string
+        return eval(forward_ref_str, dict(vars(dsl)))
+    return field_type
 
 
 def to_semantic_ir(
@@ -66,8 +95,6 @@ def to_semantic_ir(
         result = ir_class(**params)
         symbol_table[obj_id] = result  # type: ignore
         return result
-    elif isinstance(dslobj, list):
-        return [to_semantic_ir(item, symbol_table) for item in dslobj]  # type: ignore
     else:
         return dslobj
 

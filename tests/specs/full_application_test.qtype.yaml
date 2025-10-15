@@ -53,12 +53,6 @@ indexes:
 flows:
   - type: Flow
     id: flow1
-    inputs:
-      - id: var1
-        type: text
-    outputs:
-      - id: var1
-        type: text
     steps:
       - id: step1
         type: Agent

@@ -13,10 +13,10 @@ from unittest.mock import patch
 import pytest
 
 from qtype.dsl.loader import (
+    _load_yaml,
+    _load_yaml_from_string,
     _resolve_path,
     _StringStream,
-    load_yaml,
-    load_yaml_from_string,
 )
 
 
@@ -65,7 +65,7 @@ class TestHelpers:
     @staticmethod
     def load_and_assert_single_result(file_path: Path | str) -> dict[str, Any]:
         """Load YAML file and assert it returns a single result."""
-        result_list = load_yaml(str(file_path))
+        result_list = _load_yaml(str(file_path))
         # Only index if result_list is a list
         if isinstance(result_list, list):
             assert len(result_list) == 1
@@ -80,7 +80,7 @@ class TestHelpers:
     ) -> None:
         """Assert that loading a YAML file raises the expected error."""
         with pytest.raises(error_type, match=error_message):
-            load_yaml(str(file_path))
+            _load_yaml(str(file_path))
 
     @staticmethod
     def create_qtype_document(
@@ -147,7 +147,7 @@ class TestBasicLoaderFunctions:
 
     def test_load_from_string_basic(self, temp_dir: Path) -> None:
         """Test loading YAML from a string."""
-        result_list = load_yaml_from_string(TestFileFixtures.SIMPLE_YAML)
+        result_list = _load_yaml_from_string(TestFileFixtures.SIMPLE_YAML)
         if isinstance(result_list, list):
             assert len(result_list) == 1
             result = result_list[0]  # type: ignore[index]
@@ -164,7 +164,7 @@ app:
   name: ${APP_NAME}
   version: "1.0.0"
 """
-            result_list = load_yaml_from_string(yaml_content)
+            result_list = _load_yaml_from_string(yaml_content)
             if isinstance(result_list, list):
                 assert len(result_list) == 1
                 result = result_list[0]  # type: ignore[index]
@@ -177,7 +177,7 @@ app:
         from yaml.composer import ComposerError
 
         try:
-            _ = load_yaml_from_string(
+            _ = _load_yaml_from_string(
                 """
 name: "First Doc"
 ---
@@ -203,12 +203,12 @@ name: "Second Doc"
 
         if expected_result == 2:
             try:
-                _ = load_yaml_from_string(yaml_content)
+                _ = _load_yaml_from_string(yaml_content)
                 assert False, "Expected ComposerError for multiple documents"
             except ComposerError:
                 pass
         else:
-            result = load_yaml_from_string(yaml_content)
+            result = _load_yaml_from_string(yaml_content)
             assert result is None
 
 
@@ -220,7 +220,7 @@ class TestDocumentLoading:
         test_file = TestHelpers.create_qtype_document(
             temp_dir, "test.yaml", "test_app"
         )
-        result = load_yaml(str(test_file))
+        result = _load_yaml(str(test_file))
         if isinstance(result, list):
             assert len(result) == 1
             doc = result[0]  # type: ignore[index]
@@ -237,7 +237,7 @@ class TestDocumentLoading:
             temp_dir, "test.yaml", 3
         )
         try:
-            _ = load_yaml(str(test_file))
+            _ = _load_yaml(str(test_file))
             assert False, "Expected ComposerError for multiple documents"
         except ComposerError:
             pass
@@ -247,7 +247,7 @@ class TestDocumentLoading:
         test_file = TestHelpers.create_qtype_document(
             temp_dir, "test.yaml", "test_app"
         )
-        result = load_yaml(str(test_file))
+        result = _load_yaml(str(test_file))
         assert not isinstance(result, list) or len(result) == 1
 
     def test_load_function_multiple_documents(self, temp_dir: Path) -> None:
@@ -258,7 +258,7 @@ class TestDocumentLoading:
             temp_dir, "test.yaml", 2
         )
         try:
-            _ = load_yaml(str(test_file))
+            _ = _load_yaml(str(test_file))
             assert False, "Expected ComposerError for multiple documents"
         except ComposerError:
             pass
@@ -634,7 +634,7 @@ class TestLoaderEdgeCases:
     def test_load_yaml_string_content(self, temp_dir: Path) -> None:
         """Test load_yaml when content is a string, not a URI."""
         yaml_content = "name: Test App\nversion: 1.0.0"
-        result = load_yaml(yaml_content)
+        result = _load_yaml(yaml_content)
         if isinstance(result, list):
             assert len(result) == 1
             doc = result[0]  # type: ignore[index]
@@ -649,7 +649,7 @@ class TestLoaderEdgeCases:
             temp_dir, "test.yaml", "name: Test"
         )
         with patch("qtype.dsl.loader.url_to_fs", side_effect=ValueError):
-            result = load_yaml(str(test_file))
+            result = _load_yaml(str(test_file))
             if isinstance(result, dict):
                 assert result["name"] == "Test"
             elif isinstance(result, str):
@@ -669,14 +669,14 @@ class TestLoaderEdgeCases:
         self, content: str, expected_error: type
     ) -> None:
         with pytest.raises(expected_error):
-            load_yaml(content)
+            _load_yaml(content)
 
     def test_load_from_string_yaml_load_all_returns_none(
         self, temp_dir: Path
     ) -> None:
         """Test load_from_string when yaml.load_all returns None."""
         with patch("yaml.load", return_value=None):
-            result = load_yaml_from_string("name: Test")
+            result = _load_yaml_from_string("name: Test")
             assert result is None
 
 
@@ -703,4 +703,4 @@ remote_data: !include https://raw.githubusercontent.com/example/repo/main/config
         # This would normally test against a real URL
         # For now, we'll just test that the function tries to load it
         with pytest.raises((FileNotFoundError, Exception)):
-            load_yaml(str(main_file))
+            _load_yaml(str(main_file))

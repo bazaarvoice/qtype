@@ -59,7 +59,7 @@ class _StringStream:
         return result
 
 
-class YamlLoader(yaml.SafeLoader):
+class _YamlLoader(yaml.SafeLoader):
     """
     YAML loader that supports environment variable substitution and file inclusion.
 
@@ -86,7 +86,7 @@ class YamlLoader(yaml.SafeLoader):
             self._current_path = str(Path.cwd())
 
 
-def _env_var_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
+def _env_var_constructor(loader: _YamlLoader, node: yaml.ScalarNode) -> str:
     """
     Constructor for environment variable substitution.
 
@@ -123,7 +123,7 @@ def _env_var_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
 
 
 def _include_file_constructor(
-    loader: YamlLoader, node: yaml.ScalarNode
+    loader: _YamlLoader, node: yaml.ScalarNode
 ) -> Any:
     """
     Constructor for !include tag to load external YAML files using fsspec.
@@ -150,7 +150,7 @@ def _include_file_constructor(
 
             # Create a string stream with the resolved path for nested includes
             stream = _StringStream(content, resolved_path)
-            return yaml.load(stream, Loader=YamlLoader)
+            return yaml.load(stream, Loader=_YamlLoader)
     except ValueError:
         # Re-raise ValueError (e.g., missing environment variables) without wrapping
         raise
@@ -159,7 +159,9 @@ def _include_file_constructor(
         raise FileNotFoundError(msg) from e
 
 
-def _include_raw_constructor(loader: YamlLoader, node: yaml.ScalarNode) -> str:
+def _include_raw_constructor(
+    loader: _YamlLoader, node: yaml.ScalarNode
+) -> str:
     """
     Constructor for !include_raw tag to load external text files using fsspec.
 
@@ -227,12 +229,12 @@ def _load_env_files(directories: list[Path]) -> None:
 
 
 # Register constructors for YamlLoader
-YamlLoader.add_constructor("tag:yaml.org,2002:str", _env_var_constructor)
-YamlLoader.add_constructor("!include", _include_file_constructor)
-YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
+_YamlLoader.add_constructor("tag:yaml.org,2002:str", _env_var_constructor)
+_YamlLoader.add_constructor("!include", _include_file_constructor)
+_YamlLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_yaml_from_string(
+def _load_yaml_from_string(
     content: str, original_uri: str | None = None
 ) -> dict[str, Any]:
     """
@@ -255,12 +257,12 @@ def load_yaml_from_string(
     # Note: When loading from string, relative paths will be resolved relative to cwd
     stream = _StringStream(content, original_uri)
     # Use the string stream directly with the loader
-    result = yaml.load(stream, Loader=YamlLoader)
+    result = yaml.load(stream, Loader=_YamlLoader)
 
     return result  # type: ignore[no-any-return]
 
 
-def load_yaml(content: str) -> dict[str, Any]:
+def _load_yaml(content: str) -> dict[str, Any]:
     """
     Load a YAML file with environment variable substitution and file inclusion support.
 
@@ -309,9 +311,9 @@ def load_yaml(content: str) -> dict[str, Any]:
         original_uri = content
         with fsspec.open(content, "r", encoding="utf-8") as f:
             content = f.read()  # type: ignore[misc]
-        return load_yaml_from_string(content, original_uri)
+        return _load_yaml_from_string(content, original_uri)
     else:
-        return load_yaml_from_string(content)
+        return _load_yaml_from_string(content)
 
 
 def _resolve_root(doc: dsl.Document) -> DocumentRootType:
@@ -381,7 +383,7 @@ def load_document(content: str) -> tuple[DocumentRootType, CustomTypeRegistry]:
         FileNotFoundError: If the YAML file or included files don't exist.
         yaml.YAMLError: If the YAML file is malformed.
     """
-    yaml_data = load_yaml(content)
+    yaml_data = _load_yaml(content)
     dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
     dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
     document = dsl.Document.model_validate(

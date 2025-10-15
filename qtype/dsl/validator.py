@@ -23,17 +23,19 @@ class DuplicateComponentError(QTypeValidationError):
         existing_obj: qtype.dsl.domain_types.StrictBaseModel,
     ):
         super().__init__(
-            f'Duplicate component with ID "{obj_id}" found.'
-            # f"Duplicate component with ID \"{obj_id}\" found:\n{found_obj.model_dump_json()}\nAlready exists:\n{existing_obj.model_dump_json()}"
+            f"Duplicate component with ID {obj_id} found:\n"
+            + str(found_obj.model_dump_json())
+            + "\nAlready exists:\n"
+            + str(existing_obj.model_dump_json())
         )
 
 
 class ComponentNotFoundError(QTypeValidationError):
     """Raised when a component is not found in the DSL Application."""
 
-    def __init__(self, component_id: str):
+    def __init__(self, component_name: str):
         super().__init__(
-            f"Component with ID '{component_id}' not found in the DSL Application."
+            f"Component with name '{component_name}' not found in the DSL Application."
         )
 
 
@@ -199,6 +201,8 @@ def validate(
     """
     Validates a DSL Application and returns a copy of it with all
     internal references resolved to their actual objects.
+
+    Note the returned object breaks the type safety of the original -- there should be no references left.
     Args:
         dsl_application: The DSL Application to validate.
     Returns:
@@ -213,51 +217,5 @@ def validate(
 
     # Now we resolve all ID references in the DSL Application.
     _resolve_all_references(dsl_application, lookup_map)
-
-    # # If any flows have no steps, we raise an error.
-    # for flow in dsl_application.flows or []:
-    #     if not flow.steps:
-    #         raise FlowHasNoStepsError(flow.id)
-    #     # If any flow doesn't have inputs, copy the inputs from the first step.
-    #     if not flow.inputs:
-    #         first_step = (
-    #             lookup_map[flow.steps[0]]
-    #             if isinstance(flow.steps[0], str)
-    #             else flow.steps[0]
-    #         )
-    #         flow.inputs = first_step.inputs or []  # type: ignore
-
-    #     # If any flow doesn't have outputs, copy them from the last step.
-    #     if not flow.outputs:
-    #         last_step = (
-    #             lookup_map[flow.steps[-1]]
-    #             if isinstance(flow.steps[-1], str)
-    #             else flow.steps[-1]
-    #         )
-    #         flow.outputs = last_step.outputs or []  # type: ignore
-    # # If any chat flow doesn't have an input variable that is a chat message, raise an error.
-    # for flow in dsl_application.flows or []:
-    #     if flow.mode == "Chat":
-    #         inputs = flow.inputs or []
-    #         if not any(
-    #             input_var.type == qtype.dsl.domain_types.ChatMessage
-    #             for input_var in inputs
-    #             if isinstance(input_var, dsl.Variable)
-    #         ):
-    #             raise QTypeValidationError(
-    #                 f"Chat flow {flow.id} must have at least one input variable of type ChatMessage."
-    #             )
-    #         if (
-    #             not flow.outputs
-    #             or len(flow.outputs) != 1
-    #             or (
-    #                 isinstance(flow.outputs[0], dsl.Variable)
-    #                 and flow.outputs[0].type
-    #                 != qtype.dsl.domain_types.ChatMessage
-    #             )
-    #         ):
-    #             raise QTypeValidationError(
-    #                 f"Chat flow {flow.id} must have exactly one output variable of type ChatMessage."
-    #             )
 
     return dsl_application

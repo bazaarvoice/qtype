@@ -17,7 +17,6 @@ from qtype.semantic.model import (
     APITool,
     Application,
     AuthorizationProvider,
-    Condition,
     Decoder,
     DocumentIndex,
     DocumentSearch,
@@ -195,25 +194,6 @@ def _generate_step_node(
         lines.append(
             f'        {node_id}@{{shape: doc, label: "📄 Template: {step.id}"}}'
         )
-    elif isinstance(step, Condition):
-        lines.append(
-            f'        {node_id}@{{shape: diamond, label: "❓ Condition: {step.id}"}}'
-        )
-        # Add conditional branches
-        then_id = f"{node_id}_THEN"
-        then_def, then_ext = _generate_step_node(step.then, then_id, flow_id)
-        lines.extend(then_def)
-        lines.append(f"        {node_id} -->|Yes| {then_id}")
-        external_connections.extend(then_ext)
-
-        if step.else_:
-            else_id = f"{node_id}_ELSE"
-            else_def, else_ext = _generate_step_node(
-                step.else_, else_id, flow_id
-            )
-            lines.extend(else_def)
-            lines.append(f"        {node_id} -->|No| {else_id}")
-            external_connections.extend(else_ext)
     elif isinstance(step, Decoder):
         format_label = (
             step.format.value
