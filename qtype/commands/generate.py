@@ -186,6 +186,14 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         import networkx  # noqa: F401
         import ruff  # type: ignore[import-untyped]  # noqa: F401
 
+        has_semantic_deps = True
+    except ImportError:
+        logger.warning(
+            "NetworkX or Ruff is not installed. Skipping semantic model generation."
+        )
+        has_semantic_deps = False
+
+    if has_semantic_deps:
         from qtype.semantic.generate import generate_semantic_model
 
         semantic_parser = generate_subparsers.add_parser(
@@ -200,7 +208,3 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
             help="Output file for the semantic model (default: stdout)",
         )
         semantic_parser.set_defaults(func=generate_semantic_model)
-    except ImportError:
-        logger.debug(
-            "NetworkX or Ruff is not installed. Skipping semantic model generation."
-        )

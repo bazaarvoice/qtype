@@ -197,7 +197,7 @@ def validate(
     dsl_application: dsl.Application,
 ) -> dsl.Application:
     """
-    Validates the semantics of a DSL Application and returns a copy of it with all
+    Validates a DSL Application and returns a copy of it with all
     internal references resolved to their actual objects.
     Args:
         dsl_application: The DSL Application to validate.

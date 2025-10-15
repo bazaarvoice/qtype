@@ -8,15 +8,31 @@ from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import networkx as nx
 
+import qtype.base.types as base_types
 import qtype.dsl.model as dsl
-from qtype.dsl.validator import _is_dsl_type
+
+
+def _is_dsl_type(type_obj: Any) -> bool:
+    """Check if a type is a DSL type that should be converted to semantic."""
+    if not hasattr(type_obj, "__name__"):
+        return False
+
+    # Check if it's defined in the DSL module
+    return (
+        hasattr(type_obj, "__module__")
+        and (
+            type_obj.__module__ == dsl.__name__
+            or type_obj.__module__ == base_types.__name__
+        )
+        and not type_obj.__name__.startswith("_")
+    )
+
 
 FIELDS_TO_IGNORE = {"Application.references"}
 TYPES_TO_IGNORE = {
     "CustomType",
     "DecoderFormat",
     "Document",
-    "Flow",
     "ListType",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
@@ -152,39 +168,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write classes
         f.write("\n\n".join(generated))
 
-        # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
-        f.write("\n\n")
-        f.write(
-            dedent('''
-            class Flow(Step):
-                """Defines a flow of steps that can be executed in sequence or parallel.
-                If input or output variables are not specified, they are inferred from
-                the first and last step, respectively.
-                """
-
-                description: str | None = Field(
-                    None, description="Optional description of the flow."
-                )
-                cardinality: StepCardinality = Field(
-                    StepCardinality.auto,
-                    description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
-                )
-                mode: Literal["Complete", "Chat"] = Field("Complete")
-                steps: list[Step] = Field(..., description="List of steps or step IDs.")
-
-                @model_validator(mode="after")
-                def infer_cardinality(self) -> "Flow":
-                    if self.cardinality == StepCardinality.auto:
-                        self.cardinality = StepCardinality.one
-                        for step in self.steps:
-                            if step.cardinality == StepCardinality.many:
-                                self.cardinality = StepCardinality.many
-                                break
-                    return self
-
-        ''').lstrip()
-        )
-
     # Format the file with Ruff
     format_with_ruff(str(output_path))
 
@@ -213,6 +196,8 @@ def _get_union_args(type_annotation):
 DSL_ONLY_UNION_TYPES = {
     _get_union_args(dsl.ToolType): "Tool",
     _get_union_args(dsl.StepType): "Step",
+    _get_union_args(dsl.AuthProviderType): "AuthorizationProvider",
+    _get_union_args(dsl.SourceType): "Source",
     _get_union_args(dsl.IndexType): "Index",
     _get_union_args(dsl.ModelType): "Model",
 }
@@ -272,6 +257,21 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
     origin = get_origin(field_type)
     args = get_args(field_type)
 
+    # Handle Reference types - unwrap to get the actual type
+    # Reference[T] is a Pydantic generic model, so get_origin returns None
+    # Instead, check if Reference is in the MRO
+    if (
+        hasattr(field_type, "__mro__")
+        and base_types.Reference in field_type.__mro__
+    ):
+        # Reference[T] becomes just T in semantic model
+        # The actual type parameter is in __pydantic_generic_metadata__ for Pydantic generic models
+        if hasattr(field_type, "__pydantic_generic_metadata__"):
+            metadata = field_type.__pydantic_generic_metadata__
+            if "args" in metadata and metadata["args"]:
+                return dsl_to_semantic_type_name(metadata["args"][0])
+        return "Any"  # Fallback for untyped Reference
+
     # Handle Annotated types - extract the underlying type
     if origin is Annotated:
         # For Annotated[SomeType, ...], we want to process SomeType
@@ -290,9 +290,11 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
         literal_values = []
         for arg in args:
             if isinstance(arg, Enum):
-                # Handle enum values - use the actual enum value, not string representation
-                # Since StepCardinality inherits from str, we need to check Enum first
-                literal_values.append(f'"{arg.value}"')
+                # Keep the enum reference for semantic models (e.g., StepCardinality.one)
+                # not the string value
+                enum_class_name = arg.__class__.__name__
+                enum_value_name = arg.name
+                literal_values.append(f"{enum_class_name}.{enum_value_name}")
             elif isinstance(arg, str):
                 literal_values.append(f'"{arg}"')
             else:

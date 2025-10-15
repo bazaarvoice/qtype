@@ -569,7 +569,7 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    auth: Reference[AuthorizationProvider] | str | None = Field(
+    auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
@@ -703,10 +703,6 @@ class Sink(Step):
     """Base class for data sinks"""
 
     id: str = Field(..., description="Unique ID of the data sink.")
-    cardinality: Literal[StepCardinality.one] = Field(
-        default=StepCardinality.one,
-        description="Flows always emit exactly one instance of the outputs.",
-    )
 
 
 class FileSink(Sink):
@@ -758,10 +754,6 @@ class DocToTextConverter(Step):
     """
 
     type: Literal["DocToTextConverter"] = "DocToTextConverter"
-    cardinality: Literal[StepCardinality.one] = Field(
-        default=StepCardinality.one,
-        description="Consumes one document and produces one processed text output.",
-    )
 
 
 class DocumentSplitter(Step):

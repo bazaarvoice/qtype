@@ -1649,8 +1649,16 @@
           "type": "array"
         },
         "index": {
-          "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____",
-          "description": "Index to upsert into (object or ID reference)."
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Index to upsert into (object or ID reference).",
+          "title": "Index"
         }
       },
       "required": [
