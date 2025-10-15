@@ -1,0 +1,7 @@
+- id: auth1
+  type: api_key
+  api_key: key123
+
+- id: auth1
+  type: bearer_token
+  token: token456

@@ -18,7 +18,6 @@ from fsspec.core import url_to_fs  # type: ignore[import-untyped]
 from qtype.base.types import CustomTypeRegistry
 from qtype.dsl import model as dsl
 from qtype.dsl.custom_types import build_dynamic_types
-from qtype.dsl.types import DocumentRootType
 
 
 class _StringStream:
@@ -316,21 +315,12 @@ def _load_yaml(content: str) -> dict[str, Any]:
         return _load_yaml_from_string(content)
 
 
-def _resolve_root(doc: dsl.Document) -> DocumentRootType:
-    root = doc.root
-    # If the docroot is a type that ends in the name `List`, resolve it again
-    types_to_resolve = set(
-        [
-            dsl.AuthorizationProviderList,
-            dsl.IndexList,
-            dsl.ModelList,
-            dsl.ToolList,
-            dsl.VariableList,
-        ]
-    )
-    if root is not None and type(root) in types_to_resolve:
-        root = root.root  # type: ignore
-    return root  # type: ignore[return-value]
+def _resolve_root(doc: dsl.Document) -> dsl.DocumentType:
+    """Extract the DocumentType from the Document wrapper.
+
+    Simply returns doc.root which is one of the 9 DocumentType variants.
+    """
+    return doc.root
 
 
 def _list_dynamic_types_from_document(
@@ -368,15 +358,17 @@ def _list_dynamic_types_from_document(
     return rv
 
 
-def load_document(content: str) -> tuple[DocumentRootType, CustomTypeRegistry]:
+def load_document(content: str) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
     """
-    Load a QType YAML file and return the DSL document root.
+    Load a QType YAML file and return the DSL document.
 
     Args:
         content: Either a fsspec uri/file path to load, or a string containing YAML content.
 
     Returns:
-        A tuple of (DocumentRootType, CustomTypeRegistry).
+        A tuple of (DocumentType, CustomTypeRegistry) where DocumentType is one of:
+        Agent, Application, AuthorizationProviderList, Flow, IndexList, ModelList,
+        ToolList, TypeList, or VariableList.
 
     Raises:
         ValueError: If a required environment variable is not found.

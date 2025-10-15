@@ -1,0 +1,9 @@
+- id: type1
+  description: First type
+  properties:
+    field1: text
+
+- id: type1
+  description: Duplicate type
+  properties:
+    field2: int

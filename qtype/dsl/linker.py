@@ -1,6 +1,6 @@
 from typing import Any, Dict, Type
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 import qtype.base.types as base_types
 import qtype.dsl.domain_types
@@ -196,16 +196,29 @@ def _build_lookup_maps(
 
 def _resolve_all_references(
     model: BaseModel,
-    lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
+    lookup_map: Dict[str, Any],
 ):
     """Walks a Pydantic model tree and resolves all Reference objects."""
 
-    def resolve_reference(ref: str, type_hint: Type) -> BaseModel:
+    def resolve_reference(ref: str, type_hint: Type) -> Any:
         resolved_obj = lookup_map.get(ref)
         if resolved_obj is None:
             raise ReferenceNotFoundError(ref, str(type_hint))
         return resolved_obj
 
+    # Check if this is a RootModel (list-based document like ModelList, ToolList, etc.)
+    if isinstance(model, RootModel):
+        # For RootModel, __iter__() yields the items directly, not (name, value) tuples
+        root_list = model.root  # type: ignore
+        if isinstance(root_list, list):
+            for i, item in enumerate(root_list):
+                if isinstance(item, base_types.Reference):
+                    root_list[i] = resolve_reference(item.ref, type(item))
+                elif isinstance(item, BaseModel):
+                    _resolve_all_references(item, lookup_map)
+        return
+
+    # For regular BaseModel types, iterate over fields
     for field_name, field_value in model.__iter__():
         if isinstance(field_value, base_types.Reference):
             setattr(
@@ -233,15 +246,20 @@ def _resolve_all_references(
                     _resolve_all_references(v, lookup_map)
 
 
-def link(document: dsl.Document) -> dsl.Document:
+def link(document: dsl.DocumentType) -> dsl.DocumentType:
     """
     Links (resolves) all ID references in a DSL Document to their actual objects.
 
-    Works with any Document type:
+    Works with any DocumentType:
     - Application: Full application with all components
     - Flow: Individual flow definition
-    - *List types: Lists of components (AuthorizationProviderList, IndexList, etc.)
-    - Individual components: Agent, etc.
+    - Agent: Individual agent definition
+    - AuthorizationProviderList: List of authorization providers
+    - IndexList: List of indexes
+    - ModelList: List of models
+    - ToolList: List of tools
+    - TypeList: List of custom types
+    - VariableList: List of variables
 
     IMPORTANT: The returned object breaks the type safety of the original.
     All Reference[T] fields will be replaced with actual T objects, which
@@ -249,7 +267,7 @@ def link(document: dsl.Document) -> dsl.Document:
     linking phase before transformation to semantic IR.
 
     Args:
-        document: The DSL Document to link. Can be any DocumentType.
+        document: Any valid DSL DocumentType (one of the 9 possible document structures).
 
     Returns:
         The same document with all internal references resolved to actual objects.
@@ -265,6 +283,8 @@ def link(document: dsl.Document) -> dsl.Document:
     lookup_map = _build_lookup_maps(document)
 
     # Now we resolve all ID references in the document.
-    _resolve_all_references(document, lookup_map)
+    # All DocumentType variants are BaseModel instances (including RootModel-based *List types)
+    if isinstance(document, BaseModel):
+        _resolve_all_references(document, lookup_map)
 
-    return document
+    return document  # type: ignore[return-value]

@@ -938,12 +938,6 @@ class AuthorizationProviderList(RootModel[list[AuthProviderType]]):
     root: list[AuthProviderType]
 
 
-class IndexList(RootModel[list[IndexType]]):
-    """Schema for a standalone list of indexes."""
-
-    root: list[IndexType]
-
-
 class ModelList(RootModel[list[ModelType]]):
     """Schema for a standalone list of models."""
 
@@ -969,11 +963,8 @@ class VariableList(RootModel[list[Variable]]):
 
 
 DocumentType = Union[
-    Agent,
     Application,
     AuthorizationProviderList,
-    Flow,
-    IndexList,
     ModelList,
     ToolList,
     TypeList,

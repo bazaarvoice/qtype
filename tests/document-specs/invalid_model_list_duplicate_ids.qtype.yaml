@@ -1,0 +1,10 @@
+- id: model1
+  type: Model
+  provider: openai
+  model_id: gpt-4
+
+- id: model1
+  type: EmbeddingModel
+  provider: openai
+  model_id: text-embedding-3-small
+  dimensions: 1536

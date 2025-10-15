@@ -1,0 +1,32 @@
+- id: api_tool
+  type: APITool
+  name: WeatherAPI
+  description: Get weather information
+  endpoint: https://api.weather.com/v1/current
+  method: GET
+  inputs:
+    location:
+      type: text
+      optional: false
+  outputs:
+    temperature:
+      type: float
+      optional: false
+
+- id: python_tool
+  type: PythonFunctionTool
+  name: calculate_sum
+  description: Calculate sum of two numbers
+  function_name: calculate_sum
+  module_path: my_tools.math_utils
+  inputs:
+    a:
+      type: int
+      optional: false
+    b:
+      type: int
+      optional: false
+  outputs:
+    result:
+      type: int
+      optional: false

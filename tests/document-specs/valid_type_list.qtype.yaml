@@ -1,0 +1,14 @@
+- id: user_profile
+  description: User profile information
+  properties:
+    name: text
+    email: text
+    age: int
+
+- id: product_info
+  description: Product information
+  properties:
+    sku: text
+    name: text
+    price: float
+    in_stock: boolean

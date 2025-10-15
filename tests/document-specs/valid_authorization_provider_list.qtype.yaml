@@ -1,0 +1,13 @@
+- id: api_key_auth
+  type: api_key
+  api_key: test_key_123
+  host: https://api.example.com
+
+- id: bearer_auth
+  type: bearer_token
+  token: test_bearer_token
+
+- id: aws_auth
+  type: aws
+  region: us-east-1
+  profile_name: default

@@ -1,11 +1,10 @@
-"""Type mappings for QType DSL primitive types to Python types."""
+"""Utility types and functions for the DSL."""
 
 from __future__ import annotations
 
 from datetime import date, datetime, time
 
 from qtype.base.types import PrimitiveTypeEnum
-from qtype.dsl import model as dsl
 
 # Mapping of QType primitive types to Python types for internal representations
 PRIMITIVE_TO_PYTHON_TYPE = {
@@ -49,6 +48,3 @@ def python_type_for_list(element_type: PrimitiveTypeEnum) -> type:
     """
     element_python_type = PRIMITIVE_TO_PYTHON_TYPE[element_type]
     return list[element_python_type]
-
-
-DocumentRootType = dsl.Agent | dsl.Application | dsl.Flow | list

@@ -12,7 +12,6 @@ from qtype.base.logging import get_logger
 from qtype.base.types import CustomTypeRegistry, PathLike, StepCardinality
 from qtype.dsl.model import Application as DSLApplication
 from qtype.dsl.model import DocumentType
-from qtype.dsl.types import DocumentRootType
 from qtype.interpreter.batch.types import BatchConfig
 from qtype.semantic.model import Application as SemanticApplication
 from qtype.semantic.model import Variable
@@ -30,7 +29,7 @@ class QTypeFacade:
 
     def load_dsl_document(
         self, path: PathLike
-    ) -> tuple[DocumentRootType, CustomTypeRegistry]:
+    ) -> tuple[DocumentType, CustomTypeRegistry]:
         from qtype.dsl.loader import load_document
 
         return load_document(Path(path).read_text(encoding="utf-8"))
