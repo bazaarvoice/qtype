@@ -9,6 +9,7 @@ flows:
     steps:
       - id: write_data
         type: FileSink
-        path: s3://my-bucket/output.json
+        path: 
+          uri: s3://my-bucket/output.json
         inputs:
           - data

@@ -110,36 +110,20 @@
           "title": "Auth"
         },
         "headers": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": {
+            "type": "string"
+          },
           "description": "Optional HTTP headers to include in the request.",
-          "title": "Headers"
+          "title": "Headers",
+          "type": "object"
         },
         "parameters": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "$ref": "#/$defs/ToolParameter"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": {
+            "$ref": "#/$defs/ToolParameter"
+          },
           "description": "Output parameters produced by this tool.",
-          "title": "Parameters"
+          "title": "Parameters",
+          "type": "object"
         }
       },
       "required": [
@@ -608,6 +592,21 @@
       "title": "BearerTokenAuthProvider",
       "type": "object"
     },
+    "ConstantPath": {
+      "additionalProperties": false,
+      "properties": {
+        "uri": {
+          "description": "A constant Fsspec URI.",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri"
+      ],
+      "title": "ConstantPath",
+      "type": "object"
+    },
     "CustomType": {
       "additionalProperties": false,
       "description": "A simple declaration of a custom data type by the user.",
@@ -888,18 +887,10 @@
           "type": "string"
         },
         "args": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Index-specific configuration and connection parameters.",
-          "title": "Args"
+          "title": "Args",
+          "type": "object"
         },
         "auth": {
           "anyOf": [
@@ -987,18 +978,10 @@
           "type": "array"
         },
         "filters": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Optional filters to apply during search.",
-          "title": "Filters"
+          "title": "Filters",
+          "type": "object"
         },
         "index": {
           "anyOf": [
@@ -1078,18 +1061,10 @@
           "type": "string"
         },
         "args": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Reader-specific arguments to pass to the LlamaIndex constructor.",
-          "title": "Args"
+          "title": "Args",
+          "type": "object"
         },
         "auth": {
           "anyOf": [
@@ -1186,18 +1161,10 @@
           "type": "integer"
         },
         "args": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Additional arguments specific to the chosen splitter class.",
-          "title": "Args"
+          "title": "Args",
+          "type": "object"
         }
       },
       "required": [
@@ -1238,18 +1205,10 @@
           "title": "Auth"
         },
         "inference_params": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Optional inference parameters like temperature or max_tokens.",
-          "title": "Inference Params"
+          "title": "Inference Params",
+          "type": "object"
         },
         "model_id": {
           "anyOf": [
@@ -1336,9 +1295,19 @@
           "type": "array"
         },
         "path": {
-          "description": "Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
-          "title": "Path",
-          "type": "string"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConstantPath"
+            },
+            {
+              "$ref": "#/$defs/Reference_Variable_"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
+          "title": "Path"
         }
       },
       "required": [
@@ -1401,9 +1370,19 @@
           "type": "array"
         },
         "path": {
-          "description": "Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
-          "title": "Path",
-          "type": "string"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConstantPath"
+            },
+            {
+              "$ref": "#/$defs/Reference_Variable_"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
+          "title": "Path"
         }
       },
       "required": [
@@ -1670,16 +1649,8 @@
           "type": "array"
         },
         "index": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Index to upsert into (object or ID reference).",
-          "title": "Index"
+          "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____",
+          "description": "Index to upsert into (object or ID reference)."
         }
       },
       "required": [
@@ -2052,18 +2023,10 @@
           "title": "Auth"
         },
         "inference_params": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Optional inference parameters like temperature or max_tokens.",
-          "title": "Inference Params"
+          "title": "Inference Params",
+          "type": "object"
         },
         "model_id": {
           "anyOf": [
@@ -2681,18 +2644,10 @@
           "type": "string"
         },
         "args": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Index-specific configuration and connection parameters.",
-          "title": "Args"
+          "title": "Args",
+          "type": "object"
         },
         "auth": {
           "anyOf": [
@@ -2793,18 +2748,10 @@
           "type": "array"
         },
         "filters": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "additionalProperties": true,
           "description": "Optional filters to apply during search.",
-          "title": "Filters"
+          "title": "Filters",
+          "type": "object"
         },
         "index": {
           "anyOf": [

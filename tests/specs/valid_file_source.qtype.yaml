@@ -9,6 +9,7 @@ flows:
     steps:
       - id: read_data
         type: FileSource
-        path: s3://my-bucket/data.json
+        path: 
+          uri: s3://my-bucket/data.json
         outputs:
           - file_content

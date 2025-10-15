@@ -87,7 +87,7 @@ def _resolve_variable_type(
         return custom_type_registry[parsed_type]
 
     # If it's not a primitive or a known domain entity, return it as a string.
-    # This assumes it might be a reference ID to another custom type.
+    # This assumes it might be another custom type.
     return parsed_type
 
 
@@ -654,6 +654,14 @@ class Application(StrictBaseModel):
 #
 
 
+class ConstantPath(StrictBaseModel):
+    uri: str = Field(..., description="A constant Fsspec URI.")
+
+
+# Let's the user use a constant path or reference a variable
+PathType = ConstantPath | Reference[Variable] | str
+
+
 class Source(Step):
     """Base class for data sources"""
 
@@ -685,9 +693,9 @@ class FileSource(Source):
     """File source that reads data from a file using fsspec-compatible URIs."""
 
     type: Literal["FileSource"] = "FileSource"
-    path: str = Field(
+    path: PathType = Field(
         default=...,
-        description="Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+        description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
 
 
@@ -705,9 +713,9 @@ class FileSink(Sink):
     """File sink that writes data to a file using fsspec-compatible URIs."""
 
     type: Literal["FileSink"] = "FileSink"
-    path: str = Field(
+    path: PathType = Field(
         default=...,
-        description="Reference to a variable with an fsspec-compatible URI to read from. If None, expects 'path' input variable.",
+        description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
 
 
@@ -812,15 +820,6 @@ class IndexUpsert(Sink):
     index: Reference[IndexType] | str = Field(
         ..., description="Index to upsert into (object or ID reference)."
     )
-
-    @model_validator(mode="after")
-    def set_default_outputs(self) -> IndexUpsert:
-        # Ensure there is only one input variable and it's either a RAGChunk (for vector indexes) or a RAGDocument (for document indexes)
-        if not self.inputs or len(self.inputs) != 1:
-            raise ValueError(
-                "IndexUpsert must have exactly one input variable."
-            )
-        return self
 
 
 class VectorIndex(Index):
