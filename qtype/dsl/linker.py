@@ -51,13 +51,6 @@ class ReferenceNotFoundError(QTypeValidationError):
         super().__init__(msg)
 
 
-class FlowHasNoStepsError(QTypeValidationError):
-    """Raised when a flow has no steps defined."""
-
-    def __init__(self, flow_id: str):
-        super().__init__(f"Flow {flow_id} has no steps defined.")
-
-
 def _update_map_with_unique_check(
     current_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
     new_objects: list[qtype.dsl.domain_types.StrictBaseModel],
@@ -195,7 +188,7 @@ def _resolve_all_references(
                     _resolve_all_references(v, lookup_map)
 
 
-def validate(
+def link(
     dsl_application: dsl.Application,
 ) -> dsl.Application:
     """

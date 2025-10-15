@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from qtype.base.types import CustomTypeRegistry
 from qtype.dsl import model as dsl
+from qtype.dsl.linker import link
 from qtype.dsl.loader import load_document
-from qtype.dsl.validator import validate
 from qtype.semantic.model import Application
 from qtype.semantic.resolver import resolve
 
@@ -32,5 +32,5 @@ def load(content: str) -> tuple[Application, CustomTypeRegistry]:
         raise ValueError(
             f"Root document is not an Application, found {type(root)}."
         )
-    root = validate(root)
+    root = link(root)
     return resolve(root), dynamic_types_registry
