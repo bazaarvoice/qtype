@@ -1,8 +1,8 @@
 """Test list type functionality."""
 
 from qtype.base.types import PrimitiveTypeEnum
-from qtype.dsl.loader import load_document
 from qtype.dsl.model import ListType, Variable, _resolve_variable_type
+from qtype.semantic.loader import load
 
 
 def test_list_type_creation():
@@ -43,15 +43,6 @@ def test_resolve_variable_type_list():
 def test_list_type_yaml_loading():
     """Test loading YAML with list[type] syntax."""
     yaml_content = """
-id: test_list_type
-
-variables:
-- id: urls
-  type: list[text]
-- id: numbers
-  type: list[int]
-
-tools:
 - id: test_tool
   name: test
   type: APITool
@@ -71,22 +62,14 @@ tools:
       optional: false
 """
 
-    document, custom_types = load_document(yaml_content)
+    document, custom_types = load(yaml_content)
 
-    # Check variables
-    assert len(document.variables) == 2
+    # Document should be a ToolList (RootModel)
+    from qtype.semantic.model import ToolList
 
-    urls_var = next(v for v in document.variables if v.id == "urls")
-    assert isinstance(urls_var.type, ListType)
-    assert urls_var.type.element_type == PrimitiveTypeEnum.text
-
-    numbers_var = next(v for v in document.variables if v.id == "numbers")
-    assert isinstance(numbers_var.type, ListType)
-    assert numbers_var.type.element_type == PrimitiveTypeEnum.int
-
-    # Check tool parameters
-    assert len(document.tools) == 1
-    tool = document.tools[0]
+    assert isinstance(document, ToolList)
+    assert len(document.root) == 1
+    tool = document.root[0]
 
     urls_param = tool.inputs["urls"]
     assert isinstance(urls_param.type, ListType)

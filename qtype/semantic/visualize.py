@@ -117,12 +117,11 @@ def _generate_flow_subgraph(
     flow: Flow, flow_id: str
 ) -> tuple[list[str], list[str]]:
     """Generate a flow subgraph with internal nodes and return external connections."""
-    mode_indicator = "💬" if flow.mode == "Chat" else "🔄"
     # Add more spacing and line breaks for better SVG rendering
     description = f"\n{flow.description}" if flow.description else ""
 
     lines = [
-        f'    subgraph {flow_id} ["{mode_indicator} Flow: {flow.id}{description}"]',
+        f'    subgraph {flow_id} ["🔄 Flow: {flow.id}{description}"]',
         "        direction LR",
     ]
 

@@ -12,10 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from qtype.dsl import linker, loader
-from qtype.semantic import checker
 from qtype.semantic import model as ir
-from qtype.semantic import resolver
+from qtype.semantic.loader import load
 
 TEST_DIR = Path(__file__).parent.parent / "document-specs"
 
@@ -29,11 +27,8 @@ def test_resolve_and_check_all_document_types(yaml_file: str) -> None:
     yaml_path = TEST_DIR / yaml_file
 
     # Load and link the document
-    dsl_doc, _ = loader.load_document(yaml_path.read_text(encoding="utf-8"))
-    linked_doc = linker.link(dsl_doc)
 
-    # Resolve to semantic IR
-    ir_doc = resolver.resolve(linked_doc)
+    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
     assert ir_doc is not None, f"Failed to resolve {yaml_file}"
 
     # Verify the IR document is one of the valid DocumentType variants
@@ -49,17 +44,12 @@ def test_resolve_and_check_all_document_types(yaml_file: str) -> None:
         ),
     ), f"Expected DocumentType, got {type(ir_doc).__name__}"
 
-    # Check semantic validation
-    checker.check(ir_doc)  # Should not raise any exceptions
-
 
 def test_resolve_model_list() -> None:
     """Test resolving a ModelList document specifically."""
     yaml_path = TEST_DIR / "valid_model_list.qtype.yaml"
 
-    dsl_doc, _ = loader.load_document(yaml_path.read_text(encoding="utf-8"))
-    linked_doc = linker.link(dsl_doc)
-    ir_doc = resolver.resolve(linked_doc)
+    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
 
     assert isinstance(ir_doc, ir.ModelList), "Document should be ModelList"
     assert len(ir_doc.root) == 2, "Should have 2 models"
@@ -68,17 +58,12 @@ def test_resolve_model_list() -> None:
         "Second should be EmbeddingModel"
     )
 
-    # Verify checker works
-    checker.check(ir_doc)
-
 
 def test_resolve_variable_list() -> None:
     """Test resolving a VariableList document specifically."""
     yaml_path = TEST_DIR / "valid_variable_list.qtype.yaml"
 
-    dsl_doc, _ = loader.load_document(yaml_path.read_text(encoding="utf-8"))
-    linked_doc = linker.link(dsl_doc)
-    ir_doc = resolver.resolve(linked_doc)
+    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
 
     assert isinstance(ir_doc, ir.VariableList), (
         "Document should be VariableList"
@@ -88,22 +73,14 @@ def test_resolve_variable_list() -> None:
         "All items should be Variables"
     )
 
-    # Verify checker works
-    checker.check(ir_doc)
-
 
 def test_resolve_authorization_provider_list() -> None:
     """Test resolving an AuthorizationProviderList document specifically."""
     yaml_path = TEST_DIR / "valid_authorization_provider_list.qtype.yaml"
 
-    dsl_doc, _ = loader.load_document(yaml_path.read_text(encoding="utf-8"))
-    linked_doc = linker.link(dsl_doc)
-    ir_doc = resolver.resolve(linked_doc)
+    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
 
     assert isinstance(ir_doc, ir.AuthorizationProviderList), (
         "Document should be AuthorizationProviderList"
     )
     assert len(ir_doc.root) == 3, "Should have 3 auth providers"
-
-    # Verify checker works
-    checker.check(ir_doc)

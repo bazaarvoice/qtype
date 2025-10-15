@@ -773,19 +773,10 @@
     "Document": {
       "anyOf": [
         {
-          "$ref": "#/$defs/Agent"
-        },
-        {
           "$ref": "#/$defs/Application"
         },
         {
           "$ref": "#/$defs/AuthorizationProviderList"
-        },
-        {
-          "$ref": "#/$defs/Flow"
-        },
-        {
-          "$ref": "#/$defs/IndexList"
         },
         {
           "$ref": "#/$defs/ModelList"
@@ -1570,28 +1561,6 @@
       },
       "title": "FlowInterface",
       "type": "object"
-    },
-    "IndexList": {
-      "description": "Schema for a standalone list of indexes.",
-      "items": {
-        "discriminator": {
-          "mapping": {
-            "DocumentIndex": "#/$defs/DocumentIndex",
-            "VectorIndex": "#/$defs/VectorIndex"
-          },
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/$defs/DocumentIndex"
-          },
-          {
-            "$ref": "#/$defs/VectorIndex"
-          }
-        ]
-      },
-      "title": "IndexList",
-      "type": "array"
     },
     "IndexUpsert": {
       "additionalProperties": false,

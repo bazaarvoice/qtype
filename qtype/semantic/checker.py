@@ -215,9 +215,9 @@ def _validate_document_search(step: DocumentSearch) -> None:
 
 def _validate_flow(flow: Flow) -> None:
     """Validate Flow has more than one step."""
-    if len(flow.steps) <= 1:
+    if len(flow.steps) < 1:
         raise QTypeSemanticError(
-            f"Flow '{flow.id}' must have more than one step, found {len(flow.steps)}."
+            f"Flow '{flow.id}' must have one or more steps, found {len(flow.steps)}."
         )
 
 
