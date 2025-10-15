@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel
 
@@ -84,6 +84,34 @@ def _update_map_with_unique_check(
             current_map[obj_id] = obj
 
 
+def _collect_components_from_object(
+    obj: qtype.dsl.domain_types.StrictBaseModel,
+) -> list[qtype.dsl.domain_types.StrictBaseModel]:
+    """
+    Collect all components from an object that have IDs.
+    This includes the object itself and any nested components.
+
+    Args:
+        obj: The object to extract components from.
+
+    Returns:
+        List of components with IDs.
+    """
+    components = []
+
+    # Add the object itself if it has an ID
+    if hasattr(obj, "id"):
+        components.append(obj)
+
+    # For Flow, also collect embedded steps, inputs, and outputs
+    if isinstance(obj, dsl.Flow):
+        components.extend(obj.steps or [])  # type: ignore
+        components.extend(obj.inputs or [])  # type: ignore
+        components.extend(obj.outputs or [])  # type: ignore
+
+    return components
+
+
 def _update_maps_with_embedded_objects(
     lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel],
     embedded_objects: list[qtype.dsl.domain_types.StrictBaseModel],
@@ -97,54 +125,71 @@ def _update_maps_with_embedded_objects(
         embedded_objects: List of embedded objects to add to the maps.
     """
     for obj in embedded_objects:
-        if isinstance(obj, dsl.Flow):
-            _update_map_with_unique_check(lookup_map, [obj])
-            _update_map_with_unique_check(lookup_map, obj.steps or [])  # type: ignore
-            _update_map_with_unique_check(lookup_map, obj.inputs or [])  # type: ignore
-            _update_map_with_unique_check(lookup_map, obj.outputs or [])  # type: ignore
+        components = _collect_components_from_object(obj)
+        _update_map_with_unique_check(lookup_map, components)
 
 
 def _build_lookup_maps(
-    dsl_application: dsl.Application,
+    document: Any,
     lookup_map: Dict[str, qtype.dsl.domain_types.StrictBaseModel]
     | None = None,
 ) -> Dict[str, qtype.dsl.domain_types.StrictBaseModel]:
     """
-    Build lookup map for all objects in the DSL Application.
+    Build lookup map for all objects in a DSL Document.
     This function creates a dictionary of id -> component, where each key is a
     component id and the value is the component.
+
+    Works with any Document type (Application, Flow, *List types, etc.).
+
     Args:
-        dsl_application: The DSL Application to build lookup maps for.
+        document: The DSL Document to build lookup maps for.
+                 Can be Application, Flow, or any RootModel list type.
+
     Returns:
         Dict[str, dsl.StrictBaseModel]: A dictionary of lookup maps
-    Throws:
-        SemanticResolutionError: If there are duplicate components with the same ID.
-    """
-    component_names = {
-        f
-        for f in dsl.Application.model_fields.keys()
-        if f not in set(["id", "references"])
-    }
 
+    Throws:
+        QTypeValidationError: If there are duplicate components with the same ID.
+    """
     if lookup_map is None:
         lookup_map = {}
 
-    for component_name in component_names:
-        if not hasattr(dsl_application, component_name):
-            raise ComponentNotFoundError(component_name)
-        components = getattr(dsl_application, component_name) or []
-        if not isinstance(components, list):
-            components = [components]  # Ensure we have a list
-        _update_map_with_unique_check(lookup_map, components)
-        _update_maps_with_embedded_objects(lookup_map, components)
+    # Handle Application specially since it has multiple component lists
+    if isinstance(document, dsl.Application):
+        component_names = {
+            f
+            for f in dsl.Application.model_fields.keys()
+            if f not in {"id", "references", "description"}
+        }
 
-    # now deal with the references.
-    for ref in dsl_application.references or []:
-        ref = ref.root  # type: ignore
-        if isinstance(ref, dsl.Application):
+        for component_name in component_names:
+            if not hasattr(document, component_name):
+                raise ComponentNotFoundError(component_name)
+            components = getattr(document, component_name) or []
+            if not isinstance(components, list):
+                components = [components]  # Ensure we have a list
+            _update_map_with_unique_check(lookup_map, components)
+            _update_maps_with_embedded_objects(lookup_map, components)
+
+        # Handle references (which can contain nested Applications or other documents)
+        for ref in document.references or []:
+            ref = ref.root  # type: ignore
             _build_lookup_maps(ref, lookup_map)
 
-    lookup_map[dsl_application.id] = dsl_application
+        lookup_map[document.id] = document
+
+    # Handle RootModel list types (e.g., AuthorizationProviderList, IndexList, etc.)
+    elif hasattr(document, "root") and isinstance(
+        getattr(document, "root"), list
+    ):
+        root_list = getattr(document, "root")
+        _update_map_with_unique_check(lookup_map, root_list)
+        _update_maps_with_embedded_objects(lookup_map, root_list)
+
+    # Handle single component documents (e.g., Flow, Agent, etc.)
+    else:
+        components = _collect_components_from_object(document)
+        _update_map_with_unique_check(lookup_map, components)
 
     return lookup_map
 
@@ -188,27 +233,38 @@ def _resolve_all_references(
                     _resolve_all_references(v, lookup_map)
 
 
-def link(
-    dsl_application: dsl.Application,
-) -> dsl.Application:
+def link(document: dsl.Document) -> dsl.Document:
     """
-    Validates a DSL Application and returns a copy of it with all
-    internal references resolved to their actual objects.
+    Links (resolves) all ID references in a DSL Document to their actual objects.
 
-    Note the returned object breaks the type safety of the original -- there should be no references left.
+    Works with any Document type:
+    - Application: Full application with all components
+    - Flow: Individual flow definition
+    - *List types: Lists of components (AuthorizationProviderList, IndexList, etc.)
+    - Individual components: Agent, etc.
+
+    IMPORTANT: The returned object breaks the type safety of the original.
+    All Reference[T] fields will be replaced with actual T objects, which
+    violates the original type signatures. This is intentional for the
+    linking phase before transformation to semantic IR.
+
     Args:
-        dsl_application: The DSL Application to validate.
+        document: The DSL Document to link. Can be any DocumentType.
+
     Returns:
-        dsl.Application: A copy of the DSL Application with all internal references resolved.
-    Throws:
-        SemanticResolutionError: If there are semantic errors in the DSL Application.
+        The same document with all internal references resolved to actual objects.
+
+    Raises:
+        DuplicateComponentError: If there are duplicate components with the same ID.
+        ReferenceNotFoundError: If a reference cannot be resolved.
+        ComponentNotFoundError: If an expected component is missing.
     """
 
-    # First, make a lookup map of all objects in the DSL Application.
+    # First, make a lookup map of all objects in the document.
     # This ensures that all object ids are unique.
-    lookup_map = _build_lookup_maps(dsl_application)
+    lookup_map = _build_lookup_maps(document)
 
-    # Now we resolve all ID references in the DSL Application.
-    _resolve_all_references(dsl_application, lookup_map)
+    # Now we resolve all ID references in the document.
+    _resolve_all_references(document, lookup_map)
 
-    return dsl_application
+    return document

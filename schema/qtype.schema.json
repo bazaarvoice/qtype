@@ -729,11 +729,9 @@
           "type": "string"
         },
         "cardinality": {
-          "const": "one",
+          "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Consumes one document and produces one processed text output.",
-          "title": "Cardinality",
-          "type": "string"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1258,11 +1256,9 @@
           "type": "string"
         },
         "cardinality": {
-          "const": "one",
+          "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Flows always emit exactly one instance of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1612,11 +1608,9 @@
           "type": "string"
         },
         "cardinality": {
-          "const": "one",
+          "$ref": "#/$defs/StepCardinality",
           "default": "one",
-          "description": "Flows always emit exactly one instance of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -2328,19 +2322,6 @@
       "title": "Reference[Annotated[Union[EmbeddingModel, Model], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
-    "Reference_AuthorizationProvider_": {
-      "properties": {
-        "$ref": {
-          "title": "$Ref",
-          "type": "string"
-        }
-      },
-      "required": [
-        "$ref"
-      ],
-      "title": "Reference[AuthorizationProvider]",
-      "type": "object"
-    },
     "Reference_EmbeddingModel_": {
       "properties": {
         "$ref": {
@@ -2514,7 +2495,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_AuthorizationProvider_"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
             },
             {
               "type": "string"
