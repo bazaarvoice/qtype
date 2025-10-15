@@ -73,9 +73,12 @@ The architecture establishes clear layers with controlled dependencies:
     - Sort imports alphabetically within each group
     - Use `from` imports for specific items when appropriate
     - Place `from __future__ import annotations` at the very top
+    - **CRITICAL**: Use separate import lines, NOT comma-separated imports
+      - WRONG: `from qtype.semantic import checker, model as ir, resolver`
+      - RIGHT: `from qtype.semantic import checker` then `from qtype.semantic import model as ir` then `from qtype.semantic import resolver`
     
     ## ruff compliance:
-    - Follow all ruff default rules and error codes
+    - Follow all ruff default rules and error codes (line-length = 79, target py310)
     - Avoid unused variables (prefix with underscore if intentionally unused)
     - Remove unused imports
     - Use consistent quote styles (prefer double quotes)
@@ -85,8 +88,13 @@ The architecture establishes clear layers with controlled dependencies:
     - Use context managers for resource management
     - Avoid lambda assignments (use def for named functions)
     - Use enumerate() instead of manual counters
-    - Use zip() for parallel 
-    - blank lines should not include whitespace     
+    - Use zip() for parallel iteration
+    - Blank lines should not include whitespace
+    - **CRITICAL**: For assert statements with long messages, format like this:
+      - If assert + condition + message exceeds 79 chars, put message in parentheses on next line
+      - WRONG: `assert isinstance(x, Type), "Long message here"`
+      - RIGHT: `assert isinstance(x, Type), ("Long message here")`
+      - Example: `assert len(items) == 5, ("Should have exactly 5 items")`     
 
  All Python code generated for this repository *should*:
     - Use logging instead of print statements for debug/info/error messages
