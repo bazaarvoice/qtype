@@ -250,6 +250,15 @@ class AWSAuthProvider(AuthorizationProvider):
     )
     region: str | None = Field(None, description="AWS region.")
 
+# class GCPAuthProvider(BaseModel):
+#     """GCP (Vertex AI) authentication provider configuration."""
+#     id: str
+#     type: str = Field("gcp", const=True)
+#     project_id: str
+#     location: str
+#     credentials_file: str | None = None
+#     use_adc: bool = True
+#     scopes: list[str] | None = None
 
 class BearerTokenAuthProvider(AuthorizationProvider):
     """Bearer token authentication provider."""
