@@ -1,5 +1,5 @@
 
-name: Test UI
+name: test-ui
 description: QType UI tests
 
 runs:
@@ -17,6 +17,7 @@ runs:
       run: |
         cd ui
         npm install
+      shell: bash
 
     - name: Run UI unit tests
       run: |
