@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-ui:
+  setup-ui:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +27,13 @@ jobs:
           cd ui
           npm install
 
-      - name: Run UI tests
-        run: |
-          cd ui
-          npm run test
+  test-ui:
+    needs: [ setup-ui ]
+    name: Test UI
+    steps:
+      - uses: actions/checkout@v4
+      - name: test-ui
+        uses: ./.github/actions/test-ui
 
   test-and-lint:
     runs-on: ubuntu-latest
