@@ -10,33 +10,13 @@ permissions:
   pull-requests: write
 
 jobs:
-  setup-ui:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: |
-          cd ui
-          npm install
-
   test-ui:
     runs-on: ubuntu-latest
-    needs: [ setup-ui ]
     name: Test UI
     steps:
       - uses: actions/checkout@v4
       - name: test-ui
         uses: ./.github/actions/test-ui
-        with:
-          npm-token: ${{ secrets.GITHUB_TOKEN }}
 
   test-and-lint:
     runs-on: ubuntu-latest

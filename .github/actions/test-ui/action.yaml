@@ -1,28 +1,35 @@
 
 name: Test UI
 description: QType UI tests
-inputs:
-  NPM_CONFIG_AUTH:
-    description: NPM token for caching node modules
-    required: true
 
 runs:
   using: composite
   steps:
-    - id: cache-npm-node-modules
-      uses: bazaarvoice/github-actions/cache-npm-node-modules@main
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
       with:
-        npm-token: ${{ inputs.NPM_CONFIG_AUTH }}
+        node-version: "20"
+
+    - name: Install dependencies
+      run: |
+        cd ui
+        npm install
+
     - name: Run UI unit tests
       run: |
-        cd ui 
+        cd ui
         npm run test
       shell: bash
+
     - name: Job success
-      if: success ()
-      run: echo 'QType UI tests successful 🎉' >> $GITHUB_STEP_SUMMARY
+      if: success()
+      run: echo 'QType UI tests successful 🎉' >> "$GITHUB_STEP_SUMMARY"
       shell: bash
+
     - name: Job failure
-      if: failure ()
-      run: echo 'QType UI tests unsuccessful 😱' >> $GITHUB_STEP_SUMMARY
+      if: failure()
+      run: echo 'QType UI tests unsuccessful 😱' >> "$GITHUB_STEP_SUMMARY"
       shell: bash
