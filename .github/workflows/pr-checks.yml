@@ -35,6 +35,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: test-ui
         uses: ./.github/actions/test-ui
+        with:
+          npm-token: ${{ secrets.GITHUB_TOKEN }}
 
   test-and-lint:
     runs-on: ubuntu-latest

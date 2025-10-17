@@ -1,10 +1,18 @@
 
 name: Test UI
 description: QType UI tests
+inputs:
+  NPM_CONFIG_AUTH:
+    description: NPM token for caching node modules
+    required: true
 
 runs:
   using: composite
   steps:
+    - id: cache-npm-node-modules
+      uses: bvengineering/github-actions/cache-npm-node-modules@main
+      with:
+        npm-token: ${{ inputs.NPM_CONFIG_AUTH }}
     - name: Run UI unit tests
       run: |
         cd ui 
