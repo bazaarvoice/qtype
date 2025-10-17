@@ -19,6 +19,7 @@ jobs:
         uses: ./.github/actions/lint-ui
 
   test-and-lint:
+    name: Test and Lint Backend
     runs-on: ubuntu-latest
     
     steps:
