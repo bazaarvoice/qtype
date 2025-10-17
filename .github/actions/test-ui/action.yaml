@@ -10,7 +10,7 @@ runs:
   using: composite
   steps:
     - id: cache-npm-node-modules
-      uses: bvengineering/github-actions/cache-npm-node-modules@main
+      uses: bazaarvoice/github-actions/cache-npm-node-modules@main
       with:
         npm-token: ${{ inputs.NPM_CONFIG_AUTH }}
     - name: Run UI unit tests
