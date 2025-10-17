@@ -10,6 +10,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  test-ui:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd ui
+          npm install
+
+      - name: Run UI tests
+        run: |
+          cd ui
+          npm run test
+
   test-and-lint:
     runs-on: ubuntu-latest
     
