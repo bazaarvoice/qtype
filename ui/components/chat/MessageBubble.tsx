@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Bot, User } from 'lucide-react'
-import { type FileAttachment } from '@/types/Flow'
+import { type FileAttachment } from '@/types'
 import FileDisplay from './FileDisplay'
 
 interface MessagePart {

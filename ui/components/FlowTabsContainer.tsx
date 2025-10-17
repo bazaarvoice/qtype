@@ -1,6 +1,6 @@
 import { extractFlowsFromSpec } from "@/lib/apiClient"
 import { useOpenApiSpec } from "@/lib/hooks/useApi"
-import { OpenAPISpec } from "@/types/Flow"
+import { OpenAPISpec } from "@/types"
 import { TabsContainer } from '@/components/ui/TabsContainer'
 import { Tabs } from "./Tabs"
 import { TabsContent } from '@/components/ui/TabsContainer'

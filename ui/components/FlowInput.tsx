@@ -13,7 +13,7 @@ import DatePickerInput from './inputs/DatePickerInput'
 import TimeInput from './inputs/TimeInput'
 import DateTimeInput from './inputs/DatetimeInput'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
-import type { SchemaProperty, FlowInputValue } from '@/types/Flow'
+import type { SchemaProperty, FlowInputValue } from '@/types'
 
 interface FlowInputProps {
   name: string
