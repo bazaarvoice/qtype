@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { type FlowInfo, apiClient, ApiClientError } from '@/lib/apiClient'
-import type { FlowInputValues, ResponseData } from '@/types/Flow'
+import type { FlowInputValues, ResponseData } from '@/types'
 import FlowInputs from '../FlowInputs'
 import FlowResponse from '../FlowResponse'
 import { Button } from '@/components/ui/Button'

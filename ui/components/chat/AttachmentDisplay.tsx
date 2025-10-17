@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button'
 import { Paperclip, X } from 'lucide-react'
-import { type FileAttachment } from '@/types/Flow'
+import { type FileAttachment } from '@/types'
 
 interface AttachmentDisplayProps {
   files: FileAttachment[]

@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Send, Bot, Loader2, MessageSquarePlus, Paperclip} from 'lucide-react'
 import { apiClient, type FlowInfo } from '@/lib/apiClient'
-import { type FileAttachment } from '@/types/Flow'
+import { type FileAttachment } from '@/types'
 import MessageBubble from '@/components/chat/MessageBubble'
 import AttachmentDisplay from '@/components/chat/AttachmentDisplay'
 
