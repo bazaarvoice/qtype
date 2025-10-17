@@ -1,5 +1,5 @@
 
-name: test-ui
+name: Test UI
 description: QType UI tests
 
 runs:
