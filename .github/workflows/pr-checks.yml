@@ -28,6 +28,7 @@ jobs:
           npm install
 
   test-ui:
+    runs-on: ubuntu-latest
     needs: [ setup-ui ]
     name: Test UI
     steps:
