@@ -1,3 +1,3 @@
-type ResponseData = Record<string, unknown>
+type ResponseData = Record<string, unknown>;
 
 export type { ResponseData };

@@ -1,51 +1,57 @@
 /**
  * Flow Component
- * 
+ *
  * Interactive interface for executing a single flow
  */
 
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { type FlowInfo, apiClient, ApiClientError } from '@/lib/apiClient'
-import type { FlowInputValues, ResponseData } from '@/types'
-import FlowInputs from '../FlowInputs'
-import FlowResponse from '../FlowResponse'
-import { Button } from '@/components/ui/Button'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
+import { useState } from "react";
+
+import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { apiClient, ApiClientError } from "@/lib/apiClient";
+
+import FlowInputs from "../FlowInputs";
+import FlowResponse from "../FlowResponse";
+
+import type { FlowInfo } from "@/lib/apiClient";
+import type { FlowInputValues, ResponseData } from "@/types";
 
 interface FlowProps {
-  flow: FlowInfo
+  flow: FlowInfo;
 }
 
 function RestFlow({ flow }: FlowProps) {
-  const [inputs, setInputs] = useState<FlowInputValues>({})
-  const [isExecuting, setIsExecuting] = useState(false)
-  const [responseData, setResponseData] = useState<ResponseData | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [inputs, setInputs] = useState<FlowInputValues>({});
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [responseData, setResponseData] = useState<ResponseData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (newInputs: FlowInputValues) => {
-    setInputs(newInputs)
-  }
+    setInputs(newInputs);
+  };
 
   const executeFlow = async () => {
-    setIsExecuting(true)
-    setError(null)
-    setResponseData(null)
+    setIsExecuting(true);
+    setError(null);
+    setResponseData(null);
 
     try {
-      const responseData = await apiClient.executeFlow(flow.path, inputs)
-      setResponseData(responseData)
+      const responseData = await apiClient.executeFlow(flow.path, inputs);
+      setResponseData(responseData);
     } catch (err) {
       if (err instanceof ApiClientError) {
-        setError(err.message)
+        setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred')
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred",
+        );
       }
     } finally {
-      setIsExecuting(false)
+      setIsExecuting(false);
     }
-  }
+  };
   return (
     <div className="space-y-6">
       {/* Flow Header */}
@@ -90,17 +96,12 @@ function RestFlow({ flow }: FlowProps) {
       </div>
 
       <div className="mt-6 pt-4 border-t">
-        <Button
-          disabled={isExecuting}
-          onClick={executeFlow}
-        >
-          {isExecuting ? 'Executing...' : 'Execute Flow'}
+        <Button disabled={isExecuting} onClick={executeFlow}>
+          {isExecuting ? "Executing..." : "Execute Flow"}
         </Button>
       </div>
-
-
     </div>
-  )
+  );
 }
 
-export { RestFlow }
+export { RestFlow };
