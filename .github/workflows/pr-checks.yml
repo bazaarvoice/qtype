@@ -15,8 +15,16 @@ jobs:
     name: Test UI
     steps:
       - uses: actions/checkout@v4
-      - name: test-ui
+      - name: Test UI
         uses: ./.github/actions/test-ui
+
+  lint-ui:
+    runs-on: ubuntu-latest
+    name: Lint UI
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint UI
+        uses: ./.github/actions/lint-ui
 
   test-and-lint:
     name: Test and Lint Backend
