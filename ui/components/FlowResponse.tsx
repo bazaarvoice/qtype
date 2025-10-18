@@ -1,67 +1,65 @@
 /**
  * Flow Response Component
- * 
+ *
  * Renders flow response data based on response schema
  */
 
-'use client'
+"use client";
 
-import { Alert, AlertDescription } from '@/components/ui/Alert'
-import { MarkdownContainer } from './MarkdownContainer'
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
-import type { SchemaProperty, ResponseData } from '../types/Flow'
+import { MarkdownContainer } from "./MarkdownContainer";
+
+import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
-  responseSchema?: SchemaProperty | null
-  responseData?: ResponseData
+  responseSchema?: SchemaProperty | null;
+  responseData?: ResponseData;
 }
 
 interface ResponsePropertyProps {
-  name: string
-  property: SchemaProperty
-  value: ResponseData
+  name: string;
+  property: SchemaProperty;
+  value: ResponseData;
 }
 
 function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
   const renderValue = () => {
     // Handle different qtype_type values
     switch (property.qtype_type) {
-      case 'text':
-        return (
-          <MarkdownContainer>
-            {String(value)}
-          </MarkdownContainer>
-        )
-      
-      case 'boolean':
+      case "text":
+        return <MarkdownContainer>{String(value)}</MarkdownContainer>;
+
+      case "boolean":
         return (
           <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-            <p className="text-gray-800 dark:text-gray-200">
-              {String(value)}
-            </p>
+            <p className="text-gray-800 dark:text-gray-200">{String(value)}</p>
           </div>
-        )
-      
-      case 'number':
-      case 'int':
-      case 'float':
+        );
+
+      case "number":
+      case "int":
+      case "float":
         return (
           <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
             <p className="text-gray-800 dark:text-gray-200 font-mono">
               {String(value)}
             </p>
           </div>
-        )
-      
+        );
+
       default:
         return (
           <Alert variant="destructive">
             <AlertDescription>
-              Unsupported response type: <code className="font-mono text-sm">{property.qtype_type || property.type}</code>
+              Unsupported response type:{" "}
+              <code className="font-mono text-sm">
+                {property.qtype_type || property.type}
+              </code>
             </AlertDescription>
           </Alert>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className="space-y-2">
@@ -69,28 +67,30 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {property.title || name}
       </label>
-      
+
       {/* Property Description */}
       {property.description && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {property.description}
         </p>
       )}
-      
+
       {/* Property Value */}
       {renderValue()}
     </div>
-  )
+  );
 }
 
-export default function FlowResponse({ responseSchema, responseData }: FlowResponseProps) {
-  console.log('FlowResponse - responseSchema:', responseSchema)
+export default function FlowResponse({
+  responseSchema,
+  responseData,
+}: FlowResponseProps) {
   if (!responseData) {
     return (
       <div className="text-gray-500 dark:text-gray-400 text-sm">
         No response data to display
       </div>
-    )
+    );
   }
 
   if (!responseSchema?.properties) {
@@ -100,32 +100,38 @@ export default function FlowResponse({ responseSchema, responseData }: FlowRespo
           {JSON.stringify(responseData, null, 2)}
         </pre>
       </div>
-    )
+    );
   }
 
   // Extract outputs if the response follows the pattern: { outputs: { ... } }
-  const outputsData = responseData && typeof responseData === 'object' 
-    ? (responseData as Record<string, ResponseData>).outputs || responseData 
-    : responseData || {}
+  const outputsData =
+    responseData && typeof responseData === "object"
+      ? (responseData as Record<string, ResponseData>).outputs || responseData
+      : responseData || {};
 
   return (
     <div className="space-y-4">
-      {responseSchema.properties && Object.entries(responseSchema.properties).map(([propertyName, propertySchema]) => {
-        const value = (outputsData as Record<string, ResponseData>)[propertyName]
-        
-        if (value === undefined || value === null) {
-          return null
-        }
+      {responseSchema.properties &&
+        Object.entries(responseSchema.properties).map(
+          ([propertyName, propertySchema]) => {
+            const value = (outputsData as Record<string, ResponseData>)[
+              propertyName
+            ];
 
-        return (
-          <ResponseProperty
-            key={propertyName}
-            name={propertyName}
-            property={propertySchema}
-            value={value}
-          />
-        )
-      })}
+            if (value === undefined || value === null) {
+              return null;
+            }
+
+            return (
+              <ResponseProperty
+                key={propertyName}
+                name={propertyName}
+                property={propertySchema}
+                value={value}
+              />
+            );
+          },
+        )}
     </div>
-  )
+  );
 }

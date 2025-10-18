@@ -1,12 +1,13 @@
-'use client'
+"use client";
 
 import { useEffect } from "react";
-import { useOpenApiSpec } from "@/lib/hooks/useApi";
+
 import { FlowTabsContainer } from "@/components/FlowTabsContainer";
+import { useOpenApiSpec } from "@/lib/hooks/useApi";
 
 export default function Home() {
   const { spec, isLoading } = useOpenApiSpec();
-  
+
   // Use API title if available, otherwise fallback
   const pageTitle = spec?.info?.title || "QType Frontend";
 
@@ -20,7 +21,6 @@ export default function Home() {
   return (
     <div className="font-sans min-h-screen p-6 sm:p-8">
       <main className="max-w-6xl mx-auto space-y-6">
-        
         {/* Page Header */}
         <div className="text-center border-b pb-4">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
@@ -32,9 +32,8 @@ export default function Home() {
             </p>
           )}
         </div>
-        
-        <FlowTabsContainer />
 
+        <FlowTabsContainer />
       </main>
     </div>
   );

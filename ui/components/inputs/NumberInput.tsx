@@ -1,60 +1,70 @@
 /**
  * Number Input Component
- * 
+ *
  * Handles numeric input fields for flows
  */
 
-'use client'
+"use client";
 
-import { Input } from '@/components/ui/Input'
-import type { SchemaProperty, FlowInputValue } from '../../types/Flow'
+import { Input } from "@/components/ui/Input";
+
+import type { SchemaProperty, FlowInputValue } from "@/types";
 
 interface NumberInputProps {
-  name: string
-  property: SchemaProperty
-  required: boolean
-  value?: FlowInputValue
-  onChange?: (name: string, value: FlowInputValue) => void
+  name: string;
+  property: SchemaProperty;
+  required: boolean;
+  value?: FlowInputValue;
+  onChange?: (name: string, value: FlowInputValue) => void;
 }
 
-export default function NumberInput({ 
-  name, 
-  property, 
-  required, 
-  value, 
-  onChange 
+export default function NumberInput({
+  name,
+  property,
+  required,
+  value,
+  onChange,
 }: NumberInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const stringValue = e.target.value
-    
+    const stringValue = e.target.value;
+
     // Handle empty input
-    if (stringValue === '') {
-      onChange?.(name, 0)
-      return
+    if (stringValue === "") {
+      onChange?.(name, 0);
+      return;
     }
 
     // Parse based on type
-    let numericValue: number
-    if (property.type === 'integer' || property.format === 'int32' || property.format === 'int64') {
-      numericValue = parseInt(stringValue, 10)
+    let numericValue: number;
+    if (
+      property.type === "integer" ||
+      property.format === "int32" ||
+      property.format === "int64"
+    ) {
+      numericValue = parseInt(stringValue, 10);
     } else {
-      numericValue = parseFloat(stringValue)
+      numericValue = parseFloat(stringValue);
     }
 
     // Only call onChange if the value is valid
     if (!isNaN(numericValue)) {
-      onChange?.(name, numericValue)
+      onChange?.(name, numericValue);
     }
-  }
+  };
 
   // Determine step based on type
-  const step = (property.type === 'integer' || property.format === 'int32' || property.format === 'int64') ? 1 : 'any'
-  
+  const step =
+    property.type === "integer" ||
+    property.format === "int32" ||
+    property.format === "int64"
+      ? 1
+      : "any";
+
   return (
     <Input
       type="number"
       placeholder={property.description || `Enter ${property.title || name}`}
-      value={String(value || '')}
+      value={String(value || "")}
       onChange={handleChange}
       required={required}
       step={step}
@@ -62,5 +72,5 @@ export default function NumberInput({
       max={property.maximum}
       className="w-full"
     />
-  )
+  );
 }

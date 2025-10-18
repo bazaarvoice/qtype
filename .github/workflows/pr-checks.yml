@@ -10,7 +10,16 @@ permissions:
   pull-requests: write
 
 jobs:
+  lint-ui:
+    runs-on: ubuntu-latest
+    name: Lint UI
+    steps:
+      - uses: actions/checkout@v4
+      - name: lint-ui
+        uses: ./.github/actions/lint-ui
+
   test-and-lint:
+    name: Test and Lint Backend
     runs-on: ubuntu-latest
     
     steps:

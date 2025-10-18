@@ -1,32 +1,34 @@
 /**
  * Boolean Input Component
- * 
+ *
  * Handles boolean input fields for flows using shadcn Switch
  */
 
-'use client'
+"use client";
 
-import { Switch } from '@/components/ui/Switch'
-import type { SchemaProperty, FlowInputValue } from '../../types/Flow'
+import { Switch } from "@/components/ui/Switch";
+
+import type { SchemaProperty, FlowInputValue } from "@/types";
 
 interface BooleanInputProps {
-  name: string
-  property: SchemaProperty
-  required: boolean
-  value?: FlowInputValue
-  onChange?: (name: string, value: FlowInputValue) => void
+  name: string;
+  property: SchemaProperty;
+  required: boolean;
+  value?: FlowInputValue;
+  onChange?: (name: string, value: FlowInputValue) => void;
 }
 
-export default function BooleanInput({ 
-  name, 
-  property: _, 
-  required, 
-  value = false, 
-  onChange 
+export default function BooleanInput({
+  name,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  property: _,
+  required,
+  value = false,
+  onChange,
 }: BooleanInputProps) {
   const handleChange = (checked: boolean) => {
-    onChange?.(name, checked)
-  }
+    onChange?.(name, checked);
+  };
 
   return (
     <div className="flex items-center space-x-3">
@@ -37,9 +39,9 @@ export default function BooleanInput({
       />
       <div className="flex-1">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {value ? 'Enabled' : 'Disabled'}
+          {value ? "Enabled" : "Disabled"}
         </div>
       </div>
     </div>
-  )
+  );
 }

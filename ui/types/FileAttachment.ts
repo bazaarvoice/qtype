@@ -1,9 +1,9 @@
 interface FileAttachment {
-  type: 'file'
-  mediaType: string
-  filename: string
-  url: string
-  size?: number
+  type: "file";
+  mediaType: string;
+  filename: string;
+  url: string;
+  size?: number;
 }
 
 export type { FileAttachment };
