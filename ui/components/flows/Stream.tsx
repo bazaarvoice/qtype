@@ -10,7 +10,7 @@ import { ScrollArea } from '@radix-ui/react-scroll-area'
 
 import { MarkdownContainer } from '../MarkdownContainer'
 
-import type { FlowInputValues } from '@/types/Flow'
+import type { FlowInputValues } from '@/types'
 
 function StreamFlow({ path, name, description, requestSchema }: FlowInfo) {
   const [inputs, setInputs] = useState<FlowInputValues>({})
