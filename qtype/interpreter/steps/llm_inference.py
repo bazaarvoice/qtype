@@ -160,12 +160,18 @@ def execute(
             input = str(input)
 
         complete_result: CompletionResponse
+        complete_reasoning: str = ""
+
         if stream_fn:
             generator = model.stream_complete(prompt=input)
             for complete_result in generator:
+                raw = complete_result.raw  # this is temporary for development - TODO: extract reasoning better or find more appropriate place 
+                reasonring_text = raw.get("contentBlockDelta", {}).get("delta", {}).get("reasoningContent", {}).get("text")
+                if reasonring_text:
+                    complete_reasoning = complete_reasoning + reasonring_text
                 stream_fn(li, complete_result.delta)
         else:
             complete_result = model.complete(prompt=input)
+        print('complete_reasoning: ', complete_reasoning)
         output_variable.value = complete_result.text
-
     return li.outputs  # type: ignore[return-value]

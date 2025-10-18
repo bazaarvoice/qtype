@@ -1,0 +1,22 @@
+id: hello_world
+flows:
+  - id: simple_example
+    steps:
+      - id: llm_inference_step
+        type: LLMInference
+        model:
+          id: us.anthropic.claude-haiku-4-5-20251001-v1:0
+          provider: aws-bedrock
+          inference_params: 
+            thinking:
+              type: enabled
+              budget_tokens: 1024
+            max_tokens: 2048
+            temperature: 1
+        system_message:
+          "You are a helpful assistant. Answer the following question:
+          {question}
+          "
+        inputs:
+          - id: question
+            type: text

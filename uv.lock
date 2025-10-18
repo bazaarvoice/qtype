@@ -2439,16 +2439,16 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-bedrock-converse"
-version = "0.10.1"
+version = "0.10.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioboto3" },
     { name = "boto3" },
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/98/01/497f932bc3f2ec06f38c9d028d5f9ccb87a6c48f14f8035bab7bc9341d82/llama_index_llms_bedrock_converse-0.10.1.tar.gz", hash = "sha256:d732d38d55a42e77c36ef277a616a3d0666146cfb755732426c73968fe8afadc", size = 17029, upload-time = "2025-10-04T17:02:03.851Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f5/e7/f8f234186c5e77f8a39c9326acd0787c495989c1830d383a3b68e97bfb9f/llama_index_llms_bedrock_converse-0.10.5.tar.gz", hash = "sha256:4420ecc6e9c17a7dbb9c273f169738bcada0b6414af74c7305491c3ba4f977ff", size = 17069, upload-time = "2025-10-15T18:08:16.536Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/3f/36c59798122cc41237132c270547436a02b7116b2c5f61bec62eecdbe425/llama_index_llms_bedrock_converse-0.10.1-py3-none-any.whl", hash = "sha256:ccebe81cc5a9b84a787c10bc596f9f2f846ddf8e85eb4c15bb380c49a65ee0c3", size = 17448, upload-time = "2025-10-04T17:02:02.64Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/1d/2d6197d19cbefd6ea94688220bfd4b112be2c6a12403e5ff98f4420b7f37/llama_index_llms_bedrock_converse-0.10.5-py3-none-any.whl", hash = "sha256:e935ae0f02d2da96f8f22ab15e1fb62f37f4347011ca2bba0f0c6e767f46d94b", size = 17481, upload-time = "2025-10-15T18:08:15.379Z" },
 ]
 
 [[package]]
@@ -4877,7 +4877,6 @@ dependencies = [
     { name = "fsspec" },
     { name = "google-cloud-aiplatform" },
     { name = "jsonschema" },
-    { name = "llama-index-llms-vertex" },
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "openai" },
     { name = "openapi3-parser" },
@@ -4899,6 +4898,7 @@ interpreter = [
     { name = "llama-index-embeddings-openai" },
     { name = "llama-index-llms-bedrock" },
     { name = "llama-index-llms-bedrock-converse" },
+    { name = "llama-index-llms-vertex" },
     { name = "openinference-instrumentation-llama-index" },
     { name = "pandas" },
     { name = "psycopg2-binary" },
@@ -4957,8 +4957,8 @@ requires-dist = [
     { name = "llama-index-embeddings-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.5.2" },
     { name = "llama-index-embeddings-openai", marker = "extra == 'interpreter'", specifier = ">=0.3.1" },
     { name = "llama-index-llms-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.3.8" },
-    { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.7.4" },
-    { name = "llama-index-llms-vertex", specifier = ">=0.6.1" },
+    { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.10.5" },
+    { name = "llama-index-llms-vertex", marker = "extra == 'interpreter'", specifier = ">=0.6.1" },
     { name = "mkdocs-awesome-pages-plugin", specifier = ">=2.10.1" },
     { name = "openai", specifier = ">=1.93.0" },
     { name = "openapi3-parser", specifier = ">=1.1.21" },
