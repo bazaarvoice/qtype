@@ -1,0 +1,28 @@
+# Test spec for IndexUpsert.index reference resolution
+
+id: test_index_upsert
+
+models:
+  - type: EmbeddingModel
+    id: embedding_model
+    provider: openai
+    model_id: text-embedding-3-small
+    dimensions: 1536
+
+indexes:
+  - type: VectorIndex
+    id: test_index
+    name: my_collection
+    embedding_model: embedding_model
+
+flows:
+  - id: test_flow
+    variables:
+      - id: chunk_var
+        type: RAGChunk
+    steps:
+      - id: upsert_step
+        type: IndexUpsert
+        index: test_index  # String should be resolved to Reference[IndexType]
+        inputs:
+          - chunk_var

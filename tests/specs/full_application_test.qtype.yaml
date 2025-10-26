@@ -8,18 +8,51 @@ types:
     properties:
       role: text
 models:
-  - id: model1
+  - type: Model
+    id: model1
     provider: openai
     model_id: gpt-4
     inference_params:
       temperature: 0.7
       max_tokens: 256
     auth: auth1
-variables:
-  - id: var1
-    type: text
+  - type: EmbeddingModel
+    id: embed1
+    provider: openai
+    dimensions: 768
+    model_id: text-embedding-ada-002
+    auth: auth1
+    inference_params:
+      temperature: 0.1
+auths:
+  - type: api_key
+    id: auth1
+    api_key: secret-key
+    host: https://api.example.com
+tools:
+  - type: APITool
+    id: tool1
+    name: Test Tool
+    description: A tool for testing.
+    endpoint: https://api.example.com/test
+    method: POST
+    auth: auth1
+    headers:
+      Content-Type: application/json
+indexes:
+  - type: VectorIndex
+    id: index1
+    name: Test Index
+    embedding_model: embed1
+    args:
+      param: value
+    auth: auth1
 flows:
-  - id: flow1
+  - type: Flow
+    id: flow1
+    variables:
+      - id: var1
+        type: text
     inputs:
       - var1
     outputs:
@@ -36,38 +69,7 @@ flows:
         system_message: Test system message.
         tools:
           - tool1
-auths:
-  - id: auth1
-    type: api_key
-    api_key: secret-key
-    host: https://api.example.com
-tools:
-  - id: tool1
-    name: Test Tool
-    description: A tool for testing.
-    endpoint: https://api.example.com/test
-    method: POST
-    auth: auth1
-    headers:
-      Content-Type: application/json
-indexes:
-  - id: index1
-    name: Test Index
-    embedding_model: embed1
-    args:
-      param: value
-    auth: auth1
 telemetry:
   id: telemetry1
   endpoint: https://telemetry.example.com
   auth: auth1
-references:
-  - id: ref1
-    models:
-      - id: embed1
-        provider: openai
-        dimensions: 768
-        model_id: text-embedding-ada-002
-        auth: auth1
-        inference_params:
-          temperature: 0.1

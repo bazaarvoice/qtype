@@ -1,0 +1,22 @@
+# Test spec for LLMInference.memory and LLMInference.model reference resolution
+
+id: test_llm_inference
+
+memories:
+  - id: test_memory
+    token_limit: 50000
+
+models:
+  - type: Model
+    id: test_model
+    provider: openai
+    model_id: gpt-4
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_llm_step
+        type: LLMInference
+        model: test_model  # String should be resolved to Reference[ModelType]
+        memory: test_memory  # String should be resolved to Reference[Memory]
+        system_message: "You are a helpful assistant"

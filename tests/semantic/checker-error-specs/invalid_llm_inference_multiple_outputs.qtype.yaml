@@ -1,0 +1,29 @@
+# LLMInference must have exactly one text output - multiple outputs
+id: test_app
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+flows:
+  - id: test_flow
+    variables:
+      - id: prompt
+        type: text
+      - id: result1
+        type: text
+      - id: result2
+        type: text
+    inputs:
+      - prompt
+    outputs:
+      - result1
+      - result2
+    steps:
+      - id: llm1
+        type: LLMInference
+        model: test_model
+        inputs:
+          - prompt
+        outputs:
+          - result1
+          - result2

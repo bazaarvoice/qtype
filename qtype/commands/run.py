@@ -19,15 +19,31 @@ logger = logging.getLogger(__name__)
 
 
 def read_data_from_file(file_path: str) -> pd.DataFrame:
-    import magic
-
     """
     Reads a file into a pandas DataFrame based on its MIME type.
     """
+    from pathlib import Path
+
+    import magic
+
     mime_type = magic.Magic(mime=True).from_file(file_path)
 
     if mime_type == "text/csv":
         return pd.read_csv(file_path)
+    elif mime_type == "text/plain":
+        # For text/plain, use file extension to determine format
+        file_ext = Path(file_path).suffix.lower()
+        if file_ext == ".csv":
+            return pd.read_csv(file_path)
+        elif file_ext == ".json":
+            return pd.read_json(file_path)
+        else:
+            raise ValueError(
+                (
+                    f"Unsupported text/plain file extension: {file_ext}. "
+                    "Supported extensions: .csv, .json"
+                )
+            )
     elif mime_type == "application/json":
         return pd.read_json(file_path)
     elif mime_type in [
@@ -49,6 +65,8 @@ def run_flow(args: Any) -> None:
     Args:
         args: Arguments passed from the command line or calling context.
     """
+    import asyncio
+
     facade = QTypeFacade()
     spec_path = Path(args.spec)
 
@@ -66,44 +84,46 @@ def run_flow(args: Any) -> None:
                 logger.error(f"❌ Invalid JSON input: {e}")
                 return
 
-        # Execute the workflow using the facade
-        result = facade.execute_workflow(
-            spec_path, flow_name=args.flow, inputs=input, batch_config=None
+        # Execute the workflow using the facade (now async, returns DataFrame)
+        result_df = asyncio.run(
+            facade.execute_workflow(
+                spec_path, flow_name=args.flow, inputs=input
+            )
         )
 
         logger.info("✅ Flow execution completed successfully")
 
-        # Print results
-        if isinstance(result, pd.DataFrame):
-            logging.info("Output DataFrame:")
-            logging.info(result)
-        elif (
-            result
-            and hasattr(result, "__iter__")
-            and not isinstance(result, str)
-        ):
-            # If result is a list of variables or similar
-            try:
-                for item in result:
-                    if hasattr(item, "id") and hasattr(item, "value"):
-                        logger.info(f"Output {item.id}: {item.value}")
-                    else:
-                        logger.info(f"Result: {item}")
-            except TypeError:
-                logger.info(f"Result: {result}")
-        elif isinstance(result, str):
-            logger.info(f"Result: {result}")
+        # Display results
+        if len(result_df) > 0:
+            logger.info(f"Processed {len(result_df)} input(s)")
+
+            # Remove 'row' and 'error' columns for display if all errors are None
+            display_df = result_df.copy()
+            if (
+                "error" in display_df.columns
+                and display_df["error"].isna().all()
+            ):
+                display_df = display_df.drop(columns=["error"])
+            if "row" in display_df.columns:
+                display_df = display_df.drop(columns=["row"])
+
+            if len(display_df) > 1:
+                logger.info(f"\nResults:\n{display_df.to_string()}")
+            else:
+                # Print the first row with column_name: value one per line
+                fmt_str = []
+                for col, val in display_df.iloc[0].items():
+                    fmt_str.append(f"{col}: {val}")
+                fmt_str = "\n".join(fmt_str)
+                logger.info(f"\nResults:\n{fmt_str}")
+
+            # Save the output
+            if args.output:
+                # Save full DataFrame with row and error columns
+                result_df.to_parquet(args.output)
+                logger.info(f"Output saved to {args.output}")
         else:
             logger.info("Flow completed with no output")
-
-        # save the output
-        if isinstance(result, pd.DataFrame) and args.output:
-            result.to_parquet(args.output)
-            logger.info(f"Output DataFrame saved to {args.output}")
-        elif args.output:
-            with open(args.output, "w") as f:
-                json.dump(result, f, indent=2)
-            logger.info(f"Output saved to {args.output}")
 
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
@@ -113,7 +133,6 @@ def run_flow(args: Any) -> None:
         logger.error(f"❌ Execution failed: {e}")
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}", exc_info=True)
-        pass
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

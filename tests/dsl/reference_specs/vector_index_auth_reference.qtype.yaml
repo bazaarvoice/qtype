@@ -1,0 +1,29 @@
+# Test spec for VectorIndex.auth reference resolution (Index base class)
+
+id: test_vector_index_auth
+
+auths:
+  - id: test_auth
+    type: api_key
+    api_key: test_secret_key
+
+models:
+  - type: EmbeddingModel
+    id: test_embedding_model
+    provider: openai
+    model_id: text-embedding-ada-002
+    dimensions: 1536
+
+indexes:
+  - type: VectorIndex
+    id: test_index
+    name: test-index
+    embedding_model: test_embedding_model
+    auth: test_auth  # String should resolve to Reference[AuthProviderType]
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_step
+        type: PromptTemplate
+        template: "test"

@@ -1,0 +1,18 @@
+# Test spec for DocumentSource.auth reference resolution
+
+id: test_document_source_auth
+
+auths:
+  - id: doc_auth
+    type: oauth2
+    client_id: test_client_id
+    client_secret: test_client_secret
+    token_url: https://oauth.example.com/token
+
+flows:
+  - id: test_flow
+    steps:
+      - id: doc_source_step
+        type: DocumentSource
+        reader_module: google.GoogleDriveReader
+        auth: doc_auth  # String should be resolved to Reference[AuthProviderType]

@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from pydantic import BaseModel
+
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
 from qtype.interpreter.stream.chat.file_conversions import file_to_content
-from qtype.interpreter.stream.chat.vercel import ChatRequest, UIMessage
+from qtype.interpreter.stream.chat.vercel import (
+    ChatRequest,
+    CompletionRequest,
+    UIMessage,
+)
 
 
 def ui_request_to_domain_type(request: ChatRequest) -> list[ChatMessage]:
@@ -76,3 +82,35 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
         role=MessageRole(message.role),
         blocks=blocks,
     )
+
+
+def completion_request_to_input_model(
+    request: CompletionRequest, input_model: type[BaseModel]
+) -> BaseModel:
+    """
+    Convert a CompletionRequest to a flow's input model.
+
+    The CompletionRequest has a required 'prompt' field plus any additional
+    fields. This function maps the request data to the flow's input shape.
+
+    Args:
+        request: The Vercel CompletionRequest with prompt and additional fields
+        input_model: The Pydantic model class created by create_input_shape()
+
+    Returns:
+        An instance of input_model with data from the request
+
+    Raises:
+        ValueError: If required fields are missing or data doesn't match schema
+    """
+    # Get all fields from the request (including extra fields from model_config)
+    request_data = request.model_dump()
+
+    # Create instance of the input model
+    # This will automatically validate that all required fields are present
+    try:
+        return input_model(**request_data)
+    except Exception as e:
+        raise ValueError(
+            f"Failed to map CompletionRequest to input model: {e}"
+        ) from e

@@ -7,8 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from qtype.interpreter.rest.rest_api import create_rest_flow_endpoint
-from qtype.interpreter.stream.stream_api import create_stream_flow_endpoint
+from qtype.interpreter.endpoints import (
+    create_rest_endpoint,
+    create_streaming_endpoint,
+)
+from qtype.interpreter.metadata_api import create_metadata_endpoints
 from qtype.semantic.model import Application
 
 
@@ -63,19 +66,18 @@ class APIExecutor:
                     StaticFiles(directory=str(ui_dir), html=True),
                     name="ui",
                 )
-                app.get("/")(lambda: RedirectResponse(url="/ui"))
-
-        flows = self.definition.flows if self.definition.flows else []
-
-        # Dynamically generate POST endpoints for each flow
-        for flow in flows:
-            if flow.mode == "Chat":
-                from qtype.interpreter.stream.chat.chat_api import (
-                    create_chat_flow_endpoint,
+                app.get("/", include_in_schema=False)(
+                    lambda: RedirectResponse(url="/ui")
                 )
 
-                create_chat_flow_endpoint(app, flow)
-            else:
-                create_stream_flow_endpoint(app, flow)
-                create_rest_flow_endpoint(app, flow)
+        # Create metadata endpoints for flow discovery
+        create_metadata_endpoints(app, self.definition)
+
+        # Create unified invoke endpoints for each flow
+        flows = self.definition.flows if self.definition.flows else []
+        for flow in flows:
+            if flow.interface is not None:
+                create_streaming_endpoint(app, flow)
+            create_rest_endpoint(app, flow)
+
         return app

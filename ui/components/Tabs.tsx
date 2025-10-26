@@ -2,10 +2,12 @@
 
 import { TabsList, TabsTrigger } from "@/components/ui/TabsContainer";
 
-import type { FlowInfo } from "@/lib/apiClient";
+import { formatFlowName } from "./FlowTabsContainer";
+
+import type { FlowMetadata } from "@/types";
 
 interface FlowProps {
-  flows: FlowInfo[];
+  flows: FlowMetadata[];
 }
 
 function Tabs({ flows }: FlowProps) {
@@ -14,9 +16,9 @@ function Tabs({ flows }: FlowProps) {
       className="grid w-full"
       style={{ gridTemplateColumns: `repeat(${flows.length}, minmax(0, 1fr))` }}
     >
-      {flows.map(({ id, name }) => (
+      {flows.map(({ id }) => (
         <TabsTrigger key={id} value={id} className="text-sm">
-          {name}
+          {formatFlowName(id)}
         </TabsTrigger>
       ))}
     </TabsList>

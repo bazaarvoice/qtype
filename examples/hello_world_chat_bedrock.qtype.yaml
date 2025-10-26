@@ -1,20 +1,37 @@
 id: hello_world
+description: A simple stateful chat flow with AWS Bedrock
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+memories:
+  - id: chat_memory
+    token_limit: 10000
 flows:
-  - id: simple_chat_example
-    description: A simple stateful chat flow with AWS Bedrock
-    mode: Chat
+  - type: Flow
+    id: simple_chat_example
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response_message
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response_message
     steps:
       - id: llm_inference_step
         type: LLMInference
-        memory:
-          id: chat_memory
-        model:
-          id: amazon.nova-lite-v1:0
-          provider: aws-bedrock
+        model: nova_lite
         system_message: "You are a helpful assistant."
+        memory: chat_memory
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - user_message
         outputs:
-          - id: response_message
-            type: ChatMessage
+          - response_message

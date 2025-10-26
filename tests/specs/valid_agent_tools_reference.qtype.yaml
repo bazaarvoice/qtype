@@ -1,25 +1,25 @@
 id: app_agent_tools_ref
 models:
-  - id: m1
+  - type: Model
+    id: m1
     provider: openai
     model_id: gpt-4
     inference_params:
       temperature: 0.5
       max_tokens: 100
 tools:
-  - id: tool1
+  - type: APITool
+    id: tool1
     name: Echo
     description: Echoes input
     endpoint: https://example.com/echo
     method: POST
-    auth: null
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
     steps:
       - id: agent1
         type: Agent
         model: m1
         tools:
           - tool1
-        inputs: []
-        outputs: []

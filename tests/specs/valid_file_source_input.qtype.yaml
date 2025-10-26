@@ -1,13 +1,17 @@
 id: file_source_input_test
 description: Test FileSource with path from input variable
 flows:
-  - id: read_file_flow
+  - type: Flow
+    id: read_file_flow
+    variables:
+      - id: content
+        type: text
+    outputs:
+      - content
     steps:
       - id: read_data
         type: FileSource
-        inputs:
-          - id: path
-            type: text
+        path: 
+          uri: s3://my-bucket/data.json
         outputs:
-          - id: content
-            type: text
+          - content

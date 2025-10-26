@@ -5,8 +5,9 @@ from typing import Any, Tuple
 import pandas as pd
 
 from qtype.base.exceptions import InterpreterError
+from qtype.base.types import BatchConfig
 from qtype.dsl.domain_types import RAGDocument
-from qtype.interpreter.batch.types import BatchConfig, ErrorMode
+from qtype.interpreter.batch.types import ErrorMode
 from qtype.interpreter.batch.utils import reconcile_results_and_errors
 from qtype.interpreter.conversions import to_llama_document, to_vector_store
 from qtype.semantic.model import IndexUpsert

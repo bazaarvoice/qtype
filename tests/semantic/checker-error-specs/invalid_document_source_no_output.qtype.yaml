@@ -1,0 +1,9 @@
+# DocumentSource must have exactly one RAGDocument output - no outputs
+id: test_app
+flows:
+  - id: test_flow
+    steps:
+      - id: doc_source1
+        type: DocumentSource
+        reader_module: "file.SimpleDirectoryReader"
+        outputs: []

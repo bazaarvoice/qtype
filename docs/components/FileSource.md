@@ -2,4 +2,5 @@
 
 File source that reads data from a file using fsspec-compatible URIs.
 
-- **path** (`str | None`): fsspec-compatible URI to read from. If None, expects 'path' input variable.
+- **type** (`Literal`): (No documentation available.)
+- **path** (`ConstantPath | Reference[Variable] | str`): Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.

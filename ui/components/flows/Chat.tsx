@@ -14,6 +14,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
 import AttachmentDisplay from "@/components/chat/AttachmentDisplay";
 import MessageBubble from "@/components/chat/MessageBubble";
+import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -24,14 +25,21 @@ import {
 } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { ScrollArea } from "@/components/ui/ScrollArea";
-import { apiClient, type FlowInfo } from "@/lib/apiClient";
+import { apiClient } from "@/lib/apiClient";
 
-import type { FileAttachment } from "@/types";
+import type { FileAttachment, FlowMetadata } from "@/types";
 
 const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 
-function ChatFlow({ path, name, description }: FlowInfo) {
+interface ChatFlowProps {
+  flow: FlowMetadata;
+}
+
+function ChatFlow({ flow }: ChatFlowProps) {
+  const path = flow.endpoints.stream;
+  const name = formatFlowName(flow.id);
+  const description = flow.description;
   const [conversationId, setConversationId] = useState(() => generateId());
   const [input, setInput] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([]);

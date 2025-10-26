@@ -1,0 +1,5 @@
+- id: var1
+  type: text
+
+- id: var1
+  type: int

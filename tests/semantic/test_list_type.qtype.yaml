@@ -1,0 +1,21 @@
+id: test_semantic_list
+
+flows:
+- id: test_flow
+  variables:
+  - id: urls
+    type: list[text]
+  - id: result
+    type: text
+  inputs:
+  - urls
+  outputs:
+  - result
+  steps:
+  - id: dummy_step
+    type: PromptTemplate
+    template: "Processing URLs: {urls}"
+    inputs:
+    - urls
+    outputs:
+    - result

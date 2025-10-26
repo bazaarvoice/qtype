@@ -73,9 +73,17 @@ The architecture establishes clear layers with controlled dependencies:
     - Sort imports alphabetically within each group
     - Use `from` imports for specific items when appropriate
     - Place `from __future__ import annotations` at the very top
+    - **CRITICAL**: Import formatting rules:
+      - When importing multiple items from the SAME module WITHOUT aliases: use comma-separated on ONE line
+        * WRONG: `from qtype.dsl.model import ListType` then `from qtype.dsl.model import Variable`
+        * RIGHT: `from qtype.dsl.model import ListType, Variable, _resolve_variable_type`
+      - When importing with aliases or complex operations: use separate lines
+        * WRONG: `from qtype.semantic import checker, model as ir, resolver`
+        * RIGHT: `from qtype.semantic import checker` then `from qtype.semantic import model as ir` then `from qtype.semantic import resolver`
+      - Rule of thumb: Simple imports from same module = one line with commas; aliases or complexity = separate lines
     
     ## ruff compliance:
-    - Follow all ruff default rules and error codes
+    - Follow all ruff default rules and error codes (line-length = 79, target py310)
     - Avoid unused variables (prefix with underscore if intentionally unused)
     - Remove unused imports
     - Use consistent quote styles (prefer double quotes)
@@ -85,8 +93,18 @@ The architecture establishes clear layers with controlled dependencies:
     - Use context managers for resource management
     - Avoid lambda assignments (use def for named functions)
     - Use enumerate() instead of manual counters
-    - Use zip() for parallel 
-    - blank lines should not include whitespace     
+    - Use zip() for parallel iteration
+    - Blank lines should not include whitespace
+    - **CRITICAL**: Avoid unnecessary parentheses:
+      - Don't wrap simple expressions in parentheses unless needed for line continuation
+      - WRONG: `x = (Path(__file__).parent / "file.txt")`
+      - RIGHT: `x = Path(__file__).parent / "file.txt"`
+      - Use parentheses only when expression would exceed line length or for multi-line continuations
+    - **CRITICAL**: For assert statements with long messages, format like this:
+      - If assert + condition + message exceeds 79 chars, put message in parentheses on next line
+      - WRONG: `assert isinstance(x, Type), "Long message here"`
+      - RIGHT: `assert isinstance(x, Type), ("Long message here")`
+      - Example: `assert len(items) == 5, ("Should have exactly 5 items")`     
 
  All Python code generated for this repository *should*:
     - Use logging instead of print statements for debug/info/error messages

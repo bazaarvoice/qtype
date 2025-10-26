@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any, Type
 
 from pydantic import BaseModel, Field, create_model
 
 from qtype.application.converters.types import PRIMITIVE_TO_PYTHON_TYPE
 from qtype.dsl.model import PrimitiveTypeEnum
+from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Flow, Variable
 
 
@@ -34,100 +36,94 @@ def _get_variable_type(var: Variable) -> tuple[Type, dict[str, Any]]:
     return python_type, field_metadata
 
 
-def create_output_type_model(
-    flow: Flow, is_batch: bool = False
-) -> Type[BaseModel]:
-    """Dynamically create a Pydantic response model for a flow."""
-    fields: dict[str, tuple[Any, Any]] = {}
-
-    # Always include flow_id and status
-    fields["flow_id"] = (str, Field(description="ID of the executed flow"))
-    fields["status"] = (str, Field(description="Execution status"))
-
-    if is_batch:
-        # Include information about the number of results, errors, etc.
-        fields["num_inputs"] = (int, Field(description="Number of inputs."))
-        fields["num_results"] = (int, Field(description="Number of results."))
-        fields["num_errors"] = (int, Field(description="Number of errors."))
-        fields["errors"] = (
-            list[dict[Any, Any]],
-            Field(description="All inputs with their associated errors."),
-        )
-
-    # Add dynamic output fields
-    if flow.outputs:
-        output_fields = {}
-        for var in flow.outputs:
-            python_type, type_metadata = _get_variable_type(var)
-
-            # Make type optional for batch processing since rows might have missing values
-            if is_batch:
-                from typing import Union
-
-                python_type = Union[python_type, type(None)]  # type: ignore
-
-            field_info = Field(
-                # TODO: grok the description from the variable if available
-                # description=f"Output for {var.id}",
-                title=var.id,
-                json_schema_extra=type_metadata,
-            )
-            output_fields[var.id] = (python_type, field_info)
-
-        # Create nested outputs model
-        outputs_model: Type[BaseModel] = create_model(
-            f"{flow.id}Outputs",
-            __base__=BaseModel,
-            **output_fields,
-        )  # type: ignore
-        if is_batch:
-            fields["outputs"] = (
-                list[outputs_model],  # type: ignore
-                Field(description="List of flow execution outputs"),
-            )
-        else:
-            fields["outputs"] = (
-                outputs_model,
-                Field(description="Flow execution outputs"),
-            )
-    else:
-        fields["outputs"] = (
-            dict[str, Any],
-            Field(description="Flow execution outputs"),
-        )  # type: ignore
-
-    return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)  # type: ignore
-
-
-def create_input_type_model(flow: Flow, is_batch: bool) -> Type[BaseModel]:
-    """Dynamically create a Pydantic request model for a flow."""
-    if not flow.inputs and not is_batch:
-        return create_model(
-            f"{flow.id}Request",
-            __base__=BaseModel,
-        )
-
+def _fields_from_variables(variables: list[Variable]) -> dict:
     fields = {}
-    for var in flow.inputs:
+    for var in variables:
         python_type, type_metadata = _get_variable_type(var)
         field_info = Field(
-            # TODO: grok the description from the variable if available
+            # TODO: grok the description from the variable if available?
             # description=f"Input for {var.id}",
             title=var.id,
             json_schema_extra=type_metadata,
         )
         fields[var.id] = (python_type, field_info)
+    return fields
 
-    if is_batch:
-        # For batch processing, wrap inputs in a list
-        single_input_model: Type[BaseModel] = create_model(
-            f"{flow.id}SingleInput", __base__=BaseModel, **fields
-        )  # type: ignore
-        fields = {
-            "inputs": (
-                list[single_input_model],  # type: ignore
-                Field(description="List of inputs for batch processing"),
-            )
-        }
 
-    return create_model(f"{flow.id}Request", __base__=BaseModel, **fields)  # type: ignore
+def create_output_shape(flow: Flow) -> Type[BaseModel]:
+    return create_model(
+        f"{flow.id}Result",
+        __base__=BaseModel,
+        **_fields_from_variables(flow.outputs),
+    )  # type: ignore
+
+
+def create_output_container_type(flow: Flow) -> Type[BaseModel]:
+    """Dynamically create a Pydantic response model for a flow.
+
+    Always returns a batch-style response with a list of outputs.
+    """
+    output_shape: Type[BaseModel] = create_output_shape(flow)
+
+    fields: dict[str, tuple[Any, Any]] = {}
+    fields["errors"] = (
+        list[dict[Any, Any]],
+        Field(description="List of errored execution outputs"),
+    )
+    fields["outputs"] = (
+        list[output_shape],
+        Field(description="List of successful execution outputs"),
+    )
+    return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)  # type: ignore
+
+
+def create_input_shape(flow: Flow) -> Type[BaseModel]:
+    """Dynamically create a Pydantic request model for a flow."""
+    return create_model(
+        f"{flow.id}Request",
+        __base__=BaseModel,
+        **_fields_from_variables(flow.inputs),
+    )  # type: ignore
+
+
+def request_to_flow_message(request: BaseModel, **kwargs) -> FlowMessage:
+    """
+    Convert API input data into a FlowMessage for the interpreter.
+
+    Args:
+        flow: The flow being executed
+        request: Input Request
+        session_id: Optional session ID for conversational flows
+
+    Returns:
+        FlowMessage ready for execution
+    """
+    session_id = kwargs.get("session_id", str(uuid.uuid4()))
+    conversation_history = kwargs.get("conversation_history", [])
+
+    # Todo -- inject conversation history?
+    session = Session(
+        session_id=session_id, conversation_history=conversation_history
+    )
+
+    variables = {}
+    for id in request.model_dump().keys():
+        variables[id] = getattr(request, id)
+
+    return FlowMessage(session=session, variables=variables)
+
+
+def flow_results_to_output_container(
+    messages: list[FlowMessage],
+    output_shape: Type[BaseModel],
+    output_container: Type[BaseModel],
+):
+    outputs = []
+    errors = []
+    for m in messages:
+        if m.is_failed():
+            errors.append(m.error)
+        else:
+            outputs.append(output_shape(**m.variables))
+
+    return output_container(outputs=outputs, errors=errors)
