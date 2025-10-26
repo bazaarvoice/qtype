@@ -14,6 +14,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
 import AttachmentDisplay from "@/components/chat/AttachmentDisplay";
 import MessageBubble from "@/components/chat/MessageBubble";
+import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -25,7 +26,6 @@ import {
 import { Input } from "@/components/ui/Input";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { apiClient } from "@/lib/apiClient";
-import { formatFlowName } from "@/components/FlowTabsContainer";
 
 import type { FileAttachment, FlowMetadata } from "@/types";
 

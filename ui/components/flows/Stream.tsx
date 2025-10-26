@@ -4,10 +4,10 @@ import { useCompletion } from "@ai-sdk/react";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { useState, useCallback } from "react";
 
+import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { apiClient, ApiClientError } from "@/lib/apiClient";
-import { formatFlowName } from "@/components/FlowTabsContainer";
 
 import FlowInputs from "../FlowInputs";
 import { MarkdownContainer } from "../MarkdownContainer";
@@ -22,7 +22,7 @@ function StreamFlow({ flow }: StreamFlowProps) {
   const path = flow.endpoints.stream;
   const name = formatFlowName(flow.id);
   const description = flow.description;
-  const requestSchema = flow.input_schema as any;
+  const requestSchema = flow.input_schema as Record<string, unknown>;
   const [inputs, setInputs] = useState<FlowInputValues>({});
   const [error, setError] = useState<string | null>(null);
 

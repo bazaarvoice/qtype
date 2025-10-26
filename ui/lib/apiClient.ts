@@ -8,6 +8,7 @@
 
 import { extractRequestSchema, extractResponseSchema } from "./utils";
 
+import type { FlowMetadata } from "@/types";
 import type { SchemaProperty, FlowInputValues, ResponseData } from "@/types";
 import type { OpenAPIV3_1 } from "openapi-types";
 
@@ -182,8 +183,8 @@ export class ApiClient {
   /**
    * Fetches flow metadata from the /flows endpoint
    */
-  async getFlows(): Promise<import("@/types").FlowMetadata[]> {
-    return this.get<import("@/types").FlowMetadata[]>("/flows");
+  async getFlows(): Promise<FlowMetadata[]> {
+    return this.get<FlowMetadata[]>("/flows");
   }
 
   /**

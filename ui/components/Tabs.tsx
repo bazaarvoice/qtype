@@ -1,6 +1,7 @@
 "use client";
 
 import { TabsList, TabsTrigger } from "@/components/ui/TabsContainer";
+
 import { formatFlowName } from "./FlowTabsContainer";
 
 import type { FlowMetadata } from "@/types";

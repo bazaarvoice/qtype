@@ -12,6 +12,6 @@ export interface FlowMetadata {
   interface_type: "Complete" | "Conversational";
   session_inputs: string[];
   endpoints: FlowEndpoints;
-  input_schema: Record<string, any>;
-  output_schema: Record<string, any>;
+  input_schema: Record<string, unknown>;
+  output_schema: Record<string, unknown>;
 }
