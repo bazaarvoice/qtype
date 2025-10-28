@@ -124,6 +124,7 @@ def flow_results_to_output_container(
         if m.is_failed():
             errors.append(m.error)
         else:
-            outputs.append(output_shape(**m.variables))
+            output_instance = output_shape(**m.variables)
+            outputs.append(output_instance.model_dump())
 
     return output_container(outputs=outputs, errors=errors)

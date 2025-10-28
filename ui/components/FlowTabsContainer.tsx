@@ -5,7 +5,7 @@ import { TabsContainer } from "@/components/ui/TabsContainer";
 import { TabsContent } from "@/components/ui/TabsContainer";
 import { useFlows } from "@/lib/hooks/useApi";
 
-import { StreamFlow, ChatFlow } from "./flows";
+import { StreamFlow, ChatFlow, RestFlow } from "./flows";
 import { Tabs } from "./Tabs";
 
 const FLOW_ERROR_TITLE = "Failed to load flows";
@@ -60,6 +60,7 @@ function FlowTabsContainer() {
         <TabsContent key={flow.id} value={flow.id} className="mt-6">
           {flow.interface_type === "Conversational" && <ChatFlow flow={flow} />}
           {flow.interface_type === "Complete" && <StreamFlow flow={flow} />}
+          {!flow.interface_type && <RestFlow flow={flow} />}
         </TabsContent>
       ))}
     </TabsContainer>
