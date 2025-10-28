@@ -2,6 +2,7 @@ from typing import AsyncIterator
 
 from llama_cloud import MessageRole as LlamaMessageRole
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
+from openinference.semconv.trace import OpenInferenceSpanKindValues
 
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
@@ -18,6 +19,9 @@ from qtype.semantic.model import LLMInference
 
 class LLMInferenceExecutor(StepExecutor):
     """Executor for LLMInference steps."""
+
+    # LLM inference spans should be marked as LLM type
+    span_kind = OpenInferenceSpanKindValues.LLM
 
     def __init__(self, step: LLMInference, **dependencies):
         super().__init__(step, **dependencies)

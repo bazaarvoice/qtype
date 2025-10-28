@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator
 
 from aiostream import stream
+from openinference.semconv.trace import (
+    OpenInferenceSpanKindValues,
+    SpanAttributes,
+)
 from opentelemetry import context, trace
 from opentelemetry.trace import Status, StatusCode
 
@@ -42,6 +46,7 @@ class StepExecutor(ABC):
     **Subclass Requirements:**
     - Must implement `process_message()` to handle individual message processing
     - Can optionally implement `finalize()` for cleanup/terminal operations
+    - Can optionally override `span_kind` to set appropriate OpenInference span type
 
     Args:
         step: The semantic step model defining behavior and configuration
@@ -51,6 +56,11 @@ class StepExecutor(ABC):
             database connections). These are injected by the executor factory
             and stored for use during execution.
     """
+
+    # Subclasses can override this to set the appropriate span kind
+    span_kind: OpenInferenceSpanKindValues = (
+        OpenInferenceSpanKindValues.UNKNOWN
+    )
 
     def __init__(
         self,
@@ -153,6 +163,7 @@ class StepExecutor(ABC):
             attributes={
                 "step.id": self.step.id,
                 "step.type": self.step.__class__.__name__,
+                SpanAttributes.OPENINFERENCE_SPAN_KIND: self.span_kind.value,
             },
         )
 

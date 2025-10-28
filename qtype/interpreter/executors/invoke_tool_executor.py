@@ -4,6 +4,7 @@ import time
 from typing import Any, AsyncIterator
 
 import requests
+from openinference.semconv.trace import OpenInferenceSpanKindValues
 from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class InvokeToolExecutor(StepExecutor):
     """Executor for InvokeTool steps."""
+
+    # Tool invocations should be marked as TOOL type
+    span_kind = OpenInferenceSpanKindValues.TOOL
 
     def __init__(self, step: InvokeTool, **dependencies):
         super().__init__(step, **dependencies)
