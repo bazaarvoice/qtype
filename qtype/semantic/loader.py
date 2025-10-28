@@ -1,35 +1,60 @@
 """
 Semantic model loading and resolution.
+
+This is the main entry point for loading QType specifications.
+Coordinates the pipeline: load → parse → link → resolve → check
 """
 
 from __future__ import annotations
 
-from qtype.base.types import CustomTypeRegistry
+from pathlib import Path
+
+from qtype.base.types import CustomTypeRegistry, URILike
 from qtype.dsl.linker import link
-from qtype.dsl.loader import load_document
+from qtype.dsl.loader import load_yaml
+from qtype.dsl.parser import parse_document
 from qtype.semantic.checker import check
 from qtype.semantic.model import DocumentType
 from qtype.semantic.resolver import resolve
 
 
-def load(content: str) -> tuple[DocumentType, CustomTypeRegistry]:
+def load(
+    content: str | Path | URILike,
+) -> tuple[DocumentType, CustomTypeRegistry]:
     """
-    Load a QType YAML file, validate it, and return the resolved semantic Document.
+    Load a QType YAML file, validate it, and return resolved semantic model.
+
+    This function coordinates the complete loading pipeline:
+    1. Load YAML (with env vars and includes)
+    2. Parse into DSL models (with custom type building)
+    3. Link references (resolve IDs to objects)
+    4. Resolve to semantic models (DSL → IR)
+    5. Check semantic rules
 
     Args:
-        content: Either a fsspec uri/file path to load, or a string containing YAML content.
+        content: URILike or Path for file paths, str for raw YAML content
 
     Returns:
-        A tuple of (Document, CustomTypeRegistry).
+        Tuple of (SemanticDocumentType, CustomTypeRegistry)
 
     Raises:
-        YAMLLoadError: If YAML parsing fails.
-        ValueError: If the root document is not an Document or validation fails.
-        FileNotFoundError: If the YAML file or included files don't exist.
-        QTypeSemanticError: If the loaded spec violates semantic rules.
+        YAMLLoadError: If YAML parsing fails
+        ValueError: If validation fails
+        DuplicateComponentError: If duplicate IDs found
+        ReferenceNotFoundError: If reference resolution fails
+        QTypeSemanticError: If semantic rules violated
     """
-    root, dynamic_types_registry = load_document(content)
-    dsl_doc = link(root)
-    semantic_doc = resolve(dsl_doc)
+    # Use type to determine loading method
+    if isinstance(content, Path):
+        yaml_data = load_yaml(URILike(content))
+    elif isinstance(content, URILike):
+        yaml_data = load_yaml(content)
+    else:
+        # str = raw YAML content
+        yaml_data = load_yaml(content)
+
+    dsl_doc, types = parse_document(yaml_data)
+    linked_doc = link(dsl_doc)
+    semantic_doc = resolve(linked_doc)
     check(semantic_doc)
-    return semantic_doc, dynamic_types_registry
+    return semantic_doc, types

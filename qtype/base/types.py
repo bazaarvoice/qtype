@@ -25,6 +25,18 @@ JSONValue = Union[
 
 # Path-like type (string or Path object)
 PathLike = Union[str, pathlib.Path]
+
+
+class URILike:
+    """Wrapper to indicate a string is a file path/URI, not YAML content."""
+
+    def __init__(self, path: str | pathlib.Path) -> None:
+        self.path = str(path)
+
+    def __str__(self) -> str:
+        return self.path
+
+
 CustomTypeRegistry = dict[str, Type[BaseModel]]
 # Configuration dictionary type
 ConfigDict = dict[str, Any]

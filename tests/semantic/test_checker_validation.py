@@ -92,7 +92,7 @@ def test_checker_validation_errors(yaml_file, expected_error_fragment):
     test_file = Path(__file__).parent / "checker-error-specs" / yaml_file
 
     with pytest.raises(QTypeSemanticError) as exc_info:
-        load(str(test_file))
+        load(test_file)
 
     assert expected_error_fragment in str(exc_info.value), (
         f"Expected error fragment '{expected_error_fragment}' not found "

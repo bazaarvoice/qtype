@@ -12,12 +12,18 @@ from unittest.mock import patch
 
 import pytest
 
-from qtype.dsl.loader import (
-    _load_yaml,
-    _load_yaml_from_string,
-    _resolve_path,
-    _StringStream,
-)
+from qtype.base.types import URILike
+from qtype.dsl.loader import YAMLLoadError, _resolve_path, load_yaml
+
+
+def _load_yaml(content: str | Path) -> Any:
+    """Load YAML from file path."""
+    return load_yaml(URILike(content))
+
+
+def _load_yaml_from_string(content: str) -> Any:
+    """Load YAML from string content."""
+    return load_yaml(content)
 
 
 class TestFileFixtures:
@@ -112,47 +118,13 @@ def temp_dir():
         yield Path(tmp_dir)
 
 
-class TestStringStream:
-    """Test suite for _StringStream functionality."""
-
-    @pytest.mark.parametrize(
-        "content,size,expected_reads",
-        [
-            ("Hello, World!", 5, ["Hello", ", Wor", "ld!"]),
-            ("Short", 10, ["Short"]),
-            ("A" * 100, 25, ["A" * 25, "A" * 25, "A" * 25, "A" * 25]),
-        ],
-    )
-    def test_string_stream_read_with_size(
-        self, content: str, size: int, expected_reads: list[str]
-    ) -> None:
-        """Test reading from StringStream with specific size parameter."""
-        stream = _StringStream(content, "test_file.txt")
-
-        for expected_read in expected_reads:
-            result = stream.read(size)
-            assert result == expected_read
-
-    def test_string_stream_read_all(self) -> None:
-        """Test reading all content from StringStream."""
-        content = "Test content with various characters: 123 !@#"
-        stream = _StringStream(content, "test.txt")
-
-        result = stream.read()
-        assert result == content
-
-
 class TestBasicLoaderFunctions:
     """Test suite for basic loader function operations."""
 
     def test_load_from_string_basic(self, temp_dir: Path) -> None:
         """Test loading YAML from a string."""
-        result_list = _load_yaml_from_string(TestFileFixtures.SIMPLE_YAML)
-        if isinstance(result_list, list):
-            assert len(result_list) == 1
-            result = result_list[0]  # type: ignore[index]
-        else:
-            result = result_list
+        result = _load_yaml_from_string(TestFileFixtures.SIMPLE_YAML)
+        assert isinstance(result, dict)
         assert result["name"] == "Test App"
         assert result["version"] == "1.0.0"
 
@@ -173,11 +145,13 @@ app:
             assert result["app"]["name"] == "TestApp"
 
     def test_load_from_string_multiple_documents(self, temp_dir: Path) -> None:
-        """Test loading multiple YAML documents from a string."""
-        from qtype.dsl.loader import YAMLLoadError
-
-        with pytest.raises(YAMLLoadError, match="but found another document"):
-            _ = _load_yaml_from_string(
+        """Test that multiple YAML documents are rejected by new loader."""
+        # The new loader properly rejects multi-document YAML files
+        # since QType specs should be single documents
+        with pytest.raises(
+            YAMLLoadError, match="YAML parsing error.*another document"
+        ):
+            _load_yaml_from_string(
                 """
 name: "First Doc"
 ---
@@ -190,17 +164,17 @@ name: "Second Doc"
         [
             ("# Just a comment\n", []),
             ("", []),
+            # Multi-document YAML should be rejected
             ("name: Test\n---\n# Empty document\n---\nversion: 1.0", 2),
         ],
     )
     def test_load_from_string_edge_cases(
         self, yaml_content: str, expected_result: list | int
     ) -> None:
-        from qtype.dsl.loader import YAMLLoadError
-
         if expected_result == 2:
+            # Multi-document YAML should raise an error
             with pytest.raises(
-                YAMLLoadError, match="but found another document"
+                YAMLLoadError, match="YAML parsing error.*another document"
             ):
                 _ = _load_yaml_from_string(yaml_content)
         else:
@@ -226,13 +200,14 @@ class TestDocumentLoading:
         assert doc is not None
 
     def test_load_documents_multiple(self, temp_dir: Path) -> None:
-        """Test loading multiple QType documents."""
-        from qtype.dsl.loader import YAMLLoadError
-
+        """Test that multiple QType documents are rejected."""
         test_file = TestHelpers.create_multiple_documents(
             temp_dir, "test.yaml", 3
         )
-        with pytest.raises(YAMLLoadError, match="but found another document"):
+        # The new loader properly rejects multi-document YAML
+        with pytest.raises(
+            YAMLLoadError, match="YAML parsing error.*another document"
+        ):
             _ = _load_yaml(str(test_file))
 
     def test_load_function_single_document(self, temp_dir: Path) -> None:
@@ -244,13 +219,14 @@ class TestDocumentLoading:
         assert not isinstance(result, list) or len(result) == 1
 
     def test_load_function_multiple_documents(self, temp_dir: Path) -> None:
-        """Test load function with multiple documents."""
-        from qtype.dsl.loader import YAMLLoadError
-
+        """Test that load function rejects multiple documents."""
         test_file = TestHelpers.create_multiple_documents(
             temp_dir, "test.yaml", 2
         )
-        with pytest.raises(YAMLLoadError, match="but found another document"):
+        # The new loader properly rejects multi-document YAML
+        with pytest.raises(
+            YAMLLoadError, match="YAML parsing error.*another document"
+        ):
             _ = _load_yaml(str(test_file))
 
 
@@ -565,13 +541,13 @@ config: !include config.yaml
         )
 
         # Should raise error for missing required env var
-        from qtype.dsl.loader import YAMLLoadError
-
-        TestHelpers.assert_yaml_error(
-            main_file,
-            YAMLLoadError,
-            "Environment variable 'REQUIRED_SECRET' is required",
-        )
+        # The new loader wraps the ValueError in a FileNotFoundError
+        # when the error occurs in an included file
+        with pytest.raises(
+            FileNotFoundError,
+            match="Environment variable 'REQUIRED_SECRET' is required",
+        ):
+            _load_yaml(str(main_file))
 
 
 class TestPathResolution:
@@ -626,29 +602,20 @@ class TestLoaderEdgeCases:
     def test_load_yaml_string_content(self, temp_dir: Path) -> None:
         """Test load_yaml when content is a string, not a URI."""
         yaml_content = "name: Test App\nversion: 1.0.0"
-        result = _load_yaml(yaml_content)
-        if isinstance(result, list):
-            assert len(result) == 1
-            doc = result[0]  # type: ignore[index]
-        else:
-            doc = result
-        assert doc["name"] == "Test App"
-        assert doc["version"] == "1.0.0"
+        result = _load_yaml_from_string(yaml_content)
+        assert result["name"] == "Test App"
+        assert result["version"] == "1.0.0"
 
     def test_load_yaml_uri_parsing_exception(self, temp_dir: Path) -> None:
-        """Test load_yaml when URI parsing raises an exception."""
-        test_file = TestHelpers.create_temp_file(
-            temp_dir, "test.yaml", "name: Test"
-        )
-        with patch("qtype.dsl.loader.url_to_fs", side_effect=ValueError):
-            result = _load_yaml(str(test_file))
-            if isinstance(result, dict):
-                assert result["name"] == "Test"
-            elif isinstance(result, str):
-                # Loader returns the file path as a string
-                assert result == str(test_file)
-            elif result is None:
-                assert False, "Expected a dict or string, got None"
+        """Test load_yaml with raw YAML string."""
+        test_content = "name: Test\nversion: 1.0"
+        result = _load_yaml_from_string(test_content)
+
+        # Should parse as YAML string (not as file path)
+        assert isinstance(result, dict)
+        assert result["name"] == "Test"
+        # YAML parses 1.0 as float, not string
+        assert result["version"] == 1.0
 
     @pytest.mark.parametrize(
         "content,expected_error",
@@ -660,6 +627,7 @@ class TestLoaderEdgeCases:
     def test_load_yaml_file_not_found(
         self, content: str, expected_error: type
     ) -> None:
+        # With URILike, non-existent files properly raise FileNotFoundError
         with pytest.raises(expected_error):
             _load_yaml(content)
 
