@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from qtype.base.exceptions import SemanticError
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatMessage, RAGChunk, RAGDocument
 from qtype.dsl.linker import QTypeValidationError
@@ -33,10 +34,8 @@ class FlowHasNoStepsError(QTypeValidationError):
         super().__init__(f"Flow {flow_id} has no steps defined.")
 
 
-class QTypeSemanticError(QTypeValidationError):
-    """Raised when there's an error during QType semantic validation."""
-
-    pass
+# Alias for backward compatibility and semantic clarity
+QTypeSemanticError = SemanticError
 
 
 # ---- Helper Functions for Common Validation Patterns ----

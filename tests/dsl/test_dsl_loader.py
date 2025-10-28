@@ -174,9 +174,9 @@ app:
 
     def test_load_from_string_multiple_documents(self, temp_dir: Path) -> None:
         """Test loading multiple YAML documents from a string."""
-        from yaml.composer import ComposerError
+        from qtype.dsl.loader import YAMLLoadError
 
-        try:
+        with pytest.raises(YAMLLoadError, match="but found another document"):
             _ = _load_yaml_from_string(
                 """
 name: "First Doc"
@@ -184,9 +184,6 @@ name: "First Doc"
 name: "Second Doc"
 """
             )
-            assert False, "Expected ComposerError for multiple documents"
-        except ComposerError:
-            pass
 
     @pytest.mark.parametrize(
         "yaml_content,expected_result",
@@ -199,14 +196,13 @@ name: "Second Doc"
     def test_load_from_string_edge_cases(
         self, yaml_content: str, expected_result: list | int
     ) -> None:
-        from yaml.composer import ComposerError
+        from qtype.dsl.loader import YAMLLoadError
 
         if expected_result == 2:
-            try:
+            with pytest.raises(
+                YAMLLoadError, match="but found another document"
+            ):
                 _ = _load_yaml_from_string(yaml_content)
-                assert False, "Expected ComposerError for multiple documents"
-            except ComposerError:
-                pass
         else:
             result = _load_yaml_from_string(yaml_content)
             assert result is None
@@ -231,16 +227,13 @@ class TestDocumentLoading:
 
     def test_load_documents_multiple(self, temp_dir: Path) -> None:
         """Test loading multiple QType documents."""
-        from yaml.composer import ComposerError
+        from qtype.dsl.loader import YAMLLoadError
 
         test_file = TestHelpers.create_multiple_documents(
             temp_dir, "test.yaml", 3
         )
-        try:
+        with pytest.raises(YAMLLoadError, match="but found another document"):
             _ = _load_yaml(str(test_file))
-            assert False, "Expected ComposerError for multiple documents"
-        except ComposerError:
-            pass
 
     def test_load_function_single_document(self, temp_dir: Path) -> None:
         """Test load function with single document."""
@@ -252,16 +245,13 @@ class TestDocumentLoading:
 
     def test_load_function_multiple_documents(self, temp_dir: Path) -> None:
         """Test load function with multiple documents."""
-        from yaml.composer import ComposerError
+        from qtype.dsl.loader import YAMLLoadError
 
         test_file = TestHelpers.create_multiple_documents(
             temp_dir, "test.yaml", 2
         )
-        try:
+        with pytest.raises(YAMLLoadError, match="but found another document"):
             _ = _load_yaml(str(test_file))
-            assert False, "Expected ComposerError for multiple documents"
-        except ComposerError:
-            pass
 
 
 class TestFileInclusion:
@@ -575,9 +565,11 @@ config: !include config.yaml
         )
 
         # Should raise error for missing required env var
+        from qtype.dsl.loader import YAMLLoadError
+
         TestHelpers.assert_yaml_error(
             main_file,
-            ValueError,
+            YAMLLoadError,
             "Environment variable 'REQUIRED_SECRET' is required",
         )
 

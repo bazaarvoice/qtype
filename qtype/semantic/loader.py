@@ -23,10 +23,10 @@ def load(content: str) -> tuple[DocumentType, CustomTypeRegistry]:
         A tuple of (Document, CustomTypeRegistry).
 
     Raises:
+        YAMLLoadError: If YAML parsing fails.
         ValueError: If the root document is not an Document or validation fails.
         FileNotFoundError: If the YAML file or included files don't exist.
         QTypeSemanticError: If the loaded spec violates semantic rules.
-        yaml.YAMLError: If the YAML file is malformed.
     """
     root, dynamic_types_registry = load_document(content)
     dsl_doc = link(root)

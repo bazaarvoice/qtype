@@ -20,6 +20,40 @@ from qtype.dsl import model as dsl
 from qtype.dsl.custom_types import build_dynamic_types
 
 
+class YAMLLoadError(Exception):
+    """Enhanced YAML loading error with line number information."""
+
+    def __init__(
+        self,
+        message: str,
+        line: int | None = None,
+        column: int | None = None,
+        source: str | None = None,
+        original_error: Exception | None = None,
+    ) -> None:
+        self.message = message
+        self.line = line
+        self.column = column
+        self.source = source
+        self.original_error = original_error
+        super().__init__(self._format_message())
+
+    def _format_message(self) -> str:
+        """Format the error message with location information."""
+        parts = []
+        if self.source:
+            parts.append(f"in {self.source}")
+        if self.line is not None:
+            location = f"line {self.line + 1}"
+            if self.column is not None:
+                location += f", column {self.column + 1}"
+            parts.append(location)
+
+        if parts:
+            return f"{self.message} ({', '.join(parts)})"
+        return self.message
+
+
 class _StringStream:
     """
     A file-like stream wrapper around string content for YAML loading.
@@ -375,18 +409,46 @@ def _load_yaml_from_string(
         The parsed YAML data with includes resolved and environment variables substituted.
 
     Raises:
-        ValueError: If a required environment variable is not found.
+        YAMLLoadError: If YAML parsing fails or environment variables are missing.
         FileNotFoundError: If the YAML file or included files don't exist.
-        yaml.YAMLError: If the YAML file is malformed.
     """
 
     # Create a string stream for the loader
     # Note: When loading from string, relative paths will be resolved relative to cwd
     stream = _StringStream(content, original_uri)
-    # Use the string stream directly with the loader
-    result = yaml.load(stream, Loader=_YamlLoader)
 
-    return result  # type: ignore[no-any-return]
+    try:
+        # Use the string stream directly with the loader
+        result = yaml.load(stream, Loader=_YamlLoader)
+        return result  # type: ignore[no-any-return]
+    except yaml.YAMLError as e:
+        # Extract line/column information if available
+        line = None
+        column = None
+
+        if hasattr(e, "problem_mark") and e.problem_mark:  # type: ignore[attr-defined]
+            line = e.problem_mark.line  # type: ignore[attr-defined]
+            column = e.problem_mark.column  # type: ignore[attr-defined]
+
+        # Format a nice error message
+        error_msg = str(e)
+        if hasattr(e, "problem"):
+            error_msg = e.problem or error_msg  # type: ignore[attr-defined]
+
+        raise YAMLLoadError(
+            message=f"YAML parsing error: {error_msg}",
+            line=line,
+            column=column,
+            source=original_uri,
+            original_error=e,
+        ) from e
+    except ValueError as e:
+        # Environment variable substitution errors
+        raise YAMLLoadError(
+            message=str(e),
+            source=original_uri,
+            original_error=e,
+        ) from e
 
 
 def _load_yaml(content: str) -> dict[str, Any]:
@@ -400,9 +462,8 @@ def _load_yaml(content: str) -> dict[str, Any]:
         The parsed YAML data with includes resolved and environment variables substituted.
 
     Raises:
-        ValueError: If a required environment variable is not found.
+        YAMLLoadError: If YAML parsing fails or environment variables are missing.
         FileNotFoundError: If the YAML file or included files don't exist.
-        yaml.YAMLError: If the YAML file is malformed.
     """
     try:
         # First check if content looks like a file path or URI
@@ -486,6 +547,119 @@ def _list_dynamic_types_from_document(
     return rv
 
 
+def _simplify_field_path(loc: tuple) -> str:
+    """
+    Simplify a Pydantic error location path to be more readable.
+
+    Removes verbose union type names and array indices, keeping only
+    the essential field names.
+
+    Args:
+        loc: The error location tuple from Pydantic
+
+    Returns:
+        A simplified, readable field path string
+    """
+    simplified = []
+    for part in loc:
+        part_str = str(part)
+
+        # Skip union type discriminator paths (they're too verbose)
+        if "tagged-union" in part_str or "Union[" in part_str:
+            continue
+
+        # Skip Reference wrapper types
+        if part_str.startswith("Reference["):
+            continue
+
+        # Keep numeric indices but format them as array indices
+        if isinstance(part, int):
+            simplified.append(f"[{part}]")
+        else:
+            simplified.append(part_str)
+
+    return " -> ".join(simplified).replace(" -> [", "[")
+
+
+def _is_relevant_error(error: dict) -> bool:
+    """
+    Determine if a validation error is relevant to show to the user.
+
+    Filters out noise like:
+    - "Input should be a valid list" for document type selection
+    - Duplicate Reference resolution errors
+
+    But keeps actual field validation errors even if they're inside unions.
+
+    Args:
+        error: A Pydantic error dictionary
+
+    Returns:
+        True if the error should be shown to the user
+    """
+    loc_str = " -> ".join(str(loc) for loc in error["loc"])
+    error_type = error["type"]
+
+    # Filter out "should be a valid list" errors for document types
+    # These are just saying "this isn't a ModelList/ToolList/etc"
+    if error_type == "list_type" and any(
+        doc_type in loc_str
+        for doc_type in [
+            "AuthorizationProviderList",
+            "ModelList",
+            "ToolList",
+            "TypeList",
+            "VariableList",
+            "AgentList",
+            "FlowList",
+            "IndexList",
+        ]
+    ):
+        return False
+
+    # Filter out Reference wrapper errors that are about $ref field
+    # These are duplicates of the actual validation error
+    if "Reference[" in loc_str and "$ref" in error["loc"][-1]:
+        return False
+
+    return True
+
+
+def _format_validation_errors(
+    validation_error: Any, source_name: str | None
+) -> str:
+    """
+    Format Pydantic validation errors in a user-friendly way.
+
+    Args:
+        validation_error: The ValidationError from Pydantic
+        source_name: Optional source file name for context
+
+    Returns:
+        A formatted error message string
+    """
+    # Filter and collect relevant errors
+    relevant_errors = [
+        error
+        for error in validation_error.errors()
+        if _is_relevant_error(error)
+    ]
+
+    if not relevant_errors:
+        # Fallback if all errors were filtered
+        error_msg = "Validation failed (see details above)"
+    else:
+        error_msg = "Validation failed:\n"
+        for error in relevant_errors:
+            loc_path = _simplify_field_path(error["loc"])
+            error_msg += f"  {loc_path}: {error['msg']}\n"
+
+    if source_name:
+        error_msg = f"In {source_name}:\n{error_msg}"
+
+    return error_msg
+
+
 def load_document(content: str) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
     """
     Load a QType YAML file and return the DSL document.
@@ -499,15 +673,34 @@ def load_document(content: str) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
         ToolList, TypeList, or VariableList.
 
     Raises:
-        ValueError: If a required environment variable is not found.
+        YAMLLoadError: If YAML parsing fails.
+        ValueError: If Pydantic validation fails.
         FileNotFoundError: If the YAML file or included files don't exist.
-        yaml.YAMLError: If the YAML file is malformed.
     """
-    yaml_data = _load_yaml(content)
-    dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
-    dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
-    document = dsl.Document.model_validate(
-        yaml_data, context={"custom_types": dynamic_types_registry}
-    )
-    root = _resolve_root(document)
-    return root, dynamic_types_registry
+    from pydantic import ValidationError
+
+    # Determine source name for error messages
+    source_name = None
+    if "\n" not in content:
+        try:
+            parsed = urlparse(content)
+            if parsed.scheme in ["file", ""]:
+                source_name = content
+            elif parsed.scheme:
+                source_name = content
+        except Exception:
+            pass
+
+    try:
+        yaml_data = _load_yaml(content)
+        dynamic_types_lists = _list_dynamic_types_from_document(yaml_data)
+        dynamic_types_registry = build_dynamic_types(dynamic_types_lists)
+        document = dsl.Document.model_validate(
+            yaml_data, context={"custom_types": dynamic_types_registry}
+        )
+        root = _resolve_root(document)
+        return root, dynamic_types_registry
+    except ValidationError as e:
+        # Enhance Pydantic validation errors with context
+        error_msg = _format_validation_errors(e, source_name)
+        raise ValueError(error_msg) from e

@@ -31,7 +31,7 @@ class QTypeFacade:
     ) -> tuple[DocumentType, CustomTypeRegistry]:
         from qtype.dsl.loader import load_document
 
-        return load_document(Path(path).read_text(encoding="utf-8"))
+        return load_document(str(Path(path)))
 
     def telemetry(self, spec: SemanticDocumentType) -> None:
         if isinstance(spec, SemanticApplication) and spec.telemetry:
