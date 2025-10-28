@@ -26,15 +26,6 @@ class QTypeFacade:
     and interpreter layers, providing a clean API for common operations.
     """
 
-    def load_dsl_document(
-        self, path: PathLike
-    ) -> tuple[DocumentType, CustomTypeRegistry]:
-        from qtype.dsl.loader import load_yaml_file
-        from qtype.dsl.parser import parse_document
-
-        yaml_data = load_yaml_file(Path(path))
-        return parse_document(yaml_data)
-
     def telemetry(self, spec: SemanticDocumentType) -> None:
         if isinstance(spec, SemanticApplication) and spec.telemetry:
             logger.info(
