@@ -426,7 +426,7 @@ data: !include malformed.yaml
 """,
         )
         TestHelpers.assert_yaml_error(
-            main_file, FileNotFoundError, "Failed to load included file"
+            main_file, YAMLLoadError, "YAML parsing error"
         )
 
     def test_absolute_path_include(self, temp_dir: Path) -> None:
@@ -547,10 +547,9 @@ config: !include config.yaml
         )
 
         # Should raise error for missing required env var
-        # The new loader wraps the ValueError in a FileNotFoundError
-        # when the error occurs in an included file
+        # Environment variable errors should be YAMLLoadError, not FileNotFoundError
         with pytest.raises(
-            FileNotFoundError,
+            YAMLLoadError,
             match="Environment variable 'REQUIRED_SECRET' is required",
         ):
             _load_yaml(str(main_file))

@@ -166,7 +166,7 @@ def _include_constructor(loader: YAMLLoader, node: yaml.ScalarNode) -> Any:
 
             loader_class = partial(YAMLLoader, base_path=resolved_path)
             return yaml.load(content, loader_class)  # type: ignore[arg-type]
-    except Exception as e:
+    except (FileNotFoundError, IOError, OSError) as e:
         raise FileNotFoundError(
             f"Failed to load included file '{resolved_path}': {e}"
         ) from e
@@ -180,7 +180,7 @@ def _include_raw_constructor(loader: YAMLLoader, node: yaml.ScalarNode) -> str:
     try:
         with fsspec.open(resolved_path, "r", encoding="utf-8") as f:
             return f.read()  # type: ignore[no-any-return]
-    except Exception as e:
+    except (FileNotFoundError, IOError, OSError) as e:
         raise FileNotFoundError(
             f"Failed to load included file '{resolved_path}': {e}"
         ) from e
