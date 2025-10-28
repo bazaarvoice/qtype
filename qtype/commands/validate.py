@@ -10,9 +10,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from qtype import dsl
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import LoadError, SemanticError, ValidationError
+from qtype.dsl.linker import DuplicateComponentError, ReferenceNotFoundError
 from qtype.dsl.loader import YAMLLoadError
 
 logger = logging.getLogger(__name__)
@@ -32,10 +32,9 @@ def main(args: Any) -> None:
     spec_path = Path(args.spec)
 
     try:
-        # Use the facade for validation - it will raise exceptions on errors
-        loaded_data, custom_types = facade.load_dsl_document(spec_path)
-        if isinstance(loaded_data, dsl.Application):
-            loaded_data, custom_types = facade.load_semantic_model(spec_path)
+        # Load and validate the document (works for all document types)
+        # This includes: YAML parsing, Pydantic validation, linking, and semantic checks
+        loaded_data, custom_types = facade.load_semantic_model(spec_path)
         logger.info("✅ Validation successful - document is valid.")
 
     except LoadError as e:
@@ -43,6 +42,14 @@ def main(args: Any) -> None:
         sys.exit(1)
     except YAMLLoadError as e:
         # YAML syntax errors
+        logger.error(f"❌ {e}")
+        sys.exit(1)
+    except DuplicateComponentError as e:
+        # Duplicate ID errors during linking
+        logger.error(f"❌ {e}")
+        sys.exit(1)
+    except ReferenceNotFoundError as e:
+        # Reference resolution errors during linking
         logger.error(f"❌ {e}")
         sys.exit(1)
     except ValueError as e:
