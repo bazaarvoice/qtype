@@ -2,7 +2,7 @@ import base64
 
 import requests
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent
 
 

@@ -1,0 +1,15 @@
+# DocumentSource must have exactly one RAGDocument output - wrong type
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: result
+        type: text
+    outputs:
+      - result
+    steps:
+      - id: doc_source1
+        type: DocumentSource
+        reader_module: "file.SimpleDirectoryReader"
+        outputs:
+          - result

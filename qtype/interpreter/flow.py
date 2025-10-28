@@ -1,37 +1,53 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-from qtype.interpreter.exceptions import InterpreterError
-from qtype.interpreter.step import execute_step
-from qtype.semantic.model import Flow, Variable
+from qtype.interpreter.base import factory
+from qtype.interpreter.types import FlowMessage
+from qtype.semantic.model import Flow
 
 logger = logging.getLogger(__name__)
 
 
-def execute_flow(flow: Flow, **kwargs: dict[Any, Any]) -> list[Variable]:
-    """Execute a flow based on the provided arguments.
+async def run_flow(
+    flow: Flow, initial: list[FlowMessage] | FlowMessage, **kwargs
+) -> list[FlowMessage]:
+    """
+    Main entrypoint for executing a flow.
 
     Args:
-        flow: The flow to execute.
-        inputs: The input variables for the flow.
-        **kwargs: Additional keyword arguments.
+        flow: The flow to execute
+        initial: Initial FlowMessage(s) to start execution
+        **dependencies: Additional dependencies including:
+            - on_stream_event: Optional StreamingCallback for real-time events
+            - on_progress: Optional ProgressCallback for progress tracking
+            - Other executor-specific dependencies
+
+    Returns:
+        List of final FlowMessages after execution
     """
-    logger.debug(f"Executing step: {flow.id} with kwargs: {kwargs}")
 
-    unset_inputs = [input for input in flow.inputs if not input.is_set()]
-    if unset_inputs:
-        raise InterpreterError(
-            f"The following inputs are required but have no values: {', '.join([input.id for input in unset_inputs])}"
+    # 1. Get the execution plan is just the steps in order
+    execution_plan = flow.steps
+
+    # 2. Initialize the stream
+    if not isinstance(initial, list):
+        initial = [initial]
+
+    async def initial_stream():
+        for message in initial:
+            yield message
+
+    current_stream = initial_stream()
+
+    # 3. Chain executors together in the main loop
+    for step in execution_plan:
+        executor = factory.create_executor(step, **kwargs)
+        output_stream = executor.execute(
+            current_stream,
         )
+        current_stream = output_stream
 
-    for step in flow.steps:
-        execute_step(step, **kwargs)
-
-    unset_outputs = [output for output in flow.outputs if not output.is_set()]
-    if unset_outputs:
-        raise InterpreterError(
-            f"The following outputs are required but have no values: {', '.join([output.id for output in unset_outputs])}"
-        )
-    return flow.outputs
+    # 4. Collect the final results from the last stream
+    final_results = [state async for state in current_stream]
+    return final_results

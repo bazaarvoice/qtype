@@ -1,0 +1,21 @@
+# Test spec for LLMInference.memory reference resolution
+
+id: test_llm_inference_memory
+
+memories:
+  - id: test_memory
+
+models:
+  - type: Model
+    id: test_model
+    provider: openai
+    model_id: gpt-4
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_inference
+        type: LLMInference
+        model: test_model
+        memory: test_memory  # String should resolve to Reference[Memory]
+        system_message: "Hello"

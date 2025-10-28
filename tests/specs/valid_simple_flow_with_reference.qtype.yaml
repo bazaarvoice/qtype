@@ -1,38 +1,49 @@
 id: hello_world_app
 description: A simple hello world application that answers user questions using GPT-4
-variables:
-  - id: user_question
-    type: text
+models:
+  - type: Model
+    id: gpt4
+    provider: openai
+    model_id: gpt-4o
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+    auth: openai_auth
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: DEADBEEF
+    host: https://api.openai.com
 flows:
-  - id: simple_qa_flow
+  - type: Flow
+    id: simple_qa_flow
+    variables:
+      - id: prompt
+        type: text
+      - id: user_question
+        type: text
+      - id: ai_response
+        type: text
+    inputs:
+      - user_question
+    outputs:
+      - ai_response
     steps:
       - id: question_prompt_template
         type: PromptTemplate
-        template: 'You are a helpful assistant.
-
-          Answer the following question:
-
-          {user_question}
-
-'
+        template: "You are a helpful assistant.\n\nAnswer the following question:\n{user_question}\n"
         inputs:
           - user_question
+        outputs:
+          - prompt
       - id: llm_inference_step
         type: LLMInference
-        model:
-          id: gpt4
-          provider: openai
-          model_id: gpt-4o
-          inference_params:
-            temperature: 0.7
-            max_tokens: 512
-          auth:
-            id: openai_auth
-            type: api_key
-            api_key: DEADBEEF
+        model: gpt4
         system_message: You are a helpful assistant.
         inputs:
-          - question_prompt_template.prompt
+          - prompt
+        outputs:
+          - ai_response
 telemetry:
   id: telemetry_sink
   endpoint: https://localhost:6666/telemetry

@@ -1,14 +1,15 @@
 id: invalid_file_source_test
 description: Test FileSource with no path field or input variable - should fail validation
 flows:
-  - id: read_file_flow
+  - type: Flow
+    id: read_file_flow
+    variables:
+      - id: content
+        type: text
+    outputs:
+      - content
     steps:
       - id: read_data
-        type: FileSink
-        path: null
-        inputs:
-          - id: data
-            type: text
+        type: FileSource
         outputs:
-          - id: content
-            type: text
+          - content

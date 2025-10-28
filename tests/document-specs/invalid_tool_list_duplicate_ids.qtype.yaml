@@ -1,0 +1,16 @@
+- id: tool1
+  type: APITool
+  name: Tool1
+  description: Test tool
+  endpoint: https://api.test.com
+  inputs: {}
+  outputs: {}
+
+- id: tool1
+  type: PythonFunctionTool
+  name: Tool2
+  description: Another test tool
+  function_name: test_func
+  module_path: test.module
+  inputs: {}
+  outputs: {}

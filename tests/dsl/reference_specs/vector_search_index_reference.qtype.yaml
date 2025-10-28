@@ -1,0 +1,24 @@
+# Test spec for VectorSearch.index reference resolution
+
+id: test_vector_search
+
+models:
+  - type: EmbeddingModel
+    id: embedding_model
+    provider: openai
+    model_id: text-embedding-3-small
+    dimensions: 1536
+
+indexes:
+  - type: VectorIndex
+    id: search_index
+    name: my_search_collection
+    embedding_model: embedding_model
+
+flows:
+  - id: test_flow
+    steps:
+      - id: search_step
+        type: VectorSearch
+        index: search_index  # String should be resolved to Reference[IndexType]
+        default_top_k: 10

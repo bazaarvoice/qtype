@@ -1,19 +1,44 @@
 id: hello_world
+description: A simple hello world application using AWS Bedrock with AWS authentication
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+    auth: aws_auth
+auths:
+  - type: aws
+    id: aws_auth
+    profile_name: default  # Replace with relevant profile configured in .aws/config
 flows:
-  - id: simple_example
+  - type: Flow
+    id: simple_example
+    variables:
+      - id: question
+        type: text
+      - id: prompt
+        type: text
+      - id: answer
+        type: text
+    inputs:
+      - question
+    outputs:
+      - answer
     steps:
+      - id: question_prompt
+        type: PromptTemplate
+        template: "You are a helpful assistant. Answer the following question:\n{question}\n"
+        inputs:
+          - question
+        outputs:
+          - prompt
       - id: llm_inference_step
         type: LLMInference
-        model:
-          id: amazon.nova-lite-v1:0
-          provider: aws-bedrock
-          auth:
-            id: aws_auth
-            profile_name: default # Replace with relevent profile configured in .aws/config
-        system_message:
-          "You are a helpful assistant. Answer the following question:
-          {question}
-          "
+        model: nova_lite
         inputs:
-          - id: question
-            type: text
+          - prompt
+        outputs:
+          - answer

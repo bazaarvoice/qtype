@@ -1,0 +1,17 @@
+# Test spec for LLMInference.model reference resolution
+
+id: test_llm_inference_model
+
+models:
+  - type: Model
+    id: test_model
+    provider: openai
+    model_id: gpt-4
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_inference
+        type: LLMInference
+        model: test_model  # String should resolve to Reference[ModelType]
+        system_message: "Hello"

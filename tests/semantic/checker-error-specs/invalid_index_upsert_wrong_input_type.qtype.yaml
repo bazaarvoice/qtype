@@ -1,0 +1,25 @@
+# IndexUpsert must have exactly one input of type RAGChunk or RAGDocument - wrong type
+id: test_app
+models:
+  - id: embed_model
+    type: EmbeddingModel
+    provider: openai
+    dimensions: 768
+indexes:
+  - id: test_index
+    type: VectorIndex
+    name: test_vector_index
+    embedding_model: embed_model
+flows:
+  - id: test_flow
+    variables:
+      - id: text_input
+        type: text
+    inputs:
+      - text_input
+    steps:
+      - id: upsert1
+        type: IndexUpsert
+        index: test_index
+        inputs:
+          - text_input

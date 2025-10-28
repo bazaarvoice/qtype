@@ -12,17 +12,24 @@ types:
       id: int
       name: text
 flows:
-  - id: my_person_flow
-    mode: Complete
+  - type: Flow
+    id: my_person_flow
+    interface:
+      type: Complete
+    variables:
+      - id: book
+        type: Book
+      - id: prompt_format
+        type: text
+    inputs:
+      - book
+    outputs:
+      - prompt_format
     steps:
       - id: prompt_template
         type: PromptTemplate
-        template: 'You are a helpful assistant. Please provide information about the following book: {book}
-
-'
+        template: "You are a helpful assistant. Please provide information about the following book: {book}\n"
         inputs:
-          - id: book
-            type: Book
+          - book
         outputs:
-          - id: prompt_format
-            type: text
+          - prompt_format

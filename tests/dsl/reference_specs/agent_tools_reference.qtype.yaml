@@ -1,0 +1,33 @@
+# Test spec for Agent.tools reference resolution
+
+id: test_agent_tools
+
+models:
+  - type: Model
+    id: test_model
+    provider: openai
+    model_id: gpt-4
+
+tools:
+  - type: PythonFunctionTool
+    id: tool_one
+    name: ToolOne
+    description: First test tool
+    function_name: tool_one_func
+    module_path: test.module
+  - type: PythonFunctionTool
+    id: tool_two
+    name: ToolTwo
+    description: Second test tool
+    function_name: tool_two_func
+    module_path: test.module
+
+flows:
+  - id: test_flow
+    steps:
+      - id: test_agent
+        type: Agent
+        model: test_model
+        tools:
+          - tool_one  # Strings should be resolved to Reference[ToolType]
+          - tool_two

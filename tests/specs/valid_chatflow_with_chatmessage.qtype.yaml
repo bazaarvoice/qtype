@@ -1,28 +1,39 @@
 id: valid_chatflow_app
 description: A valid chat flow with a ChatMessage input variable
+models:
+  - type: Model
+    id: gpt4
+    provider: openai
+    model_id: gpt-4o
+    auth: openai_auth
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: DEADBEEF
+memories:
+  - id: chat_memory
+    token_limit: 10000
 flows:
-  - id: chat_flow
-    mode: Chat
-    inputs:
+  - type: Flow
+    id: chat_flow
+    interface:
+      type: Conversational
+    variables:
       - id: user_message
         type: ChatMessage
+      - id: response
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response
     steps:
       - id: llm_response
         type: LLMInference
-        model:
-          id: gpt4
-          provider: openai
-          model_id: gpt-4o
-          auth:
-            id: openai_auth
-            type: api_key
-            api_key: DEADBEEF
+        model: gpt4
         system_message: You are a helpful assistant.
-        memory:
-          id: chat_memory
-          token_limit: 10000
+        memory: chat_memory
         inputs:
           - user_message
         outputs:
-          - id: response
-            type: ChatMessage
+          - response

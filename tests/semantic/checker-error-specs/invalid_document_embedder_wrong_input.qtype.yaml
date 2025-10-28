@@ -1,0 +1,26 @@
+# DocumentEmbedder must have exactly one RAGChunk input - wrong type
+id: test_app
+models:
+  - id: embed_model
+    type: EmbeddingModel
+    provider: openai
+    dimensions: 768
+flows:
+  - id: test_flow
+    variables:
+      - id: text_input
+        type: text
+      - id: result
+        type: RAGChunk
+    inputs:
+      - text_input
+    outputs:
+      - result
+    steps:
+      - id: embedder1
+        type: DocumentEmbedder
+        model: embed_model
+        inputs:
+          - text_input
+        outputs:
+          - result

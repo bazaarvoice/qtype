@@ -2,25 +2,41 @@ import argparse
 import inspect
 import subprocess
 from enum import Enum
+from functools import partial
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import networkx as nx
 
+import qtype.base.types as base_types
 import qtype.dsl.model as dsl
-from qtype.dsl.validator import _is_dsl_type
+
+
+def _is_dsl_type(type_obj: Any) -> bool:
+    """Check if a type is a DSL type that should be converted to semantic."""
+    if not hasattr(type_obj, "__name__"):
+        return False
+
+    # Check if it's defined in the DSL module
+    return (
+        hasattr(type_obj, "__module__")
+        and (
+            type_obj.__module__ == dsl.__name__
+            or type_obj.__module__ == base_types.__name__
+        )
+        and not type_obj.__name__.startswith("_")
+    )
+
 
 FIELDS_TO_IGNORE = {"Application.references"}
 TYPES_TO_IGNORE = {
     "CustomType",
     "DecoderFormat",
     "Document",
-    "Flow",
     "ListType",
     "PrimitiveTypeEnum",
     "StrictBaseModel",
-    "StructuralTypeEnum",
     "TypeDefinition",
     "ToolParameter",
     "Variable",
@@ -79,7 +95,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             cls.__module__ == dsl.__name__
             and not name.startswith("_")
             and name not in TYPES_TO_IGNORE
-            and not name.endswith("List")
         ):
             dsl_classes.append((name, cls))
 
@@ -118,18 +133,19 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             dedent("""
             from __future__ import annotations
 
-            from typing import Any, Literal
+            from functools import partial
+            from typing import Any, Literal, Union
 
-            from pydantic import BaseModel, Field, model_validator
+            from pydantic import BaseModel, Field, RootModel
 
-            # Import enums and type aliases from DSL
+            # Import enums, mixins, and type aliases
+            from qtype.base.types import BatchableStepMixin, BatchConfig, ConcurrencyConfig, ConcurrentStepMixin  # noqa: F401
             from qtype.dsl.model import (  # noqa: F401
                 CustomType,
                 DecoderFormat,
                 ListType,
                 PrimitiveTypeEnum,
                 StepCardinality,
-                StructuralTypeEnum,
                 ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
@@ -154,37 +170,18 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         # Write classes
         f.write("\n\n".join(generated))
 
-        # Write the Flow class which _could_ be generated but we want a validator to update it's carndiality
-        f.write("\n\n")
+        # Write the DocumentType
         f.write(
-            dedent('''
-            class Flow(Step):
-                """Defines a flow of steps that can be executed in sequence or parallel.
-                If input or output variables are not specified, they are inferred from
-                the first and last step, respectively.
-                """
-
-                description: str | None = Field(
-                    None, description="Optional description of the flow."
-                )
-                cardinality: StepCardinality = Field(
-                    StepCardinality.auto,
-                    description="The cardinality of the flow, inferred from its steps when set to 'auto'.",
-                )
-                mode: Literal["Complete", "Chat"] = Field("Complete")
-                steps: list[Step] = Field(..., description="List of steps or step IDs.")
-
-                @model_validator(mode="after")
-                def infer_cardinality(self) -> "Flow":
-                    if self.cardinality == StepCardinality.auto:
-                        self.cardinality = StepCardinality.one
-                        for step in self.steps:
-                            if step.cardinality == StepCardinality.many:
-                                self.cardinality = StepCardinality.many
-                                break
-                    return self
-
-        ''').lstrip()
+            dedent("""\n\n
+                DocumentType = Union[
+                    Application,
+                    AuthorizationProviderList,
+                    ModelList,
+                    ToolList,
+                    TypeList,
+                    VariableList,
+                ]
+                       """)
         )
 
     # Format the file with Ruff
@@ -215,6 +212,8 @@ def _get_union_args(type_annotation):
 DSL_ONLY_UNION_TYPES = {
     _get_union_args(dsl.ToolType): "Tool",
     _get_union_args(dsl.StepType): "Step",
+    _get_union_args(dsl.AuthProviderType): "AuthorizationProvider",
+    _get_union_args(dsl.SourceType): "Source",
     _get_union_args(dsl.IndexType): "Index",
     _get_union_args(dsl.ModelType): "Model",
 }
@@ -274,6 +273,21 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
     origin = get_origin(field_type)
     args = get_args(field_type)
 
+    # Handle Reference types - unwrap to get the actual type
+    # Reference[T] is a Pydantic generic model, so get_origin returns None
+    # Instead, check if Reference is in the MRO
+    if (
+        hasattr(field_type, "__mro__")
+        and base_types.Reference in field_type.__mro__
+    ):
+        # Reference[T] becomes just T in semantic model
+        # The actual type parameter is in __pydantic_generic_metadata__ for Pydantic generic models
+        if hasattr(field_type, "__pydantic_generic_metadata__"):
+            metadata = field_type.__pydantic_generic_metadata__
+            if "args" in metadata and metadata["args"]:
+                return dsl_to_semantic_type_name(metadata["args"][0])
+        return "Any"  # Fallback for untyped Reference
+
     # Handle Annotated types - extract the underlying type
     if origin is Annotated:
         # For Annotated[SomeType, ...], we want to process SomeType
@@ -292,9 +306,11 @@ def dsl_to_semantic_type_name(field_type: Any) -> str:
         literal_values = []
         for arg in args:
             if isinstance(arg, Enum):
-                # Handle enum values - use the actual enum value, not string representation
-                # Since StepCardinality inherits from str, we need to check Enum first
-                literal_values.append(f'"{arg.value}"')
+                # Keep the enum reference for semantic models (e.g., StepCardinality.one)
+                # not the string value
+                enum_class_name = arg.__class__.__name__
+                enum_value_name = arg.name
+                literal_values.append(f"{enum_class_name}.{enum_value_name}")
             elif isinstance(arg, str):
                 literal_values.append(f'"{arg}"')
             else:
@@ -344,16 +360,35 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
     if inspect.isabstract(cls):
         inheritance += ", ABC"
 
-    # Check if this class inherits from another DSL class
+    # Collect all base classes from DSL and base_types modules
+    base_classes = []
     for base in cls.__bases__:
         if (
             hasattr(base, "__module__")
-            and base.__module__ == dsl.__name__
+            and (
+                base.__module__ == dsl.__name__
+                or base.__module__ == base_types.__name__
+            )
             and base.__name__ not in TYPES_TO_IGNORE
             and not base.__name__.startswith("_")
         ):
-            # This class inherits from another DSL class
-            semantic_base = f"{base.__name__}"
+            base_classes.append(base)
+
+    # Build inheritance string
+    if base_classes:
+        # Process DSL classes first, then mixins
+        dsl_bases = [
+            b.__name__ for b in base_classes if b.__module__ == dsl.__name__
+        ]
+        mixin_bases = [
+            b.__name__
+            for b in base_classes
+            if b.__module__ == base_types.__name__
+        ]
+
+        if dsl_bases:
+            # Inherit from the DSL class
+            semantic_base = dsl_bases[0]
             if inspect.isabstract(cls):
                 inheritance = f"ABC, {semantic_base}"
             else:
@@ -361,7 +396,10 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
             if semantic_name == "Tool":
                 # Tools should inherit from Step and be immutable
                 inheritance = f"{semantic_base}, ImmutableModel"
-            break
+
+        # Add mixins to the inheritance
+        if mixin_bases:
+            inheritance = f"{inheritance}, {', '.join(mixin_bases)}"
 
     # Get field information from the class - only fields defined on this class, not inherited
     fields = []
@@ -375,6 +413,7 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
                 field_info = cls.model_fields[field_name]
                 field_type = field_info.annotation
                 field_default = field_info.default
+                field_default_factory = field_info.default_factory
                 field_description = getattr(field_info, "description", None)
 
                 # Transform the field type
@@ -390,7 +429,11 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
 
                 # Create field definition
                 field_def = create_field_definition(
-                    field_name, semantic_type, field_default, field_description
+                    field_name,
+                    semantic_type,
+                    field_default,
+                    field_default_factory,
+                    field_description,
                 )
                 fields.append(field_def)
 
@@ -412,6 +455,7 @@ def create_field_definition(
     field_name: str,
     field_type: str,
     field_default: Any,
+    field_default_factory: Any,
     field_description: str | None,
 ) -> str:
     """Create a field definition string."""
@@ -424,7 +468,27 @@ def create_field_definition(
     # Check for PydanticUndefined (required field)
     from pydantic_core import PydanticUndefined
 
-    if field_default is PydanticUndefined or field_default is ...:
+    # Check if there's a default_factory
+    if field_default_factory is not None:
+        # Handle default_factory - check if it's a partial
+        if isinstance(field_default_factory, partial):
+            # For partial, we need to serialize it properly
+            func_name = field_default_factory.func.__name__
+            # Get the keyword arguments from the partial
+            kwargs_str = ", ".join(
+                f"{k}={v}" if not isinstance(v, str) else f'{k}="{v}"'
+                for k, v in field_default_factory.keywords.items()
+            )
+            default_part = (
+                f"default_factory=partial({func_name}, {kwargs_str})"
+            )
+        else:
+            # Regular factory function
+            factory_name = getattr(
+                field_default_factory, "__name__", str(field_default_factory)
+            )
+            default_part = f"default_factory={factory_name}"
+    elif field_default is PydanticUndefined or field_default is ...:
         default_part = "..."
     elif field_default is None:
         default_part = "None"
@@ -449,7 +513,12 @@ def create_field_definition(
         default_part = str(field_default)
 
     # Create Field definition
-    field_parts = [default_part]
+    # If using default_factory, don't include it in field_parts list initially
+    if field_default_factory is not None:
+        field_parts = []
+    else:
+        field_parts = [default_part]
+
     if field_description:
         # Escape quotes and handle multiline descriptions
         escaped_desc = field_description.replace('"', '\\"').replace(
@@ -459,6 +528,13 @@ def create_field_definition(
     if alias_part:
         field_parts.append(alias_part.lstrip(", "))
 
-    field_def = f"Field({', '.join(field_parts)})"
+    # Handle default_factory in the Field() call
+    if field_default_factory is not None:
+        if field_parts:
+            field_def = f"Field({default_part}, {', '.join(field_parts)})"
+        else:
+            field_def = f"Field({default_part})"
+    else:
+        field_def = f"Field({', '.join(field_parts)})"
 
     return f"    {field_name}: {field_type} = {field_def}"

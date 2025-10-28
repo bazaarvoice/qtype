@@ -1,0 +1,20 @@
+# Test spec for TelemetrySink.auth reference resolution
+
+id: test_telemetry_auth
+
+auths:
+  - id: telemetry_auth
+    type: bearer_token
+    token: test_bearer_token
+
+telemetry:
+  id: test_telemetry
+  endpoint: https://telemetry.example.com/ingest
+  auth: telemetry_auth  # String should be resolved to Reference[AuthorizationProvider]
+
+flows:
+  - id: dummy_flow
+    steps:
+      - id: dummy_step
+        type: PromptTemplate
+        template: "Test"
