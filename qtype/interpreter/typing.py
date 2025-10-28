@@ -5,8 +5,8 @@ from typing import Any, Type
 
 from pydantic import BaseModel, Field, create_model
 
-from qtype.application.converters.types import PRIMITIVE_TO_PYTHON_TYPE
 from qtype.dsl.model import PrimitiveTypeEnum
+from qtype.dsl.types import PRIMITIVE_TO_PYTHON_TYPE
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Flow, Variable
 

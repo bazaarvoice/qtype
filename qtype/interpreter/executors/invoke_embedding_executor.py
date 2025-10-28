@@ -1,5 +1,7 @@
 from typing import AsyncIterator
 
+from openinference.semconv.trace import OpenInferenceSpanKindValues
+
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import Embedding
 from qtype.interpreter.base.base_step_executor import StepExecutor
@@ -10,6 +12,9 @@ from qtype.semantic.model import InvokeEmbedding
 
 class InvokeEmbeddingExecutor(StepExecutor):
     """Executor for InvokeEmbedding steps."""
+
+    # Embedding operations should be marked as EMBEDDING type
+    span_kind = OpenInferenceSpanKindValues.EMBEDDING
 
     def __init__(self, step: InvokeEmbedding, **dependencies):
         super().__init__(step, **dependencies)
