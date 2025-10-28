@@ -7,10 +7,7 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from qtype.interpreter.typing import (
-    create_input_shape,
-    create_output_container_type,
-)
+from qtype.interpreter.typing import create_input_shape, create_output_shape
 from qtype.semantic.model import Application, Flow
 
 
@@ -29,8 +26,8 @@ class FlowMetadata(BaseModel):
 
     id: str = Field(..., description="Flow ID")
     description: str | None = Field(None, description="Flow description")
-    interface_type: str = Field(
-        ...,
+    interface_type: str | None = Field(
+        None,
         description="Interface type: 'Complete' or 'Conversational'",
     )
     session_inputs: list[str] = Field(
@@ -86,7 +83,7 @@ def _create_flow_metadata(flow: Flow) -> FlowMetadata:
         FlowMetadata with all information
     """
     # Determine interface type
-    interface_type = "Complete"
+    interface_type = None
     session_inputs = []
     if flow.interface:
         interface_type = flow.interface.type
@@ -97,7 +94,7 @@ def _create_flow_metadata(flow: Flow) -> FlowMetadata:
 
     # Create schemas
     input_model = create_input_shape(flow)
-    output_model = create_output_container_type(flow)
+    output_model = create_output_shape(flow)
 
     # Determine streaming endpoint availability
     stream_endpoint = (

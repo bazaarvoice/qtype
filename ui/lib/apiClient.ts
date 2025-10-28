@@ -6,10 +6,8 @@
  * - In production: uses relative paths (./) for sub-mounted APIs
  */
 
-import { extractRequestSchema, extractResponseSchema } from "./utils";
-
 import type { FlowMetadata } from "@/types";
-import type { SchemaProperty, FlowInputValues, ResponseData } from "@/types";
+import type { FlowInputValues, ResponseData } from "@/types";
 import type { OpenAPIV3_1 } from "openapi-types";
 
 // Use the official OpenAPI spec type
@@ -237,113 +235,3 @@ export const fetchOpenApiSpec = () => apiClient.getOpenApiSpec();
  * Utility function to check if the API is available
  */
 export const checkApiHealth = () => apiClient.healthCheck();
-
-// =============================================================================
-// OpenAPI Flow Processing
-// =============================================================================
-
-/**
- * Flow interface for extracted flow information
- */
-export interface FlowInfo {
-  id: string;
-  name: string;
-  path: string;
-  method: string;
-  mode: "Complete" | "Chat";
-  description?: string;
-  operationId?: string;
-  tags: string[];
-  requestSchema: SchemaProperty | null;
-  responseSchema: SchemaProperty | null;
-}
-
-/**
- * Extracts flow information from OpenAPI specification
- * Returns flows with raw names (e.g., "simple_qa_flow") - use UI utilities to format for display
- */
-export function extractFlowsFromSpec(spec: OpenAPISpec): FlowInfo[] {
-  if (!spec?.paths) return [];
-
-  const flows: FlowInfo[] = [];
-
-  Object.entries(spec.paths).forEach(
-    ([path, pathData]: [string, OpenAPIV3_1.PathItemObject | undefined]) => {
-      if (!pathData) return;
-
-      // Check each HTTP method in the path item
-      const methods = [
-        "get",
-        "post",
-        "put",
-        "delete",
-        "patch",
-        "head",
-        "options",
-        "trace",
-      ] as const;
-
-      methods.forEach((method) => {
-        const methodData = pathData[method] as
-          | OpenAPIV3_1.OperationObject
-          | undefined;
-        if (!methodData) return;
-
-        const isFlow =
-          path.startsWith("/flows/") || methodData.tags?.includes("flow");
-        const isStreamFlow = path.endsWith("/stream") && isFlow;
-
-        if (isStreamFlow) {
-          const isChatFlow = path.includes("/chat");
-          const mode: "Complete" | "Chat" = isChatFlow ? "Chat" : "Complete";
-
-          // Extract raw flow name from path
-          const pathSegments = path.split("/");
-          let rawFlowName: string;
-
-          if (isChatFlow) {
-            // For chat flows like /flows/simple_qa_flow/chat, get the flow name
-            rawFlowName = pathSegments[pathSegments.length - 2];
-          } else {
-            // For complete flows like /flows/simple_qa_flow, get the flow name
-            rawFlowName = pathSegments[pathSegments.length - 1];
-          }
-
-          const flowId = `${method}-${path.replace(/[^a-zA-Z0-9]/g, "_")}`;
-
-          // Extract request schema
-          const requestSchema = extractRequestSchema(methodData, spec);
-
-          // Extract response schema (200 response)
-          const responseSchema = extractResponseSchema(methodData, spec);
-
-          flows.push({
-            id: flowId,
-            name: formatFlowNameForDisplay(rawFlowName), // Format name for display
-            path,
-            method,
-            mode,
-            description: methodData.description || methodData.summary,
-            operationId: methodData.operationId,
-            tags: methodData.tags || [],
-            requestSchema,
-            responseSchema,
-          });
-        }
-      });
-    },
-  );
-
-  return flows;
-}
-
-/**
- * Formats a raw flow name for UI display
- * Converts snake_case to Title Case
- */
-function formatFlowNameForDisplay(rawFlowName: string): string {
-  return rawFlowName
-    .split("_")
-    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}

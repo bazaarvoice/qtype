@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.domain_types import ChatMessage, MessageRole
@@ -269,16 +269,17 @@ def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
     ResponseModel = create_output_container_type(flow)
 
     async def execute_flow_rest(
-        request: RequestModel,  # type: ignore[valid-type]
+        body: RequestModel,  # type: ignore[valid-type]
+        request: Request,
     ) -> ResponseModel:  # type: ignore[valid-type]
         """Execute the flow and return JSON response."""
         try:
+            # Only pass session_id if it's provided in headers
+            kwargs = {}
             if "session_id" in request.headers:
-                session_id = request.headers["session_id"]
+                kwargs["session_id"] = request.headers["session_id"]
 
-            initial_message = request_to_flow_message(
-                request=request, session_id=session_id
-            )
+            initial_message = request_to_flow_message(request=body, **kwargs)
 
             # Execute flow
             results = await run_flow(flow, initial_message)
@@ -306,7 +307,8 @@ def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
 
     # Set annotations for REST endpoint
     execute_flow_rest.__annotations__ = {
-        "request": RequestModel,
+        "body": RequestModel,
+        "request": Request,
         "return": ResponseModel,
     }
 

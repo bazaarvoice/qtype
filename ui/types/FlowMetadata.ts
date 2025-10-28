@@ -9,7 +9,7 @@ export interface FlowEndpoints {
 export interface FlowMetadata {
   id: string;
   description: string | null;
-  interface_type: "Complete" | "Conversational";
+  interface_type: "Complete" | "Conversational" | null;
   session_inputs: string[];
   endpoints: FlowEndpoints;
   input_schema: Record<string, unknown>;
