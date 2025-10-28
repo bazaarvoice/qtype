@@ -321,15 +321,6 @@ class AWSAuthProvider(AuthorizationProvider):
     )
     region: str | None = Field(None, description="AWS region.")
 
-# class GCPAuthProvider(BaseModel):
-#     """GCP (Vertex AI) authentication provider configuration."""
-#     id: str
-#     type: str = Field("gcp", const=True)
-#     project_id: str
-#     location: str
-#     credentials_file: str | None = None
-#     use_adc: bool = True
-#     scopes: list[str] | None = None
 
 class BearerTokenAuthProvider(AuthorizationProvider):
     """Bearer token authentication provider."""
@@ -347,6 +338,26 @@ class OAuth2AuthProvider(AuthorizationProvider):
     token_url: str = Field(..., description="Token endpoint URL.")
     scopes: list[str] = Field(
         default_factory=list, description="OAuth2 scopes required."
+    )
+
+
+class VertexAuthProvider(AuthorizationProvider):
+    """Google Vertex authentication provider supporting gcloud profile or service account."""
+
+    type: Literal["vertex"] = Field("vertex")
+    profile_name: str | None = Field(
+        None,
+        description="Local gcloud profile name (if using existing CLI credentials).",
+    )
+    project_id: str | None = Field(
+        None,
+        description="Explicit GCP project ID override (if different from profile).",
+    )
+    service_account_file: str | None = Field(
+        None, description="Path to a service account JSON key file."
+    )
+    region: str | None = Field(
+        None, description="Vertex region (e.g., us-central1)."
     )
 
 

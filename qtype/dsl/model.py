@@ -599,6 +599,38 @@ class OAuth2AuthProvider(AuthorizationProvider):
     )
 
 
+class VertexAuthProvider(AuthorizationProvider):
+    """Google Vertex authentication provider supporting gcloud profile or service account."""
+
+    type: Literal["vertex"] = "vertex"
+    profile_name: str | None = Field(
+        default=None,
+        description="Local gcloud profile name (if using existing CLI credentials).",
+    )
+    project_id: str | None = Field(
+        default=None,
+        description="Explicit GCP project ID override (if different from profile).",
+    )
+    service_account_file: str | None = Field(
+        default=None,
+        description="Path to a service account JSON key file.",
+    )
+    region: str | None = Field(
+        default=None,
+        description="Vertex region (e.g., us-central1).",
+    )
+
+    @model_validator(mode="after")
+    def validate_vertex_auth(self) -> VertexAuthProvider:
+        """Ensure at least one credential source is provided."""
+        if not (self.profile_name or self.service_account_file):
+            raise ValueError(
+                "VertexAuthProvider requires either a profile_name or a "
+                "service_account_file."
+            )
+        return self
+
+
 class AWSAuthProvider(AuthorizationProvider):
     """AWS authentication provider supporting multiple credential methods."""
 
@@ -989,6 +1021,7 @@ AuthProviderType = Union[
     BearerTokenAuthProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
+    VertexAuthProvider,
 ]
 
 # Create a union type for all step types

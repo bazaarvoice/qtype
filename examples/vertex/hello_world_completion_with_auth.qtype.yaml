@@ -7,8 +7,7 @@ models:
     model_id: gemini-2.0-flash
     inference_params:
       temperature: 0.7
-    auth: 
-      id: vertex_auth
+    auth: vertex_auth
 auths:
   - type: vertex
     id: vertex_auth
@@ -16,29 +15,31 @@ auths:
 flows:
   - type: Flow
     id: simple_example
+    interface:
+      type: Complete
     variables:
-      - id: question
-        type: text
       - id: prompt
         type: text
       - id: answer
         type: text
+      - id: formatted_prompt
+        type: text
     inputs:
-      - question
+      - prompt
     outputs:
       - answer
     steps:
       - id: question_prompt
         type: PromptTemplate
-        template: "You are a helpful assistant. Answer the following question:\n{question}\n"
+        template: "You are a helpful assistant. Answer the following question:\n{prompt}\n"
         inputs:
-          - question
-        outputs:
           - prompt
+        outputs:
+          - formatted_prompt
       - id: llm_inference_step
         type: LLMInference
         model: gemini_flash
         inputs:
-          - prompt
+          - formatted_prompt
         outputs:
           - answer
