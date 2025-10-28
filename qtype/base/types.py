@@ -25,6 +25,7 @@ JSONValue = Union[
 
 # Path-like type (string or Path object)
 PathLike = Union[str, pathlib.Path]
+
 CustomTypeRegistry = dict[str, Type[BaseModel]]
 # Configuration dictionary type
 ConfigDict = dict[str, Any]

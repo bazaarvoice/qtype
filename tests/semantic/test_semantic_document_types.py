@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from qtype.semantic import model as ir
-from qtype.semantic.loader import load
+from qtype.semantic.loader import load_from_string
 
 TEST_DIR = Path(__file__).parent.parent / "document-specs"
 
@@ -28,7 +28,9 @@ def test_resolve_and_check_all_document_types(yaml_file: str) -> None:
 
     # Load and link the document
 
-    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
+    ir_doc, _ = load_from_string(
+        yaml_path.read_text(encoding="utf-8"), base_path=yaml_path.parent
+    )
     assert ir_doc is not None, f"Failed to resolve {yaml_file}"
 
     # Verify the IR document is one of the valid DocumentType variants
@@ -49,7 +51,9 @@ def test_resolve_model_list() -> None:
     """Test resolving a ModelList document specifically."""
     yaml_path = TEST_DIR / "valid_model_list.qtype.yaml"
 
-    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
+    ir_doc, _ = load_from_string(
+        yaml_path.read_text(encoding="utf-8"), base_path=yaml_path.parent
+    )
 
     assert isinstance(ir_doc, ir.ModelList), "Document should be ModelList"
     assert len(ir_doc.root) == 2, "Should have 2 models"
@@ -63,7 +67,9 @@ def test_resolve_variable_list() -> None:
     """Test resolving a VariableList document specifically."""
     yaml_path = TEST_DIR / "valid_variable_list.qtype.yaml"
 
-    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
+    ir_doc, _ = load_from_string(
+        yaml_path.read_text(encoding="utf-8"), base_path=yaml_path.parent
+    )
 
     assert isinstance(ir_doc, ir.VariableList), (
         "Document should be VariableList"
@@ -78,7 +84,9 @@ def test_resolve_authorization_provider_list() -> None:
     """Test resolving an AuthorizationProviderList document specifically."""
     yaml_path = TEST_DIR / "valid_authorization_provider_list.qtype.yaml"
 
-    ir_doc, _ = load(yaml_path.read_text(encoding="utf-8"))
+    ir_doc, _ = load_from_string(
+        yaml_path.read_text(encoding="utf-8"), base_path=yaml_path.parent
+    )
 
     assert isinstance(ir_doc, ir.AuthorizationProviderList), (
         "Document should be AuthorizationProviderList"

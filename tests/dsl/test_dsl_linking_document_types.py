@@ -54,9 +54,7 @@ def has_reference(obj: Any) -> bool:
 
 def run_linking(yaml_path: Path):
     """Load and link a DSL Document from a YAML file."""
-    model, dynamic_types_registry = loader.load_document(
-        yaml_path.read_text(encoding="utf-8")
-    )
+    model, dynamic_types_registry = loader.load_document(yaml_path)
     linked_doc = linker.link(model)
     assert not has_reference(linked_doc), (
         "There are unresolved Reference instances"

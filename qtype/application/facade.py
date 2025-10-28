@@ -26,13 +26,6 @@ class QTypeFacade:
     and interpreter layers, providing a clean API for common operations.
     """
 
-    def load_dsl_document(
-        self, path: PathLike
-    ) -> tuple[DocumentType, CustomTypeRegistry]:
-        from qtype.dsl.loader import load_document
-
-        return load_document(str(Path(path)))
-
     def telemetry(self, spec: SemanticDocumentType) -> None:
         if isinstance(spec, SemanticApplication) and spec.telemetry:
             logger.info(
@@ -49,8 +42,7 @@ class QTypeFacade:
         """Load a document and return the resolved semantic model."""
         from qtype.semantic.loader import load
 
-        content = Path(path).read_text(encoding="utf-8")
-        return load(content)
+        return load(Path(path))
 
     async def execute_workflow(
         self,

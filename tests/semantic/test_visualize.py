@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from qtype.semantic.loader import load
+from qtype.semantic.loader import load_from_string
 from qtype.semantic.model import Application
 from qtype.semantic.visualize import visualize_application
 
@@ -24,7 +24,7 @@ def test_visualize_application_with_hello_world_chat():
 
     # Load and parse the document
     content = example_path.read_text(encoding="utf-8")
-    semantic_app, _ = load(content)
+    semantic_app, _ = load_from_string(content, base_path=example_path.parent)
 
     assert isinstance(semantic_app, Application)
 
