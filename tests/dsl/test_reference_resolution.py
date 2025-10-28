@@ -32,10 +32,9 @@ def load_test_spec(spec_filename: str) -> dsl.Application:
         The parsed DSL Application model (before validation/resolution)
     """
     spec_path = REFERENCE_SPECS_DIR / spec_filename
-    yaml_content = spec_path.read_text(encoding="utf-8")
 
     # Use the loader's load_document function which handles all the parsing
-    root, _ = load_document(yaml_content)
+    root, _ = load_document(spec_path)
 
     if not isinstance(root, dsl.Application):
         raise TypeError(f"Expected Application, got {type(root)}")

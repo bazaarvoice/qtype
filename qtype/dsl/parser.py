@@ -7,6 +7,7 @@ Pydantic DSL models, including custom type extraction and building.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -233,15 +234,17 @@ def parse_document_from_file(
     return parse_document(yaml_data, source_name)
 
 
-def load_document(content: str) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
+def load_document(
+    source: str | Path,
+) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
     """
     Load and parse a QType YAML file into DSL document.
 
-    This is a convenience function that combines load_yaml and parse_document.
-    For backward compatibility with the old loader API.
+    This is a convenience function that combines load_yaml_file and
+    parse_document.
 
     Args:
-        content: File path, URI, or raw YAML string
+        source: File path or URI to load
 
     Returns:
         Tuple of (DocumentType, CustomTypeRegistry)
@@ -250,7 +253,7 @@ def load_document(content: str) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
         YAMLLoadError: If YAML parsing fails
         ValueError: If validation fails
     """
-    from qtype.dsl.loader import load_yaml
+    from qtype.dsl.loader import load_yaml_file
 
-    yaml_data = load_yaml(content)
+    yaml_data = load_yaml_file(source)
     return parse_document(yaml_data)

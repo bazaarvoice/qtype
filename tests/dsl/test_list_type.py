@@ -2,7 +2,6 @@
 
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import ListType, Variable, _resolve_variable_type
-from qtype.semantic.loader import load
 
 
 def test_list_type_creation():
@@ -62,7 +61,9 @@ def test_list_type_yaml_loading():
       optional: false
 """
 
-    document, custom_types = load(yaml_content)
+    from qtype.semantic.loader import load_from_string
+
+    document, custom_types = load_from_string(yaml_content)
 
     # Document should be a ToolList (RootModel)
     from qtype.semantic.model import ToolList

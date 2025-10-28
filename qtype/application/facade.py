@@ -29,10 +29,10 @@ class QTypeFacade:
     def load_dsl_document(
         self, path: PathLike
     ) -> tuple[DocumentType, CustomTypeRegistry]:
-        from qtype.dsl.loader import load_yaml
+        from qtype.dsl.loader import load_yaml_file
         from qtype.dsl.parser import parse_document
 
-        yaml_data = load_yaml(str(Path(path)))
+        yaml_data = load_yaml_file(Path(path))
         return parse_document(yaml_data)
 
     def telemetry(self, spec: SemanticDocumentType) -> None:

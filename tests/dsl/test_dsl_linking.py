@@ -34,9 +34,7 @@ def has_reference(model: BaseModel) -> bool:
 
 def run_validation(yaml_path: Path) -> dsl.Application:
     """Load and validate a DSL Application from a YAML file."""
-    model, dynamic_types_registry = loader.load_document(
-        yaml_path.read_text(encoding="utf-8")
-    )
+    model, dynamic_types_registry = loader.load_document(yaml_path)
     if not isinstance(model, dsl.Application):
         raise TypeError(f"Expected Application, got {type(model)}")
     app = linker.link(model)

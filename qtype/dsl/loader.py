@@ -1,11 +1,26 @@
 """
-Simple YAML loading with environment variable and file inclusion support.
+YAML loading with environment variable and file inclusion support.
 
-This module provides a clean, straightforward interface for loading YAML files
-with support for:
+This module provides two explicit functions for loading YAML:
+- load_yaml_file(path): Load YAML from a file path or URI
+- load_yaml_string(content, base_path): Load YAML from a string
+
+Both support:
 - Environment variable substitution (${VAR} or ${VAR:default})
 - File inclusion (!include and !include_raw)
 - Multiple URI schemes via fsspec (local, http, s3, etc.)
+
+Example:
+    # Load from file
+    data = load_yaml_file("config.yaml")
+    data = load_yaml_file("s3://bucket/config.yaml")
+
+    # Load from string
+    yaml_content = "name: test\\nvalue: ${ENV_VAR}"
+    data = load_yaml_string(yaml_content)
+
+    # Load string with includes (requires base_path)
+    data = load_yaml_string(yaml_content, base_path="/path/to/configs")
 """
 
 from __future__ import annotations
@@ -19,7 +34,6 @@ import fsspec
 import yaml
 from dotenv import load_dotenv
 
-from qtype.base.types import URILike
 from qtype.dsl.parser import load_document  # noqa: F401
 
 
@@ -178,12 +192,15 @@ YAMLLoader.add_constructor("!include", _include_constructor)
 YAMLLoader.add_constructor("!include_raw", _include_raw_constructor)
 
 
-def load_yaml(source: URILike | str) -> dict[str, Any]:
+def load_yaml_file(path: str | Path) -> dict[str, Any]:
     """
-    Load YAML from file path/URI or string content.
+    Load YAML from a file path or URI.
+
+    Supports multiple URI schemes via fsspec (local files, http, s3, etc.).
+    Automatically loads .env files from the source directory.
 
     Args:
-        source: URILike for file paths/URIs, or str for raw YAML content
+        path: File path or URI to load
 
     Returns:
         Parsed YAML as dictionary
@@ -193,41 +210,77 @@ def load_yaml(source: URILike | str) -> dict[str, Any]:
         FileNotFoundError: If file doesn't exist
         ValueError: If required environment variable is missing
     """
-    # Determine if source is a file/URI or raw YAML content
-    if isinstance(source, URILike):
-        # Load from file/URI
-        source_str = source.path
+    source_str = str(path)
 
-        # Load .env file if it exists in the source directory
-        try:
-            from urllib.parse import urlparse
+    # Load .env file if it exists in the source directory
+    try:
+        from urllib.parse import urlparse
 
-            parsed = urlparse(source_str)
-            if parsed.scheme in ["file", ""]:
-                # Local file - load .env from same directory
-                source_path = Path(parsed.path if parsed.path else source_str)
-                if source_path.is_file():
-                    env_dir = source_path.parent
-                    env_file = env_dir / ".env"
-                    if env_file.exists():
-                        load_dotenv(env_file)
-        except Exception:
-            pass
+        parsed = urlparse(source_str)
+        if parsed.scheme in ["file", ""]:
+            # Local file - load .env from same directory
+            source_path = Path(parsed.path if parsed.path else source_str)
+            if source_path.is_file():
+                env_dir = source_path.parent
+                env_file = env_dir / ".env"
+                if env_file.exists():
+                    load_dotenv(env_file)
+    except Exception:
+        pass
 
-        # Also try cwd
-        load_dotenv()
+    # Also try cwd
+    load_dotenv()
 
-        # Load file content
+    # Load file content
+    try:
         with fsspec.open(source_str, "r", encoding="utf-8") as f:
             content = f.read()  # type: ignore[misc]
-        base_path = source_str
-    else:
-        # Load from string
-        content = source
-        base_path = str(Path.cwd())
-        load_dotenv()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"File not found: {source_str}") from e
 
-    # Parse YAML
+    return _parse_yaml(content, base_path=source_str, source_name=source_str)
+
+
+def load_yaml_string(
+    content: str, base_path: str | Path | None = None
+) -> dict[str, Any]:
+    """
+    Load YAML from a string.
+
+    Args:
+        content: Raw YAML content as string
+        base_path: Base path for resolving relative includes (default: cwd)
+
+    Returns:
+        Parsed YAML as dictionary
+
+    Raises:
+        YAMLLoadError: If YAML parsing fails
+        ValueError: If required environment variable is missing
+    """
+    load_dotenv()
+
+    base = str(base_path) if base_path else str(Path.cwd())
+    return _parse_yaml(content, base_path=base, source_name="<string>")
+
+
+def _parse_yaml(
+    content: str, base_path: str, source_name: str
+) -> dict[str, Any]:
+    """
+    Parse YAML content with environment variable substitution and includes.
+
+    Args:
+        content: YAML content to parse
+        base_path: Base path for resolving relative includes
+        source_name: Source name for error messages
+
+    Returns:
+        Parsed YAML as dictionary
+
+    Raises:
+        YAMLLoadError: If YAML parsing fails
+    """
     try:
         from functools import partial
 
@@ -252,13 +305,13 @@ def load_yaml(source: URILike | str) -> dict[str, Any]:
             message=f"YAML parsing error: {error_msg}",
             line=line,
             column=column,
-            source=base_path if isinstance(source, URILike) else None,
+            source=source_name,
             original_error=e,
         ) from e
     except ValueError as e:
         # Environment variable errors
         raise YAMLLoadError(
             message=str(e),
-            source=base_path if isinstance(source, URILike) else None,
+            source=source_name,
             original_error=e,
         ) from e
