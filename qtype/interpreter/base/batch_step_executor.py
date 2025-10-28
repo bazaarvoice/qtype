@@ -2,9 +2,15 @@ from abc import abstractmethod
 from typing import Any, AsyncIterator
 
 from aiostream import stream
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.types import FlowMessage
+
+# Get a tracer for this module
+# This will return a no-op tracer if no provider is configured
+tracer = trace.get_tracer(__name__)
 
 
 class BatchedStepExecutor(StepExecutor):
@@ -36,8 +42,9 @@ class BatchedStepExecutor(StepExecutor):
         **dependencies: Any,
     ):
         super().__init__(step, **dependencies)
-        # Override the processor to use batch processing instead of message processing
-        self._processor = self.process_batch
+        # Override the processor to use batch processing with telemetry
+        # instead of message processing
+        self._processor = self._process_batch_with_telemetry
 
     def _prepare_message_stream(
         self, valid_messages: AsyncIterator[FlowMessage]
@@ -100,6 +107,9 @@ class BatchedStepExecutor(StepExecutor):
         as they become available to maintain memory efficiency (don't collect
         all results before yielding).
 
+        This method is automatically wrapped with telemetry tracing when
+        called through the executor's execution pipeline.
+
         Args:
             batch: List of input messages to process as a batch
 
@@ -107,3 +117,58 @@ class BatchedStepExecutor(StepExecutor):
             Processed messages corresponding to the input batch
         """
         yield  # type: ignore[misc]
+
+    async def _process_batch_with_telemetry(
+        self, batch: list[FlowMessage]
+    ) -> AsyncIterator[FlowMessage]:
+        """
+        Internal wrapper that adds telemetry tracing to process_batch.
+
+        This method creates a span for batch processing operations,
+        automatically recording batch size, errors, and success metrics.
+        """
+        span = tracer.start_span(
+            f"step.{self.step.id}.process_batch",
+            attributes={
+                "batch.size": len(batch),
+            },
+        )
+
+        try:
+            output_count = 0
+            error_count = 0
+
+            async for output_msg in self.process_batch(batch):
+                output_count += 1
+                if output_msg.is_failed():
+                    error_count += 1
+                    span.add_event(
+                        "message_failed",
+                        {
+                            "error": str(output_msg.error),
+                        },
+                    )
+                yield output_msg
+
+            # Record processing metrics
+            span.set_attribute("batch.outputs", output_count)
+            span.set_attribute("batch.errors", error_count)
+
+            if error_count > 0:
+                span.set_status(
+                    Status(
+                        StatusCode.ERROR,
+                        f"{error_count} of {output_count} messages failed",
+                    )
+                )
+            else:
+                span.set_status(Status(StatusCode.OK))
+
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(
+                Status(StatusCode.ERROR, f"Batch processing failed: {e}")
+            )
+            raise
+        finally:
+            span.end()
