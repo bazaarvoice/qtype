@@ -13,6 +13,8 @@ import uvicorn
 
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import LoadError, ValidationError
+from qtype.semantic.loader import load
+from qtype.semantic.model import Application
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +28,14 @@ def serve(args: Any) -> None:
     facade = QTypeFacade()
 
     try:
-        # Use facade to load and validate the document
+        # Load and validate the document
         spec_path = Path(args.spec)
         logger.info(f"Loading and validating spec: {spec_path}")
 
-        semantic_model, type_registry = facade.load_semantic_model(spec_path)
+        semantic_model, type_registry = load(spec_path)
+        assert isinstance(semantic_model, Application), (
+            "Can only serve Application documents"
+        )
         facade.telemetry(semantic_model)
         logger.info(f"✅ Successfully loaded spec: {spec_path}")
 

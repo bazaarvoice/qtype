@@ -13,8 +13,10 @@ import webbrowser
 from pathlib import Path
 from typing import Any
 
-from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import LoadError, ValidationError
+from qtype.semantic.loader import load
+from qtype.semantic.model import Application
+from qtype.semantic.visualize import visualize_application
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +31,13 @@ def main(args: Any) -> None:
     Exits:
         Exits with code 1 if visualization fails.
     """
-    facade = QTypeFacade()
     spec_path = Path(args.spec)
 
     try:
-        # Generate visualization using the facade
-        mermaid_content = facade.visualize_application(spec_path)
+        # Load and generate visualization
+        semantic_model, _ = load(spec_path)
+        assert isinstance(semantic_model, Application)
+        mermaid_content = visualize_application(semantic_model)
 
         if args.output:
             # Write to file

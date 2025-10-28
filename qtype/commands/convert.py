@@ -8,10 +8,22 @@ import argparse
 import logging
 from pathlib import Path
 
-from qtype.application.facade import QTypeFacade
-from qtype.dsl.model import Application, ToolList
+from qtype.dsl.model import Application, Document, ToolList
 
 logger = logging.getLogger(__name__)
+
+
+def _convert_to_yaml(doc: Application | ToolList) -> str:
+    """Convert a document to YAML format."""
+    from pydantic_yaml import to_yaml_str
+
+    # Wrap in Document if needed
+    if isinstance(doc, Application):
+        wrapped = Document(root=doc)
+    else:
+        wrapped = doc
+
+    return to_yaml_str(wrapped, exclude_unset=True, exclude_none=True)
 
 
 def convert_api(args: argparse.Namespace) -> None:
@@ -36,9 +48,8 @@ def convert_api(args: argparse.Namespace) -> None:
                 types=types,
                 auths=auths,
             )
-        # Use facade to convert to YAML format
-        facade = QTypeFacade()
-        content = facade.convert_document(doc)
+        # Convert to YAML format
+        content = _convert_to_yaml(doc)
 
         # Write to file or stdout
         if args.output:
@@ -79,9 +90,8 @@ def convert_module(args: argparse.Namespace) -> None:
                 root=list(tools),
             )
 
-        # Use facade to convert to YAML format
-        facade = QTypeFacade()
-        content = facade.convert_document(doc)
+        # Convert to YAML format
+        content = _convert_to_yaml(doc)
 
         # Write to file or stdout
         if args.output:
