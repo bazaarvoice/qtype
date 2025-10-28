@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 from pydantic import ValidationError
 
@@ -202,38 +201,7 @@ def parse_document(
     return document.root, custom_types
 
 
-def parse_document_from_file(
-    yaml_data: dict[str, Any], file_path: str
-) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
-    """
-    Parse YAML dictionary from a file path.
-
-    Convenience method that extracts a clean source name from the file path.
-
-    Args:
-        yaml_data: Pre-loaded YAML dictionary
-        file_path: File path or URI for error messages
-
-    Returns:
-        Tuple of (DocumentType, CustomTypeRegistry)
-
-    Raises:
-        ValueError: If validation fails
-    """
-    # Extract a clean source name
-    source_name = None
-    try:
-        parsed = urlparse(file_path)
-        if parsed.scheme in ["file", ""]:
-            source_name = file_path
-        elif parsed.scheme:
-            source_name = file_path
-    except Exception:
-        pass
-
-    return parse_document(yaml_data, source_name)
-
-
+# TODO: maybe remove this since it's only used in a unit test?
 def load_document(
     source: str | Path,
 ) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
