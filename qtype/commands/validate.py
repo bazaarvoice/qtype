@@ -13,6 +13,7 @@ from typing import Any
 from qtype import dsl
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import LoadError, SemanticError, ValidationError
+from qtype.dsl.loader import YAMLLoadError
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,14 @@ def main(args: Any) -> None:
 
     except LoadError as e:
         logger.error(f"❌ Failed to load document: {e}")
+        sys.exit(1)
+    except YAMLLoadError as e:
+        # YAML syntax errors
+        logger.error(f"❌ {e}")
+        sys.exit(1)
+    except ValueError as e:
+        # Pydantic validation errors from load_document
+        logger.error(f"❌ {e}")
         sys.exit(1)
     except ValidationError as e:
         logger.error(f"❌ Validation failed: {e}")
