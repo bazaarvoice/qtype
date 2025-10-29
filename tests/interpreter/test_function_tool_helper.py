@@ -10,10 +10,17 @@ from qtype.semantic.loader import load
 from qtype.semantic.model import Application, PythonFunctionTool
 
 
-class TestToolHelper(ToolExecutionMixin, FunctionToolHelper):
-    """Test class combining the mixins needed for tool creation."""
+class ToolHelper(ToolExecutionMixin, FunctionToolHelper):
+    """Helper class combining the mixins needed for tool creation."""
 
-    pass
+    def __init__(self) -> None:
+        # Initialize the mixins with minimal required attributes
+        # Since this is a test helper, we can mock these
+        from unittest.mock import MagicMock
+
+        super().__init__()
+        self.stream_emitter = MagicMock()
+        self.step = MagicMock()
 
 
 @pytest.mark.asyncio
@@ -36,7 +43,7 @@ async def test_create_python_function_tool_and_call():
     assert timestamp_tool is not None, "get_current_timestamp tool not found"
 
     # Create the helper and generate the FunctionTool
-    helper = TestToolHelper()
+    helper = ToolHelper()
     function_tool = helper._create_python_function_tool(timestamp_tool)
 
     # Call the function tool
@@ -115,7 +122,7 @@ async def test_create_python_function_tool_with_custom_type():
     assert issubclass(output_param.type, BaseModel)
 
     # Create the helper and generate the FunctionTool
-    helper = TestToolHelper()
+    helper = ToolHelper()
     function_tool = helper._create_python_function_tool(time_diff_tool)
 
     # Call the function tool with two timestamps

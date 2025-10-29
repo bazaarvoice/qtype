@@ -143,13 +143,15 @@ class StepExecutor(ABC):
         _prepare_message_stream() and self._processor.
 
         The execution flow:
-        1. Filter out failed messages and collect them
-        2. Prepare valid messages for processing (hook for batching)
-        3. Process messages with optional concurrency
-        4. Emit failed messages first (no ordering guarantee)
-        5. Emit processed results
-        6. Run finalization hook
-        7. Track progress for all emitted messages
+        1. Start step boundary for visual grouping
+        2. Filter out failed messages and collect them
+        3. Prepare valid messages for processing (hook for batching)
+        4. Process messages with optional concurrency
+        5. Emit failed messages first (no ordering guarantee)
+        6. Emit processed results
+        7. Run finalization hook
+        8. End step boundary
+        9. Track progress for all emitted messages
 
         Args:
             message_stream: Input stream of messages to process
@@ -171,92 +173,98 @@ class StepExecutor(ABC):
         ctx = trace.set_span_in_context(span)
         token = context.attach(ctx)
 
-        try:
-            # Collect failed messages to re-emit at the end
-            failed_messages: list[FlowMessage] = []
-            valid_messages = self._filter_and_collect_errors(
-                message_stream, failed_messages
-            )
-
-            # Determine concurrency from step configuration
-            num_workers = 1
-            if hasattr(self.step, "concurrency_config") and (
-                self.step.concurrency_config is not None  # type: ignore[attr-defined]
-            ):
-                num_workers = (
-                    self.step.concurrency_config.num_workers  # type: ignore[attr-defined]
+        # Start step boundary for visual grouping in UI
+        async with self.stream_emitter.step_boundary():
+            try:
+                # Collect failed messages to re-emit at the end
+                failed_messages: list[FlowMessage] = []
+                valid_messages = self._filter_and_collect_errors(
+                    message_stream, failed_messages
                 )
 
-            span.set_attribute("step.concurrency", num_workers)
-
-            # Prepare messages for processing (batching hook)
-            prepared_messages = self._prepare_message_stream(valid_messages)
-
-            # Apply processor with concurrency control
-            async def process_item(
-                item: Any, *args: Any
-            ) -> AsyncIterator[FlowMessage]:
-                async for msg in self._processor(item):
-                    yield msg
-
-            result_stream = stream.flatmap(
-                prepared_messages, process_item, task_limit=num_workers
-            )
-
-            # Combine all streams
-            async def emit_failed_messages() -> AsyncIterator[FlowMessage]:
-                for msg in failed_messages:
-                    yield msg
-
-            all_results = stream.concat(
-                stream.iterate([result_stream, emit_failed_messages()])
-            )
-
-            # Track message counts for telemetry
-            message_count = 0
-            error_count = len(failed_messages)
-
-            # Stream results and track progress
-            async with all_results.stream() as streamer:
-                result: FlowMessage
-                async for result in streamer:
-                    message_count += 1
-                    if result.is_failed():
-                        error_count += 1
-                    self.progress.update_for_message(result, self.on_progress)
-                    yield result
-
-            # Finalize and track those messages too
-            async for msg in self.finalize():
-                message_count += 1
-                if msg.is_failed():
-                    error_count += 1
-                yield msg
-
-            # Record metrics in span
-            span.set_attribute("step.messages.total", message_count)
-            span.set_attribute("step.messages.errors", error_count)
-
-            # Set span status based on errors
-            if error_count > 0:
-                span.set_status(
-                    Status(
-                        StatusCode.ERROR,
-                        f"{error_count} of {message_count} messages failed",
+                # Determine concurrency from step configuration
+                num_workers = 1
+                if hasattr(self.step, "concurrency_config") and (
+                    self.step.concurrency_config is not None  # type: ignore[attr-defined]
+                ):
+                    num_workers = (
+                        self.step.concurrency_config.num_workers  # type: ignore[attr-defined]
                     )
-                )
-            else:
-                span.set_status(Status(StatusCode.OK))
 
-        except Exception as e:
-            # Record the exception and set error status
-            span.record_exception(e)
-            span.set_status(Status(StatusCode.ERROR, f"Step failed: {e}"))
-            raise
-        finally:
-            # Detach the context and end the span
-            context.detach(token)
-            span.end()
+                span.set_attribute("step.concurrency", num_workers)
+
+                # Prepare messages for processing (batching hook)
+                prepared_messages = self._prepare_message_stream(
+                    valid_messages
+                )
+
+                # Apply processor with concurrency control
+                async def process_item(
+                    item: Any, *args: Any
+                ) -> AsyncIterator[FlowMessage]:
+                    async for msg in self._processor(item):
+                        yield msg
+
+                result_stream = stream.flatmap(
+                    prepared_messages, process_item, task_limit=num_workers
+                )
+
+                # Combine all streams
+                async def emit_failed_messages() -> AsyncIterator[FlowMessage]:
+                    for msg in failed_messages:
+                        yield msg
+
+                all_results = stream.concat(
+                    stream.iterate([result_stream, emit_failed_messages()])
+                )
+
+                # Track message counts for telemetry
+                message_count = 0
+                error_count = len(failed_messages)
+
+                # Stream results and track progress
+                async with all_results.stream() as streamer:
+                    result: FlowMessage
+                    async for result in streamer:
+                        message_count += 1
+                        if result.is_failed():
+                            error_count += 1
+                        self.progress.update_for_message(
+                            result, self.on_progress
+                        )
+                        yield result
+
+                # Finalize and track those messages too
+                async for msg in self.finalize():
+                    message_count += 1
+                    if msg.is_failed():
+                        error_count += 1
+                    yield msg
+
+                # Record metrics in span
+                span.set_attribute("step.messages.total", message_count)
+                span.set_attribute("step.messages.errors", error_count)
+
+                # Set span status based on errors
+                if error_count > 0:
+                    span.set_status(
+                        Status(
+                            StatusCode.ERROR,
+                            f"{error_count} of {message_count} messages failed",
+                        )
+                    )
+                else:
+                    span.set_status(Status(StatusCode.OK))
+
+            except Exception as e:
+                # Record the exception and set error status
+                span.record_exception(e)
+                span.set_status(Status(StatusCode.ERROR, f"Step failed: {e}"))
+                raise
+            finally:
+                # Detach the context and end the span
+                context.detach(token)
+                span.end()
 
     @abstractmethod
     async def process_message(

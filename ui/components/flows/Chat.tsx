@@ -237,8 +237,14 @@ function ChatFlow({ flow }: ChatFlowProps) {
                 <p>Start a conversation!</p>
               </div>
             ) : (
-              messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+              messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isStreaming={
+                    status === "streaming" && index === messages.length - 1
+                  }
+                />
               ))
             )}
             <div ref={messagesEndRef} />
