@@ -154,5 +154,7 @@ class DecoderExecutor(StepExecutor):
             yield message.copy_with_variables(output_vars)
 
         except Exception as e:
+            # Emit error event to stream so frontend can display it
+            await self.stream_emitter.error(str(e))
             message.set_error(self.step.id, e)
             yield message

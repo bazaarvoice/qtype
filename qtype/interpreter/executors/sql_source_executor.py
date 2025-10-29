@@ -95,10 +95,8 @@ class SQLSourceExecutor(StepExecutor):
             )
 
         except SQLAlchemyError as e:
+            # Emit error event to stream so frontend can display it
+            await self.stream_emitter.error(str(e))
             # Set error on the message and yield it
-            message.set_error(self.step.id, e)
-            yield message
-        except Exception as e:
-            # Catch any other unexpected errors
             message.set_error(self.step.id, e)
             yield message

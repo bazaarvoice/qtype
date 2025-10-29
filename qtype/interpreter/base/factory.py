@@ -1,3 +1,4 @@
+from qtype.interpreter.executors.agent_executor import AgentExecutor
 from qtype.interpreter.executors.aggregate_executor import AggregateExecutor
 from qtype.interpreter.executors.decoder_executor import DecoderExecutor
 from qtype.interpreter.executors.doc_to_text_executor import (
@@ -17,6 +18,7 @@ from qtype.interpreter.executors.file_writer_executor import FileWriterExecutor
 from qtype.interpreter.executors.invoke_embedding_executor import (
     InvokeEmbeddingExecutor,
 )
+from qtype.interpreter.executors.invoke_flow_executor import InvokeFlowExecutor
 from qtype.interpreter.executors.invoke_tool_executor import InvokeToolExecutor
 from qtype.interpreter.executors.llm_inference_executor import (
     LLMInferenceExecutor,
@@ -26,6 +28,7 @@ from qtype.interpreter.executors.prompt_template_executor import (
 )
 from qtype.interpreter.executors.sql_source_executor import SQLSourceExecutor
 from qtype.semantic.model import (
+    Agent,
     Aggregate,
     Decoder,
     DocToTextConverter,
@@ -35,6 +38,7 @@ from qtype.semantic.model import (
     FileSource,
     FileWriter,
     InvokeEmbedding,
+    InvokeFlow,
     InvokeTool,
     LLMInference,
     PromptTemplate,
@@ -47,6 +51,8 @@ from .batch_step_executor import StepExecutor
 # ... import other executors
 
 EXECUTOR_REGISTRY = {
+    Agent: AgentExecutor,
+    InvokeFlow: InvokeFlowExecutor,
     LLMInference: LLMInferenceExecutor,
     FileWriter: FileWriterExecutor,
     FileSource: FileSourceExecutor,

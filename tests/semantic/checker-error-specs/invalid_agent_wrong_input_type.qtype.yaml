@@ -1,0 +1,26 @@
+# Agent input must be text or ChatMessage
+id: test_app
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+flows:
+  - id: test_flow
+    variables:
+      - id: input_num
+        type: number
+      - id: output_num
+        type: number
+    inputs:
+      - input_num
+    outputs:
+      - output_num
+    steps:
+      - id: agent1
+        type: Agent
+        model: test_model
+        tools: []
+        inputs:
+          - input_num
+        outputs:
+          - output_num
