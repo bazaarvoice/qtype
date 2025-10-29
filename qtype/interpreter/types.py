@@ -61,6 +61,56 @@ class TextStreamEndEvent(BaseModel):
     )
 
 
+class ReasoningStreamStartEvent(BaseModel):
+    """Signals the start of incremental reasoning streaming.
+
+    Use this when an agent begins outputting reasoning/thinking steps.
+    Must be followed by ReasoningStreamDeltaEvents and eventually
+    a ReasoningStreamEndEvent with the same stream_id.
+
+    Maps to: ReasoningStartChunk in Vercel protocol
+    """
+
+    type: Literal["reasoning_stream_start"] = "reasoning_stream_start"
+    step: Step
+    stream_id: str = Field(
+        description="Unique ID to correlate start/delta/end events"
+    )
+
+
+class ReasoningStreamDeltaEvent(BaseModel):
+    """Carries an incremental chunk of reasoning content.
+
+    Use this for streaming agent reasoning/thinking steps.
+    The delta represents a small piece of reasoning text to append.
+
+    Maps to: ReasoningDeltaChunk in Vercel protocol
+    """
+
+    type: Literal["reasoning_stream_delta"] = "reasoning_stream_delta"
+    step: Step
+    stream_id: str = Field(
+        description="Must match the stream_id from ReasoningStreamStartEvent"
+    )
+    delta: str = Field(description="Incremental reasoning content to append")
+
+
+class ReasoningStreamEndEvent(BaseModel):
+    """Signals the completion of incremental reasoning streaming.
+
+    Use this to mark the end of a reasoning stream. After this event,
+    no more deltas should be sent for this stream_id.
+
+    Maps to: ReasoningEndChunk in Vercel protocol
+    """
+
+    type: Literal["reasoning_stream_end"] = "reasoning_stream_end"
+    step: Step
+    stream_id: str = Field(
+        description="Must match the stream_id from ReasoningStreamStartEvent"
+    )
+
+
 class StatusEvent(BaseModel):
     """Reports a complete status message from a step.
 
@@ -171,6 +221,9 @@ StreamEvent = Union[
     TextStreamStartEvent,
     TextStreamDeltaEvent,
     TextStreamEndEvent,
+    ReasoningStreamStartEvent,
+    ReasoningStreamDeltaEvent,
+    ReasoningStreamEndEvent,
     StatusEvent,
     StepStartEvent,
     StepEndEvent,

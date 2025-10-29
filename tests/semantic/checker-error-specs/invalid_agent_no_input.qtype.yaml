@@ -1,0 +1,22 @@
+# Agent must have exactly one input
+id: test_app
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+flows:
+  - id: test_flow
+    variables:
+      - id: result
+        type: text
+    inputs: []
+    outputs:
+      - result
+    steps:
+      - id: agent1
+        type: Agent
+        model: test_model
+        tools: []
+        inputs: []
+        outputs:
+          - result

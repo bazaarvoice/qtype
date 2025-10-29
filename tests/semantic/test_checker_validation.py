@@ -14,6 +14,18 @@ from qtype.semantic.loader import load
     "yaml_file,expected_error_fragment",
     [
         (
+            "invalid_agent_no_input.qtype.yaml",
+            "must have exactly 1 input variable(s), found 0",
+        ),
+        (
+            "invalid_agent_mismatched_types.qtype.yaml",
+            "output type must match input type",
+        ),
+        (
+            "invalid_agent_wrong_input_type.qtype.yaml",
+            "input must be of type 'text' or 'ChatMessage'",
+        ),
+        (
             "invalid_prompt_template_no_output.qtype.yaml",
             "must have exactly 1 output variable(s), found 0",
         ),

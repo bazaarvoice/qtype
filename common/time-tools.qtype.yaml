@@ -1,0 +1,65 @@
+- type: PythonFunctionTool
+  id: get_current_timestamp
+  name: get_current_timestamp
+  description: Get the current UTC timestamp
+  function_name: get_current_timestamp
+  module_path: qtype.application.commons.tools
+  inputs: {}
+  outputs:
+    result:
+      type: datetime
+      optional: false
+
+- type: PythonFunctionTool
+  id: format_datetime
+  name: format_datetime
+  description: Format a timestamp using a custom format string
+  function_name: format_datetime
+  module_path: qtype.application.commons.tools
+  inputs:
+    timestamp:
+      type: datetime
+      optional: false
+    format_string:
+      type: text
+      optional: false
+  outputs:
+    result:
+      type: text
+      optional: false
+
+- type: PythonFunctionTool
+  id: timedelta
+  name: timedelta
+  description: Add a specified amount of time from a given timestamp
+  function_name: timedelta
+  module_path: qtype.application.commons.tools
+  inputs:
+    timestamp:
+      type: datetime
+      optional: false
+    days:
+      type: int
+      optional: true
+    hours:
+      type: int
+      optional: true
+    minutes:
+      type: int
+      optional: true
+    seconds:
+      type: int
+      optional: true
+    weeks:
+      type: int
+      optional: true
+    milliseconds:
+      type: int
+      optional: true
+    microseconds:
+      type: int
+      optional: true
+  outputs:
+    result:
+      type: datetime
+      optional: false

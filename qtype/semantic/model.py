@@ -461,11 +461,11 @@ class InvokeFlow(Step):
 
     type: Literal["InvokeFlow"] = Field("InvokeFlow")
     flow: Flow = Field(..., description="Flow to invoke.")
-    input_bindings: dict[str, str] = Field(
+    input_bindings: dict[Variable, str] = Field(
         ...,
         description="Mapping from variable references to flow input variable IDs.",
     )
-    output_bindings: dict[str, str] = Field(
+    output_bindings: dict[Variable, str] = Field(
         ...,
         description="Mapping from variable references to flow output variable IDs.",
     )

@@ -73,5 +73,7 @@ class DocumentEmbedderExecutor(StepExecutor):
             yield message.copy_with_variables({output_id: embedded_chunk})
 
         except Exception as e:
+            # Emit error event to stream so frontend can display it
+            await self.stream_emitter.error(str(e))
             message.set_error(self.step.id, e)
             yield message

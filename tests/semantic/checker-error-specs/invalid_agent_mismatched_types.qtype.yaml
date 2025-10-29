@@ -1,0 +1,26 @@
+# Agent input and output types must match
+id: test_app
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+flows:
+  - id: test_flow
+    variables:
+      - id: prompt
+        type: text
+      - id: result
+        type: ChatMessage
+    inputs:
+      - prompt
+    outputs:
+      - result
+    steps:
+      - id: agent1
+        type: Agent
+        model: test_model
+        tools: []
+        inputs:
+          - prompt
+        outputs:
+          - result
