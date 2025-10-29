@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import logging
 import time
-from typing import Any, AsyncIterator, cast
+from typing import Any, AsyncIterator
 
 import requests
 from openinference.semconv.trace import OpenInferenceSpanKindValues
@@ -19,6 +19,9 @@ from qtype.semantic.model import (
 )
 
 logger = logging.getLogger(__name__)
+
+# HTTP methods that require request body instead of query parameters
+HTTP_BODY_METHODS = frozenset(["POST", "PUT", "PATCH"])
 
 
 class ToolExecutionMixin:
@@ -111,10 +114,10 @@ class ToolExecutionMixin:
                 )
 
         # Serialize inputs for JSON
-        body = self.serialize_value(inputs) if inputs else None
+        body = self.serialize_value(inputs)
 
         # Determine if we're sending body or query params
-        is_body_method = tool.method.upper() in ["POST", "PUT", "PATCH"]
+        is_body_method = tool.method.upper() in HTTP_BODY_METHODS
 
         try:
             start_time = time.time()
@@ -241,37 +244,6 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
 
         return output_vars
 
-    async def _execute_tool(
-        self,
-        tool: APITool | PythonFunctionTool,
-        inputs: dict[str, Any],
-    ) -> Any:
-        """Execute a tool and emit status updates.
-
-        Args:
-            tool: The tool to execute.
-            inputs: Dictionary of input parameter names to values.
-
-        Returns:
-            The result from tool execution.
-        """
-        if isinstance(tool, PythonFunctionTool):
-            await self.stream_emitter.status(
-                f"Calling Python function: {tool.function_name}"
-            )
-            result = await self.execute_python_tool(tool, inputs)
-            await self.stream_emitter.status(
-                f"Function {tool.function_name} completed successfully"
-            )
-            return result
-        elif isinstance(tool, APITool):
-            await self.stream_emitter.status(
-                f"Making {tool.method} request to {tool.endpoint}"
-            )
-            return await self.execute_api_tool(tool, inputs)
-        else:
-            raise ValueError(f"Unsupported tool type: {type(tool).__name__}")
-
     async def process_message(
         self,
         message: FlowMessage,
@@ -288,12 +260,30 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
             tool_inputs = self._prepare_tool_inputs(message)
 
             # Execute the tool with status updates
-            # Cast is safe because semantic validation ensures only
-            # supported tool types
-            result = await self._execute_tool(
-                cast(APITool | PythonFunctionTool, self.step.tool),
-                tool_inputs,
-            )
+            # Dispatch to appropriate execution method based on tool type
+            if isinstance(self.step.tool, PythonFunctionTool):
+                await self.stream_emitter.status(
+                    f"Calling Python function: {self.step.tool.function_name}"
+                )
+                result = await self.execute_python_tool(
+                    self.step.tool, tool_inputs
+                )
+                await self.stream_emitter.status(
+                    f"Function {self.step.tool.function_name} completed "
+                    f"successfully"
+                )
+            elif isinstance(self.step.tool, APITool):
+                await self.stream_emitter.status(
+                    f"Making {self.step.tool.method} request to "
+                    f"{self.step.tool.endpoint}"
+                )
+                result = await self.execute_api_tool(
+                    self.step.tool, tool_inputs
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported tool type: {type(self.step.tool).__name__}"
+                )
 
             # Extract outputs from result
             output_vars = self._extract_tool_outputs(result)

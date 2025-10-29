@@ -38,7 +38,7 @@ class FunctionToolHelper:
         type:
         - Primitive types → Python type via PRIMITIVE_TO_PYTHON_TYPE
         - BaseModel subclasses (domain/custom types) → pass through
-        - List types → generic list
+        - List types → list[element_type] (recursively resolved)
         - Unknown → str
 
         Args:
@@ -51,11 +51,18 @@ class FunctionToolHelper:
         if isinstance(param.type, PrimitiveTypeEnum):
             return PRIMITIVE_TO_PYTHON_TYPE[param.type]
 
-        # Handle list types
+        # Handle list types - recursively resolve element type
         if isinstance(param.type, ListType):
-            # For now, treat as generic list
-            # Could be enhanced to create list[ElementType]
-            return list  # type: ignore[return-value]
+            # Create a mock parameter with the element type to recursively
+            # resolve it
+            element_param = ToolParameter(
+                type=param.type.element_type,
+                optional=False,
+            )
+            element_python_type = (
+                FunctionToolHelper._qtype_type_to_python_type(element_param)
+            )
+            return list[element_python_type]  # type: ignore[valid-type]
 
         # Handle domain/custom types (BaseModel subclasses)
         if isinstance(param.type, type) and issubclass(param.type, BaseModel):
@@ -81,6 +88,7 @@ class FunctionToolHelper:
             LlamaIndex ReActAgent).
         """
         # Build field definitions for Pydantic model
+        # Each field is a tuple of (type_annotation, field_info)
         field_definitions: dict[str, Any] = {}
 
         for param_name, param in inputs.items():
@@ -133,13 +141,14 @@ class FunctionToolHelper:
 
         For Python functions, we import and wrap the actual function,
         allowing LlamaIndex to access its signature while routing
-        execution through our wrapper for consistency.
+        execution through our wrapper for consistent error handling,
+        logging, and telemetry across all tool invocations.
 
         Args:
             tool: The Python function tool definition.
 
         Returns:
-            LlamaIndex FunctionTool.
+            LlamaIndex FunctionTool wrapping the Python function.
 
         Raises:
             ValueError: If the function cannot be imported.
@@ -182,11 +191,15 @@ class FunctionToolHelper:
     def _create_api_tool(self, tool: APITool) -> FunctionTool:
         """Create a FunctionTool for an API endpoint.
 
+        Wraps the API tool execution in a function that can be called
+        by LlamaIndex agents, handling authentication, request formatting,
+        and error handling consistently.
+
         Args:
             tool: The API tool definition.
 
         Returns:
-            LlamaIndex FunctionTool.
+            LlamaIndex FunctionTool wrapping the API tool execution.
         """
 
         async def api_wrapper(**kwargs: Any) -> Any:
