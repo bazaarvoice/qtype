@@ -1,0 +1,46 @@
+id: simple_agent
+description: A simple agent chatbot with time and date tools
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+references:
+  - !include ../common/tools.qtype.yaml
+memories:
+  - id: chat_memory
+    token_limit: 10000
+flows:
+  - type: Flow
+    id: agent_chat
+    interface:
+      type: Complete
+    variables:
+      - id: prompt
+        type: text
+      - id: response
+        type: text
+    inputs:
+      - prompt
+    outputs:
+      - response
+    steps:
+      - id: agent_step
+        type: Agent
+        model: nova_lite
+        system_message: "You are a helpful assistant with access to time and date tools. Use them when users ask about time-related information."
+        memory: chat_memory
+        tools:
+          - qtype.application.commons.tools.get_current_timestamp
+          - qtype.application.commons.tools.format_datetime
+          - qtype.application.commons.tools.timedelta
+        inputs:
+          - prompt
+        outputs:
+          - response
+telemetry:
+  id: simple_agent_telemetry
+  endpoint: http://localhost:6006/v1/traces
