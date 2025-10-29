@@ -143,11 +143,22 @@ class LLMInferenceExecutor(StepExecutor):
             )
             inputs = [to_chat_message(system_message)] + inputs
 
-        # Perform inference with streaming if callback provided
         chat_result: ChatResponse
         if self.on_stream_event:
-            # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
+            async with self.stream_emitter.reasoning_stream(f"llm-{self.step.id}-{id(message)}-reasoning") as reasoning:
+                generator = model.stream_chat(
+                messages=inputs,
+                **(
+                    self.step.model.inference_params
+                    if self.step.model.inference_params
+                    else {}
+                ),
+                )
+                for complete_response in generator:
+                    reasoning_text = self.__extract_reasoning_content(complete_response)
+                    if reasoning_text:
+                        await reasoning.delta(reasoning_text)
 
             async with self.stream_emitter.text_stream(stream_id) as streamer:
                 generator = model.stream_chat(
@@ -159,7 +170,9 @@ class LLMInferenceExecutor(StepExecutor):
                     ),
                 )
                 for chat_response in generator:
-                    await streamer.delta(chat_response.delta)
+                    chat_text = chat_response.delta
+                    if chat_text.strip() != "":
+                        await streamer.delta(chat_response.delta)
             # Get the final result
             chat_result = chat_response
         else:
@@ -220,6 +233,9 @@ class LLMInferenceExecutor(StepExecutor):
                     reasoning_text = self.__extract_reasoning_content(complete_response)
                     if reasoning_text:
                         await reasoning.delta(reasoning_text)
+
+                    
+                    
 
             async with self.stream_emitter.text_stream(stream_id) as streamer:
                 generator = model.stream_complete(
