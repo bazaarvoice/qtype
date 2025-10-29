@@ -200,10 +200,12 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
         return arv
     elif model.provider == "gcp-vertex":
         from llama_index.llms.vertex import Vertex
-        
+                
+        project_name = getattr(getattr(model, "auth", None), "profile_name", None)
+
         vgv: BaseLLM = Vertex(
             model=model.model_id if model.model_id else model.id,
-            project=model.auth.profile_name if model.auth else None,
+            project=project_name,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
         )
