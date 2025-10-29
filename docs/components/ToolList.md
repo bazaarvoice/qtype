@@ -2,4 +2,4 @@
 
 Schema for a standalone list of tools.
 
-- **root** (`list[APITool | PythonFunctionTool]`): (No documentation available.)
+- **root** (`list[Annotated]`): (No documentation available.)

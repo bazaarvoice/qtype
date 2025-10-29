@@ -1,0 +1,17 @@
+# Test spec for DocumentEmbedder.model reference resolution
+
+id: test_document_embedder
+
+models:
+  - type: EmbeddingModel
+    id: embedding_model
+    provider: openai
+    model_id: text-embedding-3-small
+    dimensions: 1536
+
+flows:
+  - id: test_flow
+    steps:
+      - id: embedder_step
+        type: DocumentEmbedder
+        model: embedding_model  # String should be resolved to Reference[EmbeddingModel]

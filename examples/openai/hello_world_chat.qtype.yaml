@@ -1,22 +1,43 @@
 id: hello_world
+description: A simple chat flow with OpenAI
+models:
+  - type: Model
+    id: gpt4
+    provider: openai
+    model_id: gpt-4
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+    auth: openai_auth
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_KEY}
+    host: https://api.openai.com
+memories:
+  - id: chat_memory
+    token_limit: 10000
 flows:
-  - id: chat_example
-    description: A simple chat flow with OpenAI
-    mode: Chat
+  - type: Flow
+    id: chat_example
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response
     steps:
       - id: llm_inference_step
         type: LLMInference
-        model:
-          id: gpt-4
-          provider: openai
-          auth:
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
+        model: gpt4
         system_message: "You are a helpful assistant."
+        memory: chat_memory
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - user_message
         outputs:
-          - id: response
-            type: ChatMessage
+          - response

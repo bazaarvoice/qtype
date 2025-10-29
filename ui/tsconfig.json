@@ -23,9 +23,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
     }
   },
   "include": [
@@ -33,6 +31,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next-env.d.ts",
+    "eslint.config.mjs",
+    "postcss.config.mjs",
     "../qtype/interpreter/ui/types/**/*.ts"
   ],
   "exclude": [

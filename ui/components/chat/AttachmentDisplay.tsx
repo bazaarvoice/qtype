@@ -1,20 +1,29 @@
-import { Button } from '@/components/ui/Button'
-import { Paperclip, X } from 'lucide-react'
-import { type FileAttachment } from '@/types/Flow'
+import { Paperclip, X } from "lucide-react";
+
+import { Button } from "@/components/ui/Button";
+
+import type { FileAttachment } from "@/types";
 
 interface AttachmentDisplayProps {
-  files: FileAttachment[]
-  onRemoveFile: (index: number) => void
-  onClearAll: () => void
+  files: FileAttachment[];
+  onRemoveFile: (index: number) => void;
+  onClearAll: () => void;
 }
 
-const formatFileSize = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+const formatFileSize = (bytes: number) =>
+  `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-export default function AttachmentDisplay({ files, onRemoveFile, onClearAll }: AttachmentDisplayProps) {
+export default function AttachmentDisplay({
+  files,
+  onRemoveFile,
+  onClearAll,
+}: AttachmentDisplayProps) {
   return (
     <div className="mb-3 p-2 bg-muted rounded">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium">Attachments ({files.length})</span>
+        <span className="text-sm font-medium">
+          Attachments ({files.length})
+        </span>
         <Button
           type="button"
           variant="ghost"
@@ -27,7 +36,10 @@ export default function AttachmentDisplay({ files, onRemoveFile, onClearAll }: A
       </div>
       <div className="space-y-1">
         {files.map((file, index) => (
-          <div key={`${file.filename}-${index}`} className="flex items-center justify-between bg-background rounded p-2">
+          <div
+            key={`${file.filename}-${index}`}
+            className="flex items-center justify-between bg-background rounded p-2"
+          >
             <div className="flex items-center gap-2 min-w-0">
               <Paperclip className="h-4 w-4 flex-shrink-0" />
               <span className="text-sm truncate">{file.filename}</span>
@@ -49,5 +61,5 @@ export default function AttachmentDisplay({ files, onRemoveFile, onClearAll }: A
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,11 +1,22 @@
 id: echo
 description: Repeats the user inputs
 flows:
-  - id: echo_flow
+  - type: Flow
+    id: echo_flow
+    variables:
+      - id: message
+        type: text
+      - id: echo_output
+        type: text
+    inputs:
+      - message
+    outputs:
+      - echo_output
     steps:
       - id: echo_step
         type: PromptTemplate
+        template: "You said {message}"
         inputs:
-          - id: message
-            type: text
-        template: You said {message}
+          - message
+        outputs:
+          - echo_output

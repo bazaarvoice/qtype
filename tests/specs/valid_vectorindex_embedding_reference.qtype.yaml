@@ -1,6 +1,7 @@
 id: app_vectorindex_embedding_ref
 models:
-  - id: emb1
+  - type: EmbeddingModel
+    id: emb1
     provider: openai
     model_id: text-embedding-ada-002
     inference_params:
@@ -8,18 +9,31 @@ models:
       max_tokens: 10
     dimensions: 1536
 indexes:
-  - id: v1
+  - type: VectorIndex
+    id: v1
     name: vecindex
     embedding_model: emb1
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
+    variables:
+      - id: prompt
+        type: text
+      - id: search_results
+        type: text
+    outputs:
+      - search_results
     steps:
       - id: s1
         type: PromptTemplate
         template: hi
+        outputs:
+          - prompt
       - id: search
         type: VectorSearch
         index: v1
         default_top_k: 1000
         inputs:
-          - s1.prompt
+          - prompt
+        outputs:
+          - search_results

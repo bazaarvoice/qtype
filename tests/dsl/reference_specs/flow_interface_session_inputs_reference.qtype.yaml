@@ -1,0 +1,16 @@
+# Test spec for FlowInterface.session_inputs reference resolution
+
+id: test_flow_interface_session_inputs
+
+flows:
+  - id: test_flow
+    variables:
+      - id: session_var
+        type: text
+    interface:
+      session_inputs:
+        - session_var  # String should resolve to Reference[Variable]
+    steps:
+      - id: test_step
+        type: PromptTemplate
+        template: "Hello {{session_var}}"

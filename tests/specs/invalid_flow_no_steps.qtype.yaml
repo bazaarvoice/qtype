@@ -1,4 +1,5 @@
 id: app_with_empty_flow
 flows:
-  - id: empty_flow
+  - type: Flow
+    id: empty_flow
     steps: []

@@ -2,4 +2,5 @@
 
 No documentation available.
 
-- **index** (`IndexType | str`): Index to upsert into (object or ID reference).
+- **type** (`Literal`): (No documentation available.)
+- **index** (`Reference[IndexType] | str`): Index to upsert into (object or ID reference).

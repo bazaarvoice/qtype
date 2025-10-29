@@ -17,7 +17,7 @@ from openapi_parser.specification import (
     Security,
 )
 
-from qtype.dsl.base_types import PrimitiveTypeEnum
+from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import (
     APIKeyAuthProvider,
     APITool,
@@ -344,9 +344,9 @@ def to_api_tool(
         endpoint=endpoint,
         method=operation.method.value.upper(),
         auth=auth.id if auth else None,  # Use auth ID string instead of object
-        inputs=inputs if inputs else None,
-        outputs=outputs if outputs else None,
-        parameters=parameters if parameters else None,
+        inputs=inputs,
+        outputs=outputs,
+        parameters=parameters,
     )
 
 
@@ -394,7 +394,7 @@ def to_authorization_provider(
                     }
                 )
                 if any(flow.scopes for flow in security.flows.values())
-                else None,
+                else [],
             )
         case _:
             raise ValueError(

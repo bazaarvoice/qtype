@@ -1,0 +1,16 @@
+# PromptTemplate must have exactly one text output - no outputs
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: name
+        type: text
+    inputs:
+      - name
+    steps:
+      - id: prompt1
+        type: PromptTemplate
+        template: "Hello {name}"
+        inputs:
+          - name
+        outputs: []

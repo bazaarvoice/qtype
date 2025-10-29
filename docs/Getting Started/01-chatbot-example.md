@@ -33,140 +33,146 @@ id: hello_world
 
 The `id` field is required and gives your application a unique identifier. This will be used internally by QType to reference your application.
 
-## Step 2: Defining Your Flow
+## Step 2: Defining Your Model
 
-Next, we need to define a [Flow](../Concepts/flow.md). A flow is a sequence of steps that work together to accomplish a specific task. For our chatbot, we need a flow that can handle chat interactions.
+Before creating a flow, we need to define the AI [Model](../Concepts/model.md) our chatbot will use. Models in QType represent the configuration for connecting to AI providers like OpenAI.
 
 Add this to your YAML file:
 
 ```yaml
 id: hello_world
 
-flows:
-  - id: simple_chat_example
-    description: A simple stateful chat flow with OpenAI
-    mode: Chat
-```
-
-Here's what each field means:
-
-- `id`: A unique identifier for this flow
-- `description`: Human-readable description of what this flow does
-- `mode`: Set to "Chat" to indicate this flow handles conversational interactions
-
-## Step 3: Adding Steps to Your Flow
-
-Flows contain a series of steps. For our chatbot, we need a single step that performs LLM inference. Let's add a `steps` section:
-
-```yaml
-id: hello_world
-
-flows:
-  - id: simple_chat_example
-    description: A simple stateful chat flow with OpenAI
-    mode: Chat
-    steps:
-      - id: llm_inference_step
-```
-
-## Step 4: Configuring Memory
-
-One key feature of a good chatbot is the ability to remember previous parts of the conversation. We'll add a [Memory](../Concepts/memory.md) component to our step:
-
-```yaml
-steps:
-  - id: llm_inference_step
-    memory: 
-      id: chat_memory
-```
-
-This creates a memory store with the ID `chat_memory` that will keep track of the conversation history. QType will automatically manage adding user messages and AI responses to this memory.
-
-## Step 5: Defining the Model
-
-Next, we need to configure which AI [Model](../Concepts/model.md) our chatbot will use. Models in QType represent the configuration for connecting to AI providers like OpenAI:
-
-```yaml
-steps:
-  - id: llm_inference_step
-    memory: 
-      id: chat_memory
-    model: 
-      id: gpt-4
-      provider: openai
-      auth: 
-        id: openai_auth
-        type: api_key
-        api_key: ${OPENAI_KEY}
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+    inference_params:
+      temperature: 0.7
 ```
 
 Breaking this down:
 
+- `type`: Always set to "Model" for standard language models (this is a discriminator field)
 - `id`: A unique name for this model configuration
 - `provider`: Specifies we're using OpenAI
-- `auth`: Configuration for authenticating with OpenAI's API
-  - `type`: We're using API key authentication
-  - `api_key`: References the `OPENAI_KEY` environment variable using `${OPENAI_KEY}` syntax
+- `model_id`: The specific OpenAI model to use
+- `inference_params`: Optional parameters like temperature
 
-Add your openai key to `.env` like:
-```
-OPENAI_KEY=sk...
-```
+**Note**: For authentication, you'll need to set the `OPENAI_API_KEY` environment variable. QType will automatically use it for OpenAI providers.
 
-## Step 6: Setting the System Message
+## Step 3: Defining Memory
 
-The system message tells the AI how to behave. Let's add a helpful system prompt:
+A good chatbot remembers previous conversation turns. Let's add a [Memory](../Concepts/memory.md) configuration:
 
 ```yaml
-steps:
-  - id: llm_inference_step
-    memory: 
-      id: chat_memory
-    model: 
-      id: gpt-4
-      provider: openai
-      auth: 
-        id: openai_auth
-        type: api_key
-        api_key: ${OPENAI_KEY}
-    system_message: |
-      You are a helpful assistant.
+id: hello_world
+
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+
+memories:
+  - id: chat_memory
+    token_limit: 50000
+    chat_history_token_ratio: 0.7
 ```
 
-The `|` syntax in YAML allows us to write multi-line strings. You can customize this system message to give your chatbot a specific personality or role.
+This creates a memory store that will keep track of conversation history. The `token_limit` and `chat_history_token_ratio` control how much conversation history is retained.
 
-## Step 7: Defining Input and Output Variables
+## Step 4: Defining Your Flow
 
-Finally, we need to define what data flows into and out of our step using [Variables](../Concepts/variable.md). Variables define the structure of data that moves between different parts of your application:
+Next, we need to define a [Flow](../Concepts/flow.md). A flow is a sequence of steps that work together to accomplish a specific task. For our chatbot, we need a conversational flow.
+
+Add this to your YAML file:
 
 ```yaml
-steps:
-  - id: llm_inference_step
-    memory: 
-      id: chat_memory
-    model: 
-      id: gpt-4
-      provider: openai
-      auth: 
-        id: openai_auth
-        type: api_key
-        api_key: ${OPENAI_KEY}
-    system_message: |
-      You are a helpful assistant.
-    inputs:
+flows:
+  - type: Flow
+    id: simple_chat_example
+    description: A simple stateful chat flow with OpenAI
+    interface:
+      type: Conversational
+```
+
+Here's what each field means:
+
+- `type`: Always set to "Flow" (discriminator field)
+- `id`: A unique identifier for this flow
+- `description`: Human-readable description of what this flow does
+- `interface.type`: Set to "Conversational" to indicate this flow handles chat interactions
+
+## Step 5: Declaring Variables
+
+All data flowing through a flow must be declared as [Variables](../Concepts/variable.md). For our chatbot, we need variables for the user's message and the AI's response:
+
+```yaml
+flows:
+  - type: Flow
+    id: simple_chat_example
+    description: A simple stateful chat flow with OpenAI
+    interface:
+      type: Conversational
+    variables:
       - id: user_message
         type: ChatMessage
-    outputs:
       - id: response_message
         type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response_message
 ```
 
-Here we're defining variables:
+The key principle here is **explicit variable declaration**:
 
-- **Input**: `user_message` of type `ChatMessage` - this will receive the user's input
-- **Output**: `response_message` of type `ChatMessage` - this will contain the AI's response
+- `variables`: Lists all variables used in the flow
+- `inputs`: Specifies which variables are inputs (by referencing their IDs)
+- `outputs`: Specifies which variables are outputs (by referencing their IDs)
+- `ChatMessage` is a [Domain Type](./How%20To/02-domain-types.md) specifically for chat applications
 
-The `ChatMessage` type is a [Domain Type](./How%20To/domain-types.md) provided specifically for chat applications.
+## Step 6: Adding Steps to Your Flow
+
+Now we add the LLM inference step that will generate responses:
+
+```yaml
+flows:
+  - type: Flow
+    id: simple_chat_example
+    description: A simple stateful chat flow with OpenAI
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response_message
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response_message
+    steps:
+      - type: LLMInference
+        id: llm_inference_step
+        model: gpt-4
+        memory: chat_memory
+        system_message: "You are a helpful assistant."
+        inputs:
+          - user_message
+        outputs:
+          - response_message
+```
+
+Breaking down the step configuration:
+
+- `type`: Set to "LLMInference" (discriminator field)
+- `id`: Unique identifier for this step
+- `model`: References the model by ID ("gpt-4")
+- `memory`: References the memory by ID ("chat_memory")
+- `system_message`: Sets the AI's behavior
+- `inputs`/`outputs`: Reference the variables by ID
 
 ## The Complete Chatbot
 
@@ -175,30 +181,55 @@ Here's the complete `hello_world_chat.qtype.yaml` file we've built:
 ```yaml
 id: hello_world
 
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+    inference_params:
+      temperature: 0.7
+
+memories:
+  - id: chat_memory
+    token_limit: 50000
+    chat_history_token_ratio: 0.7
+
 flows:
-  - id: simple_chat_example
+  - type: Flow
+    id: simple_chat_example
     description: A simple stateful chat flow with OpenAI
-    mode: Chat
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response_message
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response_message
     steps:
-      - id: llm_inference_step
-        memory: 
-          id: chat_memory
-        model: 
-          id: gpt-4
-          provider: openai
-          auth: 
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
-        system_message: |
-          You are a helpful assistant.
+      - type: LLMInference
+        id: llm_inference_step
+        model: gpt-4
+        memory: chat_memory
+        system_message: "You are a helpful assistant."
         inputs:
-          - id: user_message
-            type: ChatMessage
+          - user_message
         outputs:
-          - id: response_message
-            type: ChatMessage
+          - response_message
 ```
+
+## Key Concepts Demonstrated
+
+This example demonstrates the core principles of the new QType DSL:
+
+1. **Type Discriminators**: Every component has a `type` field (Model, Flow, LLMInference)
+2. **Centralized Definitions**: Models and memories are defined once at the application level
+3. **Reference by ID**: Steps reference models and memories by their string IDs
+4. **Explicit Variable Declaration**: All variables are declared in the `variables` section
+5. **Flow Interface**: The `interface` field specifies how the flow is hosted (Conversational)
 
 ## Validating Your Chatbot
 

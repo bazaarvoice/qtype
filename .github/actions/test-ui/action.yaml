@@ -1,0 +1,36 @@
+
+name: Test UI
+description: QType UI tests
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: "20"
+
+    - name: Install dependencies
+      run: |
+        cd ui
+        npm install
+      shell: bash
+
+    - name: Run UI unit tests
+      run: |
+        cd ui
+        npm run test
+      shell: bash
+
+    - name: Job success
+      if: success()
+      run: echo 'QType UI tests successful 🎉' >> "$GITHUB_STEP_SUMMARY"
+      shell: bash
+
+    - name: Job failure
+      if: failure()
+      run: echo 'QType UI tests unsuccessful 😱' >> "$GITHUB_STEP_SUMMARY"
+      shell: bash

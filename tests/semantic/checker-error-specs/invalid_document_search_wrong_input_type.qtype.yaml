@@ -1,0 +1,30 @@
+# DocumentSearch must have exactly one text input - wrong type
+id: test_app
+models:
+  - id: embed_model
+    type: EmbeddingModel
+    provider: openai
+    dimensions: 768
+indexes:
+  - id: test_index
+    type: DocumentIndex
+    name: test_doc_index
+flows:
+  - id: test_flow
+    variables:
+      - id: chunk_input
+        type: RAGChunk
+      - id: result
+        type: RAGDocument
+    inputs:
+      - chunk_input
+    outputs:
+      - result
+    steps:
+      - id: search1
+        type: DocumentSearch
+        index: test_index
+        inputs:
+          - chunk_input
+        outputs:
+          - result

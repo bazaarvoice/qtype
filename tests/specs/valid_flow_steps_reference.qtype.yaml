@@ -1,19 +1,29 @@
 id: app_flow_steps_ref
 flows:
-  - id: f1
-    steps:
-      - s1
-      - s2
-  - id: f2
+  - type: Flow
+    id: f2
+    variables:
+      - id: prompt
+        type: text
+      - id: o1
+        type: text
+    outputs:
+      - o1
     steps:
       - id: s1
         type: PromptTemplate
         template: hi
+        outputs:
+          - prompt
       - id: s2
         type: Decoder
         format: json
         inputs:
-          - s1.prompt
+          - prompt
         outputs:
-          - id: o1
-            type: text
+          - o1
+  - type: Flow
+    id: f1
+    steps:
+      - $ref: s1
+      - $ref: s2

@@ -1,106 +1,135 @@
 # Referencing Entities by ID
 
-One of QType's features is the ability to define reusable components once and reference them by their unique ID throughout your application. This promotes modularity, reduces duplication, and makes your specifications easier to maintain.
+One of QType's core principles is the ability to define reusable components once and reference them by their unique ID throughout your application. This promotes modularity, reduces duplication, and makes your specifications easier to maintain and validate.
 
 ## How It Works
 
-QType supports two ways to specify most components:
+QType uses a **"define once, reference by ID"** pattern for most components. Components are defined at the application level with a unique ID, then referenced by that ID (as a string) wherever they're needed.
 
-1. **Inline Definition**: Define the component directly where you use it
-2. **Reference by ID**: Define the component elsewhere and reference it by its unique ID
-
-The QType validation and resolution system automatically resolves ID references to their actual object definitions, ensuring all components are properly connected.
+The QType validation and resolution system automatically resolves ID references to their actual object definitions, ensuring all components are properly connected and that all references are valid.
 
 ## Basic Reference Pattern
 
 ### Models
 
-Instead of repeating model configurations:
-
-```yaml
-# ❌ Repetitive inline definitions
-id: my_app
-flows:
-  - id: flow1
-    steps:
-      - id: step1
-        model:
-          id: gpt-4
-          provider: openai
-          auth:
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
-      - id: step2  
-        model:
-          id: gpt-4
-          provider: openai
-          auth:
-            id: openai_auth
-            type: api_key
-            api_key: ${OPENAI_KEY}
-```
-
-Define once and reference by ID:
+Models are defined at the application level and referenced by ID:
 
 ```yaml
 # ✅ Clean reference-based approach
 id: my_app
 
-# Define reusable components at the application level
-auths:
-  - id: openai_auth
-    type: api_key
-    api_key: ${OPENAI_KEY}
-
 models:
-  - id: gpt-4
+  - type: Model  # Type discriminator required
+    id: gpt-4
     provider: openai
-    auth: openai_auth  # Reference auth by ID
+    model_id: gpt-4-turbo
 
 flows:
-  - id: flow1
+  - type: Flow
+    id: my_flow
     steps:
-      - id: step1
-        model: gpt-4  # Reference model by ID
-      - id: step2
+      - type: LLMInference
+        id: step1
+        model: gpt-4  # Reference model by ID (string)
+      - type: LLMInference
+        id: step2
         model: gpt-4  # Reuse the same model
+```
+
+### Authorization Providers
+
+Authorization providers follow the same pattern:
+
+```yaml
+authorization_providers:
+  - type: APIKeyAuthProvider
+    id: openai_auth
+    api_key: ${OPENAI_API_KEY}
+
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    auth: openai_auth  # Reference auth by ID
+```
+
+### Memory
+
+Memory configurations are centralized and referenced by ID:
+
+```yaml
+memories:
+  - id: chat_memory
+    token_limit: 50000
+
+flows:
+  - type: Flow
+    id: chat_flow
+    steps:
+      - type: LLMInference
+        model: gpt-4
+        memory: chat_memory  # Reference memory by ID
 ```
 
 ### Variables
 
-Variables can be defined once and referenced across multiple steps:
+Variables are declared in the flow's `variables` section and referenced by ID in step inputs/outputs:
 
 ```yaml
-id: variable_reuse_example
-
-# Define shared variables
-variables:
-  - id: user_question
-    type: text
-  - id: llm_response
-    type: text
-  - id: formatted_output
-    type: text
-
 flows:
-  - id: process_question
+  - type: Flow
+    id: process_question
+    variables:
+      - id: user_question
+        type: text
+      - id: llm_response
+        type: text
+      - id: formatted_output
+        type: text
+    inputs:
+      - user_question
+    outputs:
+      - formatted_output
     steps:
-      - id: llm_step
-        model:
-          id: gpt-4
-          provider: openai
+      - type: LLMInference
+        id: llm_step
+        model: gpt-4
         inputs:
           - user_question  # Reference by ID
         outputs:
           - llm_response   # Reference by ID
 
-      - id: format_step
+      - type: PromptTemplate
+        id: format_step
         template: "Response: {llm_response}"
         inputs:
           - llm_response   # Reuse the same variable
         outputs:
           - formatted_output
+```
+
+### Tools
+
+Tools are defined at the application level and referenced by ID:
+
+```yaml
+tools:
+  - type: PythonFunctionTool
+    id: calculator
+    name: calculate
+    function_name: calculate
+    module_path: my_tools
+
+flows:
+  - type: Flow
+    id: my_flow
+    steps:
+      - type: InvokeTool
+        tool: calculator  # Reference by ID
+      - type: Agent
+        model: gpt-4
+        tools:
+          - calculator  # Can also be used by agents
 ```
 
 ## Advanced Reference Patterns

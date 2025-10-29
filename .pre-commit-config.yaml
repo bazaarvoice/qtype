@@ -13,6 +13,15 @@ repos:
       - id: isort
         args: [qtype/, tests/]
 
+  - repo: local
+    hooks:
+      - id: eslint-ui
+        name: ESLint (UI)
+        entry: bash -c 'cd ui && npm run lint:fix'
+        language: system
+        files: ^ui/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+
   # - repo: https://github.com/pre-commit/mirrors-mypy
   #   rev: v1.17.1
   #   hooks:

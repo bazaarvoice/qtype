@@ -1,0 +1,20 @@
+# DocToTextConverter must have exactly one RAGDocument input - wrong type
+id: test_app
+flows:
+  - id: test_flow
+    variables:
+      - id: text_input
+        type: text
+      - id: result
+        type: RAGDocument
+    inputs:
+      - text_input
+    outputs:
+      - result
+    steps:
+      - id: converter1
+        type: DocToTextConverter
+        inputs:
+          - text_input
+        outputs:
+          - result

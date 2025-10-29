@@ -1,9 +1,12 @@
 id: app_step_inputs_ref
-variables:
-  - id: var1
-    type: text
 flows:
-  - id: f1
+  - type: Flow
+    id: f1
+    variables:
+      - id: var1
+        type: text
+    inputs:
+      - var1
     steps:
       - id: s1
         type: PromptTemplate

@@ -1,37 +1,148 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-from qtype.interpreter.exceptions import InterpreterError
-from qtype.interpreter.step import execute_step
-from qtype.semantic.model import Flow, Variable
+from openinference.semconv.trace import (
+    OpenInferenceSpanKindValues,
+    SpanAttributes,
+)
+from opentelemetry import context, trace
+from opentelemetry.trace import Status, StatusCode
+
+from qtype.interpreter.base import factory
+from qtype.interpreter.types import FlowMessage
+from qtype.semantic.model import Flow
 
 logger = logging.getLogger(__name__)
 
+# Get a tracer for this module
+tracer = trace.get_tracer(__name__)
 
-def execute_flow(flow: Flow, **kwargs: dict[Any, Any]) -> list[Variable]:
-    """Execute a flow based on the provided arguments.
+
+async def run_flow(
+    flow: Flow, initial: list[FlowMessage] | FlowMessage, **kwargs
+) -> list[FlowMessage]:
+    """
+    Main entrypoint for executing a flow.
 
     Args:
-        flow: The flow to execute.
-        inputs: The input variables for the flow.
-        **kwargs: Additional keyword arguments.
+        flow: The flow to execute
+        initial: Initial FlowMessage(s) to start execution
+        **dependencies: Additional dependencies including:
+            - on_stream_event: Optional StreamingCallback for real-time events
+            - on_progress: Optional ProgressCallback for progress tracking
+            - Other executor-specific dependencies
+
+    Returns:
+        List of final FlowMessages after execution
     """
-    logger.debug(f"Executing step: {flow.id} with kwargs: {kwargs}")
+    # Start a span for the entire flow execution
+    span = tracer.start_span(
+        f"flow.{flow.id}",
+        attributes={
+            "flow.id": flow.id,
+            "flow.step_count": len(flow.steps),
+            SpanAttributes.OPENINFERENCE_SPAN_KIND: (
+                OpenInferenceSpanKindValues.CHAIN.value
+            ),
+        },
+    )
 
-    unset_inputs = [input for input in flow.inputs if not input.is_set()]
-    if unset_inputs:
-        raise InterpreterError(
-            f"The following inputs are required but have no values: {', '.join([input.id for input in unset_inputs])}"
-        )
+    # Make this span the active context so step spans will nest under it
+    ctx = trace.set_span_in_context(span)
+    token = context.attach(ctx)
 
-    for step in flow.steps:
-        execute_step(step, **kwargs)
+    try:
+        # 1. Get the execution plan is just the steps in order
+        execution_plan = flow.steps
 
-    unset_outputs = [output for output in flow.outputs if not output.is_set()]
-    if unset_outputs:
-        raise InterpreterError(
-            f"The following outputs are required but have no values: {', '.join([output.id for output in unset_outputs])}"
-        )
-    return flow.outputs
+        # 2. Initialize the stream
+        if not isinstance(initial, list):
+            initial = [initial]
+
+        span.set_attribute("flow.input_count", len(initial))
+
+        # Record input variables for observability
+        if initial:
+            import json
+
+            try:
+                input_vars = {
+                    k: v for msg in initial for k, v in msg.variables.items()
+                }
+                span.set_attribute(
+                    SpanAttributes.INPUT_VALUE,
+                    json.dumps(input_vars, default=str),
+                )
+                span.set_attribute(
+                    SpanAttributes.INPUT_MIME_TYPE, "application/json"
+                )
+            except Exception:
+                # If serialization fails, skip it
+                pass
+
+        async def initial_stream():
+            for message in initial:
+                yield message
+
+        current_stream = initial_stream()
+
+        # 3. Chain executors together in the main loop
+        for step in execution_plan:
+            executor = factory.create_executor(step, **kwargs)
+            output_stream = executor.execute(
+                current_stream,
+            )
+            current_stream = output_stream
+
+        # 4. Collect the final results from the last stream
+        final_results = [state async for state in current_stream]
+
+        # Record flow completion metrics
+        span.set_attribute("flow.output_count", len(final_results))
+        error_count = sum(1 for msg in final_results if msg.is_failed())
+        span.set_attribute("flow.error_count", error_count)
+
+        # Record output variables for observability
+        if final_results:
+            import json
+
+            try:
+                output_vars = {
+                    k: v
+                    for msg in final_results
+                    if not msg.is_failed()
+                    for k, v in msg.variables.items()
+                }
+                span.set_attribute(
+                    SpanAttributes.OUTPUT_VALUE,
+                    json.dumps(output_vars, default=str),
+                )
+                span.set_attribute(
+                    SpanAttributes.OUTPUT_MIME_TYPE, "application/json"
+                )
+            except Exception:
+                # If serialization fails, skip it
+                pass
+
+        if error_count > 0:
+            span.set_status(
+                Status(
+                    StatusCode.ERROR,
+                    f"{error_count} of {len(final_results)} messages failed",
+                )
+            )
+        else:
+            span.set_status(Status(StatusCode.OK))
+
+        return final_results
+
+    except Exception as e:
+        # Record the exception and set error status
+        span.record_exception(e)
+        span.set_status(Status(StatusCode.ERROR, f"Flow failed: {e}"))
+        raise
+    finally:
+        # Detach the context and end the span
+        context.detach(token)
+        span.end()

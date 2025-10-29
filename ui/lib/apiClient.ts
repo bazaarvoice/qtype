@@ -1,17 +1,17 @@
 /**
  * API Client for FastAPI Backend
- * 
+ *
  * Handles communication with the FastAPI server.
  * - In development: connects to http://localhost:8000
  * - In production: uses relative paths (./) for sub-mounted APIs
  */
 
-import type { OpenAPIV3_1 } from 'openapi-types'
-import { extractRequestSchema, extractResponseSchema } from './utils'
-import type { SchemaProperty, FlowInputValues, ResponseData } from '../types/Flow'
+import type { FlowMetadata } from "@/types";
+import type { FlowInputValues, ResponseData } from "@/types";
+import type { OpenAPIV3_1 } from "openapi-types";
 
 // Use the official OpenAPI spec type
-export type OpenAPISpec = OpenAPIV3_1.Document
+export type OpenAPISpec = OpenAPIV3_1.Document;
 
 export interface ApiError {
   message: string;
@@ -28,7 +28,7 @@ export class ApiClientError extends Error {
 
   constructor(message: string, status: number, detail?: unknown) {
     super(message);
-    this.name = 'ApiClientError';
+    this.name = "ApiClientError";
     this.status = status;
     this.detail = detail;
   }
@@ -47,7 +47,7 @@ interface ApiClientConfig {
  */
 function getBaseUrl(): string {
   // Use NEXT_PUBLIC_QTYPE_HOST environment variable if set, otherwise use relative path
-  return process.env.NEXT_PUBLIC_QTYPE_HOST || '../';
+  return process.env.NEXT_PUBLIC_QTYPE_HOST || "../";
 }
 
 /**
@@ -69,7 +69,7 @@ export class ApiClient {
    */
   private async fetchWithTimeout(
     url: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
@@ -79,7 +79,7 @@ export class ApiClient {
         ...options,
         signal: controller.signal,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...options.headers,
         },
       });
@@ -98,33 +98,30 @@ export class ApiClient {
         let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
         if (errorDetail?.detail) {
           // Handle detail as either string or object
-          const detailString = typeof errorDetail.detail === 'string' 
-            ? errorDetail.detail 
-            : JSON.stringify(errorDetail.detail, null, 2);
+          const detailString =
+            typeof errorDetail.detail === "string"
+              ? errorDetail.detail
+              : JSON.stringify(errorDetail.detail, null, 2);
           errorMessage += `\n${detailString}`;
         }
-        throw new ApiClientError(
-          errorMessage,
-          response.status,
-          errorDetail
-        );
+        throw new ApiClientError(errorMessage, response.status, errorDetail);
       }
 
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof ApiClientError) {
         throw error;
       }
 
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new ApiClientError('Request timeout', 408);
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new ApiClientError("Request timeout", 408);
       }
 
       throw new ApiClientError(
-        `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        0
+        `Network error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        0,
       );
     }
   }
@@ -133,11 +130,11 @@ export class ApiClient {
    * Constructs the full URL for an endpoint
    */
   private getUrl(endpoint: string): string {
-    const baseUrl = this.config.baseUrl.endsWith('/') 
-      ? this.config.baseUrl.slice(0, -1) 
+    const baseUrl = this.config.baseUrl.endsWith("/")
+      ? this.config.baseUrl.slice(0, -1)
       : this.config.baseUrl;
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
     return `${baseUrl}${cleanEndpoint}`;
   }
 
@@ -146,7 +143,7 @@ export class ApiClient {
    */
   private async get<T>(endpoint: string): Promise<T> {
     const response = await this.fetchWithTimeout(this.getUrl(endpoint), {
-      method: 'GET',
+      method: "GET",
     });
 
     return response.json();
@@ -157,7 +154,7 @@ export class ApiClient {
    */
   private async post<T>(endpoint: string, data?: FlowInputValues): Promise<T> {
     const response = await this.fetchWithTimeout(this.getUrl(endpoint), {
-      method: 'POST',
+      method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -167,7 +164,10 @@ export class ApiClient {
   /**
    * Execute a flow with the given inputs
    */
-  async executeFlow<T = ResponseData>(path: string, inputs?: FlowInputValues): Promise<T> {
+  async executeFlow<T = ResponseData>(
+    path: string,
+    inputs?: FlowInputValues,
+  ): Promise<T> {
     return this.post<T>(path, inputs);
   }
 
@@ -175,7 +175,14 @@ export class ApiClient {
    * Fetches the OpenAPI specification from the API
    */
   async getOpenApiSpec(): Promise<OpenAPISpec> {
-    return this.get<OpenAPISpec>('/openapi.json');
+    return this.get<OpenAPISpec>("/openapi.json");
+  }
+
+  /**
+   * Fetches flow metadata from the /flows endpoint
+   */
+  async getFlows(): Promise<FlowMetadata[]> {
+    return this.get<FlowMetadata[]>("/flows");
   }
 
   /**
@@ -183,17 +190,17 @@ export class ApiClient {
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     try {
-      // Try to fetch the OpenAPI spec as a basic health check
-      await this.getOpenApiSpec();
+      // Try to fetch the flows metadata as a basic health check
+      await this.getFlows();
       return {
-        status: 'healthy',
+        status: "healthy",
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
       throw new ApiClientError(
-        `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Health check failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         500,
-        error
+        error,
       );
     }
   }
@@ -228,101 +235,3 @@ export const fetchOpenApiSpec = () => apiClient.getOpenApiSpec();
  * Utility function to check if the API is available
  */
 export const checkApiHealth = () => apiClient.healthCheck();
-
-// =============================================================================
-// OpenAPI Flow Processing
-// =============================================================================
-
-/**
- * Flow interface for extracted flow information
- */
-export interface FlowInfo {
-  id: string;
-  name: string;
-  path: string;
-  method: string;
-  mode: 'Complete' | 'Chat';
-  description?: string;
-  operationId?: string;
-  tags: string[];
-  requestSchema: SchemaProperty | null;
-  responseSchema: SchemaProperty | null;
-}
-
-/**
- * Extracts flow information from OpenAPI specification
- * Returns flows with raw names (e.g., "simple_qa_flow") - use UI utilities to format for display
- */
-export function extractFlowsFromSpec(spec: OpenAPISpec): FlowInfo[] {
-  if (!spec?.paths) return []
-
-  const flows: FlowInfo[] = []
-
-  Object.entries(spec.paths).forEach(([path, pathData]: [string, OpenAPIV3_1.PathItemObject | undefined]) => {
-    if (!pathData) return
-    
-    // Check each HTTP method in the path item
-    const methods = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'] as const
-    
-    methods.forEach((method) => {
-      const methodData = pathData[method] as OpenAPIV3_1.OperationObject | undefined
-      if (!methodData) return
-      
-      const isFlow =
-        path.startsWith('/flows/') ||
-        methodData.tags?.includes('flow')
-      const isStreamFlow = path.endsWith('/stream') && isFlow
-
-      if (isStreamFlow) {
-        const isChatFlow = path.includes('/chat')
-        const mode: 'Complete' | 'Chat' = isChatFlow ? 'Chat' : 'Complete'
-        
-        // Extract raw flow name from path
-        const pathSegments = path.split('/')
-        let rawFlowName: string
-        
-        if (isChatFlow) {
-          // For chat flows like /flows/simple_qa_flow/chat, get the flow name
-          rawFlowName = pathSegments[pathSegments.length - 2]
-        } else {
-          // For complete flows like /flows/simple_qa_flow, get the flow name
-          rawFlowName = pathSegments[pathSegments.length - 1]
-        }
-        
-        const flowId = `${method}-${path.replace(/[^a-zA-Z0-9]/g, '_')}`
-
-        // Extract request schema
-        const requestSchema = extractRequestSchema(methodData, spec)
-        
-        // Extract response schema (200 response)
-        const responseSchema = extractResponseSchema(methodData, spec)
-
-        flows.push({
-          id: flowId,
-          name: formatFlowNameForDisplay(rawFlowName), // Format name for display
-          path,
-          method,
-          mode,
-          description: methodData.description || methodData.summary,
-          operationId: methodData.operationId,
-          tags: methodData.tags || [],
-          requestSchema,
-          responseSchema
-        })
-      }
-    })
-  })
-
-  return flows
-}
-
-/**
- * Formats a raw flow name for UI display
- * Converts snake_case to Title Case
- */
-function formatFlowNameForDisplay(rawFlowName: string): string {
-  return rawFlowName
-    .split('_')
-    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-}

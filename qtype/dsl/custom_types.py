@@ -2,7 +2,7 @@ from typing import Any, ForwardRef, Type, Union
 
 from pydantic import BaseModel, create_model
 
-from qtype.application.converters.types import PRIMITIVE_TO_PYTHON_TYPE
+from qtype.dsl.types import PRIMITIVE_TO_PYTHON_TYPE
 
 # --- This would be in your interpreter's logic ---
 
