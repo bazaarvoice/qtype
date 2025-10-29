@@ -6,6 +6,7 @@ from qtype.dsl.domain_types import ChatMessage, RAGChunk, RAGDocument
 from qtype.dsl.linker import QTypeValidationError
 from qtype.dsl.model import AWSAuthProvider
 from qtype.semantic.model import (
+    Agent,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -195,6 +196,43 @@ def _validate_llm_inference(step: LLMInference) -> None:
         )
 
 
+def _validate_agent(step: Agent) -> None:
+    """Validate Agent step has exactly one input and output with matching types.
+
+    Agent constraints:
+    - Must have exactly one input (text or ChatMessage)
+    - Must have exactly one output
+    - Output type must match input type
+    """
+    # Validate exactly one input
+    _validate_exact_input_count(step, 1)
+
+    # Validate exactly one output
+    _validate_exact_output_count(step, 1)
+
+    # Validate input type is text or ChatMessage
+    input_type = step.inputs[0].type
+    output_type = step.outputs[0].type
+
+    ALLOWED_TYPES = {PrimitiveTypeEnum.text, ChatMessage}
+    if input_type not in ALLOWED_TYPES:
+        raise QTypeSemanticError(
+            (
+                f"Agent step '{step.id}' input must be of type "
+                f"'text' or 'ChatMessage', found '{input_type}'."
+            )
+        )
+
+    # Validate output type matches input type
+    if input_type != output_type:
+        raise QTypeSemanticError(
+            (
+                f"Agent step '{step.id}' output type must match input type. "
+                f"Input type: '{input_type}', Output type: '{output_type}'."
+            )
+        )
+
+
 def _validate_decoder(step: Decoder) -> None:
     """Validate Decoder step has exactly one text input and at least one output."""
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
@@ -336,6 +374,7 @@ def _validate_flow(flow: Flow) -> None:
 
 # Mapping of types to their validation functions
 _VALIDATORS = {
+    Agent: _validate_agent,
     PromptTemplate: _validate_prompt_template,
     AWSAuthProvider: _validate_aws_auth,
     LLMInference: _validate_llm_inference,

@@ -23,7 +23,9 @@ def _convert_to_yaml(doc: Application | ToolList) -> str:
     else:
         wrapped = doc
 
-    return to_yaml_str(wrapped, exclude_unset=True, exclude_none=True)
+    # NOTE: We use exclude_none but NOT exclude_unset because discriminator
+    # fields like 'type' have default values and must be included in output
+    return to_yaml_str(wrapped, exclude_none=True)
 
 
 def convert_api(args: argparse.Namespace) -> None:

@@ -1904,6 +1904,9 @@
             "type": "string"
           },
           "description": "Mapping from variable references to flow input variable IDs.",
+          "propertyNames": {
+            "$ref": "#/$defs/Reference_Variable_"
+          },
           "title": "Input Bindings",
           "type": "object"
         },
@@ -1912,6 +1915,9 @@
             "type": "string"
           },
           "description": "Mapping from variable references to flow output variable IDs.",
+          "propertyNames": {
+            "$ref": "#/$defs/Reference_Variable_"
+          },
           "title": "Output Bindings",
           "type": "object"
         }

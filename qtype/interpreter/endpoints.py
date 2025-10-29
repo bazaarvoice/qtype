@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 async def _execute_flow_with_streaming(
-    flow: Flow, initial_message: FlowMessage
+    flow: Flow,
+    initial_message: FlowMessage,
 ):  # type: ignore[no-untyped-def]
     """
     Execute flow and yield StreamEvents as they occur.
@@ -50,7 +51,11 @@ async def _execute_flow_with_streaming(
 
     async def execute_with_callback(callback):  # type: ignore[no-untyped-def]
         """Execute flow with streaming callback."""
-        await run_flow(flow, initial_message, on_stream_event=callback)
+        await run_flow(
+            flow,
+            initial_message,
+            on_stream_event=callback,
+        )
 
     # Convert callback-based streaming to async iterator
     async for event in callback_to_async_iterator(execute_with_callback):
@@ -142,7 +147,9 @@ def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
 
             return StreamingResponse(
                 _stream_sse_response(
-                    flow, initial_message, output_metadata=None
+                    flow,
+                    initial_message,
+                    output_metadata=None,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -200,7 +207,9 @@ def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
 
             return StreamingResponse(
                 _stream_sse_response(
-                    flow, initial_message, output_metadata=None
+                    flow,
+                    initial_message,
+                    output_metadata=None,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -238,22 +247,23 @@ def create_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     """
     Create streaming endpoint for flow execution.
 
-    Creates /flows/{flow_id}/stream endpoint that streams results using
-    Vercel AI SDK protocol. Dispatches to appropriate implementation based
-    on interface type.
-
     Args:
         app: FastAPI application instance
-        flow: Flow to create endpoint for (must have interface)
+        flow: Flow to create endpoint for
     """
-    # Type narrowing for mypy
     if flow.interface is None:
         raise ValueError(f"Flow {flow.id} has no interface defined")
 
-    if flow.interface.type == "Conversational":
+    # Dispatch based on interface type
+    interface_type = flow.interface.type
+    if interface_type == "Conversational":
         _create_chat_streaming_endpoint(app, flow)
-    else:
+    elif interface_type == "Complete":
         _create_completion_streaming_endpoint(app, flow)
+    else:
+        raise ValueError(
+            f"Unknown interface type for flow {flow.id}: {interface_type}"
+        )
 
 
 def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:

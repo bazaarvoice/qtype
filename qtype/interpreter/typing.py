@@ -41,8 +41,6 @@ def _fields_from_variables(variables: list[Variable]) -> dict:
     for var in variables:
         python_type, type_metadata = _get_variable_type(var)
         field_info = Field(
-            # TODO: grok the description from the variable if available?
-            # description=f"Input for {var.id}",
             title=var.id,
             json_schema_extra=type_metadata,
         )

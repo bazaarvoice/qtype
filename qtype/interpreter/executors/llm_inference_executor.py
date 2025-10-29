@@ -30,6 +30,18 @@ class LLMInferenceExecutor(StepExecutor):
                 "LLMInferenceExecutor can only execute LLMInference steps."
             )
         self.step: LLMInference = step
+    
+    def __extract_reasoning_content(self, response):
+        raw = response.raw
+        content_block_delta = raw.get("contentBlockDelta")
+        block_index = content_block_delta.get("contentBlockIndex") if isinstance(content_block_delta, dict) else None
+
+        reasoning_text = None
+        if block_index == 0:
+            reasoning_text = content_block_delta.get("delta", {}).get("reasoningContent", {}).get("text")
+
+        return reasoning_text
+
 
     async def process_message(
         self,
@@ -61,6 +73,8 @@ class LLMInferenceExecutor(StepExecutor):
             yield result_message
 
         except Exception as e:
+            # Emit error event to stream so frontend can display it
+            await self.stream_emitter.error(str(e))
             message.set_error(self.step.id, e)
             yield message
 
@@ -193,6 +207,20 @@ class LLMInferenceExecutor(StepExecutor):
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
 
+            async with self.stream_emitter.reasoning_stream(f"llm-{self.step.id}-{id(message)}-reasoning") as reasoning:
+                generator = model.stream_complete(
+                prompt=input_value,
+                **(
+                    self.step.model.inference_params
+                    if self.step.model.inference_params
+                    else {}
+                ),
+                )
+                for complete_response in generator:
+                    reasoning_text = self.__extract_reasoning_content(complete_response)
+                    if reasoning_text:
+                        await reasoning.delta(reasoning_text)
+
             async with self.stream_emitter.text_stream(stream_id) as streamer:
                 generator = model.stream_complete(
                     prompt=input_value,
@@ -202,20 +230,11 @@ class LLMInferenceExecutor(StepExecutor):
                         else {}
                     ),
                 )
-                for complete_response in generator:
-                    raw = complete_response.raw
-                    cbd = raw.get("contentBlockDelta")
-                    reasoning_text = cbd.get("delta", {}).get("reasoningContent", {}).get("text")
-                    block_index = cbd.get("contentBlockIndex") if isinstance(cbd, dict) else None
-                    print('raw response chunk: ', block_index)
 
-                    try:
-                        if block_index == 0:
-                            await streamer.delta(reasoning_text, "reasoning")
-                        if block_index == 1:
-                            await streamer.delta(complete_response.delta, None)
-                    except Exception as e:
-                        print('error emitting delta: ', e)
+                for complete_response in generator:
+                    text = complete_response.delta
+                    if complete_response.text.strip() != "":
+                        await streamer.delta(text)
             # Get the final result
             complete_result = complete_response
         else:
