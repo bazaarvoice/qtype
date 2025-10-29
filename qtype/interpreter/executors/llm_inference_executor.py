@@ -203,7 +203,19 @@ class LLMInferenceExecutor(StepExecutor):
                     ),
                 )
                 for complete_response in generator:
-                    await streamer.delta(complete_response.delta)
+                    raw = complete_response.raw
+                    cbd = raw.get("contentBlockDelta")
+                    reasoning_text = cbd.get("delta", {}).get("reasoningContent", {}).get("text")
+                    block_index = cbd.get("contentBlockIndex") if isinstance(cbd, dict) else None
+                    print('raw response chunk: ', block_index)
+
+                    try:
+                        if block_index == 0:
+                            await streamer.delta(reasoning_text, "reasoning")
+                        if block_index == 1:
+                            await streamer.delta(complete_response.delta, None)
+                    except Exception as e:
+                        print('error emitting delta: ', e)
             # Get the final result
             complete_result = complete_response
         else:

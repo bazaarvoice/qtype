@@ -37,6 +37,7 @@ from typing import Any
 
 from qtype.interpreter.types import (
     ErrorEvent,
+    ReasoningStreamDeltaEvent,
     StatusEvent,
     StepEndEvent,
     StepStartEvent,
@@ -97,7 +98,7 @@ class TextStreamContext:
             )
         return False
 
-    async def delta(self, text: str) -> None:
+    async def delta(self, text: str, type: str | None) -> None:
         """
         Emit a text delta chunk.
 
@@ -105,13 +106,23 @@ class TextStreamContext:
             text: The incremental text content to append to the stream
         """
         if self.on_stream_event:
-            await self.on_stream_event(
-                TextStreamDeltaEvent(
-                    step=self.step,
-                    stream_id=self.stream_id,
-                    delta=text,
-                )
-            )
+            match type:
+                case "reasoning":
+                    await self.on_stream_event(
+                        ReasoningStreamDeltaEvent(
+                            step=self.step,
+                            stream_id=self.stream_id,
+                            delta=text,
+                        )
+                    )
+                case _:
+                    await self.on_stream_event(
+                        TextStreamDeltaEvent(
+                            step=self.step,
+                            stream_id=self.stream_id,
+                            delta=text,
+                        )
+                    ) 
 
 
 class StepBoundaryContext:

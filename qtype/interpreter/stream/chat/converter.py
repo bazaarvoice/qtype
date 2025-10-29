@@ -23,6 +23,7 @@ from qtype.interpreter.stream.chat.vercel import (
     ErrorChunk,
     FinishChunk,
     FinishStepChunk,
+    ReasoningDeltaChunk,
     StartChunk,
     StartStepChunk,
     TextDeltaChunk,
@@ -35,6 +36,7 @@ from qtype.interpreter.stream.chat.vercel import (
 )
 from qtype.interpreter.types import (
     ErrorEvent,
+    ReasoningStreamDeltaEvent,
     StatusEvent,
     StepEndEvent,
     StepStartEvent,
@@ -105,6 +107,8 @@ class StreamEventConverter:
                 yield from self._convert_text_stream_delta(event)  # type: ignore[arg-type]
             case "text_stream_end":
                 yield from self._convert_text_stream_end(event)  # type: ignore[arg-type]
+            case "reasoning_stream_delta":
+                yield from self._convert_reasoning_stream_delta(event)  # type: ignore[arg-type
             case "status":
                 yield from self._convert_status(event)  # type: ignore[arg-type]
             case "step_start":
@@ -147,6 +151,19 @@ class StreamEventConverter:
         if chunk_id:
             yield TextDeltaChunk(id=chunk_id, delta=event.delta)
 
+    def _convert_reasoning_stream_delta(
+        self, event: ReasoningStreamDeltaEvent
+    ) -> Iterator[UIMessageChunk]:
+        """
+        Convert ReasoningStreamDeltaEvent to ReasoningDeltaChunk.
+
+        Uses the chunk ID registered during text_stream_start.
+        """
+        chunk_id = self._active_streams.get(event.stream_id)
+        if chunk_id:
+            yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta
+    )
+            
     def _convert_text_stream_end(
         self, event: TextStreamEndEvent
     ) -> Iterator[UIMessageChunk]:
