@@ -23,10 +23,13 @@ flows:
         type: text
       - id: answer
         type: text
+      - id: reasoning
+        type: text
     inputs:
       - prompt
     outputs:
       - answer
+      - reasoning
     steps:
       - id: question_prompt
         type: PromptTemplate
@@ -42,3 +45,4 @@ flows:
           - formatted_prompt
         outputs:
           - answer
+          - reasoning
