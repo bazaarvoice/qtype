@@ -23,6 +23,7 @@ from qtype.interpreter.stream.chat.vercel import (
     ErrorChunk,
     FinishChunk,
     FinishStepChunk,
+    MessageMetadataChunk,
     ReasoningDeltaChunk,
     ReasoningEndChunk,
     ReasoningStartChunk,
@@ -32,6 +33,8 @@ from qtype.interpreter.stream.chat.vercel import (
     TextEndChunk,
     TextStartChunk,
     ToolInputAvailableChunk,
+    ToolInputDeltaChunk,
+    ToolInputStartChunk,
     ToolOutputAvailableChunk,
     ToolOutputErrorChunk,
     UIMessageChunk,
@@ -90,10 +93,8 @@ class StreamEventConverter:
 
     def __init__(self) -> None:
         """Initialize the converter with empty state."""
-        # Map stream_id to Vercel chunk_id for text streams
+        # Map stream_id to Vercel chunk_id for all streams (text, reasoning, etc.)
         self._active_streams: dict[str, str] = {}
-        # Map stream_id to Vercel chunk_id for reasoning streams
-        self._active_reasoning_streams: dict[str, str] = {}
 
     def convert(self, event: StreamEvent) -> Iterator[UIMessageChunk]:
         """
@@ -182,7 +183,7 @@ class StreamEventConverter:
         Registers the stream_id and creates a new Vercel chunk ID for reasoning.
         """
         chunk_id = str(uuid.uuid4())
-        self._active_reasoning_streams[event.stream_id] = chunk_id
+        self._active_streams[event.stream_id] = chunk_id
         yield ReasoningStartChunk(id=chunk_id)
 
     def _convert_reasoning_stream_delta(
@@ -193,7 +194,7 @@ class StreamEventConverter:
 
         Uses the chunk ID registered during reasoning_stream_start.
         """
-        chunk_id = self._active_reasoning_streams.get(event.stream_id)
+        chunk_id = self._active_streams.get(event.stream_id)
         if chunk_id:
             yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta)
 
@@ -205,36 +206,27 @@ class StreamEventConverter:
 
         Cleans up the stream_id registration.
         """
-        chunk_id = self._active_reasoning_streams.pop(event.stream_id, None)
+        chunk_id = self._active_streams.pop(event.stream_id, None)
         if chunk_id:
             yield ReasoningEndChunk(id=chunk_id)
 
     def _convert_status(self, event: StatusEvent) -> Iterator[UIMessageChunk]:
         """
-        Convert StatusEvent to a complete step with text content.
+        Convert StatusEvent to MessageMetadataChunk.
 
-        A status message becomes:
-        1. StartStepChunk - Opens a step boundary
-        2. TextStartChunk - Begins text content
-        3. TextDeltaChunk - The status message
-        4. TextEndChunk - Completes text content
-        5. FinishStepChunk - Closes step boundary
-
-        This groups the status message visually in the UI.
+        Status messages are sent as message metadata with the 'statusMessage'
+        key, allowing the frontend to display them separately from content.
         """
-        chunk_id = str(uuid.uuid4())
-
-        yield StartStepChunk()
-        yield TextStartChunk(id=chunk_id)
-        yield TextDeltaChunk(id=chunk_id, delta=event.message)
-        yield TextEndChunk(id=chunk_id)
-        yield FinishStepChunk()
+        yield MessageMetadataChunk(
+            messageMetadata={"statusMessage": event.message}
+        )
 
     def _convert_step_start(
         self, event: StepStartEvent
     ) -> Iterator[UIMessageChunk]:
         """Convert StepStartEvent to StartStepChunk."""
         yield StartStepChunk()
+        yield MessageMetadataChunk(messageMetadata={"step_id": event.step.id})
 
     def _convert_step_end(
         self, event: StepEndEvent
@@ -246,15 +238,35 @@ class StreamEventConverter:
         self, event: ToolExecutionStartEvent
     ) -> Iterator[UIMessageChunk]:
         """
-        Convert ToolExecutionStartEvent to ToolInputAvailableChunk.
+        Convert ToolExecutionStartEvent to proper tool input sequence.
 
-        In Vercel's protocol, ToolInputAvailableChunk signals that the tool
-        is ready to execute with complete input.
+        Following Vercel's protocol:
+        1. ToolInputStartChunk - Begin receiving tool input
+        2. ToolInputDeltaChunk - Incremental input text (JSON being parsed)
+        3. ToolInputAvailableChunk - Complete input ready, tool can execute
         """
+        # 1. Start tool input streaming
+        yield ToolInputStartChunk(
+            toolCallId=event.tool_call_id,
+            toolName=event.tool_name,
+            providerExecuted=True,  # Tools are executed on the server
+        )
+
+        # 2. Stream the input as JSON text delta
+        import json
+
+        input_json = json.dumps(event.tool_input)
+        yield ToolInputDeltaChunk(
+            toolCallId=event.tool_call_id,
+            inputTextDelta=input_json,
+        )
+
+        # 3. Signal input is complete and ready for execution
         yield ToolInputAvailableChunk(
             toolCallId=event.tool_call_id,
             toolName=event.tool_name,
             input=event.tool_input,
+            providerExecuted=True,  # Tools are executed on the server
         )
 
     def _convert_tool_execution_end(
@@ -268,6 +280,7 @@ class StreamEventConverter:
         yield ToolOutputAvailableChunk(
             toolCallId=event.tool_call_id,
             output=event.tool_output,
+            providerExecuted=True,  # Tools are executed on the server
         )
 
     def _convert_tool_execution_error(
@@ -281,6 +294,7 @@ class StreamEventConverter:
         yield ToolOutputErrorChunk(
             toolCallId=event.tool_call_id,
             errorText=event.error_message,
+            providerExecuted=True,  # Tools are executed on the server
         )
 
     def _convert_error(self, event: ErrorEvent) -> Iterator[UIMessageChunk]:
