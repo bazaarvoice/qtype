@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -17,7 +17,7 @@ from qtype.interpreter.stream.chat.ui_request_to_domain_type import (
 )
 from qtype.interpreter.stream.chat.vercel import ChatRequest, CompletionRequest
 from qtype.interpreter.stream.utils import callback_to_async_iterator
-from qtype.interpreter.types import FlowMessage
+from qtype.interpreter.types import FlowMessage, StreamEvent
 from qtype.interpreter.typing import (
     create_input_shape,
     create_output_container_type,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 async def _execute_flow_with_streaming(
     flow: Flow,
     initial_message: FlowMessage,
-):  # type: ignore[no-untyped-def]
+) -> AsyncIterator[StreamEvent]:
     """
     Execute flow and yield StreamEvents as they occur.
 
@@ -66,7 +66,7 @@ async def _stream_sse_response(
     flow: Flow,
     initial_message: FlowMessage,
     output_metadata: dict[str, Any] | None = None,
-):  # type: ignore[no-untyped-def]
+) -> AsyncIterator[str]:
     """
     Execute flow and stream Server-Sent Events using Vercel AI SDK protocol.
 

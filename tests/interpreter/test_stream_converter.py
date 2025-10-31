@@ -11,11 +11,14 @@ from qtype.interpreter.stream.chat.converter import StreamEventConverter
 from qtype.interpreter.stream.chat.vercel import (
     ErrorChunk,
     FinishStepChunk,
+    MessageMetadataChunk,
     StartStepChunk,
     TextDeltaChunk,
     TextEndChunk,
     TextStartChunk,
     ToolInputAvailableChunk,
+    ToolInputDeltaChunk,
+    ToolInputStartChunk,
     ToolOutputAvailableChunk,
     ToolOutputErrorChunk,
 )
@@ -141,44 +144,32 @@ class TestTextStreamConversion:
 class TestStatusConversion:
     """Tests for status event conversion."""
 
-    def test_status_creates_complete_step_with_text(
-        self, converter, mock_step
-    ):
-        """StatusEvent should yield a complete step with text chunks."""
+    def test_status_creates_message_metadata_chunk(self, converter, mock_step):
+        """StatusEvent should yield MessageMetadataChunk with statusMessage."""
         event = StatusEvent(step=mock_step, message="Processing data...")
 
         chunks = list(converter.convert(event))
 
-        assert len(chunks) == 5
-        assert isinstance(chunks[0], StartStepChunk)
-        assert isinstance(chunks[1], TextStartChunk)
-        assert isinstance(chunks[2], TextDeltaChunk)
-        assert chunks[2].delta == "Processing data..."
-        assert isinstance(chunks[3], TextEndChunk)
-        assert isinstance(chunks[4], FinishStepChunk)
-
-    def test_status_text_chunks_share_same_id(self, converter, mock_step):
-        """Text chunks within a status should share the same ID."""
-        event = StatusEvent(step=mock_step, message="Test message")
-
-        chunks = list(converter.convert(event))
-
-        text_chunks = [c for c in chunks if hasattr(c, "id")]
-        chunk_ids = [c.id for c in text_chunks]
-        assert len(set(chunk_ids)) == 1  # All IDs are the same
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], MessageMetadataChunk)
+        assert (
+            chunks[0].message_metadata["statusMessage"] == "Processing data..."
+        )
 
 
 class TestStepBoundaryConversion:
     """Tests for step boundary event conversion."""
 
     def test_step_start_creates_start_step_chunk(self, converter, mock_step):
-        """StepStartEvent should yield StartStepChunk."""
+        """StepStartEvent should yield StartStepChunk and MessageMetadataChunk."""
         event = StepStartEvent(step=mock_step)
 
         chunks = list(converter.convert(event))
 
-        assert len(chunks) == 1
+        assert len(chunks) == 2
         assert isinstance(chunks[0], StartStepChunk)
+        assert isinstance(chunks[1], MessageMetadataChunk)
+        assert chunks[1].message_metadata["step_id"] == mock_step.id
 
     def test_step_end_creates_finish_step_chunk(self, converter, mock_step):
         """StepEndEvent should yield FinishStepChunk."""
@@ -196,7 +187,7 @@ class TestToolExecutionConversion:
     def test_tool_execution_start_creates_input_available_chunk(
         self, converter, mock_step
     ):
-        """ToolExecutionStartEvent should yield ToolInputAvailableChunk."""
+        """ToolExecutionStartEvent should yield 3-chunk sequence."""
         event = ToolExecutionStartEvent(
             step=mock_step,
             tool_call_id="tool-1",
@@ -206,11 +197,18 @@ class TestToolExecutionConversion:
 
         chunks = list(converter.convert(event))
 
-        assert len(chunks) == 1
-        assert isinstance(chunks[0], ToolInputAvailableChunk)
+        assert len(chunks) == 3
+        assert isinstance(chunks[0], ToolInputStartChunk)
         assert chunks[0].tool_call_id == "tool-1"
         assert chunks[0].tool_name == "search"
-        assert chunks[0].input == {"query": "test"}
+
+        assert isinstance(chunks[1], ToolInputDeltaChunk)
+        assert chunks[1].tool_call_id == "tool-1"
+
+        assert isinstance(chunks[2], ToolInputAvailableChunk)
+        assert chunks[2].tool_call_id == "tool-1"
+        assert chunks[2].tool_name == "search"
+        assert chunks[2].input == {"query": "test"}
 
     def test_tool_execution_end_creates_output_available_chunk(
         self, converter, mock_step
@@ -288,17 +286,19 @@ class TestIntegrationScenarios:
         for event in events:
             all_chunks.extend(converter.convert(event))
 
-        assert len(all_chunks) == 7
+        # StepStart (2) + TextStart (1) + TextDelta (3) + TextEnd (1) + StepEnd (1) = 8
+        assert len(all_chunks) == 8
         assert isinstance(all_chunks[0], StartStepChunk)
-        assert isinstance(all_chunks[1], TextStartChunk)
-        assert isinstance(all_chunks[2], TextDeltaChunk)
-        assert all_chunks[2].delta == "The "
+        assert isinstance(all_chunks[1], MessageMetadataChunk)  # step_id
+        assert isinstance(all_chunks[2], TextStartChunk)
         assert isinstance(all_chunks[3], TextDeltaChunk)
-        assert all_chunks[3].delta == "answer "
+        assert all_chunks[3].delta == "The "
         assert isinstance(all_chunks[4], TextDeltaChunk)
-        assert all_chunks[4].delta == "is 42"
-        assert isinstance(all_chunks[5], TextEndChunk)
-        assert isinstance(all_chunks[6], FinishStepChunk)
+        assert all_chunks[4].delta == "answer "
+        assert isinstance(all_chunks[5], TextDeltaChunk)
+        assert all_chunks[5].delta == "is 42"
+        assert isinstance(all_chunks[6], TextEndChunk)
+        assert isinstance(all_chunks[7], FinishStepChunk)
 
     def test_file_writer_status_scenario(self, converter, mock_step):
         """Test converting file writer status messages."""
@@ -313,20 +313,22 @@ class TestIntegrationScenarios:
         for event in events:
             all_chunks.extend(converter.convert(event))
 
-        # Each status becomes 5 chunks
-        assert len(all_chunks) == 10
+        # Each status becomes 1 MessageMetadataChunk
+        assert len(all_chunks) == 2
 
         # First status
-        assert isinstance(all_chunks[0], StartStepChunk)
-        assert isinstance(all_chunks[2], TextDeltaChunk)
-        assert "Writing 3 records" in all_chunks[2].delta
-        assert isinstance(all_chunks[4], FinishStepChunk)
+        assert isinstance(all_chunks[0], MessageMetadataChunk)
+        assert (
+            "Writing 3 records"
+            in all_chunks[0].message_metadata["statusMessage"]
+        )
 
         # Second status
-        assert isinstance(all_chunks[5], StartStepChunk)
-        assert isinstance(all_chunks[7], TextDeltaChunk)
-        assert "Wrote 3 records" in all_chunks[7].delta
-        assert isinstance(all_chunks[9], FinishStepChunk)
+        assert isinstance(all_chunks[1], MessageMetadataChunk)
+        assert (
+            "Wrote 3 records"
+            in all_chunks[1].message_metadata["statusMessage"]
+        )
 
     def test_tool_execution_scenario(self, converter, mock_step):
         """Test converting a complete tool execution."""
@@ -350,7 +352,15 @@ class TestIntegrationScenarios:
         for event in events:
             all_chunks.extend(converter.convert(event))
 
-        # Status (5) + ToolInput (1) + ToolOutput (1) + Status (5) = 12
-        assert len(all_chunks) == 12
-        assert isinstance(all_chunks[5], ToolInputAvailableChunk)
-        assert isinstance(all_chunks[6], ToolOutputAvailableChunk)
+        # Status (1) + ToolStart+Delta+Available (3) + ToolOutput (1) + Status (1) = 6
+        assert len(all_chunks) == 6
+        assert isinstance(all_chunks[0], MessageMetadataChunk)  # Status
+        assert isinstance(all_chunks[1], ToolInputStartChunk)  # Tool start
+        assert isinstance(all_chunks[2], ToolInputDeltaChunk)  # Tool delta
+        assert isinstance(
+            all_chunks[3], ToolInputAvailableChunk
+        )  # Tool available
+        assert isinstance(
+            all_chunks[4], ToolOutputAvailableChunk
+        )  # Tool output
+        assert isinstance(all_chunks[5], MessageMetadataChunk)  # Status

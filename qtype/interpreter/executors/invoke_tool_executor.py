@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import logging
 import time
+import uuid
 from typing import Any, AsyncIterator
 
 import requests
@@ -10,12 +11,14 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import (
     APITool,
     BearerTokenAuthProvider,
     InvokeTool,
     PythonFunctionTool,
+    Step,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,12 +34,18 @@ class ToolExecutionMixin:
     allowing code reuse across InvokeToolExecutor and AgentExecutor.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # These will be set by the concrete executor classes
+        self.stream_emitter: StreamEmitter
+        self.step: Step
+
     async def execute_python_tool(
         self,
         tool: PythonFunctionTool,
         inputs: dict[str, Any],
     ) -> Any:
-        """Execute a Python function tool.
+        """Execute a Python function tool with proper streaming events.
 
         Args:
             tool: The Python function tool to execute.
@@ -48,24 +57,34 @@ class ToolExecutionMixin:
         Raises:
             ValueError: If the function cannot be found or executed.
         """
-        try:
-            module = importlib.import_module(tool.module_path)
-            function = getattr(module, tool.function_name, None)
-            if function is None:
-                raise ValueError(
-                    (
-                        f"Function '{tool.function_name}' not found in "
-                        f"module '{tool.module_path}'"
+        tool_call_id = str(uuid.uuid4())
+
+        async with self.stream_emitter.tool_execution(
+            tool_call_id=tool_call_id,
+            tool_name=tool.function_name,
+            tool_input=inputs,
+        ) as tool_ctx:
+            try:
+                module = importlib.import_module(tool.module_path)
+                function = getattr(module, tool.function_name, None)
+                if function is None:
+                    raise ValueError(
+                        (
+                            f"Function '{tool.function_name}' not found in "
+                            f"module '{tool.module_path}'"
+                        )
                     )
+
+                result = function(**inputs)
+                await tool_ctx.complete(result)
+                return result
+
+            except Exception as e:
+                error_msg = (
+                    f"Failed to execute function {tool.function_name}: {e}"
                 )
-
-            result = function(**inputs)
-            return result
-
-        except Exception as e:
-            raise ValueError(
-                f"Failed to execute function {tool.function_name}: {e}"
-            ) from e
+                await tool_ctx.error(error_msg)
+                raise ValueError(error_msg) from e
 
     def serialize_value(self, value: Any) -> Any:
         """Recursively serialize values for API requests.
@@ -89,7 +108,7 @@ class ToolExecutionMixin:
         tool: APITool,
         inputs: dict[str, Any],
     ) -> Any:
-        """Execute an API tool by making an HTTP request.
+        """Execute an API tool by making an HTTP request with proper streaming events.
 
         Args:
             tool: The API tool to execute.
@@ -101,51 +120,66 @@ class ToolExecutionMixin:
         Raises:
             ValueError: If authentication fails or the request fails.
         """
-        # Prepare headers
-        headers = tool.headers.copy() if tool.headers else {}
+        tool_call_id = str(uuid.uuid4())
 
-        # Handle authentication
-        if tool.auth:
-            if isinstance(tool.auth, BearerTokenAuthProvider):
-                headers["Authorization"] = f"Bearer {tool.auth.token}"
-            else:
-                raise ValueError(
-                    (f"Unsupported auth provider: {type(tool.auth).__name__}")
+        async with self.stream_emitter.tool_execution(
+            tool_call_id=tool_call_id,
+            tool_name=f"{tool.method} {tool.endpoint}",
+            tool_input=inputs,
+        ) as tool_ctx:
+            try:
+                # Prepare headers
+                headers = tool.headers.copy() if tool.headers else {}
+
+                # Handle authentication
+                if tool.auth:
+                    if isinstance(tool.auth, BearerTokenAuthProvider):
+                        headers["Authorization"] = f"Bearer {tool.auth.token}"
+                    else:
+                        raise ValueError(
+                            (
+                                f"Unsupported auth provider: {type(tool.auth).__name__}"
+                            )
+                        )
+
+                # Serialize inputs for JSON
+                body = self.serialize_value(inputs)
+
+                # Determine if we're sending body or query params
+                is_body_method = tool.method.upper() in HTTP_BODY_METHODS
+
+                start_time = time.time()
+
+                response = requests.request(
+                    method=tool.method.upper(),
+                    url=tool.endpoint,
+                    headers=headers,
+                    params=None if is_body_method else inputs,
+                    json=body if is_body_method else None,
                 )
 
-        # Serialize inputs for JSON
-        body = self.serialize_value(inputs)
+                duration = time.time() - start_time
 
-        # Determine if we're sending body or query params
-        is_body_method = tool.method.upper() in HTTP_BODY_METHODS
+                # Raise for HTTP errors
+                response.raise_for_status()
 
-        try:
-            start_time = time.time()
+                logger.debug(
+                    f"Request completed in {duration:.2f}s with status "
+                    f"{response.status_code}"
+                )
 
-            response = requests.request(
-                method=tool.method.upper(),
-                url=tool.endpoint,
-                headers=headers,
-                params=None if is_body_method else inputs,
-                json=body if is_body_method else None,
-            )
+                result = response.json()
+                await tool_ctx.complete(result)
+                return result
 
-            duration = time.time() - start_time
-
-            # Raise for HTTP errors
-            response.raise_for_status()
-
-            logger.debug(
-                f"Request completed in {duration:.2f}s with status "
-                f"{response.status_code}"
-            )
-
-            return response.json()
-
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"API request failed: {e}") from e
-        except ValueError as e:
-            raise ValueError(f"Failed to decode JSON response: {e}") from e
+            except requests.exceptions.RequestException as e:
+                error_msg = f"API request failed: {e}"
+                await tool_ctx.error(error_msg)
+                raise ValueError(error_msg) from e
+            except ValueError as e:
+                error_msg = f"Failed to decode JSON response: {e}"
+                await tool_ctx.error(error_msg)
+                raise ValueError(error_msg) from e
 
 
 class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
@@ -154,7 +188,7 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
     # Tool invocations should be marked as TOOL type
     span_kind = OpenInferenceSpanKindValues.TOOL
 
-    def __init__(self, step: InvokeTool, **dependencies):
+    def __init__(self, step: InvokeTool, **dependencies: Any) -> None:
         super().__init__(step, **dependencies)
         if not isinstance(step, InvokeTool):
             raise ValueError(
@@ -259,24 +293,13 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
             # Prepare tool inputs from message variables
             tool_inputs = self._prepare_tool_inputs(message)
 
-            # Execute the tool with status updates
+            # Execute the tool with proper tool execution context
             # Dispatch to appropriate execution method based on tool type
             if isinstance(self.step.tool, PythonFunctionTool):
-                await self.stream_emitter.status(
-                    f"Calling Python function: {self.step.tool.function_name}"
-                )
                 result = await self.execute_python_tool(
                     self.step.tool, tool_inputs
                 )
-                await self.stream_emitter.status(
-                    f"Function {self.step.tool.function_name} completed "
-                    f"successfully"
-                )
             elif isinstance(self.step.tool, APITool):
-                await self.stream_emitter.status(
-                    f"Making {self.step.tool.method} request to "
-                    f"{self.step.tool.endpoint}"
-                )
                 result = await self.execute_api_tool(
                     self.step.tool, tool_inputs
                 )
