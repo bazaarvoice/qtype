@@ -200,7 +200,7 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
         return arv
     elif model.provider == "gcp-vertex":
         from llama_index.llms.vertex import Vertex
-                
+
         project_name = getattr(getattr(model, "auth", None), "profile_name", None)
 
         vgv: BaseLLM = Vertex(
