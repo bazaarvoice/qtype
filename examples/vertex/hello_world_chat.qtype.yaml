@@ -7,7 +7,6 @@ models:
     model_id: gemini-2.0-flash
     inference_params:
       temperature: 0.7
-      max_tokens: 512
 memories:
   - id: chat_memory
     token_limit: 10000

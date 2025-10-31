@@ -7,6 +7,11 @@ models:
     model_id: gemini-2.0-flash
     inference_params:
       temperature: 0.7
+    auth: vertex_auth
+auths:
+  - type: vertex
+    id: vertex_auth
+    profile_name: default
 flows:
   - type: Flow
     id: simple_example
@@ -15,9 +20,9 @@ flows:
     variables:
       - id: prompt
         type: text
-      - id: formatted_prompt
-        type: text
       - id: answer
+        type: text
+      - id: formatted_prompt
         type: text
     inputs:
       - prompt

@@ -96,7 +96,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -520,6 +520,9 @@
               },
               {
                 "$ref": "#/$defs/OAuth2AuthProvider"
+              },
+              {
+                "$ref": "#/$defs/VertexAuthProvider"
               }
             ]
           },
@@ -612,6 +615,9 @@
           },
           {
             "$ref": "#/$defs/OAuth2AuthProvider"
+          },
+          {
+            "$ref": "#/$defs/VertexAuthProvider"
           }
         ]
       },
@@ -974,7 +980,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -1152,7 +1158,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -1278,7 +1284,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -2200,7 +2206,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -2550,7 +2556,7 @@
       "title": "Reference[Model]",
       "type": "object"
     },
-    "Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__": {
+    "Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__": {
       "properties": {
         "$ref": {
           "title": "$Ref",
@@ -2560,7 +2566,7 @@
       "required": [
         "$ref"
       ],
-      "title": "Reference[Union[APIKeyAuthProvider, BearerTokenAuthProvider, AWSAuthProvider, OAuth2AuthProvider]]",
+      "title": "Reference[Union[APIKeyAuthProvider, BearerTokenAuthProvider, AWSAuthProvider, OAuth2AuthProvider, VertexAuthProvider]]",
       "type": "object"
     },
     "Reference_Variable_": {
@@ -2641,7 +2647,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -2684,7 +2690,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -2830,7 +2836,7 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__"
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
             },
             {
               "type": "string"
@@ -2966,6 +2972,80 @@
         "index"
       ],
       "title": "VectorSearch",
+      "type": "object"
+    },
+    "VertexAuthProvider": {
+      "additionalProperties": false,
+      "description": "Google Vertex authentication provider supporting gcloud profile or service account.",
+      "properties": {
+        "id": {
+          "description": "Unique ID of the authorization configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "vertex",
+          "default": "vertex",
+          "title": "Type",
+          "type": "string"
+        },
+        "profile_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Local gcloud profile name (if using existing CLI credentials).",
+          "title": "Profile Name"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit GCP project ID override (if different from profile).",
+          "title": "Project Id"
+        },
+        "service_account_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to a service account JSON key file.",
+          "title": "Service Account File"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vertex region (e.g., us-central1).",
+          "title": "Region"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "VertexAuthProvider",
       "type": "object"
     },
     "qtype_include_tag": {
