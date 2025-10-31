@@ -95,6 +95,18 @@ class RAGChunk(StrictBaseModel):
     )
 
 
+class RAGSearchResult(StrictBaseModel):
+    """A standard, built-in representation of a search result from a RAG vector search."""
+
+    chunk: RAGChunk = Field(
+        ..., description="The RAG chunk returned as a search result."
+    )
+    score: float = Field(
+        ...,
+        description="The similarity score of the chunk with respect to the query.",
+    )
+
+
 class AggregateStats(StrictBaseModel):
     """A standard, built-in representation of aggregate statistics."""
 

@@ -12,6 +12,7 @@ indexes:
   - type: VectorIndex
     id: v1
     name: vecindex
+    module: qdrant.QdrantVectorStore
     embedding_model: emb1
 flows:
   - type: Flow

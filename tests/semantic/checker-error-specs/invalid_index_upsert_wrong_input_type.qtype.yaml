@@ -9,6 +9,7 @@ indexes:
   - id: test_index
     type: VectorIndex
     name: test_vector_index
+    module: qdrant.QdrantVectorStore
     embedding_model: embed_model
 flows:
   - id: test_flow

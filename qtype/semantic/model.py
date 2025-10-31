@@ -619,12 +619,20 @@ class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
     type: Literal["DocumentIndex"] = Field("DocumentIndex")
+    endpoint: str = Field(
+        ...,
+        description="URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
+    )
 
 
 class VectorIndex(Index):
     """Vector database index for similarity search using embeddings."""
 
     type: Literal["VectorIndex"] = Field("VectorIndex")
+    module: str = Field(
+        ...,
+        description="Python module path for the vector store implementation (e.g., 'llama_index.vector_stores.qdrant.QdrantVectorStore').",
+    )
     embedding_model: EmbeddingModel = Field(
         ...,
         description="Embedding model used to vectorize queries and documents.",

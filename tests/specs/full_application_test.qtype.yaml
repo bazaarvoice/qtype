@@ -43,6 +43,7 @@ indexes:
   - type: VectorIndex
     id: index1
     name: Test Index
+    module: qdrant.QdrantVectorStore
     embedding_model: embed1
     args:
       param: value
