@@ -114,76 +114,7 @@ class TextStreamContext:
                     stream_id=self.stream_id,
                     delta=text,
                 )
-            ) 
-
-
-class ReasoningStreamContext:
-    """
-    Async context manager for reasoning streaming.
-
-    Automatically emits ReasoningStreamStartEvent on entry and
-    ReasoningStreamEndEvent on exit. Provides delta() method for emitting
-    reasoning chunks.
-
-    Example:
-        ```python
-        async with emitter.reasoning_stream("agent-reasoning") as streamer:
-            async for chunk in agent.stream_reasoning():
-                await streamer.delta(chunk.text)
-        ```
-    """
-
-    def __init__(
-        self,
-        step: Step,
-        stream_id: str,
-        on_stream_event: StreamingCallback | None,
-    ):
-        self.step = step
-        self.stream_id = stream_id
-        self.on_stream_event = on_stream_event
-
-    async def __aenter__(self) -> ReasoningStreamContext:
-        """Emit ReasoningStreamStartEvent when entering context."""
-        if self.on_stream_event:
-            await self.on_stream_event(
-                ReasoningStreamStartEvent(
-                    step=self.step, stream_id=self.stream_id
-                )
             )
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: Any,
-    ) -> bool:
-        """Emit ReasoningStreamEndEvent when exiting context."""
-        if self.on_stream_event:
-            await self.on_stream_event(
-                ReasoningStreamEndEvent(
-                    step=self.step, stream_id=self.stream_id
-                )
-            )
-        return False
-
-    async def delta(self, text: str) -> None:
-        """
-        Emit a reasoning delta chunk.
-
-        Args:
-            text: The incremental reasoning content to append to the stream
-        """
-        if self.on_stream_event:
-            await self.on_stream_event(
-                TextStreamDeltaEvent(
-                    step=self.step,
-                    stream_id=self.stream_id,
-                    delta=text,
-                )
-            )
-
 
 class ReasoningStreamContext:
     """

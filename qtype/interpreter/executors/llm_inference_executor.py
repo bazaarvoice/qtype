@@ -30,7 +30,7 @@ class LLMInferenceExecutor(StepExecutor):
                 "LLMInferenceExecutor can only execute LLMInference steps."
             )
         self.step: LLMInference = step
-    
+
     def __extract_stream_reasoning_(self, response):
         raw = response.raw
         content_block_delta = raw.get("contentBlockDelta")
@@ -265,15 +265,15 @@ class LLMInferenceExecutor(StepExecutor):
                 ),
             )
 
-            
+
 
         response: dict[str, str] = {output_variable_id: complete_result.text}
 
-        try: 
-            complete_reasoning = ( complete_result.raw["output"]["message"]["content"][0] ["reasoningContent"]["reasoningText"]["text"] ) 
+        try:
+            complete_reasoning = ( complete_result.raw["output"]["message"]["content"][0] ["reasoningContent"]["reasoningText"]["text"] )
             response["reasoning"] = complete_reasoning
-        except (KeyError, IndexError, TypeError): 
+        except (KeyError, IndexError, TypeError):
             pass
-            
+
 
         return message.copy_with_variables(response)

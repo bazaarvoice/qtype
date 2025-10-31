@@ -173,7 +173,7 @@ class StreamEventConverter:
         if chunk_id:
             yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta
     )
-            
+
     def _convert_text_stream_end(
         self, event: TextStreamEndEvent
     ) -> Iterator[UIMessageChunk]:
