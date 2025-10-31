@@ -43,6 +43,8 @@ class TextStreamDeltaEvent(BaseModel):
         description="Must match the stream_id from TextStreamStartEvent"
     )
     delta: str = Field(description="Incremental text content to append")
+
+
 class TextStreamEndEvent(BaseModel):
     """Signals the completion of incremental text streaming.
 

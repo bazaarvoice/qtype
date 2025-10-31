@@ -172,8 +172,7 @@ class StreamEventConverter:
         """
         chunk_id = self._active_streams.get(event.stream_id)
         if chunk_id:
-            yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta
-    )
+            yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta)
 
     def _convert_text_stream_end(
         self, event: TextStreamEndEvent

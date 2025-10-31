@@ -388,13 +388,16 @@ def _validate_flow(flow: Flow) -> None:
 
             # Streaming is enabled if there is at least one text output (the primary answer).
             # Allow an optional second text output named 'reasoning'. Any other additional text outputs are invalid.
-            text_outputs = [o for o in flow.outputs if o.type == PrimitiveTypeEnum.text]
+            text_outputs = [
+                o for o in flow.outputs if o.type == PrimitiveTypeEnum.text
+            ]
             if len(text_outputs) == 1:
                 # Single text output: normal Complete interface
                 pass
             elif (
                 len(text_outputs) == 2
-                and len(flow.outputs) == 2  # Ensure total outputs count matches
+                and len(flow.outputs)
+                == 2  # Ensure total outputs count matches
                 and flow.outputs[1].id == "reasoning"
                 and flow.outputs[1].type == PrimitiveTypeEnum.text
             ):

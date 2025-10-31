@@ -521,6 +521,7 @@ class StartChunk(BaseModel):
         default=None, alias="messageMetadata"
     )
 
+
 # temp
 class ToolStarted(BaseModel):
     """Start chunk.
@@ -534,6 +535,7 @@ class ToolStarted(BaseModel):
         default=None, alias="messageMetadata"
     )
 
+
 class ToolResultReceived(BaseModel):
     """Start chunk.
 
@@ -545,6 +547,7 @@ class ToolResultReceived(BaseModel):
     message_metadata: dict[str, Any] | None = Field(
         default=None, alias="messageMetadata"
     )
+
 
 class FinishChunk(BaseModel):
     """Finish chunk - marks the completion of message streaming.

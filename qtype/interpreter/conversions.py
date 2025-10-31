@@ -12,7 +12,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     ImageBlock,
     TextBlock,
-    ThinkingBlock
+    ThinkingBlock,
 )
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
@@ -332,6 +332,8 @@ def from_chat_message(message: LlamaChatMessage) -> ChatMessage:
             )
 
     return ChatMessage(role=message.role, blocks=blocks)
+
+
 def to_text_splitter(splitter: DocumentSplitter) -> Any:
     """Convert a DocumentSplitter to a LlamaIndex text splitter.
 
