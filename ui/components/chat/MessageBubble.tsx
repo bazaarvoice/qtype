@@ -5,28 +5,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
 import FileDisplay from "./FileDisplay";
 import ThinkingPanel from "./ThinkingPanel";
+import { deriveStatusFromParts } from "./utils/deriveStatusFromParts";
 
+import type { Message } from "./types";
 import type { FileAttachment } from "@/types";
-
-interface MessagePart {
-  type: string;
-  text?: string;
-}
-
-interface MessageMetadata {
-  statusMessage?: string;
-  step_id?: string | number;
-  [key: string]: unknown;
-}
-
-interface Message {
-  role: string;
-  content?: string;
-  parts?: (MessagePart | FileAttachment)[];
-  files?: FileAttachment[];
-  experimental_attachments?: FileAttachment[];
-  metadata?: MessageMetadata;
-}
 
 interface MessageBubbleProps {
   message: Message;
@@ -76,66 +58,11 @@ export default function MessageBubble({
   }, [message]);
 
   const statusMessage = useMemo(() => {
-    // Only show status while streaming
-    if (!isStreaming) return null;
-
-    // Check metadata for status message first
-    if (message.metadata?.statusMessage) {
-      return message.metadata.statusMessage;
-    }
-
-    // Fallback to parsing parts for tool/step events
-    let status = "Processing...";
-    let reasoningContent = "";
-
-    for (const part of catchAll) {
-      switch (part.type) {
-        case "step-start":
-          status = "Starting ... ";
-          break;
-
-        case "finish-step":
-          status = "Step completed";
-          break;
-
-        case "reasoning-start":
-          status = "Thinking...";
-          reasoningContent = "";
-          break;
-
-        case "reasoning-delta":
-          if ("delta" in part) {
-            reasoningContent += part.delta;
-            status = `Thinking... ${reasoningContent}`;
-          }
-          break;
-
-        case "reasoning-end":
-          status = "Finished thinking";
-          break;
-
-        default:
-          // Handle tool events (type starts with "tool-")
-          if (part.type.startsWith("tool-")) {
-            const toolName = part.type.replace("tool-", "");
-            if ("state" in part) {
-              switch (part.state) {
-                case "input-available":
-                  status = `Calling ${toolName}...`;
-                  break;
-                case "output-available":
-                  status = `Tool ${toolName} returned successfully`;
-                  break;
-                default:
-                  status = `Using ${toolName}...`;
-              }
-            } else {
-              status = `Using ${toolName}...`;
-            }
-          }
-      }
-    }
-
+    const status = deriveStatusFromParts(
+      catchAll,
+      message.metadata,
+      isStreaming,
+    );
     return status;
   }, [catchAll, isStreaming, message.metadata]);
 
