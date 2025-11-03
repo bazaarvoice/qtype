@@ -34,13 +34,14 @@ class SQLSourceExecutor(StepExecutor):
         Yields:
             FlowMessages with the results of SQL query execution.
         """
-        # Create a database engine
+        # Create a database engine - resolve connection string if it's a SecretReference
+        connection_string = self._resolve_secret(self.step.connection)
         connect_args = {}
         if self.step.auth:
             with auth(self.step.auth) as creds:
                 if isinstance(creds, boto3.Session):
                     connect_args["session"] = creds
-        engine = create_engine(self.step.connection, connect_args=connect_args)
+        engine = create_engine(connection_string, connect_args=connect_args)
 
         output_columns = {output.id for output in self.step.outputs}
         step_inputs = {i.id for i in self.step.inputs}

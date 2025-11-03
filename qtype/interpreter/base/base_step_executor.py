@@ -13,13 +13,14 @@ from opentelemetry import context, trace
 from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.progress_tracker import ProgressTracker
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import (
     FlowMessage,
     ProgressCallback,
     StreamingCallback,
 )
-from qtype.semantic.model import Step
+from qtype.semantic.model import SecretReference, Step
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ class StepExecutor(ABC):
         step: Step,
         on_stream_event: StreamingCallback | None = None,
         on_progress: ProgressCallback | None = None,
+        secret_manager: SecretManagerBase | None = None,
         **dependencies: Any,
     ):
         self.step = step
@@ -79,6 +81,35 @@ class StepExecutor(ABC):
         # Base uses process_message with telemetry wrapping,
         # BatchedStepExecutor uses process_batch
         self._processor = self._process_message_with_telemetry
+        self._secret_manager = secret_manager
+
+    def _resolve_secret(self, value: str | SecretReference) -> str:
+        """
+        Resolve a value that may be a string or a SecretReference.
+
+        If the value is already a string, returns it unchanged.
+        If the value is a SecretReference, uses the secret manager to resolve it.
+
+        Args:
+            value: Either a plain string or a SecretReference
+
+        Returns:
+            The resolved string value
+
+        Raises:
+            RuntimeError: If value is a SecretReference but no secret manager
+                is configured
+        """
+        if isinstance(value, str):
+            return value
+
+        if self._secret_manager is None:
+            raise RuntimeError(
+                f"Step '{self.step.id}' requires secret manager to resolve "
+                f"SecretReference, but none is configured"
+            )
+
+        return self._secret_manager(value)
 
     async def _filter_and_collect_errors(
         self,

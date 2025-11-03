@@ -21,10 +21,45 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
-from qtype.semantic.model import DocumentSplitter, Index, Model
+from qtype.semantic.model import (
+    DocumentSplitter,
+    Index,
+    Model,
+    SecretReference,
+)
 
 from .resource_cache import cached_resource
+
+
+def _resolve_secret(
+    value: str | SecretReference,
+    secret_manager: SecretManagerBase | None,
+) -> str:
+    """
+    Resolve a value that may be a string or a SecretReference.
+
+    Args:
+        value: Either a plain string or a SecretReference
+        secret_manager: Optional secret manager to use for resolution
+
+    Returns:
+        The resolved string value
+
+    Raises:
+        RuntimeError: If value is a SecretReference but no secret manager
+            is provided
+    """
+    if isinstance(value, str):
+        return value
+
+    if secret_manager is None:
+        raise RuntimeError(
+            "SecretReference requires a secret manager, but none is provided"
+        )
+
+    return secret_manager(value)
 
 
 def to_llama_document(doc: RAGDocument) -> LlamaDocument:
@@ -154,8 +189,22 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 
 
 @cached_resource
-def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
-    """Convert a qtype Model to a LlamaIndex Model."""
+def to_llm(
+    model: Model,
+    system_prompt: str | None,
+    secret_manager: SecretManagerBase | None = None,
+) -> BaseLLM:
+    """
+    Convert a qtype Model to a LlamaIndex Model.
+
+    Args:
+        model: The semantic model configuration
+        system_prompt: Optional system prompt for the model
+        secret_manager: Optional secret manager for resolving SecretReferences
+
+    Returns:
+        A LlamaIndex LLM instance
+    """
 
     if model.provider == "aws-bedrock":
         from llama_index.llms.bedrock_converse import BedrockConverse
@@ -176,26 +225,34 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     elif model.provider == "openai":
         from llama_index.llms.openai import OpenAI
 
+        api_key = None
+        if model.auth:
+            api_key_value = getattr(model.auth, "api_key", None)
+            if api_key_value is not None:
+                api_key = _resolve_secret(api_key_value, secret_manager)
+
         return OpenAI(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
-            api_key=getattr(model.auth, "api_key", None)
-            if model.auth
-            else None,
+            api_key=api_key,
         )
     elif model.provider == "anthropic":
         from llama_index.llms.anthropic import (  # type: ignore[import-untyped]
             Anthropic,
         )
 
+        api_key = None
+        if model.auth:
+            api_key_value = getattr(model.auth, "api_key", None)
+            if api_key_value is not None:
+                api_key = _resolve_secret(api_key_value, secret_manager)
+
         arv: BaseLLM = Anthropic(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
-            api_key=getattr(model.auth, "api_key", None)
-            if model.auth
-            else None,
+            api_key=api_key,
         )
         return arv
     elif model.provider == "gcp-vertex":
@@ -220,7 +277,9 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
 
 
 @cached_resource
-def to_vector_store(index: Index) -> BasePydanticVectorStore:
+def to_vector_store(
+    index: Index, secret_manager: SecretManagerBase | None = None
+) -> BasePydanticVectorStore:
     """Convert a qtype Index to a LlamaIndex vector store."""
     full_module_path = "llama_index.core.vector_stores" + index.args.get(
         "module", "SimpleVectorStore"
@@ -235,13 +294,20 @@ def to_vector_store(index: Index) -> BasePydanticVectorStore:
             f"Failed to import reader class '{class_name}' from '{full_module_path}': {e}"
         ) from e
 
-    args = index.args.copy()
-    if "module" in args:
-        del args["module"]
+    # Resolve any SecretReferences in args
+    resolved_args = {}
+    for key, value in index.args.items():
+        if isinstance(value, str) or hasattr(value, "secret_name"):
+            resolved_args[key] = _resolve_secret(value, secret_manager)  # type: ignore[arg-type]
+        else:
+            resolved_args[key] = value
 
-    index = reader_class(**args)
+    if "module" in resolved_args:
+        del resolved_args["module"]
 
-    return index
+    index_instance = reader_class(**resolved_args)
+
+    return index_instance
 
 
 @cached_resource

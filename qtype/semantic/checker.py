@@ -7,6 +7,7 @@ from qtype.dsl.linker import QTypeValidationError
 from qtype.dsl.model import AWSAuthProvider
 from qtype.semantic.model import (
     Agent,
+    Application,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -17,6 +18,7 @@ from qtype.semantic.model import (
     IndexUpsert,
     LLMInference,
     PromptTemplate,
+    SecretReference,
     SQLSource,
     Step,
     VectorSearch,
@@ -372,9 +374,64 @@ def _validate_flow(flow: Flow) -> None:
                 )
 
 
+def _has_secret_reference(obj) -> bool:  # type: ignore[no-untyped-def]
+    """
+    Recursively check if an object contains any SecretReference instances.
+
+    Args:
+        obj: Object to check
+
+    Returns:
+        True if SecretReference is found, False otherwise
+    """
+    if isinstance(obj, SecretReference):
+        return True
+
+    if isinstance(obj, BaseModel):
+        for field_name, field_value in obj:
+            if _has_secret_reference(field_value):
+                return True
+
+    elif isinstance(obj, list):
+        for item in obj:
+            if _has_secret_reference(item):
+                return True
+
+    elif isinstance(obj, dict):
+        for value in obj.values():
+            if _has_secret_reference(value):
+                return True
+
+    return False
+
+
+def _validate_application(application: Application) -> None:
+    """
+    Validate Application configuration.
+
+    Args:
+        application: The Application to validate
+
+    Raises:
+        QTypeSemanticError: If SecretReference is used but
+            secret_manager is not configured
+    """
+    if application.secret_manager is None:
+        # Check if any SecretReference is used in the application
+        if _has_secret_reference(application):
+            raise QTypeSemanticError(
+                (
+                    f"Application '{application.id}' uses SecretReference "
+                    "but does not have a secret_manager configured. "
+                    "Please add a secret_manager to the application."
+                )
+            )
+
+
 # Mapping of types to their validation functions
 _VALIDATORS = {
     Agent: _validate_agent,
+    Application: _validate_application,
     PromptTemplate: _validate_prompt_template,
     AWSAuthProvider: _validate_aws_auth,
     LLMInference: _validate_llm_inference,

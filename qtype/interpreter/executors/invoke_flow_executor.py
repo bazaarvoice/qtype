@@ -34,7 +34,11 @@ class InvokeFlowExecutor(StepExecutor):
                 for var, id in self.step.input_bindings.items()
             }
         )
-        result = await run_flow(self.step.flow, [initial])
+        # Pass through secret_manager if available
+        secret_manager = self.dependencies.get("secret_manager")
+        result = await run_flow(
+            self.step.flow, [initial], secret_manager=secret_manager
+        )
 
         for msg in result:
             yield msg.copy_with_variables(

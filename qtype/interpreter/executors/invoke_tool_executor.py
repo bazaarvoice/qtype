@@ -39,6 +39,9 @@ class ToolExecutionMixin:
         # These will be set by the concrete executor classes
         self.stream_emitter: StreamEmitter
         self.step: Step
+        self._resolve_secret: (
+            Any  # Will be provided by StepExecutor base class
+        )
 
     async def execute_python_tool(
         self,
@@ -128,13 +131,17 @@ class ToolExecutionMixin:
             tool_input=inputs,
         ) as tool_ctx:
             try:
-                # Prepare headers
-                headers = tool.headers.copy() if tool.headers else {}
+                # Prepare headers - resolve any SecretReferences
+                headers = {}
+                if tool.headers:
+                    for key, value in tool.headers.items():
+                        headers[key] = self._resolve_secret(value)
 
                 # Handle authentication
                 if tool.auth:
                     if isinstance(tool.auth, BearerTokenAuthProvider):
-                        headers["Authorization"] = f"Bearer {tool.auth.token}"
+                        token = self._resolve_secret(tool.auth.token)
+                        headers["Authorization"] = f"Bearer {token}"
                     else:
                         raise ValueError(
                             (

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
+from qtype.interpreter.base.secrets import create_secret_manager
 from qtype.semantic.model import Application as SemanticApplication
 from qtype.semantic.model import DocumentType as SemanticDocumentType
 
@@ -33,7 +34,10 @@ class QTypeFacade:
             # Register telemetry if needed
             from qtype.interpreter.telemetry import register
 
-            register(spec.telemetry, spec.id)
+            # Create secret manager if configured
+            secret_manager = create_secret_manager(spec.secret_manager)
+
+            register(spec.telemetry, spec.id, secret_manager)
 
     async def execute_workflow(
         self,
@@ -108,7 +112,13 @@ class QTypeFacade:
         # Execute the flow
         from qtype.interpreter.flow import run_flow
 
-        results = await run_flow(target_flow, initial_messages, **kwargs)
+        secret_manager = create_secret_manager(semantic_model.secret_manager)
+        results = await run_flow(
+            target_flow,
+            initial_messages,
+            secret_manager=secret_manager,
+            **kwargs,
+        )
 
         # Convert results back to DataFrame
         results_df = flow_messages_to_dataframe(results, target_flow)

@@ -213,6 +213,7 @@ DSL_ONLY_UNION_TYPES = {
     _get_union_args(dsl.ToolType): "Tool",
     _get_union_args(dsl.StepType): "Step",
     _get_union_args(dsl.AuthProviderType): "AuthorizationProvider",
+    _get_union_args(dsl.SecretManagerType): "SecretManager",
     _get_union_args(dsl.SourceType): "Source",
     _get_union_args(dsl.IndexType): "Index",
     _get_union_args(dsl.ModelType): "Model",
@@ -227,10 +228,14 @@ def _transform_union_type(args: tuple) -> str:
     )
     has_none = any(arg is type(None) for arg in args)
     has_str = any(arg is str for arg in args)
-
+    has_secret_ref = any(
+        hasattr(arg, "__name__") and arg.__name__ == "SecretReference"
+        for arg in args
+    )
     # First see if this is a DSL-only union type
     # If so, just return the corresponding semantic type
-    if args_without_str_none in DSL_ONLY_UNION_TYPES:
+    # Skip if args_without_str_none is empty (e.g., str | None should stay as str | None)
+    if args_without_str_none and args_without_str_none in DSL_ONLY_UNION_TYPES:
         if has_none:
             # If we have a DSL type and None, we return the DSL type with None
             return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
@@ -251,9 +256,14 @@ def _transform_union_type(args: tuple) -> str:
             return dsl_to_semantic_type_name(list_elems[0])
 
     # If the union contains a DSL type and a str, we need to drop the str
-    if any(_is_dsl_type(arg) for arg in args) and has_str:
-        # There is a DSL type and a str, which indicates something that can reference an ID.
-        # drop the str
+    # EXCEPT for SecretReference, where str | SecretReference is the semantic type
+    if (
+        any(_is_dsl_type(arg) for arg in args)
+        and has_str
+        and not has_secret_ref
+    ):
+        # There is a DSL type and a str, which indicates something that
+        # can reference an ID. Drop the str.
         args = tuple(arg for arg in args if arg is not str)
 
     return " | ".join(dsl_to_semantic_type_name(a) for a in args)

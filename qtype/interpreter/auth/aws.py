@@ -8,7 +8,7 @@ AWSAuthProvider configuration from the semantic model.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
 
 import boto3  # type: ignore[import-untyped]
 from botocore.exceptions import (  # type: ignore[import-untyped]
@@ -17,7 +17,24 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
 )
 
 from qtype.interpreter.auth.cache import cache_auth, get_cached_auth
-from qtype.semantic.model import AWSAuthProvider
+from qtype.semantic.model import AWSAuthProvider, SecretReference
+
+if TYPE_CHECKING:
+    pass
+
+
+def _resolve_secret(
+    value: str | SecretReference | None,
+    secret_manager: Any,
+) -> str | None:
+    """Resolve a secret value if it's a SecretReference."""
+    if value is None or isinstance(value, str):
+        return value
+    if secret_manager is None:
+        raise RuntimeError(
+            "Cannot resolve SecretReference without a secret manager configured."
+        )
+    return secret_manager(value)
 
 
 class AWSAuthenticationError(Exception):
@@ -56,7 +73,9 @@ def _is_session_valid(session: boto3.Session) -> bool:
 
 
 @contextmanager
-def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
+def aws(
+    aws_provider: AWSAuthProvider, secret_manager: Any = None
+) -> Generator[boto3.Session, None, None]:
     """
     Create a boto3 Session using AWS authentication provider configuration.
 
@@ -113,7 +132,7 @@ def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
             return
 
         # Cache miss or invalid session - create new session
-        session = _create_session(aws_provider)
+        session = _create_session(aws_provider, secret_manager)
 
         # Validate the session by attempting to get credentials
         credentials = session.get_credentials()
@@ -137,12 +156,15 @@ def aws(aws_provider: AWSAuthProvider) -> Generator[boto3.Session, None, None]:
         ) from e
 
 
-def _create_session(aws_provider: AWSAuthProvider) -> boto3.Session:
+def _create_session(
+    aws_provider: AWSAuthProvider, secret_manager: Any = None
+) -> boto3.Session:
     """
     Create a boto3 Session based on the AWS provider configuration.
 
     Args:
         aws_provider: AWSAuthProvider with authentication details
+        secret_manager: Optional secret manager for resolving SecretReferences
 
     Returns:
         boto3.Session: Configured session
@@ -162,14 +184,21 @@ def _create_session(aws_provider: AWSAuthProvider) -> boto3.Session:
         session_kwargs["profile_name"] = aws_provider.profile_name
 
     elif aws_provider.access_key_id and aws_provider.secret_access_key:
-        # Use direct credentials
-        session_kwargs["aws_access_key_id"] = aws_provider.access_key_id
-        session_kwargs["aws_secret_access_key"] = (
-            aws_provider.secret_access_key
+        # Use direct credentials - resolve secrets
+        access_key = _resolve_secret(
+            aws_provider.access_key_id, secret_manager
         )
+        secret_key = _resolve_secret(
+            aws_provider.secret_access_key, secret_manager
+        )
+        session_kwargs["aws_access_key_id"] = access_key
+        session_kwargs["aws_secret_access_key"] = secret_key
 
         if aws_provider.session_token:
-            session_kwargs["aws_session_token"] = aws_provider.session_token
+            session_token = _resolve_secret(
+                aws_provider.session_token, secret_manager
+            )
+            session_kwargs["aws_session_token"] = session_token
 
     # Create the base session
     session = boto3.Session(**session_kwargs)

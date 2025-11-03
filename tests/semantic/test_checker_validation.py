@@ -97,6 +97,10 @@ from qtype.semantic.loader import load
             "invalid_flow_unfulfilled_input.qtype.yaml",
             "has input variables that are not included in the flow or previous outputs",
         ),
+        (
+            "invalid_secret_reference_no_manager.qtype.yaml",
+            "uses SecretReference but does not have a secret_manager configured",
+        ),
     ],
 )
 def test_checker_validation_errors(yaml_file, expected_error_fragment):

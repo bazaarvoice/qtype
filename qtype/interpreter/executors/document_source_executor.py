@@ -65,12 +65,20 @@ class DocumentSourceExecutor(StepExecutor):
         output_id = self.step.outputs[0].id
 
         try:
-            # Combine step args with message variables as runtime args
+            # Resolve any SecretReferences in step args
+            resolved_args = {}
+            for key, value in self.step.args.items():
+                if isinstance(value, str) or hasattr(value, "secret_name"):
+                    resolved_args[key] = self._resolve_secret(value)  # type: ignore[arg-type]
+                else:
+                    resolved_args[key] = value
+
+            # Combine resolved step args with message variables as runtime args
             runtime_args = {
                 key: message.variables.get(key)
                 for key in message.variables.keys()
             }
-            combined_args = {**self.step.args, **runtime_args}
+            combined_args = {**resolved_args, **runtime_args}
 
             # Instantiate the reader with combined arguments
             loader = self.reader_class(**combined_args)

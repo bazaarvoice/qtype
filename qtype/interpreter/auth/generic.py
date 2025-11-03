@@ -8,7 +8,7 @@ type and return the appropriate session or provider instance.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Generator
+from typing import TYPE_CHECKING, Any, Generator
 
 import boto3  # type: ignore[import-untyped]
 
@@ -18,7 +18,22 @@ from qtype.semantic.model import (
     AuthorizationProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
+    SecretReference,
 )
+
+if TYPE_CHECKING:
+    pass
+
+
+def _resolve_secret(value: str | SecretReference, secret_manager: Any) -> str:
+    """Resolve a secret value if it's a SecretReference."""
+    if isinstance(value, str):
+        return value
+    if secret_manager is None:
+        raise RuntimeError(
+            "Cannot resolve SecretReference without a secret manager configured."
+        )
+    return secret_manager(value)
 
 
 class UnsupportedAuthProviderError(Exception):
@@ -30,7 +45,10 @@ class UnsupportedAuthProviderError(Exception):
 @contextmanager
 def auth(
     auth_provider: AuthorizationProvider,
-) -> Generator[boto3.Session | APIKeyAuthProvider, None, None]:
+    secret_manager: Any = None,
+) -> Generator[
+    boto3.Session | APIKeyAuthProvider | OAuth2AuthProvider, None, None
+]:
     """
     Create an appropriate session or provider instance based on the auth provider type.
 
@@ -81,19 +99,37 @@ def auth(
     """
     if isinstance(auth_provider, AWSAuthProvider):
         # Use AWS-specific context manager
-        with aws(auth_provider) as session:
+        with aws(auth_provider, secret_manager) as session:
             yield session
 
     elif isinstance(auth_provider, APIKeyAuthProvider):
-        # For API key providers, just return the provider itself
+        # For API key providers, resolve the api_key and return the provider
         # The caller can access provider.api_key and provider.host
-        yield auth_provider
+        resolved_key = _resolve_secret(auth_provider.api_key, secret_manager)  # type: ignore[arg-type]
+        # Create a copy with resolved api_key
+        resolved_provider = APIKeyAuthProvider(
+            id=auth_provider.id,
+            type=auth_provider.type,
+            api_key=resolved_key,
+            host=auth_provider.host,
+        )
+        yield resolved_provider
 
     elif isinstance(auth_provider, OAuth2AuthProvider):
-        # OAuth2 not yet implemented
-        raise NotImplementedError(
-            f"OAuth2 authentication is not yet implemented for provider '{auth_provider.id}'"
+        # OAuth2 - resolve client_secret
+        resolved_secret = _resolve_secret(
+            auth_provider.client_secret,
+            secret_manager,  # type: ignore[arg-type]
         )
+        # Create a copy with resolved client_secret
+        resolved_provider = OAuth2AuthProvider(
+            id=auth_provider.id,
+            type=auth_provider.type,
+            client_id=auth_provider.client_id,
+            client_secret=resolved_secret,
+            token_url=auth_provider.token_url,
+        )
+        yield resolved_provider
 
     else:
         # Unknown provider type

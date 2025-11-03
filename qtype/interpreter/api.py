@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from qtype.interpreter.base.secrets import create_secret_manager
 from qtype.interpreter.endpoints import (
     create_rest_endpoint,
     create_streaming_endpoint,
@@ -73,11 +74,14 @@ class APIExecutor:
         # Create metadata endpoints for flow discovery
         create_metadata_endpoints(app, self.definition)
 
+        # Create secret manager if configured
+        secret_manager = create_secret_manager(self.definition.secret_manager)
+
         # Create unified invoke endpoints for each flow
         flows = self.definition.flows if self.definition.flows else []
         for flow in flows:
             if flow.interface is not None:
-                create_streaming_endpoint(app, flow)
-            create_rest_endpoint(app, flow)
+                create_streaming_endpoint(app, flow, secret_manager)
+            create_rest_endpoint(app, flow, secret_manager)
 
         return app

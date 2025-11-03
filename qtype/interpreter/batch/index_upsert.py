@@ -17,6 +17,7 @@ def execute_index_upsert(
     step: IndexUpsert,
     inputs: pd.DataFrame,
     batch_config: BatchConfig,
+    secret_manager: Any = None,
     **kwargs: dict[Any, Any],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Executes an IndexUpsert step to add documents to a vector store.
@@ -48,7 +49,7 @@ def execute_index_upsert(
 
     # Get the vector store
     try:
-        vector_store = to_vector_store(step.index)
+        vector_store = to_vector_store(step.index, secret_manager)
     except Exception as e:
         if batch_config.error_mode == ErrorMode.FAIL:
             raise InterpreterError(

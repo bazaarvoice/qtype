@@ -80,7 +80,9 @@ class LLMInferenceExecutor(StepExecutor):
         Returns:
             FlowMessage with the chat response.
         """
-        model = to_llm(self.step.model, self.step.system_message)
+        model = to_llm(
+            self.step.model, self.step.system_message, self._secret_manager
+        )
 
         # Convert input variables to chat messages
         inputs = []
@@ -182,7 +184,9 @@ class LLMInferenceExecutor(StepExecutor):
         Returns:
             FlowMessage with the completion response.
         """
-        model = to_llm(self.step.model, self.step.system_message)
+        model = to_llm(
+            self.step.model, self.step.system_message, self._secret_manager
+        )
 
         # Get input value
         input_value = message.variables.get(self.step.inputs[0].id)

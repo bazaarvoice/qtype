@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 async def _execute_flow_with_streaming(
     flow: Flow,
     initial_message: FlowMessage,
+    secret_manager: Any = None,
 ) -> AsyncIterator[StreamEvent]:
     """
     Execute flow and yield StreamEvents as they occur.
@@ -55,6 +56,7 @@ async def _execute_flow_with_streaming(
             flow,
             initial_message,
             on_stream_event=callback,
+            secret_manager=secret_manager,
         )
 
     # Convert callback-based streaming to async iterator
@@ -66,6 +68,7 @@ async def _stream_sse_response(
     flow: Flow,
     initial_message: FlowMessage,
     output_metadata: dict[str, Any] | None = None,
+    secret_manager: Any = None,
 ) -> AsyncIterator[str]:
     """
     Execute flow and stream Server-Sent Events using Vercel AI SDK protocol.
@@ -82,7 +85,9 @@ async def _stream_sse_response(
         SSE formatted strings (data: {json}\\n\\n)
     """
     # Execute flow and get event stream
-    event_stream = _execute_flow_with_streaming(flow, initial_message)
+    event_stream = _execute_flow_with_streaming(
+        flow, initial_message, secret_manager
+    )
 
     # Format events as SSE with metadata
     async for sse_line in format_stream_events_as_sse(
@@ -91,13 +96,16 @@ async def _stream_sse_response(
         yield sse_line
 
 
-def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def _create_chat_streaming_endpoint(
+    app: FastAPI, flow: Flow, secret_manager: Any = None
+) -> None:
     """
     Create streaming endpoint for Conversational flows.
 
     Args:
         app: FastAPI application instance
         flow: Flow with Conversational interface
+        secret_manager: Optional secret manager for resolving secrets
     """
     flow_id = flow.id
 
@@ -150,6 +158,7 @@ def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
                     flow,
                     initial_message,
                     output_metadata=None,
+                    secret_manager=secret_manager,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -183,13 +192,16 @@ def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     )(stream_chat)
 
 
-def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def _create_completion_streaming_endpoint(
+    app: FastAPI, flow: Flow, secret_manager: Any = None
+) -> None:
     """
     Create streaming endpoint for Complete flows.
 
     Args:
         app: FastAPI application instance
         flow: Flow with Complete interface
+        secret_manager: Optional secret manager for resolving secrets
     """
     flow_id = flow.id
 
@@ -210,6 +222,7 @@ def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
                     flow,
                     initial_message,
                     output_metadata=None,
+                    secret_manager=secret_manager,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -243,13 +256,16 @@ def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     )(stream_completion)
 
 
-def create_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def create_streaming_endpoint(
+    app: FastAPI, flow: Flow, secret_manager: Any = None
+) -> None:
     """
     Create streaming endpoint for flow execution.
 
     Args:
         app: FastAPI application instance
         flow: Flow to create endpoint for
+        secret_manager: Optional secret manager for resolving secrets
     """
     if flow.interface is None:
         raise ValueError(f"Flow {flow.id} has no interface defined")
@@ -257,22 +273,25 @@ def create_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     # Dispatch based on interface type
     interface_type = flow.interface.type
     if interface_type == "Conversational":
-        _create_chat_streaming_endpoint(app, flow)
+        _create_chat_streaming_endpoint(app, flow, secret_manager)
     elif interface_type == "Complete":
-        _create_completion_streaming_endpoint(app, flow)
+        _create_completion_streaming_endpoint(app, flow, secret_manager)
     else:
         raise ValueError(
             f"Unknown interface type for flow {flow.id}: {interface_type}"
         )
 
 
-def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
+def create_rest_endpoint(
+    app: FastAPI, flow: Flow, secret_manager: Any = None
+) -> None:
     """
     Create only the REST endpoint for flow execution.
 
     Args:
         app: FastAPI application instance
         flow: Flow to create endpoint for
+        secret_manager: Optional secret manager for resolving secrets
     """
     RequestModel = create_input_shape(flow)
     ResultShape = create_output_shape(flow)
@@ -292,7 +311,9 @@ def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
             initial_message = request_to_flow_message(request=body, **kwargs)
 
             # Execute flow
-            results = await run_flow(flow, initial_message)
+            results = await run_flow(
+                flow, initial_message, secret_manager=secret_manager
+            )
 
             if not results:
                 raise HTTPException(

@@ -46,7 +46,9 @@ class AgentExecutor(StepExecutor, ToolExecutionMixin, FunctionToolHelper):
         ]
 
         # Get the LLM for the agent
-        llm = to_llm(self.step.model, self.step.system_message)
+        llm = to_llm(
+            self.step.model, self.step.system_message, self._secret_manager
+        )
 
         # Create ReActAgent
         return ReActAgent(
