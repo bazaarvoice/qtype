@@ -30,7 +30,7 @@ import { apiClient } from "@/lib/apiClient";
 
 import { useFileAttachments } from "../../hooks/useFileAttachments";
 
-import type { Message as ChatMessage } from "@/components/chat/MessageBubble";
+import type { Message as ChatMessage } from "@/components/chat/types";
 import type { FlowMetadata } from "@/types";
 
 interface ChatFlowProps {

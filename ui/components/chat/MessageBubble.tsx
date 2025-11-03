@@ -93,16 +93,15 @@ export default function MessageBubble({
           )}
         </div>
 
-        {/* Show final text content - always appears in same position */}
+        {reasoningContent && (
+          <ThinkingPanel reasoningContent={reasoningContent} />
+        )}
         {textContent && (
           <div
             className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
               isUser ? "bg-primary text-primary-foreground" : "bg-muted"
             }`}
           >
-            {reasoningContent && (
-              <ThinkingPanel reasoningContent={reasoningContent} />
-            )}
             {textContent}
           </div>
         )}
