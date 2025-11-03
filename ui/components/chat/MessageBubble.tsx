@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
 import FileDisplay from "./FileDisplay";
+import ThinkingPanel from "./ThinkingPanel";
 
 import type { FileAttachment } from "@/types";
 
@@ -43,6 +44,17 @@ export default function MessageBubble({
       message.content ||
       message.parts
         ?.filter((p) => p.type === "text")
+        .map((p) => ("text" in p ? p.text : ""))
+        .join("") ||
+      ""
+    );
+  }, [message]);
+
+  const reasoningContent = useMemo(() => {
+    return (
+      message.content ||
+      message.parts
+        ?.filter((p) => p.type === "reasoning")
         .map((p) => ("text" in p ? p.text : ""))
         .join("") ||
       ""
@@ -161,6 +173,9 @@ export default function MessageBubble({
               isUser ? "bg-primary text-primary-foreground" : "bg-muted"
             }`}
           >
+            {reasoningContent && (
+              <ThinkingPanel reasoningContent={reasoningContent} />
+            )}
             {textContent}
           </div>
         )}
