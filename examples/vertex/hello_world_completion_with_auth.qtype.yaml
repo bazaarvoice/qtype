@@ -1,0 +1,45 @@
+id: hello_world
+description: A simple hello world application using Google Vertex AI
+models:
+  - type: Model
+    id: gemini_flash
+    provider: gcp-vertex
+    model_id: gemini-2.0-flash
+    inference_params:
+      temperature: 0.7
+    auth: vertex_auth
+auths:
+  - type: vertex
+    id: vertex_auth
+    profile_name: default
+flows:
+  - type: Flow
+    id: simple_example
+    interface:
+      type: Complete
+    variables:
+      - id: prompt
+        type: text
+      - id: answer
+        type: text
+      - id: formatted_prompt
+        type: text
+    inputs:
+      - prompt
+    outputs:
+      - answer
+    steps:
+      - id: question_prompt
+        type: PromptTemplate
+        template: "You are a helpful assistant. Answer the following question:\n{prompt}\n"
+        inputs:
+          - prompt
+        outputs:
+          - formatted_prompt
+      - id: llm_inference_step
+        type: LLMInference
+        model: gemini_flash
+        inputs:
+          - formatted_prompt
+        outputs:
+          - answer
