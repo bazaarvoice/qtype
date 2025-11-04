@@ -17,7 +17,6 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
 )
 
 from qtype.interpreter.auth.cache import cache_auth, get_cached_auth
-from qtype.interpreter.base.secret_utils import resolve_secret
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import AWSAuthProvider
 
@@ -60,7 +59,7 @@ def _is_session_valid(session: boto3.Session) -> bool:
 @contextmanager
 def aws(
     aws_provider: AWSAuthProvider,
-    secret_manager: SecretManagerBase | None = None,
+    secret_manager: SecretManagerBase,
 ) -> Generator[boto3.Session, None, None]:
     """
     Create a boto3 Session using AWS authentication provider configuration.
@@ -144,14 +143,14 @@ def aws(
 
 def _create_session(
     aws_provider: AWSAuthProvider,
-    secret_manager: SecretManagerBase | None = None,
+    secret_manager: SecretManagerBase,
 ) -> boto3.Session:
     """
     Create a boto3 Session based on the AWS provider configuration.
 
     Args:
         aws_provider: AWSAuthProvider with authentication details
-        secret_manager: Optional secret manager for resolving SecretReferences
+        secret_manager: Secret manager for resolving SecretReferences
 
     Returns:
         boto3.Session: Configured session
@@ -173,19 +172,13 @@ def _create_session(
     elif aws_provider.access_key_id and aws_provider.secret_access_key:
         # Use direct credentials - resolve secrets
         context = f"AWS auth provider '{aws_provider.id}'"
-        access_key = resolve_secret(
-            aws_provider.access_key_id, secret_manager, context
-        )
-        secret_key = resolve_secret(
-            aws_provider.secret_access_key, secret_manager, context
-        )
+        access_key = secret_manager(aws_provider.access_key_id, context)
+        secret_key = secret_manager(aws_provider.secret_access_key, context)
         session_kwargs["aws_access_key_id"] = access_key
         session_kwargs["aws_secret_access_key"] = secret_key
 
         if aws_provider.session_token:
-            session_token = resolve_secret(
-                aws_provider.session_token, secret_manager, context
-            )
+            session_token = secret_manager(aws_provider.session_token, context)
             session_kwargs["aws_session_token"] = session_token
 
     # Create the base session

@@ -47,7 +47,6 @@ from typing import Generator
 import boto3  # type: ignore[import-untyped]
 
 from qtype.interpreter.auth.aws import aws
-from qtype.interpreter.base.secret_utils import resolve_secret
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import (
     APIKeyAuthProvider,
@@ -66,7 +65,7 @@ class UnsupportedAuthProviderError(Exception):
 @contextmanager
 def auth(
     auth_provider: AuthorizationProvider,
-    secret_manager: SecretManagerBase | None = None,
+    secret_manager: SecretManagerBase,
 ) -> Generator[
     boto3.Session | APIKeyAuthProvider | OAuth2AuthProvider, None, None
 ]:
@@ -81,6 +80,7 @@ def auth(
 
     Args:
         auth_provider: AuthorizationProvider instance of any supported type
+        secret_manager: Secret manager for resolving SecretReferences
 
     Yields:
         boto3.Session | APIKeyAuthProvider: The appropriate session or provider instance
@@ -127,9 +127,7 @@ def auth(
         # For API key providers, resolve the api_key and yield modified copy
         # The caller can access provider.api_key and provider.host
         context = f"auth provider '{auth_provider.id}'"
-        resolved_key = resolve_secret(
-            auth_provider.api_key, secret_manager, context
-        )
+        resolved_key = secret_manager(auth_provider.api_key, context)
         # Use model.copy(update=...) to create a copy with resolved secret
         resolved_provider = auth_provider.model_copy(
             update={"api_key": resolved_key}
@@ -139,9 +137,7 @@ def auth(
     elif isinstance(auth_provider, OAuth2AuthProvider):
         # OAuth2 - resolve client_secret
         context = f"auth provider '{auth_provider.id}'"
-        resolved_secret = resolve_secret(
-            auth_provider.client_secret, secret_manager, context
-        )
+        resolved_secret = secret_manager(auth_provider.client_secret, context)
         # Use model.copy(update=...) to create a copy with resolved secret
         resolved_provider = auth_provider.model_copy(
             update={"client_secret": resolved_secret}

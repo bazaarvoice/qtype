@@ -11,7 +11,14 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
 )
 
 from qtype.interpreter.auth.aws import AWSAuthenticationError, aws
+from qtype.interpreter.base.secrets import NoOpSecretManager
 from qtype.semantic.model import AWSAuthProvider
+
+
+@pytest.fixture
+def secret_manager():
+    """Create a NoOpSecretManager for testing."""
+    return NoOpSecretManager()
 
 
 @pytest.fixture
@@ -96,13 +103,14 @@ class TestAWSContextManager:
         mock_cache,
         mock_get_cached,
         aws_provider,
+        secret_manager,
     ):
         """Test that cached valid sessions are returned without recreation."""
         cached_session = MagicMock()
         mock_get_cached.return_value = cached_session
         mock_is_valid.return_value = True
 
-        with aws(aws_provider) as session:
+        with aws(aws_provider, secret_manager) as session:
             assert session is cached_session
 
         mock_get_cached.assert_called_once_with(aws_provider)
@@ -127,12 +135,12 @@ class TestAWSContextManager:
         mock_get_cached.return_value = None
         mock_create.return_value = new_session
 
-        with aws(aws_provider) as session:
+        with aws(aws_provider, secret_manager) as session:
             assert session is new_session
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_not_called()
-        mock_create.assert_called_once_with(aws_provider, None)
+        mock_create.assert_called_once_with(aws_provider, secret_manager)
         mock_cache.assert_called_once_with(aws_provider, new_session)
 
     @patch("qtype.interpreter.auth.aws.get_cached_auth")
@@ -154,12 +162,12 @@ class TestAWSContextManager:
         mock_is_valid.return_value = False
         mock_create.return_value = new_session
 
-        with aws(aws_provider) as session:
+        with aws(aws_provider, secret_manager) as session:
             assert session is new_session
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_called_once_with(cached_session)
-        mock_create.assert_called_once_with(aws_provider, None)
+        mock_create.assert_called_once_with(aws_provider, secret_manager)
         mock_cache.assert_called_once_with(aws_provider, new_session)
 
     @patch("qtype.interpreter.auth.aws._create_session")
@@ -174,7 +182,7 @@ class TestAWSContextManager:
         with pytest.raises(
             AWSAuthenticationError, match="No credentials found"
         ):
-            with aws(aws_provider):
+            with aws(aws_provider, secret_manager):
                 pass
 
     @patch("qtype.interpreter.auth.aws._create_session")
@@ -189,7 +197,7 @@ class TestAWSContextManager:
         mock_create.side_effect = client_error
 
         with pytest.raises(AWSAuthenticationError):
-            with aws(aws_provider):
+            with aws(aws_provider, secret_manager):
                 pass
 
 
@@ -273,7 +281,7 @@ class TestCreateSession:
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
-        result = _create_session(profile_provider)
+        result = _create_session(profile_provider, secret_manager)
 
         mock_session_class.assert_called_once_with(
             profile_name="test-profile", region_name="us-west-2"
@@ -282,7 +290,7 @@ class TestCreateSession:
 
     @patch("boto3.Session")
     def test_create_session_with_credentials(
-        self, mock_session_class, credentials_provider
+        self, mock_session_class, credentials_provider, secret_manager
     ):
         """Test creating a session with explicit credentials."""
         from qtype.interpreter.auth.aws import _create_session
@@ -290,7 +298,7 @@ class TestCreateSession:
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
-        result = _create_session(credentials_provider)
+        result = _create_session(credentials_provider, secret_manager)
 
         mock_session_class.assert_called_once_with(
             aws_access_key_id="AKIATEST",
@@ -312,7 +320,7 @@ class TestCreateSession:
         mock_session_class.return_value = base_session
         mock_assume_role.return_value = role_session
 
-        result = _create_session(role_provider)
+        result = _create_session(role_provider, secret_manager)
 
         mock_assume_role.assert_called_once_with(base_session, role_provider)
         assert result is role_session

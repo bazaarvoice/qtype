@@ -175,8 +175,12 @@ def to_llm(
     if model.provider == "aws-bedrock":
         from llama_index.llms.bedrock_converse import BedrockConverse
 
+        from qtype.semantic.model import AWSAuthProvider
+
         if model.auth:
-            with aws(model.auth) as session:
+            # Type hint for mypy - we know it's AWSAuthProvider for aws-bedrock
+            assert isinstance(model.auth, AWSAuthProvider)
+            with aws(model.auth, secret_manager) as session:
                 session = session._session
         else:
             session = None

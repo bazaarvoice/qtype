@@ -3,7 +3,6 @@ from __future__ import annotations
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from phoenix.otel import register as register_phoenix
 
-from qtype.interpreter.base.secret_utils import resolve_secret
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import TelemetrySink
 
@@ -26,17 +25,22 @@ def register(
         project_id: Optional project identifier for telemetry grouping.
             If not provided, uses telemetry.id
         secret_manager: Optional secret manager for resolving endpoint URLs
-            that are stored as SecretReferences
+            that are stored as SecretReferences. If None, uses NoOpSecretManager
+            which will raise an error if secrets are needed.
 
     Note:
         Currently only supports LlamaIndex and Phoenix. Support for
         Langfuse and LlamaTrace is planned.
     """
+    from qtype.interpreter.base.secrets import NoOpSecretManager
 
     # Only llama_index and phoenix are supported for now
     # TODO: Add support for langfues and llamatrace
+    if secret_manager is None:
+        secret_manager = NoOpSecretManager()
+
     context = f"telemetry sink '{telemetry.id}'"
-    endpoint = resolve_secret(telemetry.endpoint, secret_manager, context)  # type: ignore[arg-type]
+    endpoint = secret_manager(telemetry.endpoint, context)
     tracer_provider = register_phoenix(
         endpoint=endpoint,
         project_name=project_id if project_id else telemetry.id,
