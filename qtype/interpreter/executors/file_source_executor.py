@@ -4,6 +4,7 @@ import fsspec
 import pandas as pd
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import ConstantPath, FileSource
 
@@ -11,8 +12,10 @@ from qtype.semantic.model import ConstantPath, FileSource
 class FileSourceExecutor(StepExecutor):
     """Executor for FileSource steps."""
 
-    def __init__(self, step: FileSource, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: FileSource, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, FileSource):
             raise ValueError(
                 "FileSourceExecutor can only execute FileSource steps."

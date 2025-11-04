@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from qtype.dsl.domain_types import ChatMessage, MessageRole
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.flow import run_flow
 from qtype.interpreter.stream.chat import format_stream_events_as_sse
 from qtype.interpreter.stream.chat.ui_request_to_domain_type import (
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 async def _execute_flow_with_streaming(
     flow: Flow,
     initial_message: FlowMessage,
+    context: ExecutorContext,
 ) -> AsyncIterator[StreamEvent]:
     """
     Execute flow and yield StreamEvents as they occur.
@@ -51,10 +53,17 @@ async def _execute_flow_with_streaming(
 
     async def execute_with_callback(callback):  # type: ignore[no-untyped-def]
         """Execute flow with streaming callback."""
+        # Update context with streaming callback
+        stream_context = ExecutorContext(
+            secret_manager=context.secret_manager,
+            on_stream_event=callback,
+            on_progress=context.on_progress,
+            tracer=context.tracer,
+        )
         await run_flow(
             flow,
             initial_message,
-            on_stream_event=callback,
+            context=stream_context,
         )
 
     # Convert callback-based streaming to async iterator
@@ -65,6 +74,7 @@ async def _execute_flow_with_streaming(
 async def _stream_sse_response(
     flow: Flow,
     initial_message: FlowMessage,
+    context: ExecutorContext,
     output_metadata: dict[str, Any] | None = None,
 ) -> AsyncIterator[str]:
     """
@@ -82,7 +92,7 @@ async def _stream_sse_response(
         SSE formatted strings (data: {json}\\n\\n)
     """
     # Execute flow and get event stream
-    event_stream = _execute_flow_with_streaming(flow, initial_message)
+    event_stream = _execute_flow_with_streaming(flow, initial_message, context)
 
     # Format events as SSE with metadata
     async for sse_line in format_stream_events_as_sse(
@@ -91,13 +101,16 @@ async def _stream_sse_response(
         yield sse_line
 
 
-def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def _create_chat_streaming_endpoint(
+    app: FastAPI, flow: Flow, context: ExecutorContext
+) -> None:
     """
     Create streaming endpoint for Conversational flows.
 
     Args:
         app: FastAPI application instance
         flow: Flow with Conversational interface
+        secret_manager: Optional secret manager for resolving secrets
     """
     flow_id = flow.id
 
@@ -150,6 +163,7 @@ def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
                     flow,
                     initial_message,
                     output_metadata=None,
+                    context=context,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -183,13 +197,16 @@ def _create_chat_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     )(stream_chat)
 
 
-def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def _create_completion_streaming_endpoint(
+    app: FastAPI, flow: Flow, context: ExecutorContext
+) -> None:
     """
     Create streaming endpoint for Complete flows.
 
     Args:
         app: FastAPI application instance
         flow: Flow with Complete interface
+        secret_manager: Optional secret manager for resolving secrets
     """
     flow_id = flow.id
 
@@ -210,6 +227,7 @@ def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
                     flow,
                     initial_message,
                     output_metadata=None,
+                    context=context,
                 ),
                 media_type="text/plain; charset=utf-8",
                 headers={
@@ -243,13 +261,16 @@ def _create_completion_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     )(stream_completion)
 
 
-def create_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
+def create_streaming_endpoint(
+    app: FastAPI, flow: Flow, context: ExecutorContext
+) -> None:
     """
     Create streaming endpoint for flow execution.
 
     Args:
         app: FastAPI application instance
         flow: Flow to create endpoint for
+        secret_manager: Optional secret manager for resolving secrets
     """
     if flow.interface is None:
         raise ValueError(f"Flow {flow.id} has no interface defined")
@@ -257,22 +278,25 @@ def create_streaming_endpoint(app: FastAPI, flow: Flow) -> None:
     # Dispatch based on interface type
     interface_type = flow.interface.type
     if interface_type == "Conversational":
-        _create_chat_streaming_endpoint(app, flow)
+        _create_chat_streaming_endpoint(app, flow, context)
     elif interface_type == "Complete":
-        _create_completion_streaming_endpoint(app, flow)
+        _create_completion_streaming_endpoint(app, flow, context)
     else:
         raise ValueError(
             f"Unknown interface type for flow {flow.id}: {interface_type}"
         )
 
 
-def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
+def create_rest_endpoint(
+    app: FastAPI, flow: Flow, context: ExecutorContext
+) -> None:
     """
     Create only the REST endpoint for flow execution.
 
     Args:
         app: FastAPI application instance
         flow: Flow to create endpoint for
+        secret_manager: Optional secret manager for resolving secrets
     """
     RequestModel = create_input_shape(flow)
     ResultShape = create_output_shape(flow)
@@ -292,7 +316,7 @@ def create_rest_endpoint(app: FastAPI, flow: Flow) -> None:
             initial_message = request_to_flow_message(request=body, **kwargs)
 
             # Execute flow
-            results = await run_flow(flow, initial_message)
+            results = await run_flow(flow, initial_message, context=context)
 
             if not results:
                 raise HTTPException(

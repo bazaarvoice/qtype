@@ -2,6 +2,7 @@ import string
 from typing import AsyncIterator
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import PromptTemplate
 
@@ -20,8 +21,10 @@ def get_format_arguments(format_string: str) -> set[str]:
 class PromptTemplateExecutor(StepExecutor):
     """Executor for PromptTemplate steps."""
 
-    def __init__(self, step: PromptTemplate, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: PromptTemplate, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, PromptTemplate):
             raise ValueError(
                 (

@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import SQLSource
 
@@ -15,8 +16,10 @@ from qtype.semantic.model import SQLSource
 class SQLSourceExecutor(StepExecutor):
     """Executor for SQLSource steps."""
 
-    def __init__(self, step: SQLSource, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: SQLSource, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, SQLSource):
             raise ValueError(
                 "SQLSourceExecutor can only execute SQLSource steps."
@@ -34,13 +37,14 @@ class SQLSourceExecutor(StepExecutor):
         Yields:
             FlowMessages with the results of SQL query execution.
         """
-        # Create a database engine
+        # Create a database engine - resolve connection string if it's a SecretReference
+        connection_string = self._resolve_secret(self.step.connection)
         connect_args = {}
         if self.step.auth:
             with auth(self.step.auth) as creds:
                 if isinstance(creds, boto3.Session):
                     connect_args["session"] = creds
-        engine = create_engine(self.step.connection, connect_args=connect_args)
+        engine = create_engine(connection_string, connect_args=connect_args)
 
         output_columns = {output.id for output in self.step.outputs}
         step_inputs = {i.id for i in self.step.inputs}

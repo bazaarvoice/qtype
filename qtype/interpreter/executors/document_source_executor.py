@@ -2,6 +2,7 @@ import importlib
 from typing import AsyncIterator
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import from_llama_document
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentSource
@@ -10,8 +11,10 @@ from qtype.semantic.model import DocumentSource
 class DocumentSourceExecutor(StepExecutor):
     """Executor for DocumentSource steps."""
 
-    def __init__(self, step: DocumentSource, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: DocumentSource, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocumentSource):
             raise ValueError(
                 (
@@ -65,12 +68,18 @@ class DocumentSourceExecutor(StepExecutor):
         output_id = self.step.outputs[0].id
 
         try:
-            # Combine step args with message variables as runtime args
+            # Resolve any SecretReferences in step args
+            context = f"step '{self.step.id}'"
+            resolved_args = self._secret_manager.resolve_secrets_in_dict(
+                self.step.args, context
+            )
+
+            # Combine resolved step args with message variables as runtime args
             runtime_args = {
                 key: message.variables.get(key)
                 for key in message.variables.keys()
             }
-            combined_args = {**self.step.args, **runtime_args}
+            combined_args = {**resolved_args, **runtime_args}
 
             # Instantiate the reader with combined arguments
             loader = self.reader_class(**combined_args)

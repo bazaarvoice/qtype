@@ -47,6 +47,7 @@ from qtype.semantic.model import (
 )
 
 from .batch_step_executor import StepExecutor
+from .executor_context import ExecutorContext
 
 # ... import other executors
 
@@ -70,13 +71,25 @@ EXECUTOR_REGISTRY = {
 }
 
 
-def create_executor(step: Step, **dependencies) -> StepExecutor:
-    """Factory to create the appropriate executor for a given step."""
+def create_executor(
+    step: Step, context: ExecutorContext, **dependencies
+) -> StepExecutor:
+    """
+    Factory to create the appropriate executor for a given step.
+
+    Args:
+        step: The step to create an executor for
+        context: ExecutorContext containing cross-cutting concerns
+        **dependencies: Executor-specific dependencies
+
+    Returns:
+        StepExecutor: Configured executor instance
+    """
     executor_class = EXECUTOR_REGISTRY.get(type(step))
     if not executor_class:
         raise ValueError(
             f"No executor found for step type: {type(step).__name__}"
         )
 
-    # This assumes the constructor takes the step and then dependencies
-    return executor_class(step, **dependencies)
+    # This assumes the constructor takes the step, context, then dependencies
+    return executor_class(step, context, **dependencies)

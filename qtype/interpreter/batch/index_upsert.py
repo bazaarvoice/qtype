@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 import pandas as pd
 
 from qtype.base.exceptions import InterpreterError
 from qtype.base.types import BatchConfig
 from qtype.dsl.domain_types import RAGDocument
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.batch.types import ErrorMode
 from qtype.interpreter.batch.utils import reconcile_results_and_errors
 from qtype.interpreter.conversions import to_llama_document, to_vector_store
@@ -17,14 +18,16 @@ def execute_index_upsert(
     step: IndexUpsert,
     inputs: pd.DataFrame,
     batch_config: BatchConfig,
+    context: ExecutorContext,
     **kwargs: dict[Any, Any],
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Executes an IndexUpsert step to add documents to a vector store.
 
     Args:
         step: The IndexUpsert step to execute.
         inputs: Input DataFrame containing RAGDocument data to upsert.
         batch_config: Configuration for batch processing.
+        context: ExecutorContext with cross-cutting concerns.
         **kwargs: Additional keyword arguments.
 
     Returns:
@@ -32,6 +35,7 @@ def execute_index_upsert(
             - The first DataFrame contains success indicators with document IDs.
             - The second DataFrame contains rows that encountered errors with an 'error' column.
     """
+    secret_manager = context.secret_manager
     # Validate that we have exactly one output variable
     if len(step.outputs) != 1:
         raise InterpreterError(
@@ -48,7 +52,7 @@ def execute_index_upsert(
 
     # Get the vector store
     try:
-        vector_store = to_vector_store(step.index)
+        vector_store = to_vector_store(step.index, secret_manager)
     except Exception as e:
         if batch_config.error_mode == ErrorMode.FAIL:
             raise InterpreterError(

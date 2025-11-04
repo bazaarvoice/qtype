@@ -21,6 +21,7 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
 from qtype.semantic.model import DocumentSplitter, Index, Model
 
@@ -154,14 +155,32 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 
 
 @cached_resource
-def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
-    """Convert a qtype Model to a LlamaIndex Model."""
+def to_llm(
+    model: Model,
+    system_prompt: str | None,
+    secret_manager: SecretManagerBase,
+) -> BaseLLM:
+    """
+    Convert a qtype Model to a LlamaIndex Model.
+
+    Args:
+        model: The semantic model configuration
+        system_prompt: Optional system prompt for the model
+        secret_manager: Optional secret manager for resolving SecretReferences
+
+    Returns:
+        A LlamaIndex LLM instance
+    """
 
     if model.provider == "aws-bedrock":
         from llama_index.llms.bedrock_converse import BedrockConverse
 
+        from qtype.semantic.model import AWSAuthProvider
+
         if model.auth:
-            with aws(model.auth) as session:
+            # Type hint for mypy - we know it's AWSAuthProvider for aws-bedrock
+            assert isinstance(model.auth, AWSAuthProvider)
+            with aws(model.auth, secret_manager) as session:
                 session = session._session
         else:
             session = None
@@ -176,26 +195,50 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
     elif model.provider == "openai":
         from llama_index.llms.openai import OpenAI
 
+        from qtype.interpreter.auth.generic import auth
+        from qtype.semantic.model import APIKeyAuthProvider
+
+        api_key: str | None = None
+        if model.auth:
+            with auth(model.auth, secret_manager) as provider:
+                if not isinstance(provider, APIKeyAuthProvider):
+                    raise InterpreterError(
+                        f"OpenAI provider requires APIKeyAuthProvider, "
+                        f"got {type(provider).__name__}"
+                    )
+                # api_key is guaranteed to be str after auth() resolves it
+                api_key = provider.api_key  # type: ignore[assignment]
+
         return OpenAI(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
-            api_key=getattr(model.auth, "api_key", None)
-            if model.auth
-            else None,
+            api_key=api_key,
         )
     elif model.provider == "anthropic":
         from llama_index.llms.anthropic import (  # type: ignore[import-untyped]
             Anthropic,
         )
 
+        from qtype.interpreter.auth.generic import auth
+        from qtype.semantic.model import APIKeyAuthProvider
+
+        api_key: str | None = None
+        if model.auth:
+            with auth(model.auth, secret_manager) as provider:
+                if not isinstance(provider, APIKeyAuthProvider):
+                    raise InterpreterError(
+                        f"Anthropic provider requires APIKeyAuthProvider, "
+                        f"got {type(provider).__name__}"
+                    )
+                # api_key is guaranteed to be str after auth() resolves it
+                api_key = provider.api_key  # type: ignore[assignment]
+
         arv: BaseLLM = Anthropic(
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
-            api_key=getattr(model.auth, "api_key", None)
-            if model.auth
-            else None,
+            api_key=api_key,
         )
         return arv
     elif model.provider == "gcp-vertex":
@@ -220,7 +263,9 @@ def to_llm(model: Model, system_prompt: str | None) -> BaseLLM:
 
 
 @cached_resource
-def to_vector_store(index: Index) -> BasePydanticVectorStore:
+def to_vector_store(
+    index: Index, secret_manager: SecretManagerBase
+) -> BasePydanticVectorStore:
     """Convert a qtype Index to a LlamaIndex vector store."""
     full_module_path = "llama_index.core.vector_stores" + index.args.get(
         "module", "SimpleVectorStore"
@@ -235,13 +280,16 @@ def to_vector_store(index: Index) -> BasePydanticVectorStore:
             f"Failed to import reader class '{class_name}' from '{full_module_path}': {e}"
         ) from e
 
-    args = index.args.copy()
-    if "module" in args:
-        del args["module"]
+    # Resolve any SecretReferences in args
+    context = f"index '{index.id}'"
+    resolved_args = secret_manager.resolve_secrets_in_dict(index.args, context)
 
-    index = reader_class(**args)
+    if "module" in resolved_args:
+        del resolved_args["module"]
 
-    return index
+    index_instance = reader_class(**resolved_args)
+
+    return index_instance
 
 
 @cached_resource

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 from qtype.base.exceptions import SemanticError
@@ -7,6 +9,7 @@ from qtype.dsl.linker import QTypeValidationError
 from qtype.dsl.model import AWSAuthProvider
 from qtype.semantic.model import (
     Agent,
+    Application,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -17,6 +20,7 @@ from qtype.semantic.model import (
     IndexUpsert,
     LLMInference,
     PromptTemplate,
+    SecretReference,
     SQLSource,
     Step,
     VectorSearch,
@@ -372,9 +376,101 @@ def _validate_flow(flow: Flow) -> None:
                 )
 
 
+def _has_secret_reference(obj: Any) -> bool:
+    """
+    Recursively check if an object contains any SecretReference instances.
+
+    This function traverses Pydantic models, lists, and dictionaries to find
+    any SecretReference instances that require a secret manager for resolution.
+
+    Args:
+        obj: Object to check - can be a Pydantic BaseModel, list, dict,
+            SecretReference, or any other Python object
+
+    Returns:
+        True if SecretReference is found anywhere in the object graph,
+        False otherwise
+
+    Examples:
+        >>> from qtype.semantic.model import SecretReference
+        >>> _has_secret_reference("plain string")
+        False
+        >>> _has_secret_reference(SecretReference(secret_name="my-secret"))
+        True
+        >>> _has_secret_reference({"key": SecretReference(secret_name="s")})
+        True
+    """
+    # Direct check - most common case
+    if isinstance(obj, SecretReference):
+        return True
+
+    # Check Pydantic models by iterating over field values
+    if isinstance(obj, BaseModel):
+        for field_name, field_value in obj:
+            if _has_secret_reference(field_value):
+                return True
+
+    # Check lists
+    elif isinstance(obj, list):
+        for item in obj:
+            if _has_secret_reference(item):
+                return True
+
+    # Check dictionaries
+    elif isinstance(obj, dict):
+        for value in obj.values():
+            if _has_secret_reference(value):
+                return True
+
+    return False
+
+
+def _validate_application(application: Application) -> None:
+    """
+    Validate Application configuration.
+
+    Args:
+        application: The Application to validate
+
+    Raises:
+        QTypeSemanticError: If SecretReference is used but
+            secret_manager is not configured, or if secret_manager
+            configuration is invalid
+    """
+    if application.secret_manager is None:
+        # Check if any SecretReference is used in the application
+        if _has_secret_reference(application):
+            raise QTypeSemanticError(
+                (
+                    f"Application '{application.id}' uses SecretReference "
+                    "but does not have a secret_manager configured. "
+                    "Please add a secret_manager to the application."
+                )
+            )
+    else:
+        # Validate secret_manager configuration
+        from qtype.semantic.model import AWSAuthProvider, AWSSecretManager
+
+        secret_mgr = application.secret_manager
+
+        # For AWSSecretManager, verify auth is AWSAuthProvider
+        # (linker ensures the reference exists, we just check the type)
+        if isinstance(secret_mgr, AWSSecretManager):
+            auth_provider = secret_mgr.auth
+            if not isinstance(auth_provider, AWSAuthProvider):
+                raise QTypeSemanticError(
+                    (
+                        f"AWSSecretManager '{secret_mgr.id}' requires an "
+                        f"AWSAuthProvider but references '{auth_provider.id}' "
+                        f"which is of type '{type(auth_provider).__name__}'"
+                    )
+                )
+
+
 # Mapping of types to their validation functions
 _VALIDATORS = {
     Agent: _validate_agent,
+    Application: _validate_application,
     PromptTemplate: _validate_prompt_template,
     AWSAuthProvider: _validate_aws_auth,
     LLMInference: _validate_llm_inference,

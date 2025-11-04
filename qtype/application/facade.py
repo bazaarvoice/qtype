@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
 from qtype.semantic.model import Application as SemanticApplication
 from qtype.semantic.model import DocumentType as SemanticDocumentType
 
-if TYPE_CHECKING:
-    pass
+# Note: There should be _zero_ imports here at the top that import qtype.interpreter.
+# That's the whole point of this facade - to avoid importing optional
+# dependencies unless these methods are called.
 
 logger = get_logger("application.facade")
 
@@ -33,7 +34,22 @@ class QTypeFacade:
             # Register telemetry if needed
             from qtype.interpreter.telemetry import register
 
-            register(spec.telemetry, spec.id)
+            register(spec.telemetry, spec.id, self.secret_manager(spec))
+
+    def secret_manager(self, spec: SemanticDocumentType):
+        """
+        Create a secret manager based on the specification.
+
+        Args:
+            spec: SemanticDocumentType specification
+
+        Returns:
+            Secret manager instance
+        """
+        from qtype.interpreter.base.secrets import create_secret_manager
+
+        if isinstance(spec, SemanticApplication) and spec.secret_manager:
+            return create_secret_manager(spec.secret_manager)
 
     async def execute_workflow(
         self,
@@ -106,9 +122,22 @@ class QTypeFacade:
         initial_messages = dataframe_to_flow_messages(input_df, session)
 
         # Execute the flow
+        from opentelemetry import trace
+
+        from qtype.interpreter.base.executor_context import ExecutorContext
         from qtype.interpreter.flow import run_flow
 
-        results = await run_flow(target_flow, initial_messages, **kwargs)
+        secret_manager = self.secret_manager(semantic_model)
+        context = ExecutorContext(
+            secret_manager=secret_manager,
+            tracer=trace.get_tracer(__name__),
+        )
+        results = await run_flow(
+            target_flow,
+            initial_messages,
+            context=context,
+            **kwargs,
+        )
 
         # Convert results back to DataFrame
         results_df = flow_messages_to_dataframe(results, target_flow)

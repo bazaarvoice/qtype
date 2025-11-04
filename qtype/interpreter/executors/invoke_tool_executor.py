@@ -11,6 +11,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import (
@@ -39,6 +40,9 @@ class ToolExecutionMixin:
         # These will be set by the concrete executor classes
         self.stream_emitter: StreamEmitter
         self.step: Step
+        self._resolve_secret: (
+            Any  # Will be provided by StepExecutor base class
+        )
 
     async def execute_python_tool(
         self,
@@ -128,13 +132,24 @@ class ToolExecutionMixin:
             tool_input=inputs,
         ) as tool_ctx:
             try:
-                # Prepare headers
-                headers = tool.headers.copy() if tool.headers else {}
+                # Prepare headers - resolve any SecretReferences
+                # Note: ToolExecutionMixin users inherit from StepExecutor
+                # which provides _secret_manager
+                secret_manager = getattr(self, "_secret_manager")
+                context = f"tool '{tool.id}'"
+                headers = (
+                    secret_manager.resolve_secrets_in_dict(
+                        tool.headers, context
+                    )
+                    if tool.headers
+                    else {}
+                )
 
                 # Handle authentication
                 if tool.auth:
                     if isinstance(tool.auth, BearerTokenAuthProvider):
-                        headers["Authorization"] = f"Bearer {tool.auth.token}"
+                        token = self._resolve_secret(tool.auth.token)
+                        headers["Authorization"] = f"Bearer {token}"
                     else:
                         raise ValueError(
                             (
@@ -188,8 +203,10 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
     # Tool invocations should be marked as TOOL type
     span_kind = OpenInferenceSpanKindValues.TOOL
 
-    def __init__(self, step: InvokeTool, **dependencies: Any) -> None:
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: InvokeTool, context: ExecutorContext, **dependencies: Any
+    ) -> None:
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, InvokeTool):
             raise ValueError(
                 "InvokeToolExecutor can only execute InvokeTool steps."

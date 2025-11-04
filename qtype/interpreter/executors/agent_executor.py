@@ -9,6 +9,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_chat_message, to_llm, to_memory
 from qtype.interpreter.executors.invoke_tool_executor import ToolExecutionMixin
 from qtype.interpreter.tools import FunctionToolHelper
@@ -24,8 +25,8 @@ class AgentExecutor(StepExecutor, ToolExecutionMixin, FunctionToolHelper):
     # Agent execution should be marked as AGENT type (similar to LLM)
     span_kind = OpenInferenceSpanKindValues.AGENT
 
-    def __init__(self, step: Agent, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(self, step: Agent, context: ExecutorContext, **dependencies):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, Agent):
             raise ValueError("AgentExecutor can only execute Agent steps.")
         self.step: Agent = step
@@ -46,7 +47,9 @@ class AgentExecutor(StepExecutor, ToolExecutionMixin, FunctionToolHelper):
         ]
 
         # Get the LLM for the agent
-        llm = to_llm(self.step.model, self.step.system_message)
+        llm = to_llm(
+            self.step.model, self.step.system_message, self._secret_manager
+        )
 
         # Create ReActAgent
         return ReActAgent(

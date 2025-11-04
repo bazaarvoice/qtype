@@ -49,9 +49,11 @@ async def create_message_stream(
 class TestAggregateExecutor:
     """Test suite for AggregateExecutor functionality."""
 
-    async def test_aggregate_all_successful(self, aggregate_step, session):
+    async def test_aggregate_all_successful(
+        self, aggregate_step, session, executor_context
+    ):
         """Test aggregation with all successful messages."""
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, executor_context)
 
         results = [
             r
@@ -72,14 +74,16 @@ class TestAggregateExecutor:
         assert stats.num_failed == 0
         assert stats.num_total == 5
 
-    async def test_aggregate_all_failed(self, aggregate_step, session):
+    async def test_aggregate_all_failed(
+        self, aggregate_step, session, executor_context
+    ):
         """Test aggregation with all failed messages.
 
         Note: Failed messages are filtered by the base executor and passed
         through without going through process_batch(), but they ARE counted
         by the ProgressTracker.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, executor_context)
 
         results = [
             r
@@ -103,14 +107,14 @@ class TestAggregateExecutor:
         assert stats.num_total == 3
 
     async def test_aggregate_mixed_success_and_failure(
-        self, aggregate_step, session
+        self, aggregate_step, session, executor_context
     ):
         """Test aggregation with mix of successful and failed messages.
 
         Failed messages are filtered and emitted first, then successful
         messages are processed and emitted, then the aggregate summary.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, executor_context)
 
         results = [
             r
@@ -136,9 +140,11 @@ class TestAggregateExecutor:
         assert stats.num_failed == 3
         assert stats.num_total == 10
 
-    async def test_aggregate_empty_stream(self, aggregate_step):
+    async def test_aggregate_empty_stream(
+        self, aggregate_step, executor_context
+    ):
         """Test aggregation with no messages."""
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, executor_context)
 
         async def empty_stream():
             if False:
@@ -155,14 +161,14 @@ class TestAggregateExecutor:
         assert stats.num_total == 0
 
     async def test_aggregate_finalize_runs_after_processing(
-        self, aggregate_step, session
+        self, aggregate_step, session, executor_context
     ):
         """Test that finalize emits the summary after all messages.
 
         The finalize() method should emit exactly one message with the
         aggregate stats, and it should come last.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, executor_context)
 
         results = [
             r

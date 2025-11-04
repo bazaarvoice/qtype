@@ -213,49 +213,128 @@ DSL_ONLY_UNION_TYPES = {
     _get_union_args(dsl.ToolType): "Tool",
     _get_union_args(dsl.StepType): "Step",
     _get_union_args(dsl.AuthProviderType): "AuthorizationProvider",
+    _get_union_args(dsl.SecretManagerType): "SecretManager",
     _get_union_args(dsl.SourceType): "Source",
     _get_union_args(dsl.IndexType): "Index",
     _get_union_args(dsl.ModelType): "Model",
 }
 
 
-def _transform_union_type(args: tuple) -> str:
-    """Transform Union types, handling string ID references."""
+def _is_dsl_only_union(args_without_str_none: tuple) -> tuple[bool, str]:
+    """
+    Check if union represents a DSL-only type pattern.
 
+    Args:
+        args_without_str_none: Union args with str and None filtered out
+
+    Returns:
+        Tuple of (is_dsl_only, semantic_type_name)
+    """
+    if args_without_str_none and args_without_str_none in DSL_ONLY_UNION_TYPES:
+        return True, DSL_ONLY_UNION_TYPES[args_without_str_none]
+    return False, ""
+
+
+def _resolve_optional_collection(args: tuple, has_none: bool) -> str | None:
+    """
+    Handle list|None -> list pattern (empty collection = None).
+
+    Args:
+        args: Union type arguments
+        has_none: Whether None is in the union
+
+    Returns:
+        Resolved type name if pattern matches, None otherwise
+    """
+    if len(args) == 2 and has_none:
+        collection_types = [
+            arg for arg in args if get_origin(arg) in {list, dict}
+        ]
+        if collection_types:
+            return dsl_to_semantic_type_name(collection_types[0])
+    return None
+
+
+def _is_id_reference_pattern(
+    args: tuple, has_str: bool, has_secret_ref: bool
+) -> bool:
+    """
+    Check if union represents an ID reference pattern (str | Type).
+
+    ID references allow DSL to use string IDs that get resolved to objects
+    in the semantic model. Exception: str | SecretReference stays as-is.
+
+    Args:
+        args: Union type arguments
+        has_str: Whether str is in the union
+        has_secret_ref: Whether SecretReference is in the union
+
+    Returns:
+        True if this is an ID reference pattern
+    """
+    return (
+        any(_is_dsl_type(arg) for arg in args)
+        and has_str
+        and not has_secret_ref
+    )
+
+
+def _strip_str_from_union(args: tuple) -> tuple:
+    """
+    Remove str component from union for ID reference pattern.
+
+    Args:
+        args: Union type arguments
+
+    Returns:
+        Args with str filtered out
+    """
+    return tuple(arg for arg in args if arg is not str)
+
+
+def _transform_union_type(args: tuple) -> str:
+    """
+    Transform Union types, handling string ID references and special cases.
+
+    This function handles the semantic type generation for union types,
+    with special handling for:
+    - DSL-only types (e.g., ToolType -> Tool)
+    - ID references (str | SomeType -> SomeType)
+    - SecretReference (str | SecretReference stays as-is)
+    - Optional types (Type | None)
+
+    Args:
+        args: Tuple of types in the union
+
+    Returns:
+        String representation of the semantic type
+    """
+    # Import SecretReference for direct type comparison
+    from qtype.dsl.model import SecretReference
+
+    # Pre-compute type characteristics
     args_without_str_none = tuple(
         arg for arg in args if arg is not str and arg is not type(None)
     )
     has_none = any(arg is type(None) for arg in args)
     has_str = any(arg is str for arg in args)
+    has_secret_ref = any(arg is SecretReference for arg in args)
 
-    # First see if this is a DSL-only union type
-    # If so, just return the corresponding semantic type
-    if args_without_str_none in DSL_ONLY_UNION_TYPES:
-        if has_none:
-            # If we have a DSL type and None, we return the DSL type with None
-            return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
-        else:
-            # Note we don't handle the case where we have a DSL type and str,
-            # because that would indicate a reference to an ID, which we handle separately.
-            return DSL_ONLY_UNION_TYPES[args_without_str_none]
+    # Handle DSL-only union types (e.g., ToolType -> Tool)
+    is_dsl_only, dsl_semantic_name = _is_dsl_only_union(args_without_str_none)
+    if is_dsl_only:
+        return dsl_semantic_name + " | None" if has_none else dsl_semantic_name
 
-    # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
-    if len(args) == 2:
-        list_elems = [
-            arg for arg in args if get_origin(arg) in set([list, dict])
-        ]
-        if len(list_elems) > 0 and has_none:
-            # If we have a list and None, we return the list type
-            # This is to handle cases like List[SomeType] | None
-            # which in the DSL is needed, but here we will just have an empty list.
-            return dsl_to_semantic_type_name(list_elems[0])
+    # Handle list | None -> list (empty list is equivalent to None)
+    if resolved_collection := _resolve_optional_collection(args, has_none):
+        return resolved_collection
 
-    # If the union contains a DSL type and a str, we need to drop the str
-    if any(_is_dsl_type(arg) for arg in args) and has_str:
-        # There is a DSL type and a str, which indicates something that can reference an ID.
-        # drop the str
-        args = tuple(arg for arg in args if arg is not str)
+    # Handle ID references: str | SomeType -> SomeType
+    # Exception: str | SecretReference should remain as-is
+    if _is_id_reference_pattern(args, has_str, has_secret_ref):
+        args = _strip_str_from_union(args)
 
+    # Convert remaining types to semantic type names
     return " | ".join(dsl_to_semantic_type_name(a) for a in args)
 
 

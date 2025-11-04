@@ -76,6 +76,19 @@ class Tool(ImmutableModel):
     )
 
 
+class SecretManager(BaseModel):
+    """Base class for secret manager configurations."""
+
+    id: str = Field(
+        ..., description="Unique ID for this secret manager configuration."
+    )
+    type: str = Field(..., description="The type of secret manager.")
+    auth: AuthorizationProvider = Field(
+        ...,
+        description="AuthorizationProvider used to access this secret manager.",
+    )
+
+
 class Step(BaseModel):
     """Base class for components that take inputs and produce outputs."""
 
@@ -137,6 +150,10 @@ class Application(BaseModel):
     indexes: list[Index] = Field(
         default_factory=list,
         description="List of indexes available for search operations.",
+    )
+    secret_manager: AWSSecretManager | None = Field(
+        None,
+        description="Optional secret manager configuration for the application.",
     )
     telemetry: TelemetrySink | None = Field(
         None, description="Optional telemetry sink for observability."
@@ -253,6 +270,22 @@ class ModelList(BaseModel):
     root: list[Model] = Field(...)
 
 
+class SecretReference(BaseModel):
+    """
+    A reference to a secret in the application's configured SecretManager.
+    This value is resolved at runtime by the interpreter.
+    """
+
+    secret_name: str = Field(
+        ...,
+        description="The name, ID, or ARN of the secret to fetch (e.g., 'my-project/db-password').",
+    )
+    key: str | None = Field(
+        None,
+        description="Optional key if the secret is a JSON blob or map (e.g., a specific key in a K8s secret).",
+    )
+
+
 class TelemetrySink(BaseModel):
     """Defines an observability endpoint for collecting telemetry data from the QType runtime."""
 
@@ -263,7 +296,7 @@ class TelemetrySink(BaseModel):
         None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
-    endpoint: str = Field(
+    endpoint: str | SecretReference = Field(
         ..., description="URL endpoint where telemetry data will be sent."
     )
 
@@ -290,7 +323,9 @@ class APIKeyAuthProvider(AuthorizationProvider):
     """API key-based authentication provider."""
 
     type: Literal["api_key"] = Field("api_key")
-    api_key: str = Field(..., description="API key for authentication.")
+    api_key: str | SecretReference = Field(
+        ..., description="API key for authentication."
+    )
     host: str | None = Field(
         None, description="Base URL or domain of the provider."
     )
@@ -300,11 +335,13 @@ class AWSAuthProvider(AuthorizationProvider):
     """AWS authentication provider supporting multiple credential methods."""
 
     type: Literal["aws"] = Field("aws")
-    access_key_id: str | None = Field(None, description="AWS access key ID.")
-    secret_access_key: str | None = Field(
+    access_key_id: str | SecretReference | None = Field(
+        None, description="AWS access key ID."
+    )
+    secret_access_key: str | SecretReference | None = Field(
         None, description="AWS secret access key."
     )
-    session_token: str | None = Field(
+    session_token: str | SecretReference | None = Field(
         None, description="AWS session token for temporary credentials."
     )
     profile_name: str | None = Field(
@@ -326,7 +363,9 @@ class BearerTokenAuthProvider(AuthorizationProvider):
     """Bearer token authentication provider."""
 
     type: Literal["bearer_token"] = Field("bearer_token")
-    token: str = Field(..., description="Bearer token for authentication.")
+    token: str | SecretReference = Field(
+        ..., description="Bearer token for authentication."
+    )
 
 
 class OAuth2AuthProvider(AuthorizationProvider):
@@ -334,7 +373,9 @@ class OAuth2AuthProvider(AuthorizationProvider):
 
     type: Literal["oauth2"] = Field("oauth2")
     client_id: str = Field(..., description="OAuth2 client ID.")
-    client_secret: str = Field(..., description="OAuth2 client secret.")
+    client_secret: str | SecretReference = Field(
+        ..., description="OAuth2 client secret."
+    )
     token_url: str = Field(..., description="Token endpoint URL.")
     scopes: list[str] = Field(
         default_factory=list, description="OAuth2 scopes required."
@@ -393,6 +434,12 @@ class PythonFunctionTool(Tool):
     module_path: str = Field(
         ..., description="Optional module path where the function is defined."
     )
+
+
+class AWSSecretManager(SecretManager):
+    """Configuration for AWS Secrets Manager."""
+
+    type: Literal["aws_secret_manager"] = Field("aws_secret_manager")
 
 
 class Aggregate(Step):
@@ -651,7 +698,7 @@ class SQLSource(Source):
     query: str = Field(
         ..., description="SQL query to execute. Inputs are injected as params."
     )
-    connection: str = Field(
+    connection: str | SecretReference = Field(
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
