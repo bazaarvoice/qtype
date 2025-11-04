@@ -2,6 +2,7 @@ import importlib
 from typing import AsyncIterator
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import from_llama_document
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentSource
@@ -10,8 +11,10 @@ from qtype.semantic.model import DocumentSource
 class DocumentSourceExecutor(StepExecutor):
     """Executor for DocumentSource steps."""
 
-    def __init__(self, step: DocumentSource, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: DocumentSource, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocumentSource):
             raise ValueError(
                 (

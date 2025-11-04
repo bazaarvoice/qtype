@@ -8,13 +8,20 @@ covered by test_step_executor.py since BatchedStepExecutor extends StepExecutor.
 from __future__ import annotations
 
 import pytest
+from opentelemetry import trace
 
 from qtype.base.types import BatchConfig, ConcurrencyConfig, StepCardinality
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Step
 
 pytestmark = pytest.mark.asyncio
+
+
+def make_context():
+    """Helper to create ExecutorContext for tests."""
+    return ExecutorContext(tracer=trace.get_tracer(__name__))
 
 
 # Test Step Models
@@ -112,7 +119,7 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(step, make_context(), on_stream_event=None)
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3"], session
         )
@@ -139,7 +146,7 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(step, make_context(), on_stream_event=None)
         results = await collect_stream(executor, ["msg1", "msg2"], session)
 
         assert len(results) == 2
@@ -166,7 +173,7 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(step, make_context(), on_stream_event=None)
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3", "msg4"], session
         )

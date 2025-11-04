@@ -7,6 +7,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, MessageRole
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import (
     from_chat_message,
     to_chat_message,
@@ -23,8 +24,10 @@ class LLMInferenceExecutor(StepExecutor):
     # LLM inference spans should be marked as LLM type
     span_kind = OpenInferenceSpanKindValues.LLM
 
-    def __init__(self, step: LLMInference, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: LLMInference, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, LLMInference):
             raise ValueError(
                 "LLMInferenceExecutor can only execute LLMInference steps."

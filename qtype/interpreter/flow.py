@@ -6,17 +6,16 @@ from openinference.semconv.trace import (
     OpenInferenceSpanKindValues,
     SpanAttributes,
 )
-from opentelemetry import context, trace
+from opentelemetry import context as otel_context
+from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base import factory
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import Flow
 
 logger = logging.getLogger(__name__)
-
-# Get a tracer for this module
-tracer = trace.get_tracer(__name__)
 
 
 async def run_flow(
@@ -28,14 +27,21 @@ async def run_flow(
     Args:
         flow: The flow to execute
         initial: Initial FlowMessage(s) to start execution
-        **dependencies: Additional dependencies including:
-            - on_stream_event: Optional StreamingCallback for real-time events
-            - on_progress: Optional ProgressCallback for progress tracking
+        **kwargs: Dependencies including:
+            - context: ExecutorContext with cross-cutting concerns (optional)
             - Other executor-specific dependencies
 
     Returns:
         List of final FlowMessages after execution
     """
+    # Extract or create ExecutorContext
+    exec_context = kwargs.pop("context", None)
+    if exec_context is None:
+        exec_context = ExecutorContext(tracer=trace.get_tracer(__name__))
+
+    # Use tracer from context
+    tracer = exec_context.tracer or trace.get_tracer(__name__)
+
     # Start a span for the entire flow execution
     span = tracer.start_span(
         f"flow.{flow.id}",
@@ -50,7 +56,7 @@ async def run_flow(
 
     # Make this span the active context so step spans will nest under it
     ctx = trace.set_span_in_context(span)
-    token = context.attach(ctx)
+    token = otel_context.attach(ctx)
 
     try:
         # 1. Get the execution plan is just the steps in order
@@ -89,7 +95,7 @@ async def run_flow(
 
         # 3. Chain executors together in the main loop
         for step in execution_plan:
-            executor = factory.create_executor(step, **kwargs)
+            executor = factory.create_executor(step, exec_context, **kwargs)
             output_stream = executor.execute(
                 current_stream,
             )
@@ -144,5 +150,5 @@ async def run_flow(
         raise
     finally:
         # Detach the context and end the span
-        context.detach(token)
+        otel_context.detach(token)
         span.end()

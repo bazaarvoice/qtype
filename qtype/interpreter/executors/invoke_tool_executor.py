@@ -11,6 +11,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import (
@@ -195,8 +196,10 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
     # Tool invocations should be marked as TOOL type
     span_kind = OpenInferenceSpanKindValues.TOOL
 
-    def __init__(self, step: InvokeTool, **dependencies: Any) -> None:
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: InvokeTool, context: ExecutorContext, **dependencies: Any
+    ) -> None:
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, InvokeTool):
             raise ValueError(
                 "InvokeToolExecutor can only execute InvokeTool steps."

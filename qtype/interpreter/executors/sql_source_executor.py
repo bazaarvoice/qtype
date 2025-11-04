@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import SQLSource
 
@@ -15,8 +16,10 @@ from qtype.semantic.model import SQLSource
 class SQLSourceExecutor(StepExecutor):
     """Executor for SQLSource steps."""
 
-    def __init__(self, step: SQLSource, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: SQLSource, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, SQLSource):
             raise ValueError(
                 "SQLSourceExecutor can only execute SQLSource steps."

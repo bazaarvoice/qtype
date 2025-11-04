@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 import pytest
+from opentelemetry import trace
 
 from qtype.base.types import StepCardinality
 from qtype.dsl.domain_types import AggregateStats
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.executors.aggregate_executor import AggregateExecutor
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Aggregate, Variable
 
 pytestmark = pytest.mark.asyncio
+
+
+def make_context():
+    """Helper to create ExecutorContext for tests."""
+    return ExecutorContext(tracer=trace.get_tracer(__name__))
 
 
 @pytest.fixture
@@ -51,7 +58,7 @@ class TestAggregateExecutor:
 
     async def test_aggregate_all_successful(self, aggregate_step, session):
         """Test aggregation with all successful messages."""
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, make_context())
 
         results = [
             r
@@ -79,7 +86,7 @@ class TestAggregateExecutor:
         through without going through process_batch(), but they ARE counted
         by the ProgressTracker.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, make_context())
 
         results = [
             r
@@ -110,7 +117,7 @@ class TestAggregateExecutor:
         Failed messages are filtered and emitted first, then successful
         messages are processed and emitted, then the aggregate summary.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, make_context())
 
         results = [
             r
@@ -138,7 +145,7 @@ class TestAggregateExecutor:
 
     async def test_aggregate_empty_stream(self, aggregate_step):
         """Test aggregation with no messages."""
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, make_context())
 
         async def empty_stream():
             if False:
@@ -162,7 +169,7 @@ class TestAggregateExecutor:
         The finalize() method should emit exactly one message with the
         aggregate stats, and it should come last.
         """
-        executor = AggregateExecutor(aggregate_step)
+        executor = AggregateExecutor(aggregate_step, make_context())
 
         results = [
             r

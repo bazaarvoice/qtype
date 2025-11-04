@@ -1,6 +1,7 @@
 from typing import AsyncIterator
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import InvokeFlow
 
@@ -8,8 +9,10 @@ from qtype.semantic.model import InvokeFlow
 class InvokeFlowExecutor(StepExecutor):
     """Executor for InvokeFlow steps."""
 
-    def __init__(self, step: InvokeFlow, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: InvokeFlow, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, InvokeFlow):
             raise ValueError(
                 ("InvokeFlowExecutor can only execute InvokeFlow steps.")
@@ -34,10 +37,9 @@ class InvokeFlowExecutor(StepExecutor):
                 for var, id in self.step.input_bindings.items()
             }
         )
-        # Pass through secret_manager if available
-        secret_manager = self.dependencies.get("secret_manager")
+        # Pass through context (already available as self.context)
         result = await run_flow(
-            self.step.flow, [initial], secret_manager=secret_manager
+            self.step.flow, [initial], context=self.context
         )
 
         for msg in result:

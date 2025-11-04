@@ -122,13 +122,20 @@ class QTypeFacade:
         initial_messages = dataframe_to_flow_messages(input_df, session)
 
         # Execute the flow
+        from opentelemetry import trace
+
+        from qtype.interpreter.base.executor_context import ExecutorContext
         from qtype.interpreter.flow import run_flow
 
         secret_manager = self.secret_manager(semantic_model)
+        context = ExecutorContext(
+            secret_manager=secret_manager,
+            tracer=trace.get_tracer(__name__),
+        )
         results = await run_flow(
             target_flow,
             initial_messages,
-            secret_manager=secret_manager,
+            context=context,
             **kwargs,
         )
 

@@ -6,13 +6,20 @@ import asyncio
 from typing import AsyncIterator
 
 import pytest
+from opentelemetry import trace
 
 from qtype.base.types import ConcurrencyConfig, StepCardinality
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Step
 
 pytestmark = pytest.mark.asyncio
+
+
+def make_context():
+    """Helper to create ExecutorContext for tests."""
+    return ExecutorContext(tracer=trace.get_tracer(__name__))
 
 
 # Test Step Models
@@ -37,8 +44,14 @@ class ConcurrentStep(Step):
 class MockExecutor(StepExecutor):
     """Executor that appends a suffix to all variable values."""
 
-    def __init__(self, step: Step, suffix: str = "_processed", **kwargs):
-        super().__init__(step, **kwargs)
+    def __init__(
+        self,
+        step: Step,
+        context: ExecutorContext,
+        suffix: str = "_processed",
+        **kwargs,
+    ):
+        super().__init__(step, context, **kwargs)
         self.suffix = suffix
 
     async def process_message(
@@ -54,9 +67,13 @@ class FailingMockExecutor(StepExecutor):
     """Executor that fails on specific variable values."""
 
     def __init__(
-        self, step: Step, fail_on_values: set[str] | None = None, **kwargs
+        self,
+        step: Step,
+        context: ExecutorContext,
+        fail_on_values: set[str] | None = None,
+        **kwargs,
     ):
-        super().__init__(step, **kwargs)
+        super().__init__(step, context, **kwargs)
         self.fail_on_values = fail_on_values or set()
 
     async def process_message(
@@ -162,7 +179,10 @@ class TestStepExecutor:
     async def test_basic_execution(self, simple_step, session):
         """Test basic message processing with transformation."""
         executor = MockExecutor(
-            simple_step, on_stream_event=None, suffix="_processed"
+            simple_step,
+            make_context(),
+            on_stream_event=None,
+            suffix="_processed",
         )
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3"], session
@@ -176,7 +196,10 @@ class TestStepExecutor:
     async def test_concurrent_execution(self, concurrent_step, session):
         """Test that concurrent configuration is respected."""
         executor = MockExecutor(
-            concurrent_step, on_stream_event=None, suffix="_concurrent"
+            concurrent_step,
+            make_context(),
+            on_stream_event=None,
+            suffix="_concurrent",
         )
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3", "msg4"], session
@@ -190,7 +213,10 @@ class TestStepExecutor:
     async def test_error_handling(self, simple_step, session):
         """Test that errors are tracked and messages are marked as failed."""
         executor = FailingMockExecutor(
-            simple_step, on_stream_event=None, fail_on_values={"msg2", "msg4"}
+            simple_step,
+            make_context(),
+            on_stream_event=None,
+            fail_on_values={"msg2", "msg4"},
         )
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3", "msg4", "msg5"], session
@@ -208,6 +234,7 @@ class TestStepExecutor:
         """Test execution when all messages fail."""
         executor = FailingMockExecutor(
             simple_step,
+            make_context(),
             on_stream_event=None,
             fail_on_values={"msg1", "msg2", "msg3"},
         )
@@ -221,7 +248,10 @@ class TestStepExecutor:
     async def test_pre_failed_messages(self, simple_step, session):
         """Test that messages arriving already-failed are properly emitted."""
         executor = MockExecutor(
-            simple_step, on_stream_event=None, suffix="_processed"
+            simple_step,
+            make_context(),
+            on_stream_event=None,
+            suffix="_processed",
         )
 
         # Create a stream with mix of successful and pre-failed messages
@@ -269,19 +299,29 @@ class TestStepExecutor:
         """Test that progress callbacks receive correct counts."""
         progress_calls = []
 
-        def on_progress(step_id, processed, errors, succeeded, total):
+        def on_progress(
+            step_id: str,
+            items_processed: int,
+            items_in_error: int,
+            items_succeeded: int,
+            total_items: int | None,
+        ):
             progress_calls.append(
                 {
-                    "processed": processed,
-                    "errors": errors,
-                    "succeeded": succeeded,
+                    "processed": items_processed,
+                    "errors": items_in_error,
+                    "succeeded": items_succeeded,
                 }
             )
 
+        context = ExecutorContext(
+            tracer=trace.get_tracer(__name__),
+            on_progress=on_progress,
+        )
         executor = FailingMockExecutor(
             simple_step,
+            context,
             on_stream_event=None,
-            on_progress=on_progress,
             fail_on_values={"msg2", "msg4"},
         )
         results = await collect_stream(
@@ -323,7 +363,9 @@ class TestStepExecutor:
 
     async def test_finalize_hook(self, simple_step, session):
         """Test that finalize() is called and can emit final messages."""
-        executor = FinalizingExecutor(simple_step, on_stream_event=None)
+        executor = FinalizingExecutor(
+            simple_step, make_context(), on_stream_event=None
+        )
         results = await collect_stream(executor, ["msg1", "msg2"], session)
 
         # Should have 2 regular messages + 1 summary from finalize
@@ -336,7 +378,10 @@ class TestStepExecutor:
         """Test that dependencies are injected and accessible."""
         test_dep = {"key": "value"}
         executor = MockExecutor(
-            simple_step, on_stream_event=None, test_dependency=test_dep
+            simple_step,
+            make_context(),
+            on_stream_event=None,
+            test_dependency=test_dep,
         )
 
         assert "test_dependency" in executor.dependencies
@@ -363,7 +408,9 @@ class TestStepExecutor:
             concurrency_config=ConcurrencyConfig(num_workers=10),
         )
 
-        executor = SleepingExecutor(concurrent_step, on_stream_event=None)
+        executor = SleepingExecutor(
+            concurrent_step, make_context(), on_stream_event=None
+        )
 
         start_time = time.time()
         results = await collect_stream(

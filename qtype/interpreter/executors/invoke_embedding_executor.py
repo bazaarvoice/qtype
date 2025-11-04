@@ -5,6 +5,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import Embedding
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_embedding_model
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import InvokeEmbedding
@@ -16,8 +17,10 @@ class InvokeEmbeddingExecutor(StepExecutor):
     # Embedding operations should be marked as EMBEDDING type
     span_kind = OpenInferenceSpanKindValues.EMBEDDING
 
-    def __init__(self, step: InvokeEmbedding, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: InvokeEmbedding, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, InvokeEmbedding):
             raise ValueError(
                 (

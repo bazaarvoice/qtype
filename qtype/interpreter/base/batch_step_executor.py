@@ -2,15 +2,11 @@ from abc import abstractmethod
 from typing import Any, AsyncIterator
 
 from aiostream import stream
-from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
-
-# Get a tracer for this module
-# This will return a no-op tracer if no provider is configured
-tracer = trace.get_tracer(__name__)
 
 
 class BatchedStepExecutor(StepExecutor):
@@ -39,9 +35,10 @@ class BatchedStepExecutor(StepExecutor):
     def __init__(
         self,
         step: Any,
+        context: ExecutorContext,
         **dependencies: Any,
     ):
-        super().__init__(step, **dependencies)
+        super().__init__(step, context, **dependencies)
         # Override the processor to use batch processing with telemetry
         # instead of message processing
         self._processor = self._process_batch_with_telemetry
@@ -127,7 +124,7 @@ class BatchedStepExecutor(StepExecutor):
         This method creates a span for batch processing operations,
         automatically recording batch size, errors, and success metrics.
         """
-        span = tracer.start_span(
+        span = self._tracer.start_span(
             f"step.{self.step.id}.process_batch",
             attributes={
                 "batch.size": len(batch),
