@@ -1,19 +1,17 @@
 "use client";
 
+import { useCompletion } from "@ai-sdk/react";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, ApiClientError } from "@/lib/apiClient";
 
-import { useFlowStreaming } from "../../hooks/useFlowStreaming";
-import ThinkingPanel from "../chat/ThinkingPanel";
 import FlowInputs from "../FlowInputs";
 import { MarkdownContainer } from "../MarkdownContainer";
 
-import type { ToolEvent } from "../../hooks/useFlowStreaming";
 import type { FlowMetadata, FlowInputValues } from "@/types";
 
 interface StreamFlowProps {
@@ -31,23 +29,44 @@ function StreamFlow({ flow }: StreamFlowProps) {
   const streamingEndpoint = `${apiClient.getBaseUrl().replace(/\/$/, "")}${path}`;
 
   const {
-    answer,
-    reasoning,
-    statusMsg,
-    toolEvents,
-    isStreaming,
+    completion,
+    complete,
+    isLoading,
     error: streamError,
-    abortStreaming,
-    startFromInputs,
-  } = useFlowStreaming(streamingEndpoint);
+  } = useCompletion({
+    api: streamingEndpoint,
+  });
 
-  const handleInputChange = (newInputs: FlowInputValues) =>
+  const handleInputChange = (newInputs: FlowInputValues) => {
     setInputs(newInputs);
+  };
 
-  const handleExecute = async () => {
+  const extractQuestion = useCallback((): string => {
+    if ("question" in inputs) return String(inputs.question ?? "");
+    const keys = Object.keys(inputs);
+
+    if (keys.length === 1) return String(inputs[keys[0]] ?? "");
+    return "";
+  }, [inputs]);
+
+  const executeFlow = async () => {
     setError(null);
-    const validationError = await startFromInputs(inputs);
-    if (validationError) setError(validationError);
+    const question = extractQuestion().trim();
+    if (!question) {
+      setError("Provide a 'question' input (or a single input field).");
+      return;
+    }
+    try {
+      await complete(question);
+    } catch (e) {
+      const msg =
+        e instanceof ApiClientError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Streaming failed";
+      setError(msg);
+    }
   };
 
   return (
@@ -68,62 +87,26 @@ function StreamFlow({ flow }: StreamFlowProps) {
         requestSchema={requestSchema || null}
         onInputChange={handleInputChange}
       />
-      <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
-        <Button disabled={isStreaming} onClick={handleExecute}>
-          {isStreaming ? "Streaming..." : "Execute Flow"}
-        </Button>
-        {isStreaming && (
-          <Button variant="outline" onClick={abortStreaming}>
-            Abort
-          </Button>
+
+      <div>
+        {(error || streamError) && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription className="whitespace-pre-line">
+              {(error || streamError?.message) ?? "Error"}
+            </AlertDescription>
+          </Alert>
+        )}
+        {completion && (
+          <ScrollArea className="flex-1 min-h-0">
+            <MarkdownContainer>{completion}</MarkdownContainer>
+          </ScrollArea>
         )}
       </div>
 
-      <div>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription className="whitespace-pre-line">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
-        {streamError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription className="whitespace-pre-line">
-              {streamError}
-            </AlertDescription>
-          </Alert>
-        )}
-        {(answer || reasoning || toolEvents.length > 0) && (
-          <ScrollArea className="flex-1 min-h-0 space-y-4">
-            <div className="space-y-3">
-              {statusMsg && (
-                <div className="text-xs italic text-muted-foreground">
-                  {statusMsg}
-                </div>
-              )}
-              <ThinkingPanel reasoningContent={reasoning} />
-              {answer && <MarkdownContainer>{answer}</MarkdownContainer>}
-              {toolEvents.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <h4 className="text-sm font-medium">Tool Events</h4>
-                  <ul className="text-xs space-y-1">
-                    {toolEvents.map((t: ToolEvent) => (
-                      <li key={t.id} className="flex gap-2">
-                        <span className="font-mono text-[10px] px-1 py-0.5 rounded bg-muted">
-                          {t.type}
-                        </span>
-                        <span className="flex-1 truncate">
-                          {t.errorText || t.text || "(no data)"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        )}
+      <div className="mt-6 pt-4 border-t flex gap-2">
+        <Button disabled={isLoading} onClick={executeFlow}>
+          {isLoading ? "Streaming..." : "Execute Flow"}
+        </Button>
       </div>
     </div>
   );
