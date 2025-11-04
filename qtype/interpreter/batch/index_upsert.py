@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -12,14 +12,17 @@ from qtype.interpreter.batch.utils import reconcile_results_and_errors
 from qtype.interpreter.conversions import to_llama_document, to_vector_store
 from qtype.semantic.model import IndexUpsert
 
+if TYPE_CHECKING:
+    from qtype.interpreter.base.secrets import SecretManagerBase
+
 
 def execute_index_upsert(
     step: IndexUpsert,
     inputs: pd.DataFrame,
     batch_config: BatchConfig,
-    secret_manager: Any = None,
+    secret_manager: SecretManagerBase | None = None,
     **kwargs: dict[Any, Any],
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Executes an IndexUpsert step to add documents to a vector store.
 
     Args:

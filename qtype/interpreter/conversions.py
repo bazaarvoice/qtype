@@ -21,45 +21,12 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
+from qtype.interpreter.base.secret_utils import resolve_secret
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
-from qtype.semantic.model import (
-    DocumentSplitter,
-    Index,
-    Model,
-    SecretReference,
-)
+from qtype.semantic.model import DocumentSplitter, Index, Model
 
 from .resource_cache import cached_resource
-
-
-def _resolve_secret(
-    value: str | SecretReference,
-    secret_manager: SecretManagerBase | None,
-) -> str:
-    """
-    Resolve a value that may be a string or a SecretReference.
-
-    Args:
-        value: Either a plain string or a SecretReference
-        secret_manager: Optional secret manager to use for resolution
-
-    Returns:
-        The resolved string value
-
-    Raises:
-        RuntimeError: If value is a SecretReference but no secret manager
-            is provided
-    """
-    if isinstance(value, str):
-        return value
-
-    if secret_manager is None:
-        raise RuntimeError(
-            "SecretReference requires a secret manager, but none is provided"
-        )
-
-    return secret_manager(value)
 
 
 def to_llama_document(doc: RAGDocument) -> LlamaDocument:
@@ -229,7 +196,10 @@ def to_llm(
         if model.auth:
             api_key_value = getattr(model.auth, "api_key", None)
             if api_key_value is not None:
-                api_key = _resolve_secret(api_key_value, secret_manager)
+                context = f"model '{model.id}'"
+                api_key = resolve_secret(
+                    api_key_value, secret_manager, context
+                )
 
         return OpenAI(
             model=model.model_id if model.model_id else model.id,
@@ -246,7 +216,10 @@ def to_llm(
         if model.auth:
             api_key_value = getattr(model.auth, "api_key", None)
             if api_key_value is not None:
-                api_key = _resolve_secret(api_key_value, secret_manager)
+                context = f"model '{model.id}'"
+                api_key = resolve_secret(
+                    api_key_value, secret_manager, context
+                )
 
         arv: BaseLLM = Anthropic(
             model=model.model_id if model.model_id else model.id,
@@ -295,10 +268,15 @@ def to_vector_store(
         ) from e
 
     # Resolve any SecretReferences in args
+    context = f"index '{index.id}'"
     resolved_args = {}
     for key, value in index.args.items():
         if isinstance(value, str) or hasattr(value, "secret_name"):
-            resolved_args[key] = _resolve_secret(value, secret_manager)  # type: ignore[arg-type]
+            resolved_args[key] = resolve_secret(
+                value,
+                secret_manager,
+                context,  # type: ignore[arg-type]
+            )
         else:
             resolved_args[key] = value
 

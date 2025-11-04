@@ -18,7 +18,13 @@ class TestGenericAuthContextManager:
     """Test the generic auth context manager."""
 
     def test_api_key_provider_returns_self(self):
-        """Test that APIKeyAuthProvider returns itself."""
+        """
+        Test that APIKeyAuthProvider returns a copy with resolved secrets.
+
+        Note: The returned object is a copy (created via model_copy) to ensure
+        that SecretReferences are resolved, even when the original value is
+        already a plain string.
+        """
         provider = APIKeyAuthProvider(
             id="test-api",
             type="api_key",
@@ -27,10 +33,13 @@ class TestGenericAuthContextManager:
         )
 
         with auth(provider) as result:
-            assert result is provider
+            # Result should be a copy, not the same object
+            assert result is not provider
             assert isinstance(result, APIKeyAuthProvider)
+            # But the values should be identical
             assert result.api_key == "sk-test123"
             assert result.host == "api.openai.com"
+            assert result.id == provider.id
 
     @patch("qtype.interpreter.auth.generic.aws")
     def test_aws_provider_delegates_to_aws_context_manager(self, mock_aws):
@@ -54,11 +63,17 @@ class TestGenericAuthContextManager:
         with auth(provider) as session:
             assert session is mock_session
 
-        # Verify AWS context manager was called with the provider
-        mock_aws.assert_called_once_with(provider)
+        # Verify AWS context manager was called with the provider and secret_manager
+        mock_aws.assert_called_once_with(provider, None)
 
-    def test_oauth2_provider_raises_not_implemented(self):
-        """Test that OAuth2AuthProvider raises NotImplementedError."""
+    def test_oauth2_provider_returns_copy_with_resolved_secret(self):
+        """
+        Test that OAuth2AuthProvider returns a copy with resolved secrets.
+
+        Note: The returned object is a copy (created via model_copy) to ensure
+        that SecretReferences are resolved, even when the original value is
+        already a plain string.
+        """
         provider = OAuth2AuthProvider(
             id="test-oauth",
             type="oauth2",
@@ -68,14 +83,15 @@ class TestGenericAuthContextManager:
             scopes=[],
         )
 
-        with pytest.raises(NotImplementedError) as exc_info:
-            with auth(provider):
-                pass
-
-        assert "OAuth2 authentication is not yet implemented" in str(
-            exc_info.value
-        )
-        assert "test-oauth" in str(exc_info.value)
+        with auth(provider) as result:
+            # Result should be a copy, not the same object
+            assert result is not provider
+            assert isinstance(result, OAuth2AuthProvider)
+            # But the values should be identical
+            assert result.client_id == "client123"
+            assert result.client_secret == "secret456"
+            assert result.token_url == "https://auth.example.com/token"
+            assert result.id == provider.id
 
     def test_unsupported_provider_raises_error(self):
         """Test that unsupported provider types raise UnsupportedAuthProviderError."""

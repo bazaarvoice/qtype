@@ -221,51 +221,67 @@ DSL_ONLY_UNION_TYPES = {
 
 
 def _transform_union_type(args: tuple) -> str:
-    """Transform Union types, handling string ID references."""
+    """
+    Transform Union types, handling string ID references and special cases.
 
+    This function handles the semantic type generation for union types,
+    with special handling for:
+    - DSL-only types (e.g., ToolType -> Tool)
+    - ID references (str | SomeType -> SomeType)
+    - SecretReference (str | SecretReference stays as-is)
+    - Optional types (Type | None)
+
+    Args:
+        args: Tuple of types in the union
+
+    Returns:
+        String representation of the semantic type
+    """
+    # Import SecretReference for direct type comparison
+    from qtype.dsl.model import SecretReference
+
+    # Pre-compute type characteristics
     args_without_str_none = tuple(
         arg for arg in args if arg is not str and arg is not type(None)
     )
     has_none = any(arg is type(None) for arg in args)
     has_str = any(arg is str for arg in args)
-    has_secret_ref = any(
-        hasattr(arg, "__name__") and arg.__name__ == "SecretReference"
-        for arg in args
-    )
-    # First see if this is a DSL-only union type
-    # If so, just return the corresponding semantic type
+    # Use direct type comparison instead of string-based check
+    has_secret_ref = any(arg is SecretReference for arg in args)
+
+    # Handle DSL-only union types (e.g., ToolType -> Tool)
     # Skip if args_without_str_none is empty (e.g., str | None should stay as str | None)
     if args_without_str_none and args_without_str_none in DSL_ONLY_UNION_TYPES:
         if has_none:
-            # If we have a DSL type and None, we return the DSL type with None
+            # DSL type with None: return semantic type | None
             return DSL_ONLY_UNION_TYPES[args_without_str_none] + " | None"
         else:
-            # Note we don't handle the case where we have a DSL type and str,
-            # because that would indicate a reference to an ID, which we handle separately.
+            # Pure DSL type: return semantic type
+            # Note: We don't handle DSL type + str here, as that indicates
+            # an ID reference, which is handled separately below
             return DSL_ONLY_UNION_TYPES[args_without_str_none]
 
-    # Handle the case where we have a list | None, which in the dsl is needed, but here we will just have an empty list.
+    # Handle list | None -> list (empty list is equivalent to None)
     if len(args) == 2:
-        list_elems = [
-            arg for arg in args if get_origin(arg) in set([list, dict])
-        ]
-        if len(list_elems) > 0 and has_none:
-            # If we have a list and None, we return the list type
-            # This is to handle cases like List[SomeType] | None
-            # which in the DSL is needed, but here we will just have an empty list.
+        list_elems = [arg for arg in args if get_origin(arg) in {list, dict}]
+        if list_elems and has_none:
+            # List type with None: return just the list type
+            # (empty list is the semantic equivalent of None)
             return dsl_to_semantic_type_name(list_elems[0])
 
-    # If the union contains a DSL type and a str, we need to drop the str
-    # EXCEPT for SecretReference, where str | SecretReference is the semantic type
+    # Handle ID references: str | SomeType -> SomeType
+    # Exception: str | SecretReference should remain as-is
     if (
         any(_is_dsl_type(arg) for arg in args)
         and has_str
         and not has_secret_ref
     ):
-        # There is a DSL type and a str, which indicates something that
-        # can reference an ID. Drop the str.
+        # This is an ID reference pattern - drop the str component
+        # The str allows referencing by ID in DSL, but semantic model
+        # stores the resolved object
         args = tuple(arg for arg in args if arg is not str)
 
+    # Convert remaining types to semantic type names
     return " | ".join(dsl_to_semantic_type_name(a) for a in args)
 
 

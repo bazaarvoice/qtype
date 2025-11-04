@@ -132,7 +132,7 @@ class TestAWSContextManager:
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_not_called()
-        mock_create.assert_called_once_with(aws_provider)
+        mock_create.assert_called_once_with(aws_provider, None)
         mock_cache.assert_called_once_with(aws_provider, new_session)
 
     @patch("qtype.interpreter.auth.aws.get_cached_auth")
@@ -159,7 +159,7 @@ class TestAWSContextManager:
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_called_once_with(cached_session)
-        mock_create.assert_called_once_with(aws_provider)
+        mock_create.assert_called_once_with(aws_provider, None)
         mock_cache.assert_called_once_with(aws_provider, new_session)
 
     @patch("qtype.interpreter.auth.aws._create_session")

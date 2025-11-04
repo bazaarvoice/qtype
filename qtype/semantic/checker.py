@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 from qtype.base.exceptions import SemanticError
@@ -374,29 +376,47 @@ def _validate_flow(flow: Flow) -> None:
                 )
 
 
-def _has_secret_reference(obj) -> bool:  # type: ignore[no-untyped-def]
+def _has_secret_reference(obj: Any) -> bool:
     """
     Recursively check if an object contains any SecretReference instances.
 
+    This function traverses Pydantic models, lists, and dictionaries to find
+    any SecretReference instances that require a secret manager for resolution.
+
     Args:
-        obj: Object to check
+        obj: Object to check - can be a Pydantic BaseModel, list, dict,
+            SecretReference, or any other Python object
 
     Returns:
-        True if SecretReference is found, False otherwise
+        True if SecretReference is found anywhere in the object graph,
+        False otherwise
+
+    Examples:
+        >>> from qtype.semantic.model import SecretReference
+        >>> _has_secret_reference("plain string")
+        False
+        >>> _has_secret_reference(SecretReference(secret_name="my-secret"))
+        True
+        >>> _has_secret_reference({"key": SecretReference(secret_name="s")})
+        True
     """
+    # Direct check - most common case
     if isinstance(obj, SecretReference):
         return True
 
+    # Check Pydantic models by iterating over field values
     if isinstance(obj, BaseModel):
         for field_name, field_value in obj:
             if _has_secret_reference(field_value):
                 return True
 
+    # Check lists
     elif isinstance(obj, list):
         for item in obj:
             if _has_secret_reference(item):
                 return True
 
+    # Check dictionaries
     elif isinstance(obj, dict):
         for value in obj.values():
             if _has_secret_reference(value):

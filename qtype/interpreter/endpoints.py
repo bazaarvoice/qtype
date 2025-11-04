@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, AsyncIterator
+from typing import TYPE_CHECKING, Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+
+if TYPE_CHECKING:
+    from qtype.interpreter.base.secrets import SecretManagerBase
 
 from qtype.dsl.domain_types import ChatMessage, MessageRole
 from qtype.interpreter.flow import run_flow
@@ -33,7 +36,7 @@ logger = logging.getLogger(__name__)
 async def _execute_flow_with_streaming(
     flow: Flow,
     initial_message: FlowMessage,
-    secret_manager: Any = None,
+    secret_manager: SecretManagerBase | None = None,
 ) -> AsyncIterator[StreamEvent]:
     """
     Execute flow and yield StreamEvents as they occur.
@@ -68,7 +71,7 @@ async def _stream_sse_response(
     flow: Flow,
     initial_message: FlowMessage,
     output_metadata: dict[str, Any] | None = None,
-    secret_manager: Any = None,
+    secret_manager: SecretManagerBase | None = None,
 ) -> AsyncIterator[str]:
     """
     Execute flow and stream Server-Sent Events using Vercel AI SDK protocol.
@@ -97,7 +100,7 @@ async def _stream_sse_response(
 
 
 def _create_chat_streaming_endpoint(
-    app: FastAPI, flow: Flow, secret_manager: Any = None
+    app: FastAPI, flow: Flow, secret_manager: SecretManagerBase | None = None
 ) -> None:
     """
     Create streaming endpoint for Conversational flows.
@@ -193,7 +196,7 @@ def _create_chat_streaming_endpoint(
 
 
 def _create_completion_streaming_endpoint(
-    app: FastAPI, flow: Flow, secret_manager: Any = None
+    app: FastAPI, flow: Flow, secret_manager: SecretManagerBase | None = None
 ) -> None:
     """
     Create streaming endpoint for Complete flows.
@@ -257,7 +260,7 @@ def _create_completion_streaming_endpoint(
 
 
 def create_streaming_endpoint(
-    app: FastAPI, flow: Flow, secret_manager: Any = None
+    app: FastAPI, flow: Flow, secret_manager: SecretManagerBase | None = None
 ) -> None:
     """
     Create streaming endpoint for flow execution.
@@ -283,7 +286,7 @@ def create_streaming_endpoint(
 
 
 def create_rest_endpoint(
-    app: FastAPI, flow: Flow, secret_manager: Any = None
+    app: FastAPI, flow: Flow, secret_manager: SecretManagerBase | None = None
 ) -> None:
     """
     Create only the REST endpoint for flow execution.
