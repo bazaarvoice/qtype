@@ -341,6 +341,26 @@ class OAuth2AuthProvider(AuthorizationProvider):
     )
 
 
+class VertexAuthProvider(AuthorizationProvider):
+    """Google Vertex authentication provider supporting gcloud profile or service account."""
+
+    type: Literal["vertex"] = Field("vertex")
+    profile_name: str | None = Field(
+        None,
+        description="Local gcloud profile name (if using existing CLI credentials).",
+    )
+    project_id: str | None = Field(
+        None,
+        description="Explicit GCP project ID override (if different from profile).",
+    )
+    service_account_file: str | None = Field(
+        None, description="Path to a service account JSON key file."
+    )
+    region: str | None = Field(
+        None, description="Vertex region (e.g., us-central1)."
+    )
+
+
 class APITool(Tool):
     """Tool that invokes an API endpoint."""
 

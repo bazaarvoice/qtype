@@ -77,7 +77,6 @@ class LLMInferenceExecutor(StepExecutor):
                     message, output_variable_id
                 )
 
-            # print('hi result_message: ', result_message)
             yield result_message
 
         except Exception as e:
@@ -233,26 +232,6 @@ class LLMInferenceExecutor(StepExecutor):
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
 
-            async with self.stream_emitter.reasoning_stream(
-                f"llm-{self.step.id}-{id(message)}-reasoning"
-            ) as reasoning:
-                generator = model.stream_complete(
-                    prompt=input_value,
-                    **(
-                        self.step.model.inference_params
-                        if self.step.model.inference_params
-                        else {}
-                    ),
-                )
-                for complete_response in generator:
-                    reasoning_text = self.__extract_stream_reasoning_(
-                        complete_response
-                    )
-
-                    if reasoning_text:
-                        await reasoning.delta(reasoning_text)
-            complete_reasoning = complete_response
-
             async with self.stream_emitter.text_stream(stream_id) as streamer:
                 generator = model.stream_complete(
                     prompt=input_value,
@@ -280,13 +259,5 @@ class LLMInferenceExecutor(StepExecutor):
             )
 
         response: dict[str, str] = {output_variable_id: complete_result.text}
-
-        try:
-            complete_reasoning = complete_result.raw["output"]["message"][
-                "content"
-            ][0]["reasoningContent"]["reasoningText"]["text"]
-            response["reasoning"] = complete_reasoning
-        except (KeyError, IndexError, TypeError):
-            pass
 
         return message.copy_with_variables(response)

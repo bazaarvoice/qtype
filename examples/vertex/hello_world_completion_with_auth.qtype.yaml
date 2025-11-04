@@ -1,16 +1,17 @@
 id: hello_world
-description: A simple hello world application using AWS Bedrock with AWS authentication
+description: A simple hello world application using Google Vertex AI
 models:
   - type: Model
-    id: claude-haiku
-    provider: aws-bedrock
-    model_id: us.anthropic.claude-haiku-4-5-20251001-v1:0
+    id: gemini_flash
+    provider: gcp-vertex
+    model_id: gemini-2.0-flash
     inference_params:
-      temperature: 1
-      max_tokens: 2048
-      thinking:
-        type: enabled
-        budget_tokens: 1024
+      temperature: 0.7
+    auth: vertex_auth
+auths:
+  - type: vertex
+    id: vertex_auth
+    profile_name: default
 flows:
   - type: Flow
     id: simple_example
@@ -19,17 +20,14 @@ flows:
     variables:
       - id: prompt
         type: text
-      - id: formatted_prompt
-        type: text
       - id: answer
         type: text
-      - id: reasoning
+      - id: formatted_prompt
         type: text
     inputs:
       - prompt
     outputs:
       - answer
-      - reasoning
     steps:
       - id: question_prompt
         type: PromptTemplate
@@ -40,9 +38,8 @@ flows:
           - formatted_prompt
       - id: llm_inference_step
         type: LLMInference
-        model: claude-haiku
+        model: gemini_flash
         inputs:
           - formatted_prompt
         outputs:
           - answer
-          - reasoning

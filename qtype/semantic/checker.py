@@ -182,42 +182,18 @@ def _validate_aws_auth(a: AWSAuthProvider) -> None:
 
 
 def _validate_llm_inference(step: LLMInference) -> None:
-    """Validate LLMInference step outputs.
+    """Validate LLMInference step has exactly one text output."""
 
-    Rules:
-    - Allow exactly one output of type text or ChatMessage (standard case).
-    - OR allow exactly two outputs when the second is named 'reasoning' and is text.
-    """
-    ALLOWED_PRIMARY_TYPES = {PrimitiveTypeEnum.text, ChatMessage}
-
-    if len(step.outputs) == 1:
-        primary_type = step.outputs[0].type
-        if primary_type not in ALLOWED_PRIMARY_TYPES:
-            raise QTypeSemanticError(
-                (
-                    f"LLMInference step '{step.id}' output must be of type "
-                    f"'PrimitiveTypeEnum.text' or 'ChatMessage', found "
-                    f"'{primary_type}'."
-                )
+    _validate_exact_output_count(step, 1)
+    ALLOWED_TYPES = {PrimitiveTypeEnum.text, ChatMessage}
+    if step.outputs[0].type not in ALLOWED_TYPES:
+        raise QTypeSemanticError(
+            (
+                f"LLMInference step '{step.id}' output must be of type "
+                f"'PrimitiveTypeEnum.text' or 'ChatMessage', found "
+                f"'{step.outputs[0].type}'."
             )
-        return
-
-    # Optional reasoning output case
-    if (
-        len(step.outputs) == 2
-        and step.outputs[1].id == "reasoning"
-        and step.outputs[0].type in ALLOWED_PRIMARY_TYPES
-        and step.outputs[1].type == PrimitiveTypeEnum.text
-    ):
-        return  # Valid two-output configuration with reasoning
-
-    # Anything else invalid
-    raise QTypeSemanticError(
-        (
-            f"LLMInference step '{step.id}' must have exactly 1 output variable, "
-            f"or 2 when the second is 'reasoning'. Found {len(step.outputs)} outputs."
         )
-    )
 
 
 def _validate_agent(step: Agent) -> None:
@@ -386,27 +362,13 @@ def _validate_flow(flow: Flow) -> None:
                     f'Flow has a Complete interface but {len(prompt_input)} prompt inputs -- there should be one input with type text and id "prompt"'
                 )
 
-            # Streaming is enabled if there is at least one text output (the primary answer).
-            # Allow an optional second text output named 'reasoning'. Any other additional text outputs are invalid.
-            text_outputs = [
-                o for o in flow.outputs if o.type == PrimitiveTypeEnum.text
-            ]
-            if len(text_outputs) == 1:
-                # Single text output: normal Complete interface
-                pass
-            elif (
-                len(text_outputs) == 2
-                and len(flow.outputs)
-                == 2  # Ensure total outputs count matches
-                and flow.outputs[1].id == "reasoning"
-                and flow.outputs[1].type == PrimitiveTypeEnum.text
-            ):
-                # Two outputs allowed only when the second is the reasoning field
-                # The first text output is considered the primary streamed answer.
-                pass
-            else:
+            # stream if there is at least one output of type text. All other outputs should be returned by the call but not streamed.
+            text_outputs = {
+                i.id for i in flow.outputs if i.type == PrimitiveTypeEnum.text
+            }
+            if len(text_outputs) != 1:
                 raise QTypeSemanticError(
-                    f"Flow {flow.id} has a Complete interface but {len(text_outputs)} text outputs -- there should be 1, or 2 when the second is 'reasoning'."
+                    f"Flow {flow.id} has a Complete interface but {len(text_outputs)} text outputs -- there should be 1."
                 )
 
 
