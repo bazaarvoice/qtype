@@ -8,7 +8,7 @@ AWSAuthProvider configuration from the semantic model.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generator
+from typing import Any, Generator
 
 import boto3  # type: ignore[import-untyped]
 from botocore.exceptions import (  # type: ignore[import-untyped]
@@ -18,10 +18,8 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
 
 from qtype.interpreter.auth.cache import cache_auth, get_cached_auth
 from qtype.interpreter.base.secret_utils import resolve_secret
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import AWSAuthProvider
-
-if TYPE_CHECKING:
-    from qtype.interpreter.base.secrets import SecretManagerBase
 
 
 class AWSAuthenticationError(Exception):

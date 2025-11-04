@@ -42,21 +42,19 @@ Example:
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator
+from typing import Generator
 
 import boto3  # type: ignore[import-untyped]
 
 from qtype.interpreter.auth.aws import aws
 from qtype.interpreter.base.secret_utils import resolve_secret
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import (
     APIKeyAuthProvider,
     AuthorizationProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
 )
-
-if TYPE_CHECKING:
-    from qtype.interpreter.base.secrets import SecretManagerBase
 
 
 class UnsupportedAuthProviderError(Exception):

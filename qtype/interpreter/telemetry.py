@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from phoenix.otel import register as register_phoenix
 
 from qtype.interpreter.base.secret_utils import resolve_secret
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import TelemetrySink
-
-if TYPE_CHECKING:
-    from qtype.interpreter.base.secrets import SecretManagerBase
 
 
 def register(

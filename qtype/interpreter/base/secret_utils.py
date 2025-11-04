@@ -8,13 +8,9 @@ utilities to ensure consistent behavior and error handling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from qtype.interpreter.base.exceptions import SecretResolutionError
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import SecretReference
-
-if TYPE_CHECKING:
-    from qtype.interpreter.base.secrets import SecretManagerBase
 
 
 def resolve_secret(

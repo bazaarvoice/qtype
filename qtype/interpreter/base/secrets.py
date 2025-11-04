@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 
-from qtype.interpreter.auth.aws import aws
 from qtype.semantic.model import (
     AWSAuthProvider,
     AWSSecretManager,
@@ -136,6 +135,7 @@ class AWSSecretManagerImpl(SecretManagerBase):
             json.JSONDecodeError: If secret is not valid JSON when key
                 is specified
         """
+        from qtype.interpreter.auth.aws import aws
 
         with aws(self.config.auth) as session:  # type: ignore
             client = session.client("secretsmanager")

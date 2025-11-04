@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-if TYPE_CHECKING:
-    from qtype.interpreter.base.secrets import SecretManagerBase
-
 from qtype.dsl.domain_types import ChatMessage, MessageRole
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.flow import run_flow
 from qtype.interpreter.stream.chat import format_stream_events_as_sse
 from qtype.interpreter.stream.chat.ui_request_to_domain_type import (
