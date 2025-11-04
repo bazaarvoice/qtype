@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.base.secret_utils import resolve_secrets_in_dict
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import (
@@ -133,10 +134,17 @@ class ToolExecutionMixin:
         ) as tool_ctx:
             try:
                 # Prepare headers - resolve any SecretReferences
-                headers = {}
-                if tool.headers:
-                    for key, value in tool.headers.items():
-                        headers[key] = self._resolve_secret(value)
+                # Note: ToolExecutionMixin users inherit from StepExecutor
+                # which provides _secret_manager
+                secret_manager = getattr(self, "_secret_manager", None)
+                context = f"tool '{tool.id}'"
+                headers = (
+                    resolve_secrets_in_dict(
+                        tool.headers, secret_manager, context
+                    )
+                    if tool.headers
+                    else {}
+                )
 
                 # Handle authentication
                 if tool.auth:

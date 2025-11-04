@@ -8,6 +8,8 @@ utilities to ensure consistent behavior and error handling.
 
 from __future__ import annotations
 
+from typing import Any
+
 from qtype.interpreter.base.exceptions import SecretResolutionError
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import SecretReference
@@ -76,3 +78,50 @@ def resolve_secret(
         raise SecretResolutionError(
             f"Failed to resolve secret '{value.secret_name}'{context_msg}: {e}"
         ) from e
+
+
+def resolve_secrets_in_dict(
+    args: dict[str, Any],
+    secret_manager: SecretManagerBase | None,
+    context: str = "",
+) -> dict[str, Any]:
+    """
+    Resolve any SecretReferences in a dictionary's values.
+
+    This is a convenience function that iterates over a dictionary and
+    resolves any values that might be SecretReferences. Non-secret values
+    (strings, numbers, etc.) are passed through unchanged.
+
+    Args:
+        args: Dictionary with potentially secret-containing values
+        secret_manager: The secret manager instance to use for resolution,
+            or None if no secret manager is configured
+        context: Optional context string describing where secrets are
+            being resolved (e.g., "step 'my_step'", "index 'my_index'").
+            This is included in error messages to aid debugging.
+
+    Returns:
+        A new dictionary with all SecretReferences resolved to strings.
+        Other values are copied unchanged.
+
+    Raises:
+        SecretResolutionError: If any value is a SecretReference but no
+            secret manager is provided, or if resolution fails.
+
+    Examples:
+        >>> args = {
+        ...     "api_key": SecretReference(secret_name="my-app/key"),
+        ...     "host": "api.example.com",
+        ...     "port": 443
+        ... }
+        >>> resolve_secrets_in_dict(args, secret_manager, "tool 'my_api'")
+        {'api_key': 'sk-abc123...', 'host': 'api.example.com', 'port': 443}
+    """
+    resolved = {}
+    for key, value in args.items():
+        # Check if value might be a SecretReference
+        if isinstance(value, str) or hasattr(value, "secret_name"):
+            resolved[key] = resolve_secret(value, secret_manager, context)
+        else:
+            resolved[key] = value
+    return resolved

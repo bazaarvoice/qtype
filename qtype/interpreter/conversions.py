@@ -21,7 +21,7 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
-from qtype.interpreter.base.secret_utils import resolve_secret
+from qtype.interpreter.base.secret_utils import resolve_secrets_in_dict
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
 from qtype.semantic.model import DocumentSplitter, Index, Model
@@ -192,14 +192,19 @@ def to_llm(
     elif model.provider == "openai":
         from llama_index.llms.openai import OpenAI
 
-        api_key = None
+        from qtype.interpreter.auth.generic import auth
+        from qtype.semantic.model import APIKeyAuthProvider
+
+        api_key: str | None = None
         if model.auth:
-            api_key_value = getattr(model.auth, "api_key", None)
-            if api_key_value is not None:
-                context = f"model '{model.id}'"
-                api_key = resolve_secret(
-                    api_key_value, secret_manager, context
-                )
+            with auth(model.auth, secret_manager) as provider:
+                if not isinstance(provider, APIKeyAuthProvider):
+                    raise InterpreterError(
+                        f"OpenAI provider requires APIKeyAuthProvider, "
+                        f"got {type(provider).__name__}"
+                    )
+                # api_key is guaranteed to be str after auth() resolves it
+                api_key = provider.api_key  # type: ignore[assignment]
 
         return OpenAI(
             model=model.model_id if model.model_id else model.id,
@@ -212,14 +217,19 @@ def to_llm(
             Anthropic,
         )
 
-        api_key = None
+        from qtype.interpreter.auth.generic import auth
+        from qtype.semantic.model import APIKeyAuthProvider
+
+        api_key: str | None = None
         if model.auth:
-            api_key_value = getattr(model.auth, "api_key", None)
-            if api_key_value is not None:
-                context = f"model '{model.id}'"
-                api_key = resolve_secret(
-                    api_key_value, secret_manager, context
-                )
+            with auth(model.auth, secret_manager) as provider:
+                if not isinstance(provider, APIKeyAuthProvider):
+                    raise InterpreterError(
+                        f"Anthropic provider requires APIKeyAuthProvider, "
+                        f"got {type(provider).__name__}"
+                    )
+                # api_key is guaranteed to be str after auth() resolves it
+                api_key = provider.api_key  # type: ignore[assignment]
 
         arv: BaseLLM = Anthropic(
             model=model.model_id if model.model_id else model.id,
@@ -269,16 +279,9 @@ def to_vector_store(
 
     # Resolve any SecretReferences in args
     context = f"index '{index.id}'"
-    resolved_args = {}
-    for key, value in index.args.items():
-        if isinstance(value, str) or hasattr(value, "secret_name"):
-            resolved_args[key] = resolve_secret(
-                value,
-                secret_manager,
-                context,  # type: ignore[arg-type]
-            )
-        else:
-            resolved_args[key] = value
+    resolved_args = resolve_secrets_in_dict(
+        index.args, secret_manager, context
+    )
 
     if "module" in resolved_args:
         del resolved_args["module"]

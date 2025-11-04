@@ -44,8 +44,7 @@ class StepExecutor(ABC):
 
     Args:
         step: The semantic step model defining behavior and configuration
-        on_stream_event: Optional callback for real-time streaming events
-        on_progress: Optional callback for progress updates
+        context: ExecutorContext with cross-cutting concerns
         **dependencies: Executor-specific dependencies (e.g., LLM clients,
             database connections). These are injected by the executor factory
             and stored for use during execution.
