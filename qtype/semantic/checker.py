@@ -434,7 +434,8 @@ def _validate_application(application: Application) -> None:
 
     Raises:
         QTypeSemanticError: If SecretReference is used but
-            secret_manager is not configured
+            secret_manager is not configured, or if secret_manager
+            configuration is invalid
     """
     if application.secret_manager is None:
         # Check if any SecretReference is used in the application
@@ -446,6 +447,24 @@ def _validate_application(application: Application) -> None:
                     "Please add a secret_manager to the application."
                 )
             )
+    else:
+        # Validate secret_manager configuration
+        from qtype.semantic.model import AWSAuthProvider, AWSSecretManager
+
+        secret_mgr = application.secret_manager
+
+        # For AWSSecretManager, verify auth is AWSAuthProvider
+        # (linker ensures the reference exists, we just check the type)
+        if isinstance(secret_mgr, AWSSecretManager):
+            auth_provider = secret_mgr.auth
+            if not isinstance(auth_provider, AWSAuthProvider):
+                raise QTypeSemanticError(
+                    (
+                        f"AWSSecretManager '{secret_mgr.id}' requires an "
+                        f"AWSAuthProvider but references '{auth_provider.id}' "
+                        f"which is of type '{type(auth_provider).__name__}'"
+                    )
+                )
 
 
 # Mapping of types to their validation functions

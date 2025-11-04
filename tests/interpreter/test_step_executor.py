@@ -18,16 +18,6 @@ from qtype.semantic.model import Step
 pytestmark = pytest.mark.asyncio
 
 
-def make_context():
-    """Helper to create ExecutorContext for tests."""
-    from qtype.interpreter.base.secrets import NoOpSecretManager
-
-    return ExecutorContext(
-        secret_manager=NoOpSecretManager(),
-        tracer=trace.get_tracer(__name__),
-    )
-
-
 # Test Step Models
 
 
@@ -182,11 +172,13 @@ async def collect_stream(
 class TestStepExecutor:
     """Test suite for StepExecutor base functionality."""
 
-    async def test_basic_execution(self, simple_step, session):
+    async def test_basic_execution(
+        self, simple_step, session, executor_context
+    ):
         """Test basic message processing with transformation."""
         executor = MockExecutor(
             simple_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             suffix="_processed",
         )
@@ -199,11 +191,13 @@ class TestStepExecutor:
         assert results[1].variables["input"] == "msg2_processed"
         assert results[2].variables["input"] == "msg3_processed"
 
-    async def test_concurrent_execution(self, concurrent_step, session):
+    async def test_concurrent_execution(
+        self, concurrent_step, session, executor_context
+    ):
         """Test that concurrent configuration is respected."""
         executor = MockExecutor(
             concurrent_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             suffix="_concurrent",
         )
@@ -216,11 +210,13 @@ class TestStepExecutor:
         assert all(not r.is_failed() for r in results)
         # Note: We can't easily verify actual parallel execution in unit tests
 
-    async def test_error_handling(self, simple_step, session):
+    async def test_error_handling(
+        self, simple_step, session, executor_context
+    ):
         """Test that errors are tracked and messages are marked as failed."""
         executor = FailingMockExecutor(
             simple_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             fail_on_values={"msg2", "msg4"},
         )
@@ -236,11 +232,13 @@ class TestStepExecutor:
         assert results[3].is_failed()  # msg4 fails
         assert not results[4].is_failed()  # msg5 succeeds
 
-    async def test_all_messages_failed(self, simple_step, session):
+    async def test_all_messages_failed(
+        self, simple_step, session, executor_context
+    ):
         """Test execution when all messages fail."""
         executor = FailingMockExecutor(
             simple_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             fail_on_values={"msg1", "msg2", "msg3"},
         )
@@ -251,11 +249,13 @@ class TestStepExecutor:
         assert len(results) == 3
         assert all(r.is_failed() for r in results)
 
-    async def test_pre_failed_messages(self, simple_step, session):
+    async def test_pre_failed_messages(
+        self, simple_step, session, executor_context
+    ):
         """Test that messages arriving already-failed are properly emitted."""
         executor = MockExecutor(
             simple_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             suffix="_processed",
         )
@@ -301,7 +301,9 @@ class TestStepExecutor:
             r.variables["input"].endswith("_processed") for r in succeeded
         )
 
-    async def test_progress_callback(self, simple_step, session):
+    async def test_progress_callback(
+        self, simple_step, session, executor_context
+    ):
         """Test that progress callbacks receive correct counts."""
         progress_calls = []
 
@@ -347,7 +349,7 @@ class TestStepExecutor:
         }
         assert len(results) == 5
 
-    # async def test_streaming_events(self, simple_step, session):
+    # async def test_streaming_events(self, simple_step, session, executor_context):
     #     """Test that streaming events are emitted during processing."""
     #     events = []
 
@@ -368,10 +370,10 @@ class TestStepExecutor:
     #     assert events[0] == "Processing: msg1"
     #     assert events[1] == "Processing: msg2"
 
-    async def test_finalize_hook(self, simple_step, session):
+    async def test_finalize_hook(self, simple_step, session, executor_context):
         """Test that finalize() is called and can emit final messages."""
         executor = FinalizingExecutor(
-            simple_step, make_context(), on_stream_event=None
+            simple_step, executor_context, on_stream_event=None
         )
         results = await collect_stream(executor, ["msg1", "msg2"], session)
 
@@ -381,12 +383,12 @@ class TestStepExecutor:
         assert results[-1].variables.get("finalized") == "true"
         # Note: Progress count timing depends on stream implementation details
 
-    async def test_dependencies_injection(self, simple_step):
+    async def test_dependencies_injection(self, simple_step, executor_context):
         """Test that dependencies are injected and accessible."""
         test_dep = {"key": "value"}
         executor = MockExecutor(
             simple_step,
-            make_context(),
+            executor_context,
             on_stream_event=None,
             test_dependency=test_dep,
         )
@@ -394,7 +396,9 @@ class TestStepExecutor:
         assert "test_dependency" in executor.dependencies
         assert executor.dependencies["test_dependency"] == test_dep
 
-    async def test_concurrent_execution_performance(self, session):
+    async def test_concurrent_execution_performance(
+        self, session, executor_context
+    ):
         """Test that num_workers actually provides concurrent execution.
 
         With 10 messages that each sleep for 1 second:
@@ -416,7 +420,7 @@ class TestStepExecutor:
         )
 
         executor = SleepingExecutor(
-            concurrent_step, make_context(), on_stream_event=None
+            concurrent_step, executor_context, on_stream_event=None
         )
 
         start_time = time.time()

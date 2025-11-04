@@ -11,14 +11,7 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
 )
 
 from qtype.interpreter.auth.aws import AWSAuthenticationError, aws
-from qtype.interpreter.base.secrets import NoOpSecretManager
 from qtype.semantic.model import AWSAuthProvider
-
-
-@pytest.fixture
-def secret_manager():
-    """Create a NoOpSecretManager for testing."""
-    return NoOpSecretManager()
 
 
 @pytest.fixture
@@ -129,6 +122,7 @@ class TestAWSContextManager:
         mock_cache,
         mock_get_cached,
         aws_provider,
+        secret_manager,
     ):
         """Test that when no cached session exists, a new one is created."""
         new_session = MagicMock()
@@ -154,6 +148,7 @@ class TestAWSContextManager:
         mock_cache,
         mock_get_cached,
         aws_provider,
+        secret_manager,
     ):
         """Test that invalid cached sessions are replaced with new ones."""
         cached_session = MagicMock()
@@ -172,7 +167,7 @@ class TestAWSContextManager:
 
     @patch("qtype.interpreter.auth.aws._create_session")
     def test_session_without_credentials_raises_error(
-        self, mock_create, aws_provider
+        self, mock_create, aws_provider, secret_manager
     ):
         """Test that authentication errors are properly wrapped."""
         mock_create.side_effect = AWSAuthenticationError(
@@ -187,7 +182,7 @@ class TestAWSContextManager:
 
     @patch("qtype.interpreter.auth.aws._create_session")
     def test_client_error_raises_aws_authentication_error(
-        self, mock_create, aws_provider
+        self, mock_create, aws_provider, secret_manager
     ):
         """Test that boto3 ClientError is wrapped in AWSAuthenticationError."""
         client_error = ClientError(
@@ -273,7 +268,7 @@ class TestCreateSession:
 
     @patch("boto3.Session")
     def test_create_session_with_profile(
-        self, mock_session_class, profile_provider
+        self, mock_session_class, profile_provider, secret_manager
     ):
         """Test creating a session with an AWS profile."""
         from qtype.interpreter.auth.aws import _create_session
@@ -310,7 +305,11 @@ class TestCreateSession:
     @patch("qtype.interpreter.auth.aws._assume_role_session")
     @patch("boto3.Session")
     def test_create_session_with_role_assumption(
-        self, mock_session_class, mock_assume_role, role_provider
+        self,
+        mock_session_class,
+        mock_assume_role,
+        role_provider,
+        secret_manager,
     ):
         """Test creating a session that assumes a role."""
         from qtype.interpreter.auth.aws import _create_session

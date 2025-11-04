@@ -62,13 +62,56 @@ class UnsupportedAuthProviderError(Exception):
     pass
 
 
+def resolve_provider_secrets(
+    provider: AuthorizationProvider,
+    secret_manager: SecretManagerBase,
+) -> AuthorizationProvider:
+    """
+    Resolve all SecretReference fields in an auth provider.
+
+    This helper automatically detects and resolves any fields that contain
+    SecretReference objects, returning a copy of the provider with resolved
+    secret values. This eliminates duplication when handling different auth
+    provider types.
+
+    Note: Always returns a copy to ensure consistency, even when there are
+    no secrets to resolve. This prevents issues with object identity checks
+    in tests and ensures a clean separation between DSL and runtime objects.
+
+    Args:
+        provider: Auth provider instance with potential SecretReferences
+        secret_manager: Secret manager to use for resolution
+
+    Returns:
+        Copy of the provider with all SecretReferences resolved to strings
+
+    Example:
+        >>> provider = APIKeyAuthProvider(
+        ...     id="my_auth",
+        ...     api_key=SecretReference(secret_name="my-key")
+        ... )
+        >>> resolved = resolve_provider_secrets(provider, secret_manager)
+        >>> assert isinstance(resolved.api_key, str)
+    """
+    context = f"auth provider '{provider.id}'"
+    updates = {}
+
+    # Iterate over all fields and resolve any SecretReferences
+    for field_name, field_info in provider.model_fields.items():
+        value = getattr(provider, field_name)
+        # Check if value is a SecretReference by looking for secret_name attr
+        if hasattr(value, "secret_name"):
+            updates[field_name] = secret_manager(value, context)
+
+    # Always create a copy to ensure clean separation between DSL and runtime
+    return provider.model_copy(update=updates)
+
+
 @contextmanager
 def auth(
     auth_provider: AuthorizationProvider,
     secret_manager: SecretManagerBase,
-) -> Generator[
-    boto3.Session | APIKeyAuthProvider | OAuth2AuthProvider, None, None
-]:
+) -> Generator[boto3.Session | AuthorizationProvider, None, None]:
     """
     Create an appropriate session or provider instance based on the auth provider type.
 
@@ -123,24 +166,10 @@ def auth(
         with aws(auth_provider, secret_manager) as session:
             yield session
 
-    elif isinstance(auth_provider, APIKeyAuthProvider):
-        # For API key providers, resolve the api_key and yield modified copy
-        # The caller can access provider.api_key and provider.host
-        context = f"auth provider '{auth_provider.id}'"
-        resolved_key = secret_manager(auth_provider.api_key, context)
-        # Use model.copy(update=...) to create a copy with resolved secret
-        resolved_provider = auth_provider.model_copy(
-            update={"api_key": resolved_key}
-        )
-        yield resolved_provider
-
-    elif isinstance(auth_provider, OAuth2AuthProvider):
-        # OAuth2 - resolve client_secret
-        context = f"auth provider '{auth_provider.id}'"
-        resolved_secret = secret_manager(auth_provider.client_secret, context)
-        # Use model.copy(update=...) to create a copy with resolved secret
-        resolved_provider = auth_provider.model_copy(
-            update={"client_secret": resolved_secret}
+    elif isinstance(auth_provider, (APIKeyAuthProvider, OAuth2AuthProvider)):
+        # For non-AWS providers, resolve secrets and yield modified copy
+        resolved_provider = resolve_provider_secrets(
+            auth_provider, secret_manager
         )
         yield resolved_provider
 

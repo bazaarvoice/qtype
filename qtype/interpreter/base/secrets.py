@@ -12,12 +12,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from qtype.interpreter.base.exceptions import SecretResolutionError
-from qtype.semantic.model import (
-    AWSAuthProvider,
-    AWSSecretManager,
-    SecretManager,
-    SecretReference,
-)
+from qtype.semantic.model import AWSAuthProvider
+from qtype.semantic.model import AWSSecretManager as AWSSecretManagerConfig
+from qtype.semantic.model import SecretManager as SecretManagerConfig
+from qtype.semantic.model import SecretReference
 
 
 class SecretManagerBase(ABC):
@@ -88,10 +86,8 @@ class SecretManagerBase(ABC):
         try:
             return self.get_secret(value)
         except Exception as e:
-            context_msg = f" in {context}" if context else ""
             raise SecretResolutionError(
-                f"Failed to resolve secret "
-                f"'{value.secret_name}'{context_msg}: {e}"
+                secret_name=value.secret_name, context=context, cause=e
             ) from e
 
     def resolve_secrets_in_dict(
@@ -168,13 +164,15 @@ class NoOpSecretManager(SecretManagerBase):
             SecretResolutionError: Always raised with configuration help
         """
         raise SecretResolutionError(
-            f"Cannot resolve secret '{secret_ref.secret_name}': "
-            "no secret manager configured. Please add a secret_manager "
-            "to your application configuration."
+            secret_name=secret_ref.secret_name,
+            context="no secret manager configured",
+            cause=ValueError(
+                "Please add a secret_manager to your application configuration"
+            ),
         )
 
 
-class AWSSecretManagerImpl(SecretManagerBase):
+class AWSSecretManager(SecretManagerBase):
     """
     AWS Secrets Manager implementation.
 
@@ -188,11 +186,11 @@ class AWSSecretManagerImpl(SecretManagerBase):
     Example:
         ```python
         from qtype.semantic.model import (
-            AWSSecretManager,
+            AWSSecretManager as AWSSecretManagerConfig,
             AWSAuthProvider,
             SecretReference
         )
-        from qtype.interpreter.secrets.aws import AWSSecretManagerImpl
+        from qtype.interpreter.base.secrets import AWSSecretManager
 
         # Create auth provider
         auth = AWSAuthProvider(
@@ -203,14 +201,14 @@ class AWSSecretManagerImpl(SecretManagerBase):
         )
 
         # Create secret manager config
-        secret_mgr_config = AWSSecretManager(
+        secret_mgr_config = AWSSecretManagerConfig(
             id="my-secret-manager",
             type="aws_secret_manager",
             auth=auth
         )
 
         # Create implementation
-        secret_mgr = AWSSecretManagerImpl(secret_mgr_config)
+        secret_mgr = AWSSecretManager(secret_mgr_config)
 
         # Resolve a secret
         secret_ref = SecretReference(
@@ -221,7 +219,7 @@ class AWSSecretManagerImpl(SecretManagerBase):
         ```
     """
 
-    def __init__(self, config: AWSSecretManager):
+    def __init__(self, config: AWSSecretManagerConfig):
         """
         Initialize AWS Secrets Manager implementation.
 
@@ -292,7 +290,7 @@ class AWSSecretManagerImpl(SecretManagerBase):
 
 
 def create_secret_manager(
-    config: SecretManager | None,
+    config: SecretManagerConfig | None,
 ) -> SecretManagerBase:
     """
     Factory function to create the appropriate secret manager implementation.
@@ -309,11 +307,14 @@ def create_secret_manager(
 
     Example:
         ```python
-        from qtype.semantic.model import AWSSecretManager, AWSAuthProvider
+        from qtype.semantic.model import (
+            AWSSecretManager as AWSSecretManagerConfig,
+            AWSAuthProvider
+        )
         from qtype.interpreter.base.secrets import create_secret_manager
 
         # Create config
-        config = AWSSecretManager(
+        config = AWSSecretManagerConfig(
             id="my-secret-manager",
             type="aws_secret_manager",
             auth=auth_provider
@@ -329,8 +330,8 @@ def create_secret_manager(
     if config is None:
         return NoOpSecretManager()
 
-    if isinstance(config, AWSSecretManager):
-        return AWSSecretManagerImpl(config)
+    if isinstance(config, AWSSecretManagerConfig):
+        return AWSSecretManager(config)
 
     raise ValueError(
         f"Unsupported secret manager type: {config.type}. "

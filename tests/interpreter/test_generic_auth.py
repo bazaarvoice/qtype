@@ -7,18 +7,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from qtype.interpreter.auth.generic import UnsupportedAuthProviderError, auth
-from qtype.interpreter.base.secrets import NoOpSecretManager
 from qtype.semantic.model import (
     APIKeyAuthProvider,
     AWSAuthProvider,
     OAuth2AuthProvider,
 )
-
-
-@pytest.fixture
-def secret_manager():
-    """Provide a NoOpSecretManager for testing."""
-    return NoOpSecretManager()
 
 
 class TestGenericAuthContextManager:

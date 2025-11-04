@@ -25,6 +25,23 @@ class ExecutorContext:
     Using a context object reduces parameter threading boilerplate while
     keeping dependencies explicit and testable.
 
+    Secret Resolution Lifecycle:
+        Secrets are resolved EARLY in the execution pipeline, following a
+        fail-fast principle:
+
+        1. At executor construction time, any SecretReferences in step
+           configuration are resolved
+        2. At auth context creation time, SecretReferences in auth providers
+           are resolved (via auth() context manager)
+        3. Resolution failures raise SecretResolutionError immediately,
+           preventing execution from starting with invalid configuration
+
+        This ensures:
+        - Errors are caught before expensive operations begin
+        - All secrets are validated at initialization
+        - No partial execution with missing secrets
+        - Clear, actionable error messages at startup
+
     Attributes:
         secret_manager: Secret manager for resolving SecretReferences at
             runtime. Always present (uses NoOpSecretManager if no secrets
