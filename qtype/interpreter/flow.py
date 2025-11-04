@@ -34,10 +34,15 @@ async def run_flow(
     Returns:
         List of final FlowMessages after execution
     """
+    from qtype.interpreter.base.secrets import NoOpSecretManager
+
     # Extract or create ExecutorContext
     exec_context = kwargs.pop("context", None)
     if exec_context is None:
-        exec_context = ExecutorContext(tracer=trace.get_tracer(__name__))
+        exec_context = ExecutorContext(
+            secret_manager=NoOpSecretManager(),
+            tracer=trace.get_tracer(__name__),
+        )
 
     # Use tracer from context
     tracer = exec_context.tracer or trace.get_tracer(__name__)

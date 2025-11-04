@@ -11,6 +11,7 @@ from opentelemetry import trace
 from qtype.base.types import ConcurrencyConfig, StepCardinality
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.base.secrets import NoOpSecretManager
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Step
 
@@ -19,7 +20,12 @@ pytestmark = pytest.mark.asyncio
 
 def make_context():
     """Helper to create ExecutorContext for tests."""
-    return ExecutorContext(tracer=trace.get_tracer(__name__))
+    from qtype.interpreter.base.secrets import NoOpSecretManager
+
+    return ExecutorContext(
+        secret_manager=NoOpSecretManager(),
+        tracer=trace.get_tracer(__name__),
+    )
 
 
 # Test Step Models
@@ -315,6 +321,7 @@ class TestStepExecutor:
             )
 
         context = ExecutorContext(
+            secret_manager=NoOpSecretManager(),
             tracer=trace.get_tracer(__name__),
             on_progress=on_progress,
         )

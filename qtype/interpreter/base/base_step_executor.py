@@ -14,7 +14,6 @@ from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.progress_tracker import ProgressTracker
-from qtype.interpreter.base.secret_utils import resolve_secret
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import SecretReference, Step
@@ -78,8 +77,7 @@ class StepExecutor(ABC):
         """
         Resolve a value that may be a string or a SecretReference.
 
-        This is a convenience wrapper around the centralized resolve_secret
-        utility that automatically provides the step context.
+        This is a convenience wrapper that adds step context to error messages.
 
         Args:
             value: Either a plain string or a SecretReference
@@ -88,11 +86,10 @@ class StepExecutor(ABC):
             The resolved string value
 
         Raises:
-            SecretResolutionError: If value is a SecretReference but no
-                secret manager is configured, or if resolution fails
+            SecretResolutionError: If secret resolution fails
         """
         context = f"step '{self.step.id}'"
-        return resolve_secret(value, self._secret_manager, context)
+        return self._secret_manager(value, context)
 
     async def _filter_and_collect_errors(
         self,

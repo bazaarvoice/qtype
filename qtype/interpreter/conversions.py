@@ -21,7 +21,6 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
-from qtype.interpreter.base.secret_utils import resolve_secrets_in_dict
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
 from qtype.semantic.model import DocumentSplitter, Index, Model
@@ -159,7 +158,7 @@ def to_memory(session_id: str | None, memory: Memory) -> LlamaMemory:
 def to_llm(
     model: Model,
     system_prompt: str | None,
-    secret_manager: SecretManagerBase | None = None,
+    secret_manager: SecretManagerBase,
 ) -> BaseLLM:
     """
     Convert a qtype Model to a LlamaIndex Model.
@@ -261,7 +260,7 @@ def to_llm(
 
 @cached_resource
 def to_vector_store(
-    index: Index, secret_manager: SecretManagerBase | None = None
+    index: Index, secret_manager: SecretManagerBase
 ) -> BasePydanticVectorStore:
     """Convert a qtype Index to a LlamaIndex vector store."""
     full_module_path = "llama_index.core.vector_stores" + index.args.get(
@@ -279,9 +278,7 @@ def to_vector_store(
 
     # Resolve any SecretReferences in args
     context = f"index '{index.id}'"
-    resolved_args = resolve_secrets_in_dict(
-        index.args, secret_manager, context
-    )
+    resolved_args = secret_manager.resolve_secrets_in_dict(index.args, context)
 
     if "module" in resolved_args:
         del resolved_args["module"]

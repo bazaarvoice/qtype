@@ -27,7 +27,8 @@ class ExecutorContext:
 
     Attributes:
         secret_manager: Secret manager for resolving SecretReferences at
-            runtime. None if no secret management is configured.
+            runtime. Always present (uses NoOpSecretManager if no secrets
+            are configured), eliminating the need for None checks.
         on_stream_event: Optional callback for streaming real-time execution
             events (chunks, steps, errors) to clients.
         on_progress: Optional callback for progress updates during execution.
@@ -37,10 +38,11 @@ class ExecutorContext:
     Example:
         ```python
         from qtype.interpreter.base.executor_context import ExecutorContext
+        from qtype.interpreter.base.secrets import create_secret_manager
         from opentelemetry import trace
 
         context = ExecutorContext(
-            secret_manager=my_secret_manager,
+            secret_manager=create_secret_manager(config),
             on_stream_event=my_stream_callback,
             tracer=trace.get_tracer(__name__)
         )
@@ -49,7 +51,7 @@ class ExecutorContext:
         ```
     """
 
-    secret_manager: SecretManagerBase | None = None
+    secret_manager: SecretManagerBase
     on_stream_event: StreamingCallback | None = None
     on_progress: ProgressCallback | None = None
     tracer: Tracer | None = None

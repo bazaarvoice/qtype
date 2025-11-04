@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from typing import Any
 
+from qtype.interpreter.base.exceptions import SecretResolutionError
 from qtype.semantic.model import (
     AWSAuthProvider,
     AWSSecretManager,
@@ -29,9 +31,12 @@ class SecretManagerBase(ABC):
     """
 
     @abstractmethod
-    def __call__(self, secret_ref: SecretReference) -> str:
+    def get_secret(self, secret_ref: SecretReference) -> str:
         """
-        Resolve a secret reference and return the secret value.
+        Retrieve a secret value from the underlying secret store.
+
+        Subclasses must implement this method to interface with their
+        specific secret management service.
 
         Args:
             secret_ref: SecretReference containing the secret identifier
@@ -45,11 +50,128 @@ class SecretManagerBase(ABC):
         """
         pass
 
+    def __call__(self, value: str | SecretReference, context: str = "") -> str:
+        """
+        Resolve a value that may be a string or a SecretReference.
+
+        This is the main entry point for secret resolution. It handles
+        plain strings (pass-through) and SecretReferences (delegates to
+        get_secret()).
+
+        Args:
+            value: Either a plain string or a SecretReference to resolve
+            context: Optional context string describing where the secret
+                is being resolved (e.g., "step 'my_step'", "model 'gpt4'").
+                This is included in error messages to aid debugging.
+
+        Returns:
+            The resolved string value. If value is already a string, it is
+            returned unchanged. If value is a SecretReference, it is
+            resolved using get_secret().
+
+        Raises:
+            SecretResolutionError: If secret resolution fails
+
+        Examples:
+            >>> # Resolve a plain string (no-op)
+            >>> secret_manager("plain-text")
+            'plain-text'
+
+            >>> # Resolve a secret reference
+            >>> ref = SecretReference(secret_name="my-app/api-key")
+            >>> secret_manager(ref, context="model 'gpt4'")
+            'sk-abc123...'
+        """
+        if isinstance(value, str):
+            return value
+
+        try:
+            return self.get_secret(value)
+        except Exception as e:
+            context_msg = f" in {context}" if context else ""
+            raise SecretResolutionError(
+                f"Failed to resolve secret "
+                f"'{value.secret_name}'{context_msg}: {e}"
+            ) from e
+
+    def resolve_secrets_in_dict(
+        self, args: dict[str, Any], context: str = ""
+    ) -> dict[str, Any]:
+        """
+        Resolve any SecretReferences in a dictionary's values.
+
+        This is a convenience method that iterates over a dictionary and
+        resolves any values that might be SecretReferences. Non-secret
+        values (strings, numbers, etc.) are passed through unchanged.
+
+        Args:
+            args: Dictionary with potentially secret-containing values
+            context: Optional context string describing where secrets are
+                being resolved (e.g., "step 'my_step'", "index 'my_index'").
+                This is included in error messages to aid debugging.
+
+        Returns:
+            A new dictionary with all SecretReferences resolved to strings.
+            Other values are copied unchanged.
+
+        Raises:
+            SecretResolutionError: If resolution fails for any secret.
+
+        Examples:
+            >>> args = {
+            ...     "api_key": SecretReference(secret_name="my-app/key"),
+            ...     "host": "api.example.com",
+            ...     "port": 443
+            ... }
+            >>> secret_manager.resolve_secrets_in_dict(
+            ...     args, "tool 'my_api'"
+            ... )
+            {'api_key': 'sk-abc123...', 'host': 'api.example.com', 'port': 443}
+        """
+        resolved = {}
+        for key, value in args.items():
+            # Check if value might be a SecretReference
+            if isinstance(value, str) or hasattr(value, "secret_name"):
+                resolved[key] = self(value, context)
+            else:
+                resolved[key] = value
+        return resolved
+
 
 class AWSSecretManagerError(Exception):
     """Raised when AWS Secrets Manager operations fail."""
 
     pass
+
+
+class NoOpSecretManager(SecretManagerBase):
+    """
+    No-op secret manager that always raises an error.
+
+    This implementation is used when no secret manager is configured.
+    It allows code to always have a valid SecretManagerBase instance
+    instead of dealing with Optional types, following the Null Object
+    pattern.
+
+    Any attempt to resolve a secret will raise a SecretResolutionError
+    with a helpful message explaining that no secret manager is configured.
+    """
+
+    def get_secret(self, secret_ref: SecretReference) -> str:
+        """
+        Raise an error indicating no secret manager is configured.
+
+        Args:
+            secret_ref: The SecretReference that cannot be resolved
+
+        Raises:
+            SecretResolutionError: Always raised with configuration help
+        """
+        raise SecretResolutionError(
+            f"Cannot resolve secret '{secret_ref.secret_name}': "
+            "no secret manager configured. Please add a secret_manager "
+            "to your application configuration."
+        )
 
 
 class AWSSecretManagerImpl(SecretManagerBase):
@@ -113,9 +235,9 @@ class AWSSecretManagerImpl(SecretManagerBase):
             )
         self.config = config
 
-    def __call__(self, secret_ref: SecretReference) -> str:
+    def get_secret(self, secret_ref: SecretReference) -> str:
         """
-        Resolve a secret reference from AWS Secrets Manager.
+        Retrieve a secret from AWS Secrets Manager.
 
         This method retrieves the secret value from AWS Secrets Manager
         using the secret name provided in the reference. If the secret
@@ -171,7 +293,7 @@ class AWSSecretManagerImpl(SecretManagerBase):
 
 def create_secret_manager(
     config: SecretManager | None,
-) -> SecretManagerBase | None:
+) -> SecretManagerBase:
     """
     Factory function to create the appropriate secret manager implementation.
 
@@ -179,8 +301,8 @@ def create_secret_manager(
         config: SecretManager configuration from semantic model, or None
 
     Returns:
-        SecretManagerBase: Appropriate implementation based on config type,
-            or None if config is None
+        SecretManagerBase: Appropriate implementation based on config type.
+            Returns NoOpSecretManager if config is None.
 
     Raises:
         ValueError: If the secret manager type is not supported
@@ -200,12 +322,12 @@ def create_secret_manager(
         # Create implementation
         secret_manager = create_secret_manager(config)
 
-        # Use it
+        # Use it directly - no None checks needed!
         secret_value = secret_manager(secret_ref)
         ```
     """
     if config is None:
-        return None
+        return NoOpSecretManager()
 
     if isinstance(config, AWSSecretManager):
         return AWSSecretManagerImpl(config)

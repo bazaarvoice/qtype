@@ -17,7 +17,12 @@ pytestmark = pytest.mark.asyncio
 
 def make_context():
     """Helper to create ExecutorContext for tests."""
-    return ExecutorContext(tracer=trace.get_tracer(__name__))
+    from qtype.interpreter.base.secrets import NoOpSecretManager
+
+    return ExecutorContext(
+        secret_manager=NoOpSecretManager(),
+        tracer=trace.get_tracer(__name__),
+    )
 
 
 @pytest.fixture

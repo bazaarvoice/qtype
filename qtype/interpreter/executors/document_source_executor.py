@@ -3,7 +3,6 @@ from typing import AsyncIterator
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
-from qtype.interpreter.base.secret_utils import resolve_secrets_in_dict
 from qtype.interpreter.conversions import from_llama_document
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentSource
@@ -71,8 +70,8 @@ class DocumentSourceExecutor(StepExecutor):
         try:
             # Resolve any SecretReferences in step args
             context = f"step '{self.step.id}'"
-            resolved_args = resolve_secrets_in_dict(
-                self.step.args, self._secret_manager, context
+            resolved_args = self._secret_manager.resolve_secrets_in_dict(
+                self.step.args, context
             )
 
             # Combine resolved step args with message variables as runtime args
