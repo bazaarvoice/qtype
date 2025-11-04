@@ -48,16 +48,3 @@ class SecretResolutionError(Exception):
         if self.cause:
             msg += f": {self.cause}"
         return msg
-
-
-class AuthenticationError(Exception):
-    """
-    Raised when authentication operations fail.
-
-    This includes failures in:
-    - Creating authenticated sessions
-    - Validating credentials
-    - Refreshing authentication tokens
-    """
-
-    pass
