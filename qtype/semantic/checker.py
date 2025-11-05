@@ -16,6 +16,7 @@ from qtype.semantic.model import (
     DocumentSearch,
     DocumentSource,
     DocumentSplitter,
+    Echo,
     Flow,
     IndexUpsert,
     LLMInference,
@@ -241,6 +242,38 @@ def _validate_decoder(step: Decoder) -> None:
     """Validate Decoder step has exactly one text input and at least one output."""
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
     _validate_min_output_count(step, 1)
+
+
+def _validate_echo(step: Echo) -> None:
+    """
+    Validate Echo step has matching input and output variable IDs.
+
+    The inputs and outputs must contain the same set of variable IDs,
+    though they can be in different order.
+
+    Args:
+        step: The Echo step to validate
+
+    Raises:
+        QTypeSemanticError: If inputs and outputs don't match
+    """
+    input_ids = {var.id for var in step.inputs}
+    output_ids = {var.id for var in step.outputs}
+
+    if input_ids != output_ids:
+        missing_in_outputs = input_ids - output_ids
+        extra_in_outputs = output_ids - input_ids
+
+        error_msg = (
+            f"Echo step '{step.id}' must have the same variable IDs "
+            f"in inputs and outputs (order can differ)."
+        )
+        if missing_in_outputs:
+            error_msg += f" Missing in outputs: {sorted(missing_in_outputs)}."
+        if extra_in_outputs:
+            error_msg += f" Extra in outputs: {sorted(extra_in_outputs)}."
+
+        raise QTypeSemanticError(error_msg)
 
 
 def _validate_sql_source(step: SQLSource) -> None:
@@ -475,6 +508,7 @@ _VALIDATORS = {
     AWSAuthProvider: _validate_aws_auth,
     LLMInference: _validate_llm_inference,
     Decoder: _validate_decoder,
+    Echo: _validate_echo,
     SQLSource: _validate_sql_source,
     DocumentSource: _validate_document_source,
     DocToTextConverter: _validate_doc_to_text_converter,

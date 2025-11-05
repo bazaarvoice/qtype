@@ -1,0 +1,59 @@
+id: echo-debug-example
+description: Example showing how to use Echo step for debugging flows
+
+flows:
+  - id: debug-flow
+    description: A flow that uses Echo to inspect variables at different points
+    variables:
+      - id: original_input
+        type: text
+      - id: processed_text
+        type: text
+      - id: final_output
+        type: text
+    inputs:
+      - original_input
+    outputs:
+      - final_output
+    steps:
+      # Step 1: Echo the original input for debugging
+      - id: debug_input
+        type: Echo
+        inputs:
+          - original_input
+        outputs:
+          - original_input
+      
+      # Step 2: Process the input (example: add prefix)
+      - id: process_input
+        type: PromptTemplate
+        template: "Processed: {original_input}"
+        inputs:
+          - original_input
+        outputs:
+          - processed_text
+      
+      # Step 3: Echo the processed value for debugging
+      - id: debug_processed
+        type: Echo
+        inputs:
+          - processed_text
+        outputs:
+          - processed_text
+      
+      # Step 4: Final transformation
+      - id: final_transform
+        type: PromptTemplate
+        template: "{processed_text} - DONE"
+        inputs:
+          - processed_text
+        outputs:
+          - final_output
+      
+      # Step 5: Echo the final output for debugging
+      - id: debug_output
+        type: Echo
+        inputs:
+          - final_output
+        outputs:
+          - final_output

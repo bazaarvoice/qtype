@@ -13,6 +13,7 @@ from qtype.interpreter.executors.document_source_executor import (
 from qtype.interpreter.executors.document_splitter_executor import (
     DocumentSplitterExecutor,
 )
+from qtype.interpreter.executors.echo_executor import EchoExecutor
 from qtype.interpreter.executors.file_source_executor import FileSourceExecutor
 from qtype.interpreter.executors.file_writer_executor import FileWriterExecutor
 from qtype.interpreter.executors.invoke_embedding_executor import (
@@ -35,6 +36,7 @@ from qtype.semantic.model import (
     DocumentEmbedder,
     DocumentSource,
     DocumentSplitter,
+    Echo,
     FileSource,
     FileWriter,
     InvokeEmbedding,
@@ -63,6 +65,7 @@ EXECUTOR_REGISTRY = {
     DocumentEmbedder: DocumentEmbedderExecutor,
     DocumentSource: DocumentSourceExecutor,
     DocumentSplitter: DocumentSplitterExecutor,
+    Echo: EchoExecutor,
     InvokeEmbedding: InvokeEmbeddingExecutor,
     InvokeTool: InvokeToolExecutor,
     Aggregate: AggregateExecutor,
