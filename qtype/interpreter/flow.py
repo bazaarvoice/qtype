@@ -60,8 +60,9 @@ async def run_flow(
     )
 
     # Make this span the active context so step spans will nest under it
+    # Only attach if span is recording (i.e., real tracer is configured)
     ctx = trace.set_span_in_context(span)
-    token = otel_context.attach(ctx)
+    token = otel_context.attach(ctx) if span.is_recording() else None
 
     try:
         # 1. Get the execution plan is just the steps in order
@@ -155,5 +156,7 @@ async def run_flow(
         raise
     finally:
         # Detach the context and end the span
-        otel_context.detach(token)
+        # Only detach if we successfully attached (span was recording)
+        if token is not None:
+            otel_context.detach(token)
         span.end()
