@@ -530,7 +530,7 @@ def from_node_with_score(node_with_score) -> Any:
         from qtype.dsl.domain_types import Embedding
 
         embedding = Embedding(
-            vector=node.embedding, source_text=node.text, metadata=None
+            vector=node.embedding, content=node.text, metadata=None
         )
 
     # Create RAGChunk from node

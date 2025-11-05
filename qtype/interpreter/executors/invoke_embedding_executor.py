@@ -79,7 +79,7 @@ class InvokeEmbeddingExecutor(StepExecutor):
             # Create the Embedding object
             embedding = Embedding(
                 vector=vector,
-                source_text=source_text,
+                content=source_text,
                 metadata=None,
             )
 

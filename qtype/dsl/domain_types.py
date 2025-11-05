@@ -14,7 +14,7 @@ class Embedding(StrictBaseModel):
     vector: list[float] = Field(
         ..., description="The vector representation of the embedding."
     )
-    source_text: str | None = Field(
+    content: Any | None = Field(
         None, description="The original text that was embedded."
     )
     metadata: dict[str, Any] | None = Field(
@@ -77,21 +77,17 @@ class RAGDocument(StrictBaseModel):
     )
 
 
-class RAGChunk(StrictBaseModel):
+class RAGChunk(Embedding):
     """A standard, built-in representation of a chunk of a document used in Retrieval-Augmented Generation (RAG)."""
 
-    content: str = Field(..., description="The text content of the chunk.")
     chunk_id: str = Field(
         ..., description="An unique identifier for the chunk."
     )
     document_id: str = Field(
         ..., description="The identifier of the parent document."
     )
-    embedding: Embedding | None = Field(
+    vector: list[str] | None = Field(
         None, description="Optional embedding associated with the chunk."
-    )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata associated with the chunk."
     )
 
 

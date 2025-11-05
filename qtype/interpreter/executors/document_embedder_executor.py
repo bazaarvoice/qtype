@@ -59,7 +59,7 @@ class DocumentEmbedderExecutor(StepExecutor):
             # Create an Embedding object
             embedding = Embedding(
                 vector=vector,
-                source_text=chunk.content,
+                content=chunk.content,
                 metadata=chunk.metadata,
             )
 
