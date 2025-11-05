@@ -58,11 +58,9 @@ flows:
         type: RAGChunk
       - id: embedded_chunk
         type: RAGChunk
-      - id: ingest_result
-        type: text
     
     outputs:
-      - ingest_result
+      - embedded_chunk
     
     steps:
       # Step 1: Load documents from the directory
@@ -106,4 +104,4 @@ flows:
         inputs:
           - embedded_chunk
         outputs:
-          - ingest_result
+          - embedded_chunk
