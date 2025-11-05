@@ -524,22 +524,18 @@ def from_node_with_score(node_with_score) -> Any:
 
     node = node_with_score.node
 
-    # Extract embedding if available
-    embedding = None
+    # Extract vector if available
+    vector = None
     if hasattr(node, "embedding") and node.embedding is not None:
-        from qtype.dsl.domain_types import Embedding
-
-        embedding = Embedding(
-            vector=node.embedding, content=node.text, metadata=None
-        )
+        vector = node.embedding
 
     # Create RAGChunk from node
     chunk = RAGChunk(
         content=node.text or "",
         chunk_id=node.node_id,
         document_id=node.metadata.get("document_id", node.node_id),
-        embedding=embedding,
-        metadata=node.metadata,
+        vector=vector,
+        metadata=node.metadata or {},
     )
 
     # Wrap in RAGSearchResult with score

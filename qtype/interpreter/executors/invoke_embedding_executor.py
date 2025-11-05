@@ -61,13 +61,13 @@ class InvokeEmbeddingExecutor(StepExecutor):
                 vector = self.embedding_model.get_text_embedding(
                     text=input_value
                 )
-                source_text = input_value
+                content = input_value
             elif input_type == PrimitiveTypeEnum.image:
                 # For image embeddings
                 vector = self.embedding_model.get_image_embedding(
                     image_path=input_value
                 )
-                source_text = None
+                content = input_value
             else:
                 raise ValueError(
                     (
@@ -79,8 +79,7 @@ class InvokeEmbeddingExecutor(StepExecutor):
             # Create the Embedding object
             embedding = Embedding(
                 vector=vector,
-                content=source_text,
-                metadata=None,
+                content=content,
             )
 
             # Yield the result

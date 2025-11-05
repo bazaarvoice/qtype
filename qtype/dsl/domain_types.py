@@ -15,10 +15,11 @@ class Embedding(StrictBaseModel):
         ..., description="The vector representation of the embedding."
     )
     content: Any | None = Field(
-        None, description="The original text that was embedded."
+        None, description="The original content that was embedded."
     )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata associated with the embedding."
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata associated with the embedding.",
     )
 
 
@@ -68,8 +69,9 @@ class RAGDocument(StrictBaseModel):
     uri: str | None = Field(
         None, description="The URI where the document can be found."
     )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata associated with the document."
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata associated with the document.",
     )
     type: PrimitiveTypeEnum = Field(
         ...,
@@ -86,8 +88,8 @@ class RAGChunk(Embedding):
     document_id: str = Field(
         ..., description="The identifier of the parent document."
     )
-    vector: list[str] | None = Field(
-        None, description="Optional embedding associated with the chunk."
+    vector: list[float] | None = Field(
+        None, description="Optional vector embedding for the chunk."
     )
 
 

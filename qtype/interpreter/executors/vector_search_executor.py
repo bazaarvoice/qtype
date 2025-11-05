@@ -84,8 +84,7 @@ class VectorSearchExecutor(StepExecutor):
                             content="",
                             chunk_id="no_results",
                             document_id="no_results",
-                            embedding=None,
-                            metadata={},
+                            vector=None,
                         )
                         output_vars[output_var.id] = RAGSearchResult(
                             chunk=empty_chunk, score=0.0
