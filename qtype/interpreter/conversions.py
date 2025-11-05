@@ -325,12 +325,7 @@ def from_chat_message(message: LlamaChatMessage) -> ChatMessage:
                 ChatContent(type=PrimitiveTypeEnum.file, content=block.data)
             )
         elif isinstance(block, ThinkingBlock):
-            blocks.append(
-                ChatContent(
-                    type=PrimitiveTypeEnum.thinking,
-                    content=block.content,
-                )
-            )
+            continue
         else:
             raise InterpreterError(
                 f"Unsupported content block type: {type(block)}"
