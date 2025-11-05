@@ -40,6 +40,8 @@ class PrimitiveTypeEnum(str, Enum):
     audio = "audio"
     boolean = "boolean"
     bytes = "bytes"
+    citation_document = "citation_document"
+    citation_url = "citation_url"
     date = "date"
     datetime = "datetime"
     int = "int"
