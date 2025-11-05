@@ -8,7 +8,7 @@ import pytest
 from pydantic import BaseModel
 
 from qtype import dsl
-from qtype.dsl import linker, loader
+from qtype.dsl import linker, loader, parser
 
 TEST_DIR = Path(__file__).parent.parent / "specs"
 
@@ -34,12 +34,16 @@ def has_reference(model: BaseModel) -> bool:
 
 def run_validation(yaml_path: Path) -> dsl.Application:
     """Load and validate a DSL Application from a YAML file."""
-    model, dynamic_types_registry = loader.load_document(yaml_path)
+    yaml_data = loader.load_yaml_file(yaml_path)
+    model, dynamic_types_registry = parser.parse_document(yaml_data)
     if not isinstance(model, dsl.Application):
         raise TypeError(f"Expected Application, got {type(model)}")
-    app = linker.link(model)
-    assert not has_reference(app), "There are unresolved Reference instances"
-    return app
+    linked = linker.link(model)
+    assert isinstance(linked, dsl.Application)
+    assert not has_reference(linked), (
+        "There are unresolved Reference instances"
+    )
+    return linked
 
 
 @pytest.mark.parametrize(

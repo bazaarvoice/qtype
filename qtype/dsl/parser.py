@@ -7,7 +7,6 @@ Pydantic DSL models, including custom type extraction and building.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
@@ -199,29 +198,3 @@ def parse_document(
 
     # Extract root document from wrapper
     return document.root, custom_types
-
-
-# TODO: maybe remove this since it's only used in a unit test?
-def load_document(
-    source: str | Path,
-) -> tuple[dsl.DocumentType, CustomTypeRegistry]:
-    """
-    Load and parse a QType YAML file into DSL document.
-
-    This is a convenience function that combines load_yaml_file and
-    parse_document.
-
-    Args:
-        source: File path or URI to load
-
-    Returns:
-        Tuple of (DocumentType, CustomTypeRegistry)
-
-    Raises:
-        YAMLLoadError: If YAML parsing fails
-        ValueError: If validation fails
-    """
-    from qtype.dsl.loader import load_yaml_file
-
-    yaml_data = load_yaml_file(source)
-    return parse_document(yaml_data)

@@ -2,6 +2,7 @@ from typing import AsyncIterator
 
 from qtype.dsl.domain_types import AggregateStats
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Aggregate
 
@@ -16,8 +17,10 @@ class AggregateExecutor(BatchedStepExecutor):
     processing phase, then emits a single aggregate summary during finalization.
     """
 
-    def __init__(self, step: Aggregate, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: Aggregate, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, Aggregate):
             raise ValueError(
                 "AggregateExecutor can only execute Aggregate steps."

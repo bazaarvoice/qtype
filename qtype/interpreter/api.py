@@ -6,7 +6,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from opentelemetry import trace
 
+from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.base.secrets import create_secret_manager
 from qtype.interpreter.endpoints import (
     create_rest_endpoint,
     create_streaming_endpoint,
@@ -73,11 +76,30 @@ class APIExecutor:
         # Create metadata endpoints for flow discovery
         create_metadata_endpoints(app, self.definition)
 
+        # Create secret manager if configured
+        secret_manager = create_secret_manager(self.definition.secret_manager)
+
+        # Register telemetry if configured
+        if self.definition.telemetry:
+            from qtype.interpreter.telemetry import register
+
+            register(
+                self.definition.telemetry,
+                project_id=name or self.definition.id,
+                secret_manager=secret_manager,
+            )
+
+        # Create executor context
+        context = ExecutorContext(
+            secret_manager=secret_manager,
+            tracer=trace.get_tracer(__name__),
+        )
+
         # Create unified invoke endpoints for each flow
         flows = self.definition.flows if self.definition.flows else []
         for flow in flows:
             if flow.interface is not None:
-                create_streaming_endpoint(app, flow)
-            create_rest_endpoint(app, flow)
+                create_streaming_endpoint(app, flow, context)
+            create_rest_endpoint(app, flow, context)
 
         return app

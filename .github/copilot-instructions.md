@@ -121,7 +121,11 @@ You should, however, use features that are available in Python 3.10. Some exampl
     - Use `Optional` or `| None` for optional parameters (e.g., `str | None` instead of `Optional[str]`)
     - Use `from __future__ import annotations` for forward references and string annotations
     - Pattern matching with `match`/`case` statements (new in 3.10)
- 
+
+Other coding guidelines for python:
+ - Don't use `if TYPE_CHECKING` unless absolutely necessary to break a cicurlar dependency
+ - Don't try then raise -- this is an antipattern -- unless it's absolutely necessary to transform an exception type.
+
 # Virtual Environment
 
 This is a `uv` project, so all commands should be run inside the virtual environment like:

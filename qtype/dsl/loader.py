@@ -34,8 +34,6 @@ import fsspec
 import yaml
 from dotenv import load_dotenv
 
-from qtype.dsl.parser import load_document  # noqa: F401
-
 
 class YAMLLoadError(Exception):
     """Error during YAML loading or parsing."""

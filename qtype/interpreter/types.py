@@ -267,10 +267,7 @@ class ProgressCallback(Protocol):
 class StepError(BaseModel):
     """A structured error object attached to a failed FlowState."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     step_id: str
-    error: Exception
     error_message: str
     exception_type: str
 
@@ -309,7 +306,6 @@ class FlowMessage(BaseModel):
         if not self.is_failed():  # Only capture the first error
             self.error = StepError(
                 step_id=step_id,
-                error=exc,
                 error_message=str(exc),
                 exception_type=type(exc).__name__,
             )

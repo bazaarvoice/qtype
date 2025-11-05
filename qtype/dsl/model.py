@@ -218,6 +218,22 @@ class Variable(StrictBaseModel):
         return _resolve_type_field_validator(data, info)
 
 
+class SecretReference(StrictBaseModel):
+    """
+    A reference to a secret in the application's configured SecretManager.
+    This value is resolved at runtime by the interpreter.
+    """
+
+    secret_name: str = Field(
+        ...,
+        description="The name, ID, or ARN of the secret to fetch (e.g., 'my-project/db-password').",
+    )
+    key: str | None = Field(
+        default=None,
+        description="Optional key if the secret is a JSON blob or map (e.g., a specific key in a K8s secret).",
+    )
+
+
 class CustomType(StrictBaseModel):
     """A simple declaration of a custom data type by the user."""
 
@@ -286,9 +302,10 @@ class Model(StrictBaseModel):
         default=None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    # TODO(maybe): Make this an enum?
-    provider: str = Field(
-        ..., description="Name of the provider, e.g., openai or anthropic."
+    provider: Literal["openai", "anthropic", "aws-bedrock", "gcp-vertex"] = (
+        Field(
+            ..., description="Name of the provider, e.g., openai or anthropic."
+        )
     )
 
 
@@ -557,6 +574,30 @@ class InvokeFlow(Step):
 
 
 #
+# ---------------- Secret Manager Component ----------------
+#
+
+
+class SecretManager(StrictBaseModel, ABC):
+    """Base class for secret manager configurations."""
+
+    id: str = Field(
+        ..., description="Unique ID for this secret manager configuration."
+    )
+    type: str = Field(..., description="The type of secret manager.")
+    auth: Reference[AuthProviderType] | str = Field(
+        ...,
+        description="AuthorizationProvider used to access this secret manager.",
+    )
+
+
+class AWSSecretManager(SecretManager):
+    """Configuration for AWS Secrets Manager."""
+
+    type: Literal["aws_secret_manager"] = "aws_secret_manager"
+
+
+#
 # ---------------- Observability and Authentication Components ----------------
 #
 
@@ -574,7 +615,9 @@ class APIKeyAuthProvider(AuthorizationProvider):
     """API key-based authentication provider."""
 
     type: Literal["api_key"] = "api_key"
-    api_key: str = Field(..., description="API key for authentication.")
+    api_key: str | SecretReference = Field(
+        ..., description="API key for authentication."
+    )
     host: str | None = Field(
         default=None, description="Base URL or domain of the provider."
     )
@@ -584,7 +627,9 @@ class BearerTokenAuthProvider(AuthorizationProvider):
     """Bearer token authentication provider."""
 
     type: Literal["bearer_token"] = "bearer_token"
-    token: str = Field(..., description="Bearer token for authentication.")
+    token: str | SecretReference = Field(
+        ..., description="Bearer token for authentication."
+    )
 
 
 class OAuth2AuthProvider(AuthorizationProvider):
@@ -592,7 +637,9 @@ class OAuth2AuthProvider(AuthorizationProvider):
 
     type: Literal["oauth2"] = "oauth2"
     client_id: str = Field(..., description="OAuth2 client ID.")
-    client_secret: str = Field(..., description="OAuth2 client secret.")
+    client_secret: str | SecretReference = Field(
+        ..., description="OAuth2 client secret."
+    )
     token_url: str = Field(..., description="Token endpoint URL.")
     scopes: list[str] = Field(
         default_factory=list, description="OAuth2 scopes required."
@@ -637,13 +684,13 @@ class AWSAuthProvider(AuthorizationProvider):
     type: Literal["aws"] = "aws"
 
     # Method 1: Access key/secret/session
-    access_key_id: str | None = Field(
+    access_key_id: str | SecretReference | None = Field(
         default=None, description="AWS access key ID."
     )
-    secret_access_key: str | None = Field(
+    secret_access_key: str | SecretReference | None = Field(
         default=None, description="AWS secret access key."
     )
-    session_token: str | None = Field(
+    session_token: str | SecretReference | None = Field(
         default=None,
         description="AWS session token for temporary credentials.",
     )
@@ -696,12 +743,17 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
+    provider: Literal["Phoenix", "Langfuse"] = "Phoenix"
     auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
-    endpoint: str = Field(
+    endpoint: str | SecretReference = Field(
         ..., description="URL endpoint where telemetry data will be sent."
+    )
+    args: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional configuration arguments specific to the telemetry sink type.",
     )
 
 
@@ -760,6 +812,12 @@ class Application(StrictBaseModel):
         description="List of indexes available for search operations.",
     )
 
+    # Secret management
+    secret_manager: SecretManagerType | None = Field(
+        default=None,
+        description="Optional secret manager configuration for the application.",
+    )
+
     # Observability
     telemetry: TelemetrySink | None = Field(
         default=None, description="Optional telemetry sink for observability."
@@ -802,7 +860,7 @@ class SQLSource(Source):
     query: str = Field(
         ..., description="SQL query to execute. Inputs are injected as params."
     )
-    connection: str = Field(
+    connection: str | SecretReference = Field(
         ...,
         description="Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
     )
@@ -967,7 +1025,6 @@ class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
     type: Literal["DocumentIndex"] = "DocumentIndex"
-    # TODO: add anything that is needed for document search indexes
     pass
 
 
@@ -1022,6 +1079,15 @@ AuthProviderType = Union[
     AWSAuthProvider,
     OAuth2AuthProvider,
     VertexAuthProvider,
+]
+
+# Create a union type for all secret manager types
+SecretManagerType = Annotated[
+    Union[
+        AWSSecretManager
+        # Add future managers like KubernetesSecretManager here
+    ],
+    Field(discriminator="type"),
 ]
 
 # Create a union type for all step types

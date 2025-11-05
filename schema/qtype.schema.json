@@ -16,9 +16,16 @@
           "type": "string"
         },
         "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
+            }
+          ],
           "description": "API key for authentication.",
-          "title": "Api Key",
-          "type": "string"
+          "title": "Api Key"
         },
         "host": {
           "anyOf": [
@@ -156,6 +163,9 @@
               "type": "string"
             },
             {
+              "$ref": "#/$defs/SecretReference"
+            },
+            {
               "type": "null"
             }
           ],
@@ -169,6 +179,9 @@
               "type": "string"
             },
             {
+              "$ref": "#/$defs/SecretReference"
+            },
+            {
               "type": "null"
             }
           ],
@@ -180,6 +193,9 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
             },
             {
               "type": "null"
@@ -259,6 +275,41 @@
         "id"
       ],
       "title": "AWSAuthProvider",
+      "type": "object"
+    },
+    "AWSSecretManager": {
+      "additionalProperties": false,
+      "description": "Configuration for AWS Secrets Manager.",
+      "properties": {
+        "id": {
+          "description": "Unique ID for this secret manager configuration.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "aws_secret_manager",
+          "default": "aws_secret_manager",
+          "title": "Type",
+          "type": "string"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reference_Union_APIKeyAuthProvider__BearerTokenAuthProvider__AWSAuthProvider__OAuth2AuthProvider__VertexAuthProvider__"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "AuthorizationProvider used to access this secret manager.",
+          "title": "Auth"
+        }
+      },
+      "required": [
+        "id",
+        "auth"
+      ],
+      "title": "AWSSecretManager",
       "type": "object"
     },
     "Agent": {
@@ -573,6 +624,29 @@
           "title": "Indexes",
           "type": "array"
         },
+        "secret_manager": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "aws_secret_manager": "#/$defs/AWSSecretManager"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/AWSSecretManager"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional secret manager configuration for the application.",
+          "title": "Secret Manager"
+        },
         "telemetry": {
           "anyOf": [
             {
@@ -654,9 +728,16 @@
           "type": "string"
         },
         "token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
+            }
+          ],
           "description": "Bearer token for authentication.",
-          "title": "Token",
-          "type": "string"
+          "title": "Token"
         }
       },
       "required": [
@@ -1318,6 +1399,12 @@
         },
         "provider": {
           "description": "Name of the provider, e.g., openai or anthropic.",
+          "enum": [
+            "openai",
+            "anthropic",
+            "aws-bedrock",
+            "gcp-vertex"
+          ],
           "title": "Provider",
           "type": "string"
         },
@@ -2240,6 +2327,12 @@
         },
         "provider": {
           "description": "Name of the provider, e.g., openai or anthropic.",
+          "enum": [
+            "openai",
+            "anthropic",
+            "aws-bedrock",
+            "gcp-vertex"
+          ],
           "title": "Provider",
           "type": "string"
         }
@@ -2294,9 +2387,16 @@
           "type": "string"
         },
         "client_secret": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
+            }
+          ],
           "description": "OAuth2 client secret.",
-          "title": "Client Secret",
-          "type": "string"
+          "title": "Client Secret"
         },
         "token_url": {
           "description": "Token endpoint URL.",
@@ -2327,6 +2427,8 @@
         "audio",
         "boolean",
         "bytes",
+        "citation_document",
+        "citation_url",
         "date",
         "datetime",
         "int",
@@ -2640,9 +2742,16 @@
           "type": "string"
         },
         "connection": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
+            }
+          ],
           "description": "Database connection string or reference to auth provider. Typically in SQLAlchemy format.",
-          "title": "Connection",
-          "type": "string"
+          "title": "Connection"
         },
         "auth": {
           "anyOf": [
@@ -2669,6 +2778,35 @@
       "title": "SQLSource",
       "type": "object"
     },
+    "SecretReference": {
+      "additionalProperties": false,
+      "description": "A reference to a secret in the application's configured SecretManager.\nThis value is resolved at runtime by the interpreter.",
+      "properties": {
+        "secret_name": {
+          "description": "The name, ID, or ARN of the secret to fetch (e.g., 'my-project/db-password').",
+          "title": "Secret Name",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional key if the secret is a JSON blob or map (e.g., a specific key in a K8s secret).",
+          "title": "Key"
+        }
+      },
+      "required": [
+        "secret_name"
+      ],
+      "title": "SecretReference",
+      "type": "object"
+    },
     "StepCardinality": {
       "description": "Does this step emit 1 (one) or 0...N (many) items?",
       "enum": [
@@ -2685,6 +2823,15 @@
         "id": {
           "description": "Unique ID of the telemetry sink configuration.",
           "title": "Id",
+          "type": "string"
+        },
+        "provider": {
+          "default": "Phoenix",
+          "enum": [
+            "Phoenix",
+            "Langfuse"
+          ],
+          "title": "Provider",
           "type": "string"
         },
         "auth": {
@@ -2704,9 +2851,22 @@
           "title": "Auth"
         },
         "endpoint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SecretReference"
+            }
+          ],
           "description": "URL endpoint where telemetry data will be sent.",
-          "title": "Endpoint",
-          "type": "string"
+          "title": "Endpoint"
+        },
+        "args": {
+          "additionalProperties": true,
+          "description": "Additional configuration arguments specific to the telemetry sink type.",
+          "title": "Args",
+          "type": "object"
         }
       },
       "required": [

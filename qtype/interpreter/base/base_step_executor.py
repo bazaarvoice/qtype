@@ -12,20 +12,13 @@ from openinference.semconv.trace import (
 from opentelemetry import context, trace
 from opentelemetry.trace import Status, StatusCode
 
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.progress_tracker import ProgressTracker
 from qtype.interpreter.base.stream_emitter import StreamEmitter
-from qtype.interpreter.types import (
-    FlowMessage,
-    ProgressCallback,
-    StreamingCallback,
-)
-from qtype.semantic.model import Step
+from qtype.interpreter.types import FlowMessage
+from qtype.semantic.model import SecretReference, Step
 
 logger = logging.getLogger(__name__)
-
-# Get a tracer for this module
-# This will return a no-op tracer if no provider is configured
-tracer = trace.get_tracer(__name__)
 
 
 class StepExecutor(ABC):
@@ -50,8 +43,7 @@ class StepExecutor(ABC):
 
     Args:
         step: The semantic step model defining behavior and configuration
-        on_stream_event: Optional callback for real-time streaming events
-        on_progress: Optional callback for progress updates
+        context: ExecutorContext with cross-cutting concerns
         **dependencies: Executor-specific dependencies (e.g., LLM clients,
             database connections). These are injected by the executor factory
             and stored for use during execution.
@@ -65,20 +57,39 @@ class StepExecutor(ABC):
     def __init__(
         self,
         step: Step,
-        on_stream_event: StreamingCallback | None = None,
-        on_progress: ProgressCallback | None = None,
+        context: ExecutorContext,
         **dependencies: Any,
     ):
         self.step = step
+        self.context = context
         self.dependencies = dependencies
         self.progress = ProgressTracker(step.id)
-        self.on_stream_event = on_stream_event
-        self.on_progress = on_progress
-        self.stream_emitter = StreamEmitter(step, on_stream_event)
+        self.stream_emitter = StreamEmitter(step, context.on_stream_event)
         # Hook for subclasses to customize the processing function
         # Base uses process_message with telemetry wrapping,
         # BatchedStepExecutor uses process_batch
         self._processor = self._process_message_with_telemetry
+        # Convenience properties from context
+        self._secret_manager = context.secret_manager
+        self._tracer = context.tracer or trace.get_tracer(__name__)
+
+    def _resolve_secret(self, value: str | SecretReference) -> str:
+        """
+        Resolve a value that may be a string or a SecretReference.
+
+        This is a convenience wrapper that adds step context to error messages.
+
+        Args:
+            value: Either a plain string or a SecretReference
+
+        Returns:
+            The resolved string value
+
+        Raises:
+            SecretResolutionError: If secret resolution fails
+        """
+        context = f"step '{self.step.id}'"
+        return self._secret_manager(value, context)
 
     async def _filter_and_collect_errors(
         self,
@@ -160,7 +171,7 @@ class StepExecutor(ABC):
         """
         # Start a span for tracking
         # Note: We manually manage the span lifecycle to allow yielding
-        span = tracer.start_span(
+        span = self._tracer.start_span(
             f"step.{self.step.id}",
             attributes={
                 "step.id": self.step.id,
@@ -230,7 +241,7 @@ class StepExecutor(ABC):
                         if result.is_failed():
                             error_count += 1
                         self.progress.update_for_message(
-                            result, self.on_progress
+                            result, self.context.on_progress
                         )
                         yield result
 
@@ -303,7 +314,7 @@ class StepExecutor(ABC):
         active span in the context.
         """
         # Get current context and create child span within it
-        span = tracer.start_span(
+        span = self._tracer.start_span(
             f"step.{self.step.id}.process_message",
             attributes={
                 "session.id": message.session.session_id,

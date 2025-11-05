@@ -49,25 +49,38 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
             blocks.append(
                 file_to_content(part.url)  # type: ignore
             )
-        elif part.type.startswith("tool-"):
-            raise NotImplementedError(
-                "Tool call part handling is not implemented yet."
+        elif part.type == "source-url":
+            # Source URLs are references that might be displayed as citations
+            # Store as structured citation data
+            citation_data = {
+                "source_id": part.source_id,  # type: ignore
+                "url": part.url,  # type: ignore
+                "title": part.title,  # type: ignore
+            }
+            blocks.append(
+                ChatContent(
+                    type=PrimitiveTypeEnum.citation_url,
+                    content=citation_data,
+                )
             )
-        elif part.type == "dynamic-tool":
-            raise NotImplementedError(
-                "Dynamic tool part handling is not implemented yet."
+        elif part.type == "source-document":
+            # Source documents are references to documents
+            # Store as structured citation data
+            citation_data = {
+                "source_id": part.source_id,  # type: ignore
+                "title": part.title,  # type: ignore
+                "filename": part.filename,  # type: ignore
+                "media_type": part.media_type,  # type: ignore
+            }
+            blocks.append(
+                ChatContent(
+                    type=PrimitiveTypeEnum.citation_document,
+                    content=citation_data,
+                )
             )
         elif part.type == "step-start":
             # Step boundaries might not need content blocks
             continue
-        elif part.type in ["source-url", "source-document"]:
-            raise NotImplementedError(
-                "Source part handling is not implemented yet."
-            )
-        elif part.type.startswith("data-"):
-            raise NotImplementedError(
-                "Data part handling is not implemented yet."
-            )
         else:
             # Log unknown part types for debugging
             raise ValueError(f"Unknown part type: {part.type}")

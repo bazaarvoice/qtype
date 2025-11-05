@@ -4,6 +4,7 @@ from typing import Any, AsyncIterator
 
 from qtype.dsl.model import DecoderFormat
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import Decoder
 
@@ -11,8 +12,10 @@ from qtype.semantic.model import Decoder
 class DecoderExecutor(StepExecutor):
     """Executor for Decoder steps."""
 
-    def __init__(self, step: Decoder, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: Decoder, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, Decoder):
             raise ValueError("DecoderExecutor can only execute Decoder steps.")
         self.step: Decoder = step
