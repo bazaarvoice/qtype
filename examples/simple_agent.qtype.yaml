@@ -41,6 +41,6 @@ flows:
           - user_message
         outputs:
           - response
-telemetry:
-  id: simple_agent_telemetry
-  endpoint: http://localhost:6006/v1/traces
+# telemetry:
+#   id: simple_agent_telemetry
+#   endpoint: http://localhost:6006/v1/traces

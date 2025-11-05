@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any
 
@@ -19,46 +19,6 @@ from qtype.semantic.model import Application
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class ServerConfig:
-    """Configuration for API server."""
-
-    spec_path: Path
-    name: str
-    ui_enabled: bool
-    host: str
-    port: int
-
-    @property
-    def servers(self) -> list[dict[str, str]]:
-        """Generate server list for OpenAPI spec."""
-        return [
-            {
-                "url": f"http://{self.host}:{self.port}",
-                "description": "Development server",
-            }
-        ]
-
-    @classmethod
-    def from_args(cls, args: argparse.Namespace) -> ServerConfig:
-        """Create configuration from CLI arguments."""
-        spec_path = Path(args.spec)
-        name = (
-            spec_path.name.replace(".qtype.yaml", "").replace("_", " ").title()
-        )
-        return cls(
-            spec_path=spec_path,
-            name=name,
-            ui_enabled=not args.disable_ui,
-            host=args.host,
-            port=args.port,
-        )
-
-
-# Module-level config for uvicorn reload factory
-_reload_config: ServerConfig | None = None
-
-
 def create_api_app() -> Any:
     """Factory function to create FastAPI app.
 
@@ -66,58 +26,42 @@ def create_api_app() -> Any:
         FastAPI application instance.
 
     Raises:
-        RuntimeError: If called without config being set.
+        RuntimeError: If QTYPE_SPEC_PATH not set in environment.
         ValidationError: If spec is not an Application document.
     """
-    if _reload_config is None:
-        raise RuntimeError("Reload config not initialized")
-
     from qtype.interpreter.api import APIExecutor
 
-    config = _reload_config
-    logger.info(f"Loading spec: {config.spec_path}")
+    spec_path_str = os.environ["_QTYPE_SPEC_PATH"]
 
-    semantic_model, _ = load(config.spec_path)
+    spec_path = Path(spec_path_str)
+    logger.info(f"Loading spec: {spec_path}")
+
+    semantic_model, _ = load(spec_path)
     if not isinstance(semantic_model, Application):
         raise ValidationError("Can only serve Application documents")
 
-    logger.info(f"✅ Successfully loaded spec: {config.spec_path}")
+    logger.info(f"✅ Successfully loaded spec: {spec_path}")
 
-    api_executor = APIExecutor(semantic_model, config.host, config.port)
+    # Derive name from spec filename
+    name = spec_path.name.replace(".qtype.yaml", "").replace("_", " ").title()
+
+    # Get host/port from environment (set by uvicorn)
+    host = os.environ["_QTYPE_HOST"]
+    port = int(os.environ["_QTYPE_PORT"])
+
+    # Create server info for OpenAPI spec
+    servers = [
+        {
+            "url": f"http://{host}:{port}",
+            "description": "Development server",
+        }
+    ]
+
+    api_executor = APIExecutor(semantic_model, host, port)
     return api_executor.create_app(
-        name=config.name,
-        ui_enabled=config.ui_enabled,
-        servers=config.servers,
-    )
-
-
-def _run_server(config: ServerConfig, reload: bool) -> None:
-    """Start the uvicorn server.
-
-    Args:
-        config: Server configuration.
-        reload: Whether to enable auto-reload on code changes.
-    """
-    logger.info(
-        f"Starting server for: {config.name}"
-        f"{' (reload enabled)' if reload else ''}"
-    )
-
-    # Set module-level config for factory function
-    global _reload_config
-    _reload_config = config
-
-    # Use factory mode with import string (required for reload)
-    uvicorn.run(
-        "qtype.commands.serve:create_api_app",
-        factory=True,
-        host=config.host,
-        port=config.port,
-        log_level="info",
-        reload=reload,
-        reload_includes=[
-            str(config.spec_path)
-        ],  # Watch the spec file for changes
+        name=name,
+        ui_enabled=True,
+        servers=servers,
     )
 
 
@@ -127,8 +71,26 @@ def serve(args: argparse.Namespace) -> None:
     Args:
         args: Arguments passed from the command line.
     """
-    config = ServerConfig.from_args(args)
-    _run_server(config, reload=args.reload)
+    # Set environment variables for factory function
+    os.environ["_QTYPE_SPEC_PATH"] = args.spec
+    os.environ["_QTYPE_HOST"] = args.host
+    os.environ["_QTYPE_PORT"] = str(args.port)
+
+    logger.info(
+        f"Starting server on {args.host}:{args.port}"
+        f"{' (reload enabled)' if args.reload else ''}"
+    )
+
+    # Use factory mode with import string
+    uvicorn.run(
+        "qtype.commands.serve:create_api_app",
+        factory=True,
+        host=args.host,
+        port=args.port,
+        log_level="info",
+        reload=args.reload,
+        reload_includes=[args.spec] if args.reload else None,
+    )
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:
@@ -143,11 +105,6 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
 
     cmd_parser.add_argument("-p", "--port", type=int, default=8000)
     cmd_parser.add_argument("-H", "--host", type=str, default="localhost")
-    cmd_parser.add_argument(
-        "--disable-ui",
-        action="store_true",
-        help="Disable the UI for the QType application.",
-    )
     cmd_parser.add_argument(
         "--reload",
         action="store_true",

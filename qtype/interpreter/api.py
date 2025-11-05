@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -67,9 +68,14 @@ class APIExecutor:
                     secret_manager=secret_manager,
                 )
             yield
-            # Shutdown telemetry on app shutdown
+            # Fire off telemetry shutdown in background for fast reloads
             if tracer_provider is not None:
-                tracer_provider.shutdown()
+
+                async def shutdown_telemetry():
+                    tracer_provider.force_flush(timeout_millis=1000)
+                    tracer_provider.shutdown()
+
+                asyncio.create_task(shutdown_telemetry())
 
         # Create FastAPI app with lifespan
         app = FastAPI(
