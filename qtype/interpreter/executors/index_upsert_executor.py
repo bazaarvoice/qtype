@@ -9,6 +9,7 @@ from llama_index.core.schema import TextNode
 
 from qtype.dsl.domain_types import RAGChunk, RAGDocument
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import (
     to_llama_vector_store_and_retriever,
     to_opensearch_client,
@@ -22,8 +23,10 @@ logger = logging.getLogger(__name__)
 class IndexUpsertExecutor(BatchedStepExecutor):
     """Executor for IndexUpsert steps supporting both vector and document indexes."""
 
-    def __init__(self, step: IndexUpsert, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: IndexUpsert, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, IndexUpsert):
             raise ValueError(
                 "IndexUpsertExecutor can only execute IndexUpsert steps."
@@ -40,7 +43,9 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             self.index_type = "vector"
         elif isinstance(self.step.index, DocumentIndex):
             # Document index for text-based search
-            self._opensearch_client = to_opensearch_client(self.step.index, self.context.secret_manager)
+            self._opensearch_client = to_opensearch_client(
+                self.step.index, self._secret_manager
+            )
             self._vector_store = None
             self.index_type = "document"
             self.index_name = self.step.index.name

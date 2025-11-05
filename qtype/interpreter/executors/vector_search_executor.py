@@ -8,6 +8,7 @@ from typing import AsyncIterator
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import RAGSearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import (
     from_node_with_score,
     to_llama_vector_store_and_retriever,
@@ -21,8 +22,10 @@ logger = logging.getLogger(__name__)
 class VectorSearchExecutor(StepExecutor):
     """Executor for VectorSearch steps using LlamaIndex vector stores."""
 
-    def __init__(self, step: VectorSearch, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: VectorSearch, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, VectorSearch):
             raise ValueError(
                 "VectorSearchExecutor can only execute VectorSearch steps."

@@ -22,8 +22,8 @@ from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
-from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.auth.generic import auth
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
 from qtype.semantic.model import (
     APIKeyAuthProvider,
@@ -329,7 +329,9 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
 
 
 @cached_resource
-def to_opensearch_client(index: DocumentIndex, secret_manager: SecretManagerBase) -> OpenSearch:
+def to_opensearch_client(
+    index: DocumentIndex, secret_manager: SecretManagerBase
+) -> OpenSearch:
     """
     Convert a DocumentIndex to an OpenSearch/Elasticsearch client.
 

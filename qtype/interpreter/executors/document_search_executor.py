@@ -2,6 +2,7 @@ from typing import AsyncIterator
 
 from qtype.dsl.domain_types import RAGChunk, RAGSearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_opensearch_client
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentSearch
@@ -10,8 +11,10 @@ from qtype.semantic.model import DocumentSearch
 class DocumentSearchExecutor(StepExecutor):
     """Executor for DocumentSearch steps using OpenSearch/Elasticsearch."""
 
-    def __init__(self, step: DocumentSearch, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: DocumentSearch, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocumentSearch):
             raise ValueError(
                 (
@@ -21,7 +24,9 @@ class DocumentSearchExecutor(StepExecutor):
             )
         self.step: DocumentSearch = step
         # Initialize the OpenSearch client once for the executor
-        self.client = to_opensearch_client(self.step.index, self.context.secret_manager)
+        self.client = to_opensearch_client(
+            self.step.index, self._secret_manager
+        )
         self.index_name = self.step.index.name
 
     async def process_message(
