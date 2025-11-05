@@ -695,12 +695,15 @@ class DocumentSource(Source):
 
     type: Literal["DocumentSource"] = Field("DocumentSource")
     reader_module: str = Field(
-        ...,
-        description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+        ..., description="Module path of the LlamaIndex Reader)."
     )
     args: dict[str, Any] = Field(
         default_factory=dict,
-        description="Reader-specific arguments to pass to the LlamaIndex constructor.",
+        description="Reader-specific arguments to pass to the Reader constructor.",
+    )
+    loader_args: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Loader-specific arguments to pass to the load_data method.",
     )
     auth: AuthorizationProvider | None = Field(
         None, description="AuthorizationProvider for accessing the source."

@@ -29,8 +29,8 @@ from qtype.semantic.model import (
     APIKeyAuthProvider,
     DocumentIndex,
     DocumentSplitter,
-    Index,
     Model,
+    VectorIndex,
 )
 
 from .resource_cache import cached_resource
@@ -272,29 +272,23 @@ def to_llm(
 
 @cached_resource
 def to_vector_store(
-    index: Index, secret_manager: SecretManagerBase
+    index: VectorIndex, secret_manager: SecretManagerBase
 ) -> BasePydanticVectorStore:
     """Convert a qtype Index to a LlamaIndex vector store."""
-    full_module_path = "llama_index.core.vector_stores" + index.args.get(
-        "module", "SimpleVectorStore"
-    )
-    class_name = full_module_path.split(".")[-1]
+    module_path = ".".join(index.module.split(".")[:-1])
+    class_name = index.module.split(".")[-1]
     # Dynamically import the reader module
     try:
-        reader_module = importlib.import_module(full_module_path)
+        reader_module = importlib.import_module(module_path)
         reader_class = getattr(reader_module, class_name)
     except (ImportError, AttributeError) as e:
         raise ImportError(
-            f"Failed to import reader class '{class_name}' from '{full_module_path}': {e}"
+            f"Failed to import reader class '{class_name}' from '{module_path}': {e}"
         ) from e
 
     # Resolve any SecretReferences in args
     context = f"index '{index.id}'"
     resolved_args = secret_manager.resolve_secrets_in_dict(index.args, context)
-
-    if "module" in resolved_args:
-        del resolved_args["module"]
-
     index_instance = reader_class(**resolved_args)
 
     return index_instance
@@ -304,7 +298,7 @@ def to_vector_store(
 def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
-    if model.provider in {"bedrock", "aws", "aws-bedrock"}:
+    if model.provider == "aws-bedrock":
         from llama_index.embeddings.bedrock import (  # type: ignore[import-untyped]
             BedrockEmbedding,
         )
@@ -487,7 +481,7 @@ def to_text_splitter(splitter: DocumentSplitter) -> Any:
 
 
 def to_llama_vector_store_and_retriever(
-    index,
+    index: VectorIndex, secret_manager: SecretManagerBase
 ) -> tuple[BasePydanticVectorStore, Any]:
     """Create a LlamaIndex vector store and retriever from a VectorIndex.
 
@@ -500,7 +494,7 @@ def to_llama_vector_store_and_retriever(
     from llama_index.core import VectorStoreIndex
 
     # Get the vector store using existing function
-    vector_store = to_vector_store(index)
+    vector_store = to_vector_store(index, secret_manager)
 
     # Get the embedding model
     embedding_model = to_embedding_model(index.embedding_model)

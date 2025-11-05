@@ -1232,14 +1232,20 @@
           "type": "array"
         },
         "reader_module": {
-          "description": "Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+          "description": "Module path of the LlamaIndex Reader).",
           "title": "Reader Module",
           "type": "string"
         },
         "args": {
           "additionalProperties": true,
-          "description": "Reader-specific arguments to pass to the LlamaIndex constructor.",
+          "description": "Reader-specific arguments to pass to the Reader constructor.",
           "title": "Args",
+          "type": "object"
+        },
+        "loader_args": {
+          "additionalProperties": true,
+          "description": "Loader-specific arguments to pass to the load_data method.",
+          "title": "Loader Args",
           "type": "object"
         },
         "auth": {

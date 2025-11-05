@@ -1,0 +1,109 @@
+id: rag_example
+description: |
+  End-to-end RAG (Retrieval Augmented Generation) example that processes documents 
+  into a Qdrant vector store using AWS Bedrock Titan v2 embeddings.
+  
+  This flow demonstrates document ingestion:
+  1. Load documents from tests/rag_files directory
+  2. Split documents into manageable chunks
+  3. Generate embeddings using AWS Bedrock Titan Embed Text v2
+  4. Store embedded chunks in Qdrant vector database
+  
+  Prerequisites:
+  - AWS credentials configured (via AWS CLI profile or environment variables)
+  - Qdrant running locally on port 6333 (or update the index args for Qdrant Cloud)
+  
+  To run:
+    uv run python -m qtype.cli run examples/rag.qtype.yaml --flow document_ingestion
+
+# AWS Authentication for Bedrock
+auths:
+  - type: aws
+    id: aws_auth
+    profile_name: ${AWS_PROFILE}  # Uses AWS_PROFILE env var
+
+# Embedding model using AWS Bedrock Titan v2
+models:
+  - type: EmbeddingModel
+    id: titan_embed_v2
+    provider: aws-bedrock
+    model_id: amazon.titan-embed-text-v2:0
+    dimensions: 1024
+    auth: aws_auth
+
+# Qdrant vector index for storing embedded documents
+indexes:
+  - type: VectorIndex
+    module: llama_index.vector_stores.qdrant.QdrantVectorStore
+    id: rag_index
+    name: documents
+    embedding_model: titan_embed_v2
+    args:
+      # Qdrant vector store arguments.
+      # See https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/qdrant/
+      collection_name: documents
+      url: http://localhost:6333
+      api_key: DEADBEEF
+
+# Flow to ingest documents into the vector store
+flows:
+  - type: Flow
+    id: document_ingestion
+    description: Load, split, embed, and index documents from the rag_files directory
+    
+    variables:
+      - id: raw_document
+        type: RAGDocument
+      - id: document_chunk
+        type: RAGChunk
+      - id: embedded_chunk
+        type: RAGChunk
+      - id: ingest_result
+        type: text
+    
+    outputs:
+      - ingest_result
+    
+    steps:
+      # Step 1: Load documents from the directory
+      - id: load_documents
+        type: DocumentSource
+        reader_module: llama_index.core.SimpleDirectoryReader
+        args:
+          input_dir: "tests/rag_files"
+          recursive: false
+        outputs:
+          - raw_document
+      
+      # Step 2: Split documents into chunks
+      - id: split_documents
+        type: DocumentSplitter
+        splitter_name: "SentenceSplitter"
+        chunk_size: 512
+        chunk_overlap: 50
+        inputs:
+          - raw_document
+        outputs:
+          - document_chunk
+      
+      # Step 3: Generate embeddings for each chunk
+      - id: embed_chunks
+        type: DocumentEmbedder
+        model: titan_embed_v2
+        concurrency_config:
+          num_workers: 5
+        inputs:
+          - document_chunk
+        outputs:
+          - embedded_chunk
+      
+      # Step 4: Upsert embedded chunks into Qdrant
+      - id: index_chunks
+        type: IndexUpsert
+        index: rag_index
+        batch_config:
+          batch_size: 25
+        inputs:
+          - embedded_chunk
+        outputs:
+          - ingest_result

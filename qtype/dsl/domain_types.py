@@ -17,7 +17,7 @@ class Embedding(StrictBaseModel):
     source_text: str | None = Field(
         None, description="The original text that was embedded."
     )
-    metadata: dict[str, str] | None = Field(
+    metadata: dict[str, Any] | None = Field(
         None, description="Optional metadata associated with the embedding."
     )
 

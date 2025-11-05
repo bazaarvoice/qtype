@@ -19,6 +19,9 @@ from qtype.interpreter.executors.document_splitter_executor import (
 from qtype.interpreter.executors.echo_executor import EchoExecutor
 from qtype.interpreter.executors.file_source_executor import FileSourceExecutor
 from qtype.interpreter.executors.file_writer_executor import FileWriterExecutor
+from qtype.interpreter.executors.index_upsert_executor import (
+    IndexUpsertExecutor,
+)
 from qtype.interpreter.executors.invoke_embedding_executor import (
     InvokeEmbeddingExecutor,
 )
@@ -43,6 +46,7 @@ from qtype.semantic.model import (
     Echo,
     FileSource,
     FileWriter,
+    IndexUpsert,
     InvokeEmbedding,
     InvokeFlow,
     InvokeTool,
@@ -59,11 +63,7 @@ from .executor_context import ExecutorContext
 
 EXECUTOR_REGISTRY = {
     Agent: AgentExecutor,
-    InvokeFlow: InvokeFlowExecutor,
-    LLMInference: LLMInferenceExecutor,
-    FileWriter: FileWriterExecutor,
-    FileSource: FileSourceExecutor,
-    SQLSource: SQLSourceExecutor,
+    Aggregate: AggregateExecutor,
     Decoder: DecoderExecutor,
     DocToTextConverter: DocToTextConverterExecutor,
     DocumentEmbedder: DocumentEmbedderExecutor,
@@ -71,11 +71,15 @@ EXECUTOR_REGISTRY = {
     DocumentSource: DocumentSourceExecutor,
     DocumentSplitter: DocumentSplitterExecutor,
     Echo: EchoExecutor,
+    FileSource: FileSourceExecutor,
+    FileWriter: FileWriterExecutor,
+    IndexUpsert: IndexUpsertExecutor,
     InvokeEmbedding: InvokeEmbeddingExecutor,
+    InvokeFlow: InvokeFlowExecutor,
     InvokeTool: InvokeToolExecutor,
-    Aggregate: AggregateExecutor,
+    LLMInference: LLMInferenceExecutor,
     PromptTemplate: PromptTemplateExecutor,
-    # ... map all other step model classes to their executor class
+    SQLSource: SQLSourceExecutor,
 }
 
 

@@ -37,14 +37,14 @@ class IndexUpsertExecutor(BatchedStepExecutor):
         if isinstance(self.step.index, VectorIndex):
             # Vector index for RAGChunk embeddings
             self._vector_store, _ = to_llama_vector_store_and_retriever(
-                self.step.index
+                self.step.index, self.context.secret_manager
             )
             self._opensearch_client = None
             self.index_type = "vector"
         elif isinstance(self.step.index, DocumentIndex):
             # Document index for text-based search
             self._opensearch_client = to_opensearch_client(
-                self.step.index, self._secret_manager
+                self.step.index, self.context.secret_manager
             )
             self._vector_store = None
             self.index_type = "document"
