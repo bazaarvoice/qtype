@@ -87,7 +87,7 @@ def register(
     telemetry: TelemetrySink,
     secret_manager: SecretManagerBase,
     project_id: str | None = None,
-) -> None:
+) -> TracerProvider:
     """
     Register and configure telemetry for the QType runtime.
 
@@ -103,6 +103,9 @@ def register(
         secret_manager: Optional secret manager for resolving endpoint URLs
             that are stored as SecretReferences. If None, uses NoOpSecretManager
             which will raise an error if secrets are needed.
+
+    Returns:
+        TracerProvider instance for managing telemetry lifecycle.
 
     Note:
         Supports Phoenix and Langfuse telemetry providers.
@@ -137,3 +140,4 @@ def register(
             f"Unsupported telemetry provider: {telemetry.provider}"
         )
     LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
+    return tracer_provider
