@@ -18,6 +18,7 @@ indexes:
   - type: VectorIndex
     id: test_vector_index
     name: my_vector_collection
+    module: qdrant.QdrantVectorStore
     auth: index_auth  # String should be resolved to Reference[AuthProviderType]
     embedding_model: embedding_model  # String should be resolved to Reference[EmbeddingModel]
 

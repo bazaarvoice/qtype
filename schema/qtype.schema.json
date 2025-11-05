@@ -1084,11 +1084,17 @@
           "default": "DocumentIndex",
           "title": "Type",
           "type": "string"
+        },
+        "endpoint": {
+          "description": "URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
+          "title": "Endpoint",
+          "type": "string"
         }
       },
       "required": [
         "id",
-        "name"
+        "name",
+        "endpoint"
       ],
       "title": "DocumentIndex",
       "type": "object"
@@ -3081,6 +3087,11 @@
           "title": "Type",
           "type": "string"
         },
+        "module": {
+          "description": "Python module path for the vector store implementation (e.g., 'llama_index.vector_stores.qdrant.QdrantVectorStore').",
+          "title": "Module",
+          "type": "string"
+        },
         "embedding_model": {
           "anyOf": [
             {
@@ -3097,6 +3108,7 @@
       "required": [
         "id",
         "name",
+        "module",
         "embedding_model"
       ],
       "title": "VectorIndex",

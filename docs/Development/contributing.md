@@ -37,20 +37,15 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install all dependencies including development tools
-uv sync --group dev --extra interpreter
+# Install all dependencies, development tools, and qtype in editable mode
+uv sync --extra interpreter
 ```
 
-## Installing QType for Development
+This single command installs everything you need, including the `qtype` package in editable mode so changes to the source code are immediately reflected.
 
-Install QType in editable mode so changes to the source code are immediately reflected:
+## Using QType Commands
 
-```bash
-# Install in development mode
-uv pip install -e '.[interpreter]'
-```
-
-Next, activate the virtaul environment:
+After installation, activate the virtual environment:
 ```bash
 source ./venv/bin/activate
 ```

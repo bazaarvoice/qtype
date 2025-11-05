@@ -37,6 +37,7 @@ interpreter = [
     "llama-index-llms-bedrock>=0.3.8",
     "llama-index>=0.12.45",
     "openinference-instrumentation-llama-index>=4.3.4",
+    "opensearch-py>=2.7.0",
     "pandas>=2.2.3",
     "psycopg2-binary>=2.9.10",
     "pyarrow>=21.0.0",
@@ -87,6 +88,8 @@ docs = [
 [tool.uv]
 # Install dev dependencies by default when running uv sync
 default-groups = ["dev"]
+# Install the package itself in editable mode
+package = true
 # Use highest resolution strategy for dependencies  
 resolution = "highest"
 # Compile bytecode for faster subsequent runs

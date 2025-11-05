@@ -16,14 +16,22 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from opensearchpy import AWSV4SignerAuth, OpenSearch
 
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
+from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
-from qtype.semantic.model import DocumentSplitter, Index, Model
+from qtype.semantic.model import (
+    APIKeyAuthProvider,
+    DocumentIndex,
+    DocumentSplitter,
+    Index,
+    Model,
+)
 
 from .resource_cache import cached_resource
 
@@ -320,6 +328,61 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
         )
 
 
+@cached_resource
+def to_opensearch_client(
+    index: DocumentIndex, secret_manager: SecretManagerBase
+) -> OpenSearch:
+    """
+    Convert a DocumentIndex to an OpenSearch/Elasticsearch client.
+
+    Args:
+        index: DocumentIndex configuration with endpoint, auth, etc.
+
+    Returns:
+        OpenSearch client instance configured with authentication
+
+    Raises:
+        InterpreterError: If authentication fails or configuration is invalid
+    """
+    client_kwargs: dict[str, Any] = {
+        "hosts": [index.endpoint],
+        **index.args,
+    }
+
+    # Handle authentication if provided
+    if index.auth:
+        if isinstance(index.auth, APIKeyAuthProvider):
+            # Use API key authentication
+            client_kwargs["api_key"] = index.auth.api_key
+        elif hasattr(index.auth, "type") and index.auth.type == "aws":
+            # Use AWS authentication with boto3 session
+            # Get AWS credentials from auth provider using context manager
+            with auth(index.auth, secret_manager) as auth_session:
+                # Type checker doesn't know this is a boto3.Session
+                # but runtime validation ensures it for AWS auth
+                credentials = auth_session.get_credentials()  # type: ignore
+                if credentials is None:
+                    raise InterpreterError(
+                        f"Failed to obtain AWS credentials for DocumentIndex '{index.id}'"
+                    )
+
+                # Use opensearch-py's built-in AWS auth
+                aws_auth = AWSV4SignerAuth(
+                    credentials,
+                    auth_session.region_name or "us-east-1",  # type: ignore
+                )
+
+                client_kwargs["http_auth"] = aws_auth
+                client_kwargs["use_ssl"] = True
+                client_kwargs["verify_certs"] = True
+        else:
+            raise InterpreterError(
+                f"Unsupported authentication type for DocumentIndex: {type(index.auth)}"
+            )
+
+    return OpenSearch(**client_kwargs)
+
+
 def to_content_block(content: ChatContent) -> ContentBlock:
     if content.type == PrimitiveTypeEnum.text:
         if isinstance(content.content, str):
@@ -421,3 +484,69 @@ def to_text_splitter(splitter: DocumentSplitter) -> Any:
         raise InterpreterError(
             f"Failed to instantiate {splitter.splitter_name}: {e}"
         ) from e
+
+
+def to_llama_vector_store_and_retriever(
+    index,
+) -> tuple[BasePydanticVectorStore, Any]:
+    """Create a LlamaIndex vector store and retriever from a VectorIndex.
+
+    Args:
+        index: VectorIndex configuration
+
+    Returns:
+        Tuple of (vector_store, retriever)
+    """
+    from llama_index.core import VectorStoreIndex
+
+    # Get the vector store using existing function
+    vector_store = to_vector_store(index)
+
+    # Get the embedding model
+    embedding_model = to_embedding_model(index.embedding_model)
+
+    # Create a VectorStoreIndex with the vector store and embedding model
+    vector_index = VectorStoreIndex.from_vector_store(
+        vector_store=vector_store,
+        embed_model=embedding_model,
+    )
+
+    # Create retriever with optional top_k configuration
+    retriever = vector_index.as_retriever()
+
+    return vector_store, retriever
+
+
+def from_node_with_score(node_with_score) -> Any:
+    """Convert a LlamaIndex NodeWithScore to a RAGSearchResult.
+
+    Args:
+        node_with_score: LlamaIndex NodeWithScore object
+
+    Returns:
+        RAGSearchResult with chunk and score
+    """
+    from qtype.dsl.domain_types import RAGChunk, RAGSearchResult
+
+    node = node_with_score.node
+
+    # Extract embedding if available
+    embedding = None
+    if hasattr(node, "embedding") and node.embedding is not None:
+        from qtype.dsl.domain_types import Embedding
+
+        embedding = Embedding(
+            vector=node.embedding, source_text=node.text, metadata=None
+        )
+
+    # Create RAGChunk from node
+    chunk = RAGChunk(
+        content=node.text or "",
+        chunk_id=node.node_id,
+        document_id=node.metadata.get("document_id", node.node_id),
+        embedding=embedding,
+        metadata=node.metadata,
+    )
+
+    # Wrap in RAGSearchResult with score
+    return RAGSearchResult(chunk=chunk, score=node_with_score.score or 0.0)

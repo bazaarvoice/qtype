@@ -7,6 +7,9 @@ from qtype.interpreter.executors.doc_to_text_executor import (
 from qtype.interpreter.executors.document_embedder_executor import (
     DocumentEmbedderExecutor,
 )
+from qtype.interpreter.executors.document_search_executor import (
+    DocumentSearchExecutor,
+)
 from qtype.interpreter.executors.document_source_executor import (
     DocumentSourceExecutor,
 )
@@ -34,6 +37,7 @@ from qtype.semantic.model import (
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
+    DocumentSearch,
     DocumentSource,
     DocumentSplitter,
     Echo,
@@ -63,6 +67,7 @@ EXECUTOR_REGISTRY = {
     Decoder: DecoderExecutor,
     DocToTextConverter: DocToTextConverterExecutor,
     DocumentEmbedder: DocumentEmbedderExecutor,
+    DocumentSearch: DocumentSearchExecutor,
     DocumentSource: DocumentSourceExecutor,
     DocumentSplitter: DocumentSplitterExecutor,
     Echo: EchoExecutor,
