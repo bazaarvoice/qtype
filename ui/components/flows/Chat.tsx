@@ -13,8 +13,7 @@ import { generateId } from "ai";
 import { Send, Bot, Loader2, MessageSquarePlus, Paperclip } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
-import AttachmentDisplay from "@/components/chat/AttachmentDisplay";
-import MessageBubble from "@/components/chat/MessageBubble";
+import { AttachmentDisplay, MessageBubble } from "@/components/chat";
 import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Button } from "@/components/ui/Button";
 import {

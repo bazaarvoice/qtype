@@ -1,13 +1,14 @@
 import { Bot, User } from "lucide-react";
-import { useMemo } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
-import FileDisplay from "./FileDisplay";
-import ThinkingPanel from "./ThinkingPanel";
+import { MessagePartWithTextContent } from "./constants";
 import { deriveStatusFromParts } from "./utils/deriveStatusFromParts";
 
+import { FileDisplay, ThinkingPanel } from ".";
+
 import type { Message } from "./types";
+import type { MessagePartWithText } from "./types/MessagePart";
 import type { FileAttachment } from "@/types";
 
 interface MessageBubbleProps {
@@ -15,60 +16,42 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
 }
 
-export default function MessageBubble({
-  message,
-  isStreaming = false,
-}: MessageBubbleProps) {
+interface StreamingPart {
+  type: string;
+  [key: string]: unknown;
+}
+
+function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
-  const textContent = useMemo(() => {
-    return (
-      message.content ||
-      message.parts
-        ?.filter((p) => p.type === "text")
-        .map((p) => ("text" in p ? p.text : ""))
-        .join("") ||
-      ""
-    );
-  }, [message]);
+  const reasoningContent = getPartContent(
+    message,
+    MessagePartWithTextContent.Reasoning,
+  );
+  const textContent = getPartContent(message, MessagePartWithTextContent.Text);
 
-  const reasoningContent = useMemo(() => {
-    return (
-      message.content ||
-      message.parts
-        ?.filter((p) => p.type === "reasoning")
-        .map((p) => ("text" in p ? p.text : ""))
-        .join("") ||
-      ""
-    );
-  }, [message]);
+  const fileAttachments: FileAttachment[] =
+    message.files ||
+    message.experimental_attachments ||
+    (message.parts?.filter((p): p is FileAttachment => p.type === "file") ??
+      []);
 
-  const fileAttachments = useMemo((): FileAttachment[] => {
-    const files =
-      message.files ||
-      message.experimental_attachments ||
-      message.parts?.filter((p): p is FileAttachment => p.type === "file") ||
-      [];
-    return files;
-  }, [message]);
+  const excludedPartTypes = new Set(["text", "file"]);
+  const statusParts = (message.parts ?? []).filter(
+    (p) => !excludedPartTypes.has(p.type),
+  ) as StreamingPart[];
 
-  const catchAll = useMemo(() => {
-    const knownTypes = new Set(["text", "file"]);
-    return message.parts?.filter((p) => !knownTypes.has(p.type)) || [];
-  }, [message]);
-
-  const statusMessage = useMemo(() => {
-    const status = deriveStatusFromParts(
-      catchAll,
-      message.metadata,
-      isStreaming,
-    );
-    return status;
-  }, [catchAll, isStreaming, message.metadata]);
+  const statusMessage = deriveStatusFromParts(
+    statusParts,
+    message.metadata,
+    isStreaming,
+  );
 
   return (
     <div
-      className={`flex gap-3 w-full ${isUser ? "justify-end" : "justify-start"}`}
+      className={`flex gap-3 w-full ${
+        isUser ? "justify-end" : "justify-start"
+      }`}
     >
       {!isUser && (
         <Avatar className="h-8 w-8 flex-shrink-0">
@@ -79,7 +62,6 @@ export default function MessageBubble({
       )}
 
       <div className="flex-1 max-w-[75%] space-y-2">
-        {/* Fixed height status area - prevents layout jumping */}
         <div className="min-h-[1.5rem] flex items-center">
           {statusMessage && (
             <div className="text-xs italic text-muted-foreground bg-muted/30 px-2 py-1 rounded transition-all duration-200">
@@ -96,6 +78,7 @@ export default function MessageBubble({
         {reasoningContent && (
           <ThinkingPanel reasoningContent={reasoningContent} />
         )}
+
         {textContent && (
           <div
             className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
@@ -127,3 +110,21 @@ export default function MessageBubble({
     </div>
   );
 }
+
+function getPartContent(
+  { content, parts }: Message,
+  partType: MessagePartWithTextContent,
+): string {
+  if (!parts?.length) {
+    return content || "";
+  }
+  const matching = parts.filter(
+    (p) => p.type === partType,
+  ) as MessagePartWithText[];
+  if (matching.length === 0 && content) {
+    return content;
+  }
+  return matching.map((p) => p.text).join("");
+}
+
+export { MessageBubble };

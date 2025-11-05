@@ -1,6 +1,14 @@
-interface MessagePart {
-  type: string;
-  text?: string;
+import type { MessagePartWithTextContent } from "../constants";
+
+interface MessagePartWithText extends BaseMessagePart {
+  type: MessagePartWithTextContent;
+  text: string;
 }
 
-export type { MessagePart };
+interface BaseMessagePart {
+  type: string;
+}
+
+type MessagePart = MessagePartWithText | BaseMessagePart;
+
+export type { MessagePart, MessagePartWithText };

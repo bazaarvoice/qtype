@@ -7,7 +7,7 @@ interface ThinkingPanelProps {
   className?: string;
 }
 
-export default function ThinkingPanel({
+function ThinkingPanel({
   reasoningContent,
   initiallyOpen = false,
   className = "",
@@ -61,3 +61,5 @@ export default function ThinkingPanel({
     </div>
   );
 }
+
+export { ThinkingPanel };
