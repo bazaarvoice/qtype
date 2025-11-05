@@ -302,9 +302,10 @@ class Model(StrictBaseModel):
         default=None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    # TODO(maybe): Make this an enum?
-    provider: str = Field(
-        ..., description="Name of the provider, e.g., openai or anthropic."
+    provider: Literal["openai", "anthropic", "aws-bedrock", "gcp-vertex"] = (
+        Field(
+            ..., description="Name of the provider, e.g., openai or anthropic."
+        )
     )
 
 
@@ -742,12 +743,17 @@ class TelemetrySink(StrictBaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
+    provider: Literal["Phoenix", "Langfuse"] = "Phoenix"
     auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str | SecretReference = Field(
         ..., description="URL endpoint where telemetry data will be sent."
+    )
+    args: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional configuration arguments specific to the telemetry sink type.",
     )
 
 
@@ -1019,7 +1025,6 @@ class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
     type: Literal["DocumentIndex"] = "DocumentIndex"
-    # TODO: add anything that is needed for document search indexes
     pass
 
 

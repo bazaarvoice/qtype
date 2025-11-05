@@ -1,0 +1,50 @@
+id: hello_world_langfuse
+description: A simple chat flow with Langfuse telemetry
+models:
+  - type: Model
+    id: gpt4
+    provider: openai
+    model_id: gpt-4
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+    auth: openai_auth
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_KEY}
+memories:
+  - id: chat_memory
+    token_limit: 10000
+flows:
+  - type: Flow
+    id: chat_example
+    description: A simple chat flow with telemetry sent to Langfuse
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: response
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - response
+    steps:
+      - type: LLMInference
+        id: llm_inference_step
+        model: gpt4
+        memory: chat_memory
+        system_message: "You are a helpful assistant."
+        inputs:
+          - user_message
+        outputs:
+          - response
+telemetry:
+  id: langfuse_telemetry
+  provider: Langfuse
+  endpoint: https://cloud.langfuse.com
+  args:
+    public_key: ${LANGFUSE_PUBLIC_KEY}
+    secret_key: ${LANGFUSE_SECRET_KEY}

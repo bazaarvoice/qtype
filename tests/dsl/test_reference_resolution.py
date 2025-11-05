@@ -15,7 +15,7 @@ from pathlib import Path
 
 from qtype import dsl
 from qtype.base.types import Reference
-from qtype.dsl.parser import load_document
+from qtype.dsl import loader, parser
 
 # Path to the reference test specs
 REFERENCE_SPECS_DIR = Path(__file__).parent / "reference_specs"
@@ -33,8 +33,9 @@ def load_test_spec(spec_filename: str) -> dsl.Application:
     """
     spec_path = REFERENCE_SPECS_DIR / spec_filename
 
-    # Use the loader's load_document function which handles all the parsing
-    root, _ = load_document(spec_path)
+    # Load and parse the YAML file
+    yaml_data = loader.load_yaml_file(spec_path)
+    root, _ = parser.parse_document(yaml_data)
 
     if not isinstance(root, dsl.Application):
         raise TypeError(f"Expected Application, got {type(root)}")

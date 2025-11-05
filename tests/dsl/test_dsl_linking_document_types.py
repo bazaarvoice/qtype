@@ -24,7 +24,7 @@ import pytest
 from pydantic import BaseModel
 
 from qtype import dsl
-from qtype.dsl import linker, loader
+from qtype.dsl import linker, loader, parser
 
 TEST_DIR = Path(__file__).parent.parent / "document-specs"
 
@@ -54,7 +54,8 @@ def has_reference(obj: Any) -> bool:
 
 def run_linking(yaml_path: Path):
     """Load and link a DSL Document from a YAML file."""
-    model, dynamic_types_registry = loader.load_document(yaml_path)
+    yaml_data = loader.load_yaml_file(yaml_path)
+    model, dynamic_types_registry = parser.parse_document(yaml_data)
     linked_doc = linker.link(model)
     assert not has_reference(linked_doc), (
         "There are unresolved Reference instances"

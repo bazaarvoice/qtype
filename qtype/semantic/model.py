@@ -202,8 +202,10 @@ class Model(ImmutableModel):
         None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    provider: str = Field(
-        ..., description="Name of the provider, e.g., openai or anthropic."
+    provider: Literal["openai", "anthropic", "aws-bedrock", "gcp-vertex"] = (
+        Field(
+            ..., description="Name of the provider, e.g., openai or anthropic."
+        )
     )
 
 
@@ -292,12 +294,17 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
+    provider: Literal["Phoenix", "Langfuse"] = Field("Phoenix")
     auth: AuthorizationProvider | None = Field(
         None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",
     )
     endpoint: str | SecretReference = Field(
         ..., description="URL endpoint where telemetry data will be sent."
+    )
+    args: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional configuration arguments specific to the telemetry sink type.",
     )
 
 

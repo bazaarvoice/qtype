@@ -119,7 +119,6 @@ def auth(
     on the type of AuthorizationProvider:
     - AWSAuthProvider: Returns a configured boto3.Session
     - APIKeyAuthProvider: Returns the provider instance (contains the API key)
-    - OAuth2AuthProvider: Raises NotImplementedError (not yet supported)
 
     Args:
         auth_provider: AuthorizationProvider instance of any supported type
@@ -130,7 +129,6 @@ def auth(
 
     Raises:
         UnsupportedAuthProviderError: When an unsupported provider type is used
-        NotImplementedError: When OAuth2AuthProvider is used (not yet implemented)
 
     Example:
         ```python
