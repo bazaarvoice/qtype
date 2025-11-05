@@ -2,12 +2,13 @@ import functools
 import os
 from typing import Any, Callable
 
-from cachetools import LRUCache  # type: ignore[import-untyped]
+from cachetools import TTLCache  # type: ignore[import-untyped]
 
-# Global LRU cache with a reasonable default size
+# Global TTL cache with a reasonable default size and 55-minute TTL
 _RESOURCE_CACHE_MAX_SIZE = int(os.environ.get("RESOURCE_CACHE_MAX_SIZE", 128))
-_GLOBAL_RESOURCE_CACHE: LRUCache[Any, Any] = LRUCache(
-    maxsize=_RESOURCE_CACHE_MAX_SIZE
+_RESOURCE_CACHE_TTL = int(os.environ.get("RESOURCE_CACHE_TTL", 55 * 60))
+_GLOBAL_RESOURCE_CACHE: TTLCache[Any, Any] = TTLCache(
+    maxsize=_RESOURCE_CACHE_MAX_SIZE, ttl=_RESOURCE_CACHE_TTL
 )
 
 
