@@ -387,12 +387,9 @@ def _validate_flow(flow: Flow) -> None:
                 )
 
         elif flow.interface.type == "Complete":
-            # ensure there is one input called "prompt" and it is text
-            # TODO: relax this constraint to only be one input type text and map it to "prompt" from the vercel input shape in the api
+            # ensure there is one input and it is text
             prompt_input = [
-                i
-                for i in flow.inputs
-                if i.type == PrimitiveTypeEnum.text and i.id == "prompt"
+                i for i in flow.inputs if i.type == PrimitiveTypeEnum.text
             ]
             if len(prompt_input) != 1:
                 raise QTypeSemanticError(
