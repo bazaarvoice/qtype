@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -49,7 +50,31 @@ class APIExecutor:
         if servers is not None:
             fast_api_args["servers"] = servers
 
-        app = FastAPI(title=name or "QType API", **fast_api_args)
+        # Create secret manager if configured
+        secret_manager = create_secret_manager(self.definition.secret_manager)
+
+        # Create lifespan context manager for telemetry
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            """Manage telemetry lifecycle during app startup/shutdown."""
+            tracer_provider = None
+            if self.definition.telemetry:
+                from qtype.interpreter.telemetry import register
+
+                tracer_provider = register(
+                    self.definition.telemetry,
+                    project_id=name or self.definition.id,
+                    secret_manager=secret_manager,
+                )
+            yield
+            # Shutdown telemetry on app shutdown
+            if tracer_provider is not None:
+                tracer_provider.shutdown()
+
+        # Create FastAPI app with lifespan
+        app = FastAPI(
+            title=name or "QType API", lifespan=lifespan, **fast_api_args
+        )
 
         # Serve static UI files if they exist
         if ui_enabled:
@@ -75,19 +100,6 @@ class APIExecutor:
 
         # Create metadata endpoints for flow discovery
         create_metadata_endpoints(app, self.definition)
-
-        # Create secret manager if configured
-        secret_manager = create_secret_manager(self.definition.secret_manager)
-
-        # Register telemetry if configured
-        if self.definition.telemetry:
-            from qtype.interpreter.telemetry import register
-
-            register(
-                self.definition.telemetry,
-                project_id=name or self.definition.id,
-                secret_manager=secret_manager,
-            )
 
         # Create executor context
         context = ExecutorContext(

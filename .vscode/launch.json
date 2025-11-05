@@ -6,7 +6,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "qtype.cli",
-            "args": "${input:cliArgs}",
+            "args": "${input:cliArgs} --reload",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "justMyCode": false,
