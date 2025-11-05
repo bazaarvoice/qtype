@@ -1,17 +1,20 @@
-id: audio demo
-description: Returns audio
+id: echo-audio
+description: Test the Echo step for audio
+
 flows:
-  - type: Flow
-    id: audio_flow
+  - id: echo-audio
+    description: Simple flow to test the Echo step
     variables:
-      - id: audio
+      - id: user_input
         type: audio
-        
+    inputs:
+      - user_input
     outputs:
-      - audio
+      - user_input
     steps:
-      - id: echo_step
-        type: PromptTemplate
-        template: ""
+      - id: echo_debug
+        type: Echo
+        inputs:
+          - user_input
         outputs:
-          - audio
+          - user_input

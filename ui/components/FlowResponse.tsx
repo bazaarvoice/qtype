@@ -8,6 +8,7 @@
 
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
+import { Audio } from "./Audio";
 import { MarkdownContainer } from "./MarkdownContainer";
 import { Video } from "./Video";
 
@@ -49,6 +50,8 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
         );
       case "video":
         return <Video value={value} />;
+      case "audio":
+        return <Audio value={value} />;
 
       default:
         return (
