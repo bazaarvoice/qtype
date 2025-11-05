@@ -1,0 +1,17 @@
+id: audio demo
+description: Returns audio
+flows:
+  - type: Flow
+    id: audio_flow
+    variables:
+      - id: audio
+        type: audio
+        
+    outputs:
+      - audio
+    steps:
+      - id: echo_step
+        type: PromptTemplate
+        template: ""
+        outputs:
+          - audio

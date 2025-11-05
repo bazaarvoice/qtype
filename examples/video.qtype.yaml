@@ -1,0 +1,17 @@
+id: video demo
+description: Returns video
+flows:
+  - type: Flow
+    id: video_flow
+    variables:
+      - id: video
+        type: video
+
+    outputs:
+      - video
+    steps:
+      - id: echo_step
+        type: PromptTemplate
+        template: ""
+        outputs:
+          - video

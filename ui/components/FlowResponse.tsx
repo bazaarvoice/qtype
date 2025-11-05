@@ -9,6 +9,7 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
+import { Video } from "./Video";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -46,6 +47,8 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
             </p>
           </div>
         );
+      case "video":
+        return <Video />;
 
       default:
         return (
