@@ -34,7 +34,7 @@ class QTypeFacade:
             # Register telemetry if needed
             from qtype.interpreter.telemetry import register
 
-            register(spec.telemetry, spec.id, self.secret_manager(spec))
+            register(spec.telemetry, self.secret_manager(spec), spec.id)
 
     def secret_manager(self, spec: SemanticDocumentType):
         """
@@ -48,8 +48,12 @@ class QTypeFacade:
         """
         from qtype.interpreter.base.secrets import create_secret_manager
 
-        if isinstance(spec, SemanticApplication) and spec.secret_manager:
+        if isinstance(spec, SemanticApplication):
             return create_secret_manager(spec.secret_manager)
+        else:
+            raise ValueError(
+                "Can't create secret manager for non-Application spec"
+            )
 
     async def execute_workflow(
         self,

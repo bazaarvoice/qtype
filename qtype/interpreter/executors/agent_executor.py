@@ -223,7 +223,7 @@ class AgentExecutor(StepExecutor, ToolExecutionMixin, FunctionToolHelper):
         Returns:
             The agent's response as a string
         """
-        if self.on_stream_event:
+        if self.context.on_stream_event:
             # Generate a unique stream ID for this inference
             stream_id = f"agent-{self.step.id}-{id(message)}"
 
