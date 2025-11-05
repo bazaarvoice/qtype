@@ -48,7 +48,7 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
           </div>
         );
       case "video":
-        return <Video />;
+        return <Video value={value} />;
 
       default:
         return (
