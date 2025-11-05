@@ -52,7 +52,8 @@ tools:
       optional: false
       type: TimeDifferenceResultType
   type: PythonFunctionTool
-- description: Format a timestamp using a custom format string.
+- description: Format a timestamp using a custom format string that can be 
+    passed to strftime.
   function_name: format_datetime
   id: qtype.application.commons.tools.format_datetime
   inputs:

@@ -138,7 +138,7 @@ class LLMInferenceExecutor(StepExecutor):
 
         # Perform inference with streaming if callback provided
         chat_result: ChatResponse
-        if self.on_stream_event:
+        if self.context.on_stream_event:
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
 
@@ -198,7 +198,7 @@ class LLMInferenceExecutor(StepExecutor):
 
         # Perform inference with streaming if callback provided
         complete_result: CompletionResponse
-        if self.on_stream_event:
+        if self.context.on_stream_event:
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
 

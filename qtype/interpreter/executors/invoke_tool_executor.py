@@ -48,12 +48,16 @@ class ToolExecutionMixin:
         self,
         tool: PythonFunctionTool,
         inputs: dict[str, Any],
+        original_inputs: dict[str, Any] | None = None,
     ) -> Any:
         """Execute a Python function tool with proper streaming events.
 
         Args:
             tool: The Python function tool to execute.
-            inputs: Dictionary of input parameter names to values.
+            inputs: Dictionary of input parameter names to values
+                (may contain parsed Python objects like datetime).
+            original_inputs: Optional dictionary of original JSON-serializable
+                inputs for streaming events. If not provided, uses inputs.
 
         Returns:
             The result from the function call.
@@ -63,10 +67,13 @@ class ToolExecutionMixin:
         """
         tool_call_id = str(uuid.uuid4())
 
+        # Use original inputs for streaming events if provided
+        stream_inputs = original_inputs if original_inputs else inputs
+
         async with self.stream_emitter.tool_execution(
             tool_call_id=tool_call_id,
             tool_name=tool.function_name,
-            tool_input=inputs,
+            tool_input=stream_inputs,
         ) as tool_ctx:
             try:
                 module = importlib.import_module(tool.module_path)
@@ -87,6 +94,7 @@ class ToolExecutionMixin:
                 error_msg = (
                     f"Failed to execute function {tool.function_name}: {e}"
                 )
+                logger.error(error_msg, exc_info=True)
                 await tool_ctx.error(error_msg)
                 raise ValueError(error_msg) from e
 
@@ -111,12 +119,16 @@ class ToolExecutionMixin:
         self,
         tool: APITool,
         inputs: dict[str, Any],
+        original_inputs: dict[str, Any] | None = None,
     ) -> Any:
         """Execute an API tool by making an HTTP request with proper streaming events.
 
         Args:
             tool: The API tool to execute.
-            inputs: Dictionary of input parameter names to values.
+            inputs: Dictionary of input parameter names to values
+                (may contain parsed Python objects like datetime).
+            original_inputs: Optional dictionary of original JSON-serializable
+                inputs for streaming events. If not provided, uses inputs.
 
         Returns:
             The result from the API call.
@@ -126,10 +138,13 @@ class ToolExecutionMixin:
         """
         tool_call_id = str(uuid.uuid4())
 
+        # Use original inputs for streaming events if provided
+        stream_inputs = original_inputs if original_inputs else inputs
+
         async with self.stream_emitter.tool_execution(
             tool_call_id=tool_call_id,
             tool_name=f"{tool.method} {tool.endpoint}",
-            tool_input=inputs,
+            tool_input=stream_inputs,
         ) as tool_ctx:
             try:
                 # Prepare headers - resolve any SecretReferences

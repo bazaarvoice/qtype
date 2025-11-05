@@ -165,13 +165,27 @@ class FunctionToolHelper:
                     )
                 )
 
-            # Create wrapper that calls the function through execution
-            # This maintains consistent error handling and hooks
-            async def wrapped_fn(**kwargs: Any) -> Any:
-                return await self.execute_python_tool(tool, kwargs)
-
             # Create metadata from QType tool definition
             metadata = FunctionToolHelper._create_tool_metadata(tool)
+
+            # Create wrapper that validates inputs using Pydantic schema
+            # before calling the function through execution
+            # This maintains consistent error handling and hooks
+            async def wrapped_fn(**kwargs: Any) -> Any:
+                # Keep original kwargs for streaming events (JSON-compatible)
+                original_kwargs = kwargs.copy()
+
+                # Validate and parse inputs using the Pydantic schema
+                if metadata.fn_schema is not None:
+                    validated_inputs = metadata.fn_schema(**kwargs)
+                    # Convert Pydantic model to dict with Python native types
+                    # (datetime objects, etc.)
+                    kwargs = validated_inputs.model_dump(mode="python")
+
+                # Pass both the validated kwargs and original for streaming
+                return await self.execute_python_tool(  # type: ignore[attr-defined]
+                    tool, kwargs, original_inputs=original_kwargs
+                )
 
             return FunctionTool(
                 fn=None,
@@ -201,13 +215,24 @@ class FunctionToolHelper:
         Returns:
             LlamaIndex FunctionTool wrapping the API tool execution.
         """
+        # Create metadata from QType tool definition
+        metadata = FunctionToolHelper._create_tool_metadata(tool)
 
         async def api_wrapper(**kwargs: Any) -> Any:
             """Wrapper function that executes the API tool."""
-            return await self.execute_api_tool(tool, kwargs)
+            # Keep original kwargs for streaming events (JSON-compatible)
+            original_kwargs = kwargs.copy()
 
-        # Create metadata from QType tool definition
-        metadata = FunctionToolHelper._create_tool_metadata(tool)
+            # Validate and parse inputs using the Pydantic schema
+            if metadata.fn_schema is not None:
+                validated_inputs = metadata.fn_schema(**kwargs)
+                # Convert Pydantic model to dict for execution
+                kwargs = validated_inputs.model_dump(mode="python")
+
+            # Pass both the validated kwargs and original for streaming
+            return await self.execute_api_tool(  # type: ignore[attr-defined]
+                tool, kwargs, original_inputs=original_kwargs
+            )
 
         return FunctionTool(
             fn=None,
