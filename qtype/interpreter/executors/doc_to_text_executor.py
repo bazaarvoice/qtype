@@ -7,6 +7,7 @@ from docling_core.types.io import DocumentStream
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import RAGDocument
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocToTextConverter
 
@@ -14,8 +15,13 @@ from qtype.semantic.model import DocToTextConverter
 class DocToTextConverterExecutor(StepExecutor):
     """Executor for DocToTextConverter steps."""
 
-    def __init__(self, step: DocToTextConverter, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self,
+        step: DocToTextConverter,
+        context: ExecutorContext,
+        **dependencies,
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocToTextConverter):
             raise ValueError(
                 (

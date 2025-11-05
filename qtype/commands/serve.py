@@ -73,9 +73,9 @@ def serve(args: Any) -> None:
     except ValidationError as e:
         logger.error(f"❌ Validation failed: {e}")
         exit(1)
-    except Exception as e:
-        logger.error(f"❌ Unexpected error starting server: {e}")
-        exit(1)
+    # except Exception as e:
+    #     logger.error(f"❌ Unexpected error starting server: {e}")
+    #     exit(1)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

@@ -5,6 +5,7 @@ import fsspec
 import pandas as pd
 
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import ConstantPath, FileWriter, Variable
 
@@ -15,9 +16,10 @@ class FileWriterExecutor(BatchedStepExecutor):
     def __init__(
         self,
         step: FileWriter,
+        context: ExecutorContext,
         **dependencies,
     ):
-        super().__init__(step, **dependencies)
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, FileWriter):
             raise ValueError(
                 "FileWriterExecutor can only execute FileWriter steps."

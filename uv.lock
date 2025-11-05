@@ -443,6 +443,15 @@ wheels = [
 ]
 
 [[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001, upload-time = "2022-10-05T19:19:32.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148, upload-time = "2022-10-05T19:19:30.546Z" },
+]
+
+[[package]]
 name = "backports-asyncio-runner"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2204,6 +2213,27 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bf/ce/46fbd9c8119cfc3581ee5643ea49464d168028cfb5caff5fc0596d0cf914/jsonschema_specifications-2025.4.1.tar.gz", hash = "sha256:630159c9f4dbea161a6a2205c3011cc4f18ff381b189fff48bb39b9bf26ae608", size = 15513, upload-time = "2025-04-23T12:34:07.418Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/0e/b27cdbaccf30b890c40ed1da9fd4a3593a5cf94dae54fb34f8a4b74fcd3f/jsonschema_specifications-2025.4.1-py3-none-any.whl", hash = "sha256:4653bffbd6584f7de83a67e0d620ef16900b390ddc7939d56684d6c81e33f1af", size = 18437, upload-time = "2025-04-23T12:34:05.422Z" },
+]
+
+[[package]]
+name = "langfuse"
+version = "3.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backoff" },
+    { name = "httpx" },
+    { name = "openai" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e0/c6/1bdb6c68ebc2b7d3875861cf99715e227bcd909a758df8af329f81f6e7af/langfuse-3.9.0.tar.gz", hash = "sha256:ed02744ab184a320dba5662be09be21441a467cc84db7e9a67c8bb6baec9fb5c", size = 201850, upload-time = "2025-11-03T10:25:49.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/de/66ab298aecc0b50465824e7db5df77e43f872dcd8642d3c91d11be3ac6f7/langfuse-3.9.0-py3-none-any.whl", hash = "sha256:de46c47717822de46ad4a2563be5d775ca896dc4d0955a83b4d12e1ce5e249a9", size = 369620, upload-time = "2025-11-03T10:25:47.747Z" },
 ]
 
 [[package]]
@@ -4929,6 +4959,7 @@ interpreter = [
     { name = "boto3" },
     { name = "docling" },
     { name = "fastapi" },
+    { name = "langfuse" },
     { name = "llama-index" },
     { name = "llama-index-embeddings-bedrock" },
     { name = "llama-index-embeddings-openai" },
@@ -4936,6 +4967,8 @@ interpreter = [
     { name = "llama-index-llms-bedrock-converse" },
     { name = "llama-index-llms-vertex" },
     { name = "openinference-instrumentation-llama-index" },
+    { name = "opentelemetry-exporter-otlp" },
+    { name = "opentelemetry-sdk" },
     { name = "pandas" },
     { name = "psycopg2-binary" },
     { name = "pyarrow" },
@@ -4991,6 +5024,7 @@ requires-dist = [
     { name = "fsspec", specifier = ">=2025.5.1" },
     { name = "google-cloud-aiplatform", specifier = ">=1.120.0" },
     { name = "jsonschema", specifier = ">=4.24.0" },
+    { name = "langfuse", marker = "extra == 'interpreter'", specifier = ">=3.9.0" },
     { name = "llama-index", marker = "extra == 'interpreter'", specifier = ">=0.12.45" },
     { name = "llama-index-embeddings-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.5.2" },
     { name = "llama-index-embeddings-openai", marker = "extra == 'interpreter'", specifier = ">=0.3.1" },
@@ -5001,6 +5035,8 @@ requires-dist = [
     { name = "openai", specifier = ">=1.93.0" },
     { name = "openapi3-parser", specifier = ">=1.1.21" },
     { name = "openinference-instrumentation-llama-index", marker = "extra == 'interpreter'", specifier = ">=4.3.4" },
+    { name = "opentelemetry-exporter-otlp", marker = "extra == 'interpreter'", specifier = ">=1.35.0" },
+    { name = "opentelemetry-sdk", marker = "extra == 'interpreter'", specifier = ">=1.35.0" },
     { name = "pandas", marker = "extra == 'interpreter'", specifier = ">=2.2.3" },
     { name = "pip-system-certs", specifier = ">=5.2" },
     { name = "psycopg2-binary", marker = "extra == 'interpreter'", specifier = ">=2.9.10" },

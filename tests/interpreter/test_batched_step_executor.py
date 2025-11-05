@@ -92,8 +92,8 @@ class TestBatchedStepExecutor:
     These tests focus specifically on batching behavior.
     """
 
-    async def test_batch_size_configuration(self, session):
-        """Test that configured batch size is respected."""
+    async def test_batching_groups_messages(self, session, executor_context):
+        """Test that messages are correctly grouped into batches."""
         step = BatchableStep(
             id="batch-step",
             type="BatchableStep",
@@ -112,7 +112,9 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(
+            step, executor_context, on_stream_event=None
+        )
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3"], session
         )
@@ -121,7 +123,7 @@ class TestBatchedStepExecutor:
         # With batch_size=2 and 3 messages: [2, 1]
         assert batch_sizes == [2, 1]
 
-    async def test_default_batch_size(self, session):
+    async def test_default_batch_size(self, session, executor_context):
         """Test that default batch_size=1 is used when no batch_config."""
         step = Step(
             id="no-batch-config",
@@ -139,14 +141,16 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(
+            step, executor_context, on_stream_event=None
+        )
         results = await collect_stream(executor, ["msg1", "msg2"], session)
 
         assert len(results) == 2
         # Each message should be its own batch of size 1
         assert batch_sizes == [1, 1]
 
-    async def test_batch_with_concurrency(self, session):
+    async def test_batch_with_concurrency(self, session, executor_context):
         """Test that batching works correctly with concurrent processing."""
         step = ConcurrentBatchableStep(
             id="concurrent-batch-step",
@@ -166,7 +170,9 @@ class TestBatchedStepExecutor:
                 for msg in batch:
                     yield msg
 
-        executor = TrackingExecutor(step, on_stream_event=None)
+        executor = TrackingExecutor(
+            step, executor_context, on_stream_event=None
+        )
         results = await collect_stream(
             executor, ["msg1", "msg2", "msg3", "msg4"], session
         )

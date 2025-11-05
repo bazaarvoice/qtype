@@ -17,8 +17,14 @@ from qtype.semantic.model import (
 class TestGenericAuthContextManager:
     """Test the generic auth context manager."""
 
-    def test_api_key_provider_returns_self(self):
-        """Test that APIKeyAuthProvider returns itself."""
+    def test_api_key_provider_returns_self(self, secret_manager):
+        """
+        Test that APIKeyAuthProvider returns a copy with resolved secrets.
+
+        Note: The returned object is a copy (created via model_copy) to ensure
+        that SecretReferences are resolved, even when the original value is
+        already a plain string.
+        """
         provider = APIKeyAuthProvider(
             id="test-api",
             type="api_key",
@@ -26,14 +32,19 @@ class TestGenericAuthContextManager:
             host="api.openai.com",
         )
 
-        with auth(provider) as result:
-            assert result is provider
+        with auth(provider, secret_manager) as result:
+            # Result should be a copy, not the same object
+            assert result is not provider
             assert isinstance(result, APIKeyAuthProvider)
+            # But the values should be identical
             assert result.api_key == "sk-test123"
             assert result.host == "api.openai.com"
+            assert result.id == provider.id
 
     @patch("qtype.interpreter.auth.generic.aws")
-    def test_aws_provider_delegates_to_aws_context_manager(self, mock_aws):
+    def test_aws_provider_delegates_to_aws_context_manager(
+        self, mock_aws, secret_manager
+    ):
         """Test that AWSAuthProvider delegates to the AWS context manager."""
         provider = AWSAuthProvider(
             id="test-aws",
@@ -51,14 +62,22 @@ class TestGenericAuthContextManager:
         mock_session = MagicMock()
         mock_aws.return_value.__enter__.return_value = mock_session
 
-        with auth(provider) as session:
+        with auth(provider, secret_manager) as session:
             assert session is mock_session
 
-        # Verify AWS context manager was called with the provider
-        mock_aws.assert_called_once_with(provider)
+        # Verify AWS context manager was called with the provider and secret_manager
+        mock_aws.assert_called_once_with(provider, secret_manager)
 
-    def test_oauth2_provider_raises_not_implemented(self):
-        """Test that OAuth2AuthProvider raises NotImplementedError."""
+    def test_oauth2_provider_returns_copy_with_resolved_secret(
+        self, secret_manager
+    ):
+        """
+        Test that OAuth2AuthProvider returns a copy with resolved secrets.
+
+        Note: The returned object is a copy (created via model_copy) to ensure
+        that SecretReferences are resolved, even when the original value is
+        already a plain string.
+        """
         provider = OAuth2AuthProvider(
             id="test-oauth",
             type="oauth2",
@@ -68,16 +87,17 @@ class TestGenericAuthContextManager:
             scopes=[],
         )
 
-        with pytest.raises(NotImplementedError) as exc_info:
-            with auth(provider):
-                pass
+        with auth(provider, secret_manager) as result:
+            # Result should be a copy, not the same object
+            assert result is not provider
+            assert isinstance(result, OAuth2AuthProvider)
+            # But the values should be identical
+            assert result.client_id == "client123"
+            assert result.client_secret == "secret456"
+            assert result.token_url == "https://auth.example.com/token"
+            assert result.id == provider.id
 
-        assert "OAuth2 authentication is not yet implemented" in str(
-            exc_info.value
-        )
-        assert "test-oauth" in str(exc_info.value)
-
-    def test_unsupported_provider_raises_error(self):
+    def test_unsupported_provider_raises_error(self, secret_manager):
         """Test that unsupported provider types raise UnsupportedAuthProviderError."""
         # Create a mock provider that doesn't match any known types
         mock_provider = MagicMock()
@@ -85,7 +105,7 @@ class TestGenericAuthContextManager:
         type(mock_provider).__name__ = "UnknownProvider"
 
         with pytest.raises(UnsupportedAuthProviderError) as exc_info:
-            with auth(mock_provider):
+            with auth(mock_provider, secret_manager):
                 pass
 
         assert (

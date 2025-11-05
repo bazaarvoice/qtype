@@ -2,6 +2,7 @@ from typing import AsyncIterator
 
 from qtype.dsl.domain_types import Embedding, RAGChunk
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_embedding_model
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentEmbedder
@@ -10,8 +11,10 @@ from qtype.semantic.model import DocumentEmbedder
 class DocumentEmbedderExecutor(StepExecutor):
     """Executor for DocumentEmbedder steps."""
 
-    def __init__(self, step: DocumentEmbedder, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: DocumentEmbedder, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocumentEmbedder):
             raise ValueError(
                 (

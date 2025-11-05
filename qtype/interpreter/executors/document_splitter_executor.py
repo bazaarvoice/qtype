@@ -4,6 +4,7 @@ from llama_index.core.schema import Document as LlamaDocument
 
 from qtype.dsl.domain_types import RAGChunk, RAGDocument
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_text_splitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import DocumentSplitter
@@ -12,8 +13,10 @@ from qtype.semantic.model import DocumentSplitter
 class DocumentSplitterExecutor(StepExecutor):
     """Executor for DocumentSplitter steps."""
 
-    def __init__(self, step: DocumentSplitter, **dependencies):
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: DocumentSplitter, context: ExecutorContext, **dependencies
+    ):
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, DocumentSplitter):
             raise ValueError(
                 (

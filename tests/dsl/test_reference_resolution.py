@@ -15,7 +15,7 @@ from pathlib import Path
 
 from qtype import dsl
 from qtype.base.types import Reference
-from qtype.dsl.parser import load_document
+from qtype.dsl import loader, parser
 
 # Path to the reference test specs
 REFERENCE_SPECS_DIR = Path(__file__).parent / "reference_specs"
@@ -33,8 +33,9 @@ def load_test_spec(spec_filename: str) -> dsl.Application:
     """
     spec_path = REFERENCE_SPECS_DIR / spec_filename
 
-    # Use the loader's load_document function which handles all the parsing
-    root, _ = load_document(spec_path)
+    # Load and parse the YAML file
+    yaml_data = loader.load_yaml_file(spec_path)
+    root, _ = parser.parse_document(yaml_data)
 
     if not isinstance(root, dsl.Application):
         raise TypeError(f"Expected Application, got {type(root)}")
@@ -361,6 +362,56 @@ class TestVectorSearchReferenceResolution:
 
         assert isinstance(step.index, Reference)
         assert step.index.ref == "search_index"
+
+
+class TestSecretManagerReferenceResolution:
+    """Test reference resolution for SecretManager class."""
+
+    def test_secret_manager_auth_string_resolved_to_reference(self) -> None:
+        """Test that SecretManager.auth string is resolved to Reference[AuthProviderType]."""
+        app = load_test_spec("secret_manager_with_references.qtype.yaml")
+
+        # Verify secret_manager is configured
+        assert app.secret_manager is not None
+        assert isinstance(app.secret_manager, dsl.AWSSecretManager)
+        assert app.secret_manager.id == "main_secret_manager"
+
+        # Verify the secret_manager auth is a Reference
+        assert isinstance(app.secret_manager.auth, Reference)
+        assert app.secret_manager.auth.ref == "aws_auth"
+
+        # Verify auth providers with SecretReference fields
+        assert app.auths is not None
+        assert len(app.auths) == 4
+
+        # Check AWS auth provider with SecretReference fields
+        aws_auth = app.auths[0]
+        assert isinstance(aws_auth, dsl.AWSAuthProvider)
+        assert isinstance(aws_auth.access_key_id, dsl.SecretReference)
+        assert aws_auth.access_key_id.secret_name == "my-app/aws-credentials"
+        assert aws_auth.access_key_id.key == "access_key_id"
+
+        # Check API key auth provider with SecretReference
+        openai_auth = app.auths[1]
+        assert isinstance(openai_auth, dsl.APIKeyAuthProvider)
+        assert isinstance(openai_auth.api_key, dsl.SecretReference)
+        assert openai_auth.api_key.secret_name == "my-app/openai-api-key"
+        assert openai_auth.api_key.key is None  # Plain secret, no key
+
+        # Check Bearer token auth provider with SecretReference
+        github_auth = app.auths[2]
+        assert isinstance(github_auth, dsl.BearerTokenAuthProvider)
+        assert isinstance(github_auth.token, dsl.SecretReference)
+        assert github_auth.token.secret_name == "my-app/github-tokens"
+        assert github_auth.token.key == "personal_access_token"
+
+        # Check OAuth2 auth provider with SecretReference
+        oauth_auth = app.auths[3]
+        assert isinstance(oauth_auth, dsl.OAuth2AuthProvider)
+        assert oauth_auth.client_id == "my-client-id"  # Plain string
+        assert isinstance(oauth_auth.client_secret, dsl.SecretReference)
+        assert oauth_auth.client_secret.secret_name == "my-app/oauth-secrets"
+        assert oauth_auth.client_secret.key == "client_secret"
 
 
 class TestCombinedReferenceResolution:

@@ -11,6 +11,7 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues
 from pydantic import BaseModel
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
+from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import (
@@ -39,17 +40,24 @@ class ToolExecutionMixin:
         # These will be set by the concrete executor classes
         self.stream_emitter: StreamEmitter
         self.step: Step
+        self._resolve_secret: (
+            Any  # Will be provided by StepExecutor base class
+        )
 
     async def execute_python_tool(
         self,
         tool: PythonFunctionTool,
         inputs: dict[str, Any],
+        original_inputs: dict[str, Any] | None = None,
     ) -> Any:
         """Execute a Python function tool with proper streaming events.
 
         Args:
             tool: The Python function tool to execute.
-            inputs: Dictionary of input parameter names to values.
+            inputs: Dictionary of input parameter names to values
+                (may contain parsed Python objects like datetime).
+            original_inputs: Optional dictionary of original JSON-serializable
+                inputs for streaming events. If not provided, uses inputs.
 
         Returns:
             The result from the function call.
@@ -59,10 +67,13 @@ class ToolExecutionMixin:
         """
         tool_call_id = str(uuid.uuid4())
 
+        # Use original inputs for streaming events if provided
+        stream_inputs = original_inputs if original_inputs else inputs
+
         async with self.stream_emitter.tool_execution(
             tool_call_id=tool_call_id,
             tool_name=tool.function_name,
-            tool_input=inputs,
+            tool_input=stream_inputs,
         ) as tool_ctx:
             try:
                 module = importlib.import_module(tool.module_path)
@@ -83,6 +94,7 @@ class ToolExecutionMixin:
                 error_msg = (
                     f"Failed to execute function {tool.function_name}: {e}"
                 )
+                logger.error(error_msg, exc_info=True)
                 await tool_ctx.error(error_msg)
                 raise ValueError(error_msg) from e
 
@@ -107,12 +119,16 @@ class ToolExecutionMixin:
         self,
         tool: APITool,
         inputs: dict[str, Any],
+        original_inputs: dict[str, Any] | None = None,
     ) -> Any:
         """Execute an API tool by making an HTTP request with proper streaming events.
 
         Args:
             tool: The API tool to execute.
-            inputs: Dictionary of input parameter names to values.
+            inputs: Dictionary of input parameter names to values
+                (may contain parsed Python objects like datetime).
+            original_inputs: Optional dictionary of original JSON-serializable
+                inputs for streaming events. If not provided, uses inputs.
 
         Returns:
             The result from the API call.
@@ -122,19 +138,33 @@ class ToolExecutionMixin:
         """
         tool_call_id = str(uuid.uuid4())
 
+        # Use original inputs for streaming events if provided
+        stream_inputs = original_inputs if original_inputs else inputs
+
         async with self.stream_emitter.tool_execution(
             tool_call_id=tool_call_id,
             tool_name=f"{tool.method} {tool.endpoint}",
-            tool_input=inputs,
+            tool_input=stream_inputs,
         ) as tool_ctx:
             try:
-                # Prepare headers
-                headers = tool.headers.copy() if tool.headers else {}
+                # Prepare headers - resolve any SecretReferences
+                # Note: ToolExecutionMixin users inherit from StepExecutor
+                # which provides _secret_manager
+                secret_manager = getattr(self, "_secret_manager")
+                context = f"tool '{tool.id}'"
+                headers = (
+                    secret_manager.resolve_secrets_in_dict(
+                        tool.headers, context
+                    )
+                    if tool.headers
+                    else {}
+                )
 
                 # Handle authentication
                 if tool.auth:
                     if isinstance(tool.auth, BearerTokenAuthProvider):
-                        headers["Authorization"] = f"Bearer {tool.auth.token}"
+                        token = self._resolve_secret(tool.auth.token)
+                        headers["Authorization"] = f"Bearer {token}"
                     else:
                         raise ValueError(
                             (
@@ -188,8 +218,10 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
     # Tool invocations should be marked as TOOL type
     span_kind = OpenInferenceSpanKindValues.TOOL
 
-    def __init__(self, step: InvokeTool, **dependencies: Any) -> None:
-        super().__init__(step, **dependencies)
+    def __init__(
+        self, step: InvokeTool, context: ExecutorContext, **dependencies: Any
+    ) -> None:
+        super().__init__(step, context, **dependencies)
         if not isinstance(step, InvokeTool):
             raise ValueError(
                 "InvokeToolExecutor can only execute InvokeTool steps."

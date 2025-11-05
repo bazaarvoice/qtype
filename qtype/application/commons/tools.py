@@ -180,7 +180,7 @@ def parse_duration_string(duration: str) -> int:
 
 def format_datetime(timestamp: datetime, format_string: str) -> str:
     """
-    Format a timestamp using a custom format string.
+    Format a timestamp using a custom format string that can be passed to strftime.
 
     Args:
         timestamp: Datetime object to format.

@@ -99,7 +99,6 @@ def request_to_flow_message(request: BaseModel, **kwargs) -> FlowMessage:
     session_id = kwargs.get("session_id", str(uuid.uuid4()))
     conversation_history = kwargs.get("conversation_history", [])
 
-    # Todo -- inject conversation history?
     session = Session(
         session_id=session_id, conversation_history=conversation_history
     )
@@ -119,8 +118,8 @@ def flow_results_to_output_container(
     outputs = []
     errors = []
     for m in messages:
-        if m.is_failed():
-            errors.append(m.error)
+        if m.is_failed() and m.error is not None:
+            errors.append(m.error.model_dump())
         else:
             output_instance = output_shape(**m.variables)
             outputs.append(output_instance.model_dump())
