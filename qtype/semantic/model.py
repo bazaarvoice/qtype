@@ -202,7 +202,7 @@ class Model(ImmutableModel):
         None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    provider: str = Field(
+    provider: Literal["openai", "anthropic"] = Field(
         ..., description="Name of the provider, e.g., openai or anthropic."
     )
 

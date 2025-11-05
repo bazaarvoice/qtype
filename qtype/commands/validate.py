@@ -54,7 +54,7 @@ def main(args: Any) -> None:
         logger.error(f"❌ {e}")
         sys.exit(1)
     except ValueError as e:
-        # Pydantic validation errors from load_document
+        # Pydantic validation errors from parse_document
         logger.error(f"❌ {e}")
         sys.exit(1)
     except ValidationError as e:

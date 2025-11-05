@@ -302,8 +302,7 @@ class Model(StrictBaseModel):
         default=None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    # TODO(maybe): Make this an enum?
-    provider: str = Field(
+    provider: Literal["openai", "anthropic"] = Field(
         ..., description="Name of the provider, e.g., openai or anthropic."
     )
 
@@ -1024,7 +1023,6 @@ class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
     type: Literal["DocumentIndex"] = "DocumentIndex"
-    # TODO: add anything that is needed for document search indexes
     pass
 
 

@@ -1399,6 +1399,10 @@
         },
         "provider": {
           "description": "Name of the provider, e.g., openai or anthropic.",
+          "enum": [
+            "openai",
+            "anthropic"
+          ],
           "title": "Provider",
           "type": "string"
         },
@@ -2321,6 +2325,10 @@
         },
         "provider": {
           "description": "Name of the provider, e.g., openai or anthropic.",
+          "enum": [
+            "openai",
+            "anthropic"
+          ],
           "title": "Provider",
           "type": "string"
         }
