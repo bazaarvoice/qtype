@@ -181,8 +181,9 @@ class StepExecutor(ABC):
         )
 
         # Make this span the active context so child spans will nest under it
+        # Only attach if span is recording (i.e., real tracer is configured)
         ctx = trace.set_span_in_context(span)
-        token = context.attach(ctx)
+        token = context.attach(ctx) if span.is_recording() else None
 
         # Start step boundary for visual grouping in UI
         async with self.stream_emitter.step_boundary():
@@ -274,7 +275,9 @@ class StepExecutor(ABC):
                 raise
             finally:
                 # Detach the context and end the span
-                context.detach(token)
+                # Only detach if we successfully attached (span was recording)
+                if token is not None:
+                    context.detach(token)
                 span.end()
 
     @abstractmethod
