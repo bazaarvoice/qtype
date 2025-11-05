@@ -520,6 +520,17 @@ class DocumentSplitter(Step, ConcurrentStepMixin):
     )
 
 
+class Echo(Step):
+    """Defines a step that echoes its inputs as outputs.
+
+    Useful for debugging flows by inspecting variable values at a specific
+    point in the execution pipeline. The step simply passes through all input
+    variables as outputs without modification.
+    """
+
+    type: Literal["Echo"] = Field("Echo")
+
+
 class InvokeEmbedding(Step, ConcurrentStepMixin):
     """Defines a step that generates embeddings using an embedding model.
     It takes input variables and produces output variables containing the embeddings."""

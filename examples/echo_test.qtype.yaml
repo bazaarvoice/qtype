@@ -1,0 +1,26 @@
+id: test-echo
+description: Test the Echo step for debugging
+
+flows:
+  - id: echo-test
+    description: Simple flow to test the Echo step
+    variables:
+      - id: user_input
+        type: text
+      - id: user_count
+        type: number
+    inputs:
+      - user_input
+      - user_count
+    outputs:
+      - user_input
+      - user_count
+    steps:
+      - id: echo_debug
+        type: Echo
+        inputs:
+          - user_input
+          - user_count
+        outputs:
+          - user_input
+          - user_count

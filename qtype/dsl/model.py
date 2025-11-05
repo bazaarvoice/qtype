@@ -535,6 +535,17 @@ class Decoder(Step):
     )
 
 
+class Echo(Step):
+    """Defines a step that echoes its inputs as outputs.
+
+    Useful for debugging flows by inspecting variable values at a specific
+    point in the execution pipeline. The step simply passes through all input
+    variables as outputs without modification.
+    """
+
+    type: Literal["Echo"] = "Echo"
+
+
 class InvokeTool(Step, ConcurrentStepMixin):
     """Invokes a tool with input and output bindings."""
 
@@ -1101,10 +1112,11 @@ StepType = Annotated[
         DocumentSearch,
         DocumentSplitter,
         DocumentSource,
-        InvokeEmbedding,
-        FileWriter,
+        Echo,
         FileSource,
+        FileWriter,
         IndexUpsert,
+        InvokeEmbedding,
         InvokeFlow,
         InvokeTool,
         LLMInference,
