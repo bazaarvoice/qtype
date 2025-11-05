@@ -302,8 +302,10 @@ class Model(StrictBaseModel):
         default=None,
         description="The specific model name or ID for the provider. If None, id is used",
     )
-    provider: Literal["openai", "anthropic"] = Field(
-        ..., description="Name of the provider, e.g., openai or anthropic."
+    provider: Literal["openai", "anthropic", "aws-bedrock", "gcp-vertex"] = (
+        Field(
+            ..., description="Name of the provider, e.g., openai or anthropic."
+        )
     )
 
 

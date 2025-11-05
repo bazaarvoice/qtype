@@ -5,6 +5,8 @@ Represents the type of data a user or system input can accept within the DSL.
 - **audio**: Represents the type of data a user or system input can accept within the DSL.
 - **boolean**: Represents the type of data a user or system input can accept within the DSL.
 - **bytes**: Represents the type of data a user or system input can accept within the DSL.
+- **citation_document**: Represents the type of data a user or system input can accept within the DSL.
+- **citation_url**: Represents the type of data a user or system input can accept within the DSL.
 - **date**: Represents the type of data a user or system input can accept within the DSL.
 - **datetime**: Represents the type of data a user or system input can accept within the DSL.
 - **file**: Represents the type of data a user or system input can accept within the DSL.

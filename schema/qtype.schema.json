@@ -1401,7 +1401,9 @@
           "description": "Name of the provider, e.g., openai or anthropic.",
           "enum": [
             "openai",
-            "anthropic"
+            "anthropic",
+            "aws-bedrock",
+            "gcp-vertex"
           ],
           "title": "Provider",
           "type": "string"
@@ -2327,7 +2329,9 @@
           "description": "Name of the provider, e.g., openai or anthropic.",
           "enum": [
             "openai",
-            "anthropic"
+            "anthropic",
+            "aws-bedrock",
+            "gcp-vertex"
           ],
           "title": "Provider",
           "type": "string"
@@ -2423,6 +2427,8 @@
         "audio",
         "boolean",
         "bytes",
+        "citation_document",
+        "citation_url",
         "date",
         "datetime",
         "int",
