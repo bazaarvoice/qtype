@@ -3,4 +3,4 @@
 Bearer token authentication provider.
 
 - **type** (`Literal`): (No documentation available.)
-- **token** (`str`): Bearer token for authentication.
+- **token** (`str | SecretReference`): Bearer token for authentication.

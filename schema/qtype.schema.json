@@ -2811,6 +2811,15 @@
           "title": "Id",
           "type": "string"
         },
+        "provider": {
+          "default": "Phoenix",
+          "enum": [
+            "Phoenix",
+            "Langfuse"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
         "auth": {
           "anyOf": [
             {
@@ -2838,6 +2847,12 @@
           ],
           "description": "URL endpoint where telemetry data will be sent.",
           "title": "Endpoint"
+        },
+        "args": {
+          "additionalProperties": true,
+          "description": "Additional configuration arguments specific to the telemetry sink type.",
+          "title": "Args",
+          "type": "object"
         }
       },
       "required": [

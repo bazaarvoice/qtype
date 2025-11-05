@@ -17,5 +17,6 @@ executable system.
 - **auths** (`list[AuthProviderType]`): List of authorization providers used for API access.
 - **tools** (`list[ToolType]`): List of tools available in this application.
 - **indexes** (`list[IndexType]`): List of indexes available for search operations.
+- **secret_manager** (`SecretManagerType | None`): Optional secret manager configuration for the application.
 - **telemetry** (`TelemetrySink | None`): Optional telemetry sink for observability.
 - **references** (`list[Document]`): List of other q-type documents you may use. This allows modular composition and reuse of components across applications.
