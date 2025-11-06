@@ -34,6 +34,9 @@ from qtype.interpreter.executors.prompt_template_executor import (
     PromptTemplateExecutor,
 )
 from qtype.interpreter.executors.sql_source_executor import SQLSourceExecutor
+from qtype.interpreter.executors.vector_search_executor import (
+    VectorSearchExecutor,
+)
 from qtype.semantic.model import (
     Agent,
     Aggregate,
@@ -54,6 +57,7 @@ from qtype.semantic.model import (
     PromptTemplate,
     SQLSource,
     Step,
+    VectorSearch,
 )
 
 from .batch_step_executor import StepExecutor
@@ -80,6 +84,7 @@ EXECUTOR_REGISTRY = {
     LLMInference: LLMInferenceExecutor,
     PromptTemplate: PromptTemplateExecutor,
     SQLSource: SQLSourceExecutor,
+    VectorSearch: VectorSearchExecutor,
 }
 
 

@@ -14,7 +14,7 @@ from qtype.interpreter.conversions import (
     to_llama_vector_store_and_retriever,
 )
 from qtype.interpreter.types import FlowMessage
-from qtype.semantic.model import VectorSearch
+from qtype.semantic.model import VectorIndex, VectorSearch
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,17 @@ class VectorSearchExecutor(StepExecutor):
             )
         self.step: VectorSearch = step
 
+        if not isinstance(self.step.index, VectorIndex):
+            raise ValueError(
+                f"VectorSearch step {self.step.id} must reference a VectorIndex."
+            )
+        self.index: VectorIndex = self.step.index
+
         # Get the vector store and retriever
         self._vector_store, self._retriever = (
-            to_llama_vector_store_and_retriever(self.step.index)
+            to_llama_vector_store_and_retriever(
+                self.step.index, self.context.secret_manager
+            )
         )
 
     async def process_message(

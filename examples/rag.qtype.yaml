@@ -1,20 +1,31 @@
 id: rag_example
 description: |
   End-to-end RAG (Retrieval Augmented Generation) example that processes documents 
-  into a Qdrant vector store using AWS Bedrock Titan v2 embeddings.
+  into a Qdrant vector store and enables conversational chat with the indexed content.
   
-  This flow demonstrates document ingestion:
-  1. Load documents from tests/rag_files directory
-  2. Split documents into manageable chunks
-  3. Generate embeddings using AWS Bedrock Titan Embed Text v2
-  4. Store embedded chunks in Qdrant vector database
+  This example includes two flows:
+  
+  1. document_ingestion: Ingest documents into the vector store
+     - Load documents from tests/rag_files directory
+     - Split documents into manageable chunks
+     - Generate embeddings using AWS Bedrock Titan Embed Text v2
+     - Store embedded chunks in Qdrant vector database
+  
+  2. rag_chat: Chat with your documents using RAG
+     - Accept user questions as ChatMessage
+     - Search vector index for relevant context
+     - Generate contextual responses using Claude 3.5 Sonnet
+     - Maintain conversation history with memory
   
   Prerequisites:
   - AWS credentials configured (via AWS CLI profile or environment variables)
   - Qdrant running locally on port 6333 (or update the index args for Qdrant Cloud)
   
-  To run:
+  To run ingestion:
     uv run python -m qtype.cli run examples/rag.qtype.yaml --flow document_ingestion
+  
+  To start chat:
+    uv run python -m qtype.cli run examples/rag.qtype.yaml --flow rag_chat
 
 # AWS Authentication for Bedrock
 auths:
@@ -22,13 +33,24 @@ auths:
     id: aws_auth
     profile_name: ${AWS_PROFILE}  # Uses AWS_PROFILE env var
 
-# Embedding model using AWS Bedrock Titan v2
+# Models
 models:
+  # Embedding model using AWS Bedrock Titan v2
   - type: EmbeddingModel
     id: titan_embed_v2
     provider: aws-bedrock
     model_id: amazon.titan-embed-text-v2:0
     dimensions: 1024
+    auth: aws_auth
+  
+  # Generative model for chat
+  - type: Model
+    id: claude_sonnet
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 2048
     auth: aws_auth
 
 # Qdrant vector index for storing embedded documents
@@ -47,6 +69,80 @@ indexes:
 
 # Flow to ingest documents into the vector store
 flows:
+  # Flow for conversational RAG
+  - type: Flow
+    id: rag_chat
+    description: Chat with the document collection using RAG
+    
+    interface:
+      type: Conversational
+    
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: user_question
+        type: text
+      - id: search_results
+        type: list[RAGSearchResult]
+      - id: context_prompt
+        type: text
+      - id: assistant_response
+        type: ChatMessage
+    
+    inputs:
+      - user_message
+    
+    outputs:
+      - assistant_response
+    
+    steps:
+      # Step 1: Extract text from chat message
+      - id: extract_question
+        type: PromptTemplate
+        template: "{user_message}"
+        inputs:
+          - user_message
+        outputs:
+          - user_question
+      
+      # Step 2: Search the vector index for relevant chunks (VectorSearch handles embedding internally)
+      - id: search_index
+        type: VectorSearch
+        index: rag_index
+        default_top_k: 5
+        inputs:
+          - user_question
+        outputs:
+          - search_results
+      
+      # Step 3: Build context prompt with retrieved chunks
+      - id: build_prompt
+        type: PromptTemplate
+        template: |
+          You are a helpful assistant that answers questions based on the provided context.
+          
+          Context from documents:
+          {search_results}
+          
+          User question: {user_question}
+          
+          Please provide a detailed answer based on the context above. If the context doesn't contain relevant information, say so.
+        inputs:
+          - search_results
+          - user_question
+        outputs:
+          - context_prompt
+      
+      # Step 4: Generate response using LLM with context
+      - id: generate_response
+        type: LLMInference
+        model: claude_sonnet
+        system_message: "You are a helpful assistant that answers questions based on provided document context. Be concise and accurate."
+        inputs:
+          - context_prompt
+        outputs:
+          - assistant_response
+
   - type: Flow
     id: document_ingestion
     description: Load, split, embed, and index documents from the rag_files directory
@@ -105,3 +201,4 @@ flows:
           - embedded_chunk
         outputs:
           - embedded_chunk
+
