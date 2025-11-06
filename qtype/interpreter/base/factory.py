@@ -17,6 +17,9 @@ from qtype.interpreter.executors.document_splitter_executor import (
     DocumentSplitterExecutor,
 )
 from qtype.interpreter.executors.echo_executor import EchoExecutor
+from qtype.interpreter.executors.field_extractor_executor import (
+    FieldExtractorExecutor,
+)
 from qtype.interpreter.executors.file_source_executor import FileSourceExecutor
 from qtype.interpreter.executors.file_writer_executor import FileWriterExecutor
 from qtype.interpreter.executors.index_upsert_executor import (
@@ -47,6 +50,7 @@ from qtype.semantic.model import (
     DocumentSource,
     DocumentSplitter,
     Echo,
+    FieldExtractor,
     FileSource,
     FileWriter,
     IndexUpsert,
@@ -75,6 +79,7 @@ EXECUTOR_REGISTRY = {
     DocumentSource: DocumentSourceExecutor,
     DocumentSplitter: DocumentSplitterExecutor,
     Echo: EchoExecutor,
+    FieldExtractor: FieldExtractorExecutor,
     FileSource: FileSourceExecutor,
     FileWriter: FileWriterExecutor,
     IndexUpsert: IndexUpsertExecutor,

@@ -235,6 +235,8 @@ The semantic version of [qtype/semantic/model.py](model.py) can also be automati
 qtype generate semantic-model
 ```
 
+Next, update [qtype/semantic/checker.py](checker.py) to enforce any semantic rules for your step.
+
 Next, make a canonical example of your new type in the `examples` folder (e.g., `examples/new_type_example.qtype.yaml`) and it can be validated:
 ```
 qtype validate examples/new_type_example.qtype.yaml
