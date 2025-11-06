@@ -315,8 +315,13 @@ def _validate_index_upsert(step: IndexUpsert) -> None:
 
 
 def _validate_vector_search(step: VectorSearch) -> None:
-    """Validate VectorSearch has exactly one text input for the query."""
+    """Validate VectorSearch has exactly one text input and one list[RAGSearchResult] output."""
+    from qtype.dsl.model import ListType
+
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
+    _validate_exact_output_count(
+        step, 1, ListType(element_type="RAGSearchResult")
+    )
 
 
 def _validate_document_search(step: DocumentSearch) -> None:

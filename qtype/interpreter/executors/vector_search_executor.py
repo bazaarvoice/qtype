@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import AsyncIterator
 
-from qtype.base.types import PrimitiveTypeEnum
-from qtype.dsl.domain_types import RAGSearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import (
@@ -58,7 +56,8 @@ class VectorSearchExecutor(StepExecutor):
             FlowMessage with search results.
         """
         try:
-            # Get the query from the input variable (already validated to be exactly one text input)
+            # Get the query from the input variable
+            # (validated to be exactly one text input)
             input_var = self.step.inputs[0]
             query = message.variables.get(input_var.id)
 
@@ -77,45 +76,10 @@ class VectorSearchExecutor(StepExecutor):
                 for node_with_score in nodes_with_scores
             ]
 
-            # Determine output variables and their types
-            output_vars = {}
-            for output_var in self.step.outputs:
-                if output_var.type == RAGSearchResult:
-                    # If output is a single RAGSearchResult, return the first result
-                    if search_results:
-                        output_vars[output_var.id] = search_results[0]
-                    else:
-                        # Return empty result if no matches found
-                        from qtype.dsl.domain_types import RAGChunk
-
-                        empty_chunk = RAGChunk(
-                            content="",
-                            chunk_id="no_results",
-                            document_id="no_results",
-                            vector=None,
-                        )
-                        output_vars[output_var.id] = RAGSearchResult(
-                            chunk=empty_chunk, score=0.0
-                        )
-                elif (
-                    hasattr(output_var.type, "__origin__")
-                    and output_var.type.__origin__ is list
-                ):
-                    # If output is a list of RAGSearchResult, return all results
-                    output_vars[output_var.id] = search_results
-                else:
-                    # For other types, try to convert appropriately
-                    if output_var.type == PrimitiveTypeEnum.text:
-                        # Return concatenated content of all results
-                        content = "\n\n".join(
-                            result.chunk.content for result in search_results
-                        )
-                        output_vars[output_var.id] = content
-                    else:
-                        logger.warning(
-                            f"Unsupported output type {output_var.type} for VectorSearch step {self.step.id}"
-                        )
-                        output_vars[output_var.id] = search_results
+            # Set the output variable (validated to be exactly one output
+            # of type list[RAGSearchResult])
+            output_var = self.step.outputs[0]
+            output_vars = {output_var.id: search_results}
 
             yield message.copy_with_variables(output_vars)
 
