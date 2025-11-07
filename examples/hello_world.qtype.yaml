@@ -11,8 +11,6 @@ models:
 flows:
   - type: Flow
     id: simple_example
-    interface: 
-      type: Complete
     variables:
       - id: question
         type: text

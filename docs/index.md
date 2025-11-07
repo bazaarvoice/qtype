@@ -78,4 +78,4 @@ And go to [http://localhost:8000/ui](http://localhost:8000/ui) to see the user i
 ![Example UI](Tutorials/example_ui.png)
 
 
-Check out the [Tutorials](Tutorials/01-first-chatbot.md) guide to learn more.
+Check out the [Tutorials](Tutorials/01-first-qtype-application.md) guide to learn more.
