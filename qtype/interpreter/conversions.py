@@ -147,7 +147,7 @@ def from_llama_document(doc: LlamaDocument) -> RAGDocument:
         file_id=file_id,
         file_name=file_name,
         uri=uri,
-        metadata=doc.metadata.copy() if doc.metadata else None,
+        metadata=doc.metadata.copy() if doc.metadata else {},
         type=content_type,
     )
 
@@ -400,6 +400,61 @@ def to_content_block(content: ChatContent) -> ContentBlock:
     raise InterpreterError(
         f"Unsupported content type: {content.type} with data of type {type(content.content)}"
     )
+
+
+def variable_to_chat_message(
+    value: Any, variable: Any, default_role: str = "user"
+) -> ChatMessage:
+    """Convert any variable value to a ChatMessage based on the variable's type.
+
+    Args:
+        value: The value to convert (can be any primitive type or ChatMessage)
+        variable: The Variable definition with type information
+        default_role: The default message role to use (default: "user")
+
+    Returns:
+        ChatMessage with appropriate content blocks
+
+    Raises:
+        InterpreterError: If the value type cannot be converted
+    """
+    # If already a ChatMessage, return as-is
+    if isinstance(value, ChatMessage):
+        return value
+
+    # Convert based on the variable's declared type
+    var_type = variable.type
+    # Handle primitive types based on variable declaration
+    if isinstance(var_type, PrimitiveTypeEnum):
+        # Numeric/boolean types get converted to text
+        if var_type in (
+            PrimitiveTypeEnum.int,
+            PrimitiveTypeEnum.float,
+            PrimitiveTypeEnum.boolean,
+        ):
+            content = ChatContent(
+                type=PrimitiveTypeEnum.text, content=str(value)
+            )
+        # All other primitive types pass through as-is
+        else:
+            content = ChatContent(type=var_type, content=value)
+    elif isinstance(var_type, str) and (
+        var_type.startswith("list[") or var_type.startswith("dict[")
+    ):
+        # Handle list and dict types - convert to JSON string
+        import json
+
+        content = ChatContent(
+            type=PrimitiveTypeEnum.text, content=json.dumps(value)
+        )
+    else:
+        # Unsupported type - raise an error
+        raise InterpreterError(
+            f"Cannot convert variable '{variable.id}' of unsupported type "
+            f"'{var_type}' to ChatMessage"
+        )
+
+    return ChatMessage(role=default_role, blocks=[content])  # type: ignore
 
 
 def to_chat_message(message: ChatMessage) -> LlamaChatMessage:
