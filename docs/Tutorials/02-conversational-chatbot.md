@@ -7,9 +7,11 @@
 ## Before You Begin
 
 You should have completed:
+
 - **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows, and steps
 
 Make sure you have:
+
 - QType installed: `pip install qtype[interpreter]`
 - An OpenAI API key (or AWS Bedrock access)
 - Your `my_first_app.qtype.yaml` from Tutorial 1
@@ -56,6 +58,7 @@ QType flows have two interface types that control how they process requests:
 - Like a REST API call or function call
 
 **Example use cases:**
+
 - Simple Q&A
 - Data transformation
 - Single-step calculations
@@ -63,7 +66,8 @@ QType flows have two interface types that control how they process requests:
 **In YAML (optional to specify):**
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: simple_flow
     interface:
       type: Complete  # Optional - this is the default
@@ -78,6 +82,7 @@ flows:
 - Like a chat session
 
 **Example use cases:**
+
 - Chatbots
 - Virtual assistants
 - Contextual Q&A systems
@@ -85,7 +90,8 @@ flows:
 **In YAML (required):**
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: chat_flow
     interface:
       type: Conversational  # Required for memory
@@ -106,7 +112,8 @@ id: my_chatbot
 description: A conversational chatbot with memory
 
 models:
-  - type: Model
+
+- type: Model
     id: gpt-4
     provider: openai
     model_id: gpt-4-turbo
@@ -124,12 +131,14 @@ Now add a memory configuration *before* the `flows:` section:
 
 ```yaml
 memories:
-  - id: chat_memory
+
+- id: chat_memory
     token_limit: 50000
     chat_history_token_ratio: 0.7
 ```
 
 **What this means:**
+
 - `memories:` - Section for memory configurations (new concept!)
 - `id: chat_memory` - A nickname you'll use to reference this memory
 - `token_limit: 50000` - Maximum total tokens (includes conversation + system messages)
@@ -139,6 +148,7 @@ memories:
 LLMs have a maximum context window (how much text they can "see" at once). GPT-4-turbo has a 128k token limit, but we're using 50k here for cost efficiency. The `chat_history_token_ratio` ensures the AI always has room to see enough conversation history while leaving space for its response.
 
 **Check your work:**
+
 1. Save the file
 2. Validate: `qtype validate my_chatbot.qtype.yaml`
 3. Should pass ✅ (even though we haven't added flows yet)
@@ -153,20 +163,24 @@ Add this flow definition:
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: chat_flow
     description: Main chat flow with conversation memory
     interface:
       type: Conversational
     variables:
-      - id: user_message
+
+- id: user_message
         type: ChatMessage
       - id: response_message
         type: ChatMessage
     inputs:
-      - user_message
+
+- user_message
     outputs:
-      - response_message
+
+- response_message
 ```
 
 **New concepts explained:**
@@ -182,12 +196,14 @@ flows:
 - Different from the simple `text` type you used in Tutorial 1
 - Learn more: [Domain Types Reference](../components/ChatMessage.md)
 
-**Why two variables?**  
+**Why two variables?**
+
 - `user_message` - What the user types
 - `response_message` - What the AI responds
 - QType tracks both in memory for context
 
 **Check your work:**
+
 1. Validate: `qtype validate my_chatbot.qtype.yaml`
 2. Should still pass ✅
 
@@ -199,15 +215,18 @@ Add the LLM inference step that connects to your memory:
 
 ```yaml
     steps:
-      - type: LLMInference
+
+- type: LLMInference
         id: chat_step
         model: gpt-4
         memory: chat_memory
         system_message: "You are a helpful assistant. Be friendly and conversational."
         inputs:
-          - user_message
+
+- user_message
         outputs:
-          - response_message
+
+- response_message
 ```
 
 **What's new from Tutorial 1:**
@@ -220,6 +239,7 @@ Add the LLM inference step that connects to your memory:
 **`system_message` with personality** - Unlike Tutorial 1's generic message, this shapes the AI's behavior for conversation
 
 **Check your work:**
+
 1. Validate: `qtype validate my_chatbot.qtype.yaml`
 2. Should pass ✅
 
@@ -238,7 +258,8 @@ OPENAI_API_KEY=sk-your-key-here
 **Already using AWS Bedrock?** Replace the model configuration with:
 ```yaml
 models:
-  - type: Model
+
+- type: Model
     id: claude
     provider: aws-bedrock
     model_id: amazon.nova-lite-v1:0
@@ -285,10 +306,12 @@ You: What food do I like?
 AI: You mentioned you love pizza!  ✅
 ```
 
-**Experiment:** 
+**Experiment:**
+
 1. Refresh the page - memory resets (new session)
 2. Try a multi-step math problem:
-   - "Remember the number 42"
+
+- "Remember the number 42"
    - "Now multiply that by 2"  
    - Does it remember 42?
 
@@ -317,6 +340,7 @@ User: Sees response
 ```
 
 **Key insight:** The LLM itself has no memory - QType handles this by:
+
 1. Storing all previous messages
 2. Sending relevant history with each new question
 3. Managing token limits automatically
@@ -331,6 +355,7 @@ Your `chat_history_token_ratio: 0.7` setting means:
 - **30% of tokens** → System message + AI response (15,000 tokens)
 
 If the conversation gets too long, QType automatically:
+
 1. Keeps recent messages
 2. Drops older messages
 3. Ensures the AI always has enough tokens to respond
@@ -368,6 +393,7 @@ Congratulations! You've mastered:
 Now that you can build conversational applications:
 
 **Want to dive deeper?**
+
 - [Memory Concept](../Concepts/Core/memory.md) - Advanced memory strategies
 - [ChatMessage Reference](../How-To%20Guides/Data%20Types/domain-types.md) - Full type specification
 - [Flow Interfaces](../Concepts/Core/flow.md) - Complete vs Conversational
@@ -383,7 +409,8 @@ id: my_chatbot
 description: A conversational chatbot with memory
 
 models:
-  - type: Model
+
+- type: Model
     id: gpt-4
     provider: openai
     model_id: gpt-4-turbo
@@ -391,35 +418,43 @@ models:
       temperature: 0.7
 
 memories:
-  - id: chat_memory
+
+- id: chat_memory
     token_limit: 50000
     chat_history_token_ratio: 0.7
 
 flows:
-  - type: Flow
+
+- type: Flow
     id: chat_flow
     description: Main chat flow with conversation memory
     interface:
       type: Conversational
     variables:
-      - id: user_message
+
+- id: user_message
         type: ChatMessage
       - id: response_message
         type: ChatMessage
     inputs:
-      - user_message
+
+- user_message
     outputs:
-      - response_message
+
+- response_message
     steps:
-      - type: LLMInference
+
+- type: LLMInference
         id: chat_step
         model: gpt-4
         memory: chat_memory
         system_message: "You are a helpful assistant. Be friendly and conversational."
         inputs:
-          - user_message
+
+- user_message
         outputs:
-          - response_message
+
+- response_message
 ```
 
 **Download:** See a similar example at [examples/hello_world_chat.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml)

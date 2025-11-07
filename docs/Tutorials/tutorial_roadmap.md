@@ -20,7 +20,9 @@ Based on model.py and the `schema`, here are the key capabilities:
 - **RAG Pipeline** - Full document processing workflow
 
 ### CLI Capabilities
+
 From commands:
+
 - **Validation** - Schema and semantic checking
 - **Execution** - Local flow running  
 - **Serving** - Web UI and API hosting
@@ -197,7 +199,9 @@ flows:
 ## Key Improvements for Tutorial Strategy
 
 ### 1. **Progressive Complexity**
+
 Each tutorial builds on previous concepts without overwhelming users:
+
 - Tutorial 1: Basic structure
 - Tutorial 2: + Memory (stateful)  
 - Tutorial 3: + Tools (extensibility)
@@ -205,8 +209,10 @@ Each tutorial builds on previous concepts without overwhelming users:
 - Tutorial 5: + Multi-flow (architecture)
 - Tutorial 6: + RAG (production patterns)
 
-### 2. **Practical Learning Path**  
+### 2. **Practical Learning Path**
+
 Users can stop after any tutorial and have built something useful:
+
 - After Tutorial 2: Can build chatbots
 - After Tutorial 3: Can add tool integrations  
 - After Tutorial 4: Can process data
@@ -217,24 +223,29 @@ Users can stop after any tutorial and have built something useful:
 By Tutorial 6, users will have encountered:
 
 **Core Components:**
+
 - ✅ Application, Model, Flow, Variable
 - ✅ Memory, Tools, Authentication  
 - ✅ All major step types (LLMInference, Agent, Sources, etc.)
 
-**Advanced Features:**  
+**Advanced Features:**
+
 - ✅ Both flow interfaces (Complete, Conversational)
 - ✅ Step cardinality (one vs many)  
 - ✅ Batch and concurrent processing
 - ✅ External integrations (APIs, databases, vector stores)
 
 **Production Concepts:**
+
 - ✅ Authentication providers
 - ✅ Index management  
 - ✅ Error handling
 - ✅ Application composition
 
 ### 4. **CLI Integration**
+
 Each tutorial should show relevant CLI commands:
+
 - **validate** - Every tutorial teaches validation
 - **run** - Execute flows locally  
 - **serve** - Host applications (Tutorials 2, 6)

@@ -39,13 +39,15 @@ id: multi_flow_example
 description: Multi-flow application demonstrating multiple independent flows
 
 models:
-  - type: Model
+
+- type: Model
     id: gpt4o-mini
     provider: openai
     model_id: gpt-4o-mini
 
 flows:
-  - type: Flow
+
+- type: Flow
     id: clean_names
     # ... flow definition ...
   
@@ -64,10 +66,12 @@ Each flow defines its own variables that are completely isolated from other flow
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: clean_names
     variables:
-      - id: raw_name        # Only exists in clean_names flow
+
+- id: raw_name        # Only exists in clean_names flow
         type: text
       - id: clean_name      # Only exists in clean_names flow
         type: text
@@ -75,7 +79,8 @@ flows:
   - type: Flow
     id: validate_names
     variables:
-      - id: name_to_validate  # Only exists in validate_names flow
+
+- id: name_to_validate  # Only exists in validate_names flow
         type: text
       - id: validation_result # Only exists in validate_names flow
         type: text
@@ -92,10 +97,12 @@ Each flow declares what inputs it requires and what outputs it produces:
   id: clean_names
   
   inputs:
-    - raw_name      # Required input - must be provided when running this flow
+
+- raw_name      # Required input - must be provided when running this flow
   
   outputs:
-    - clean_name    # Output - available in results after flow completes
+
+- clean_name    # Output - available in results after flow completes
 ```
 
 This contract makes flows easy to understand and test in isolation.
@@ -110,7 +117,8 @@ Let's examine the `clean_names` flow in detail:
   description: Clean and standardize customer names
   
   variables:
-    - id: raw_name
+
+- id: raw_name
       type: text
     - id: clean_prompt
       type: text
@@ -118,10 +126,12 @@ Let's examine the `clean_names` flow in detail:
       type: text
   
   inputs:
-    - raw_name
+
+- raw_name
   
   outputs:
-    - clean_name
+
+- clean_name
   
   steps:
     # Step 1: Create prompt to clean the name
@@ -129,18 +139,22 @@ Let's examine the `clean_names` flow in detail:
       type: PromptTemplate
       template: "Clean this name by trimming whitespace and converting to title case: {{raw_name}}. Return ONLY the cleaned name, nothing else."
       inputs:
-        - raw_name
+
+- raw_name
       outputs:
-        - clean_prompt
+
+- clean_prompt
     
     # Step 2: Call LLM to clean the name
     - id: clean_step
       type: LLMInference
       model: gpt4o-mini
       inputs:
-        - clean_prompt
+
+- clean_prompt
       outputs:
-        - clean_name
+
+- clean_name
 ```
 
 **Pattern:** Notice the `PromptTemplate` → `LLMInference` pattern. This is the standard way to work with LLMs in QType:

@@ -7,9 +7,11 @@
 ## Before You Begin
 
 You should have completed:
+
 - **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows
 
 Make sure you have:
+
 - QType installed: `pip install qtype[interpreter]`
 - A text editor
 - 15 minutes
@@ -19,6 +21,7 @@ Make sure you have:
 ## Understanding Data Processing in QType
 
 So far, you've built applications that process one request at a time:
+
 - Tutorial 1: One question → one answer
 - Tutorial 2: One message → one response  
 - Tutorial 3: Get time → calculate difference → return result
@@ -33,10 +36,12 @@ Load CSV file → Count records
 ### Key Concepts
 
 **Step Cardinality** - Does a step emit one result or many?
+
 - `cardinality: one` - Takes input(s), emits 1 output per input
 - `cardinality: many` - Takes input(s), emits 0...N outputs per input
 
 **Streaming Processing** - Processing multiple records
+
 - FileSource reads the file and emits one record at a time
 - Each record flows through the pipeline as it's read
 - Aggregate collects all records and produces a summary
@@ -111,12 +116,14 @@ Add a flow that declares all the variables we'll use:
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: process_customers
     description: Load customer data and count records
     
     variables:
-      - id: file_path
+
+- id: file_path
         type: text
       - id: name
         type: text
@@ -128,16 +135,19 @@ flows:
         type: AggregateStats
     
     inputs:
-      - file_path
+
+- file_path
     
     outputs:
-      - stats
+
+- stats
       - name
       - region
       - purchases
 ```
 
 **What's happening:**
+
 - We declare 5 variables for each stage of processing
 - Only `file_path` is required as input (the file path)
 - All four fields are returned as outputs: `stats` (aggregate summary) plus the three data fields
@@ -147,6 +157,7 @@ flows:
 **Why return all fields?** This lets you see both the individual records AND the aggregate summary in the output.
 
 **Check your work:**
+
 1. Validate: `uv run qtype validate examples/data_processor.qtype.yaml`
 2. Should pass ✅
 
@@ -163,9 +174,11 @@ Add the first step to read the file:
         type: FileSource
         path: file_path
         inputs:
-          - file_path
+
+- file_path
         outputs:
-          - name
+
+- name
           - region
           - purchases
 ```
@@ -173,6 +186,7 @@ Add the first step to read the file:
 **New concepts:**
 
 **`FileSource` step** - Reads data from files
+
 - `path: file_path` - Reference to variable containing file path
 - Automatically detects format from file extension (`.csv`, `.parquet`, `.json`, `.jsonl`)
 - `cardinality: many` (implicit) - Emits one output per row
@@ -198,12 +212,15 @@ Add a step to count all the records:
       - id: count_records
         type: Aggregate
         inputs:
-          - region
+
+- region
         outputs:
-          - stats
+
+- stats
 ```
 
 **`Aggregate` step** - Combines many items into one result
+
 - Counts how many items flow through
 - `cardinality: one` - Takes many inputs, emits 1 output
 - Waits for all upstream items before computing
@@ -216,6 +233,7 @@ Output: stats = AggregateStats(num_successful=5, num_failed=0, num_total=5)
 ```
 
 **Check your work:**
+
 1. Validate: `uv run qtype validate examples/data_processor.qtype.yaml`
 2. Should pass ✅
 
@@ -248,6 +266,7 @@ Results:
 ```
 
 **What happened:**
+
 1. FileSource read 5 rows from CSV
 2. Each row became a FlowMessage with name, region, purchases
 3. All 5 messages flowed through to Aggregate
@@ -255,6 +274,7 @@ Results:
 5. You see 5 data rows (0-4) with customer info + 1 final stats row (5)
 
 **Understanding the output:**
+
 - **Rows 0-4:** Individual customer records with `stats=None` (data hasn't been aggregated yet)
 - **Row 5:** Aggregate summary with `stats=AggregateStats(...)` and data fields as `None`/`NaN`
 
@@ -314,6 +334,7 @@ This is why FileSource is so powerful - it lets you process entire datasets with
 Now that you understand data processing:
 
 **Want to dive deeper?**
+
 - [FileSource Reference](../components/FileSource.md) - All file formats
 - [Aggregate Reference](../components/Aggregate.md) - Statistics details
 - [AggregateStats Reference](../components/AggregateStats.md) - Output structure
@@ -345,12 +366,14 @@ id: data_processor
 description: Process CSV data to extract and summarize information
 
 flows:
-  - type: Flow
+
+- type: Flow
     id: process_customers
     description: Load customer data and count records
     
     variables:
-      - id: file_path
+
+- id: file_path
         type: text
       - id: name
         type: text
@@ -362,10 +385,12 @@ flows:
         type: AggregateStats
     
     inputs:
-      - file_path
+
+- file_path
     
     outputs:
-      - stats
+
+- stats
       - name
       - region
       - purchases
@@ -376,9 +401,11 @@ flows:
         type: FileSource
         path: file_path
         inputs:
-          - file_path
+
+- file_path
         outputs:
-          - name
+
+- name
           - region
           - purchases
       
@@ -386,9 +413,11 @@ flows:
       - id: count_records
         type: Aggregate
         inputs:
-          - region
+
+- region
         outputs:
-          - stats
+
+- stats
           - name
           - region
           - purchases
@@ -411,7 +440,8 @@ A: Use the `FieldExtractor` step (from Tutorial 3) or `Decoder` step to parse an
 A: Use `SQLSource` step instead of `FileSource`. It works similarly but connects to databases and executes SQL queries.
 
 **Q: What's the difference between `cardinality: one` and `cardinality: many`?**  
-A: 
+A:
+
 - `one` - Each input produces exactly one output (transforms, LLM calls)
 - `many` - Each input can produce 0, 1, or more outputs (file reading, searches)
 

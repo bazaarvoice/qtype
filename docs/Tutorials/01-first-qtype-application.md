@@ -29,6 +29,7 @@ description: My first QType application
 ```
 
 **What this means:**
+
 - Every QType application starts with an `id` - a unique name for your app
 - The `description` helps you remember what the app does (optional but helpful)
 
@@ -45,7 +46,8 @@ id: hello_world
 description: My first QType application
 
 models:
-  - type: Model
+
+- type: Model
     id: gpt-4
     provider: openai
     model_id: gpt-4-turbo
@@ -54,13 +56,15 @@ models:
 ```
 
 **What this means:**
+
 - `models:` - Where you configure which AI to use
 - `type: Model` - Tells QType "this is an AI model"
 - `id: gpt-4` - A nickname you'll use to refer to this model
 - `provider: openai` - Which AI service to use
 - `temperature: 0.7` - Controls creativity (0 = focused, 1 = creative)
 
-**Check your work:** 
+**Check your work:**
+
 1. Make sure the indentation matches exactly (2 spaces for each level)
 2. Save the file
 3. Run: `qtype validate my_first_app.qtype.yaml`
@@ -78,20 +82,25 @@ A "flow" is where you define what your app actually does. Add this to your file:
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: simple_example
     variables:
-      - id: question
+
+- id: question
         type: text
       - id: answer
         type: text
     inputs:
-      - question
+
+- question
     outputs:
-      - answer
+
+- answer
 ```
 
 **What this means:**
+
 - `flows:` - The processing logic section
 - `variables:` - Declares the data your app uses:
   - `question` - What the user asks
@@ -99,6 +108,7 @@ flows:
 - `inputs:` and `outputs:` - Which variables go in and out
 
 **Check your work:**
+
 1. Validate again: `qtype validate my_first_app.qtype.yaml`
 2. Still should see: `✅ Validation successful`
 
@@ -110,17 +120,21 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 
 ```yaml
     steps:
-      - id: llm_step
+
+- id: llm_step
         type: LLMInference
         model: gpt-4
         system_message: "You are a helpful assistant."
         inputs:
-          - question
+
+- question
         outputs:
-          - answer
+
+- answer
 ```
 
 **What this means:**
+
 - `steps:` - The actual processing instructions
 - `type: LLMInference` - "Send this to an AI model"
 - `model: gpt-4` - Use the model we defined earlier (by its `id`)
@@ -129,6 +143,7 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 - `outputs: [answer]` - Put the AI's response in `answer`
 
 **Check your work:**
+
 1. Validate: `qtype validate my_first_app.qtype.yaml`
 2. Should still pass ✅
 
@@ -149,7 +164,8 @@ Replace `sk-your-key-here` with your actual OpenAI API key.
 **Using AWS Bedrock instead?** Replace the models section with:
 ```yaml
 models:
-  - type: Model
+
+- type: Model
     id: nova
     provider: aws-bedrock
     model_id: amazon.nova-lite-v1:0
@@ -175,6 +191,7 @@ qtype run -i '{"question":"What is 2+2?"}' my_first_app.qtype.yaml
 ```
 
 **Troubleshooting:**
+
 - **"Authentication error"** → Check your API key in `.env`
 - **"Model not found"** → Verify you have access to the model
 - **"Variable not found"** → Check your indentation in the YAML file
@@ -215,6 +232,7 @@ Now that you understand the basics:
 1. **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Make your app remember previous messages
 
 **Want to dive deeper?**
+
 - [Application Concept](../Concepts/Core/application.md) - Full specification
 - [All Step Types](../Concepts/Steps/index.md) - What else can you build?
 
@@ -229,7 +247,8 @@ id: hello_world
 description: My first QType application
 
 models:
-  - type: Model
+
+- type: Model
     id: gpt-4
     provider: openai
     model_id: gpt-4-turbo
@@ -237,26 +256,33 @@ models:
       temperature: 0.7
 
 flows:
-  - type: Flow
+
+- type: Flow
     id: simple_example
     variables:
-      - id: question
+
+- id: question
         type: text
       - id: answer
         type: text
     inputs:
-      - question
+
+- question
     outputs:
-      - answer
+
+- answer
     steps:
-      - id: llm_step
+
+- id: llm_step
         type: LLMInference
         model: gpt-4
         system_message: "You are a helpful assistant."
         inputs:
-          - question
+
+- question
         outputs:
-          - answer
+
+- answer
 ```
 
 **Download:** You can find a similar example at [examples/hello_world.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml)

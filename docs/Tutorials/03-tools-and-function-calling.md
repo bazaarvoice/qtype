@@ -7,10 +7,12 @@
 ## Before You Begin
 
 You should have completed:
+
 - **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, and flows
 - **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Understanding conversational flows
 
 Make sure you have:
+
 - QType installed: `pip install qtype[interpreter]`
 - A text editor
 - 20 minutes
@@ -22,10 +24,12 @@ Make sure you have:
 **Tools** in QType are reusable functions that your flows can invoke. They extend your application's capabilities beyond just LLM inference.
 
 Tools can be:
+
 - **Python functions** - Call any Python code
 - **API endpoints** - Make HTTP requests to external services
 
 **Why use tools?**
+
 - Get real-time data (current time, weather, stock prices)
 - Perform calculations or data transformations
 - Integrate with databases or external systems
@@ -46,10 +50,12 @@ qtype generate commons --prefix ./common/
 ```
 
 This creates two files:
+
 - `./common/tools.qtype.yaml` - All available Python function tools
 - `./common/aws.bedrock.models.qtype.yaml` - AWS Bedrock model configurations
 
 **Check your work:**
+
 1. Look at `./common/tools.qtype.yaml`
 2. Search for "get_current_timestamp"
 3. You should see tool definitions with inputs and outputs
@@ -76,15 +82,18 @@ description: A simple application demonstrating tool usage
 
 # Import the commons tools library
 references:
-  - !include ../common/tools.qtype.yaml
+
+- !include ../common/tools.qtype.yaml
 ```
 
 **What's happening:**
+
 - `references: - !include ...` - Imports tool definitions from another YAML file
 - All tools from `tools.qtype.yaml` become available in your application
 - Tools are referenced by their full IDs like `qtype.application.commons.tools.get_current_timestamp`
 
 **Check your work:**
+
 1. Save the file
 2. Run: `qtype validate time_utilities.qtype.yaml`
 3. Should pass ✅ (even with just these lines)
@@ -97,12 +106,14 @@ Add a flow with variables for each step's output:
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: time_info_flow
     description: Get and format the current timestamp
     
     variables:
-      - id: current_time
+
+- id: current_time
         type: datetime
       - id: time_two_hours_later
         type: datetime
@@ -110,17 +121,20 @@ flows:
         type: TimeDifferenceResultType
     
     outputs:
-      - current_time
+
+- current_time
       - time_difference
 ```
 
 **What this means:**
+
 - `variables:` - Declares all data used in the flow
 - `datetime` type - QType's built-in type for timestamps
 - `TimeDifferenceResultType` - A custom type from the commons library
 - `outputs:` - Only these two variables are returned as final results
 
 **Check your work:**
+
 1. Validate: `qtype validate time_utilities.qtype.yaml`
 2. Should still pass ✅
 
@@ -146,6 +160,7 @@ Add this step to your flow:
 ```
 
 **Breaking down InvokeTool:**
+
 - `type: InvokeTool` - Step type for calling tools (new concept!)
 - `tool: <full_tool_id>` - Reference to the tool we want to call
 - `input_bindings: {}` - Maps flow variables to tool parameters (empty because this tool has no parameters)
@@ -171,11 +186,13 @@ Add a step to calculate what time it will be in 2 hours:
 ```
 
 **What this does:**
+
 - Takes our `current_time`
 - Adds 2 hours to it using the `timedelta` tool
 - Stores the result in `time_two_hours_later`
 
 **Key concept:** Input bindings map flow variables to tool parameters. Here we're passing:
+
 - `timestamp: current_time` - The variable from Step 1
 - `hours: "2"` - The number of hours to add (as a string that will be converted to int)
 
@@ -198,11 +215,13 @@ Add a final step to calculate the difference:
 ```
 
 **What this does:**
+
 - Compares `current_time` and `time_two_hours_later`
 - Returns a structured object with the difference in seconds, minutes, hours, days
 - Stores in `time_difference` (which has type `TimeDifferenceResultType`)
 
 **Check your work:**
+
 1. Validate: `qtype validate time_utilities.qtype.yaml`
 2. Should pass ✅
 
@@ -230,6 +249,7 @@ time_difference: total_seconds=0.0 total_minutes=0.0 total_hours=0.0 total_days=
 ```
 
 **What happened:**
+
 1. QType called `get_current_timestamp()` and got the current UTC time
 2. Added 2 hours to create a future timestamp
 3. Calculated the difference between the two times
@@ -258,6 +278,7 @@ When QType executes an `InvokeTool` step:
 ```
 
 **Key insight:** Tools are just Python functions. QType:
+
 - Handles importing the module
 - Validates all types match
 - Converts between Python and QType types automatically
@@ -287,7 +308,8 @@ Calls a Python function from a module:
 
 ```yaml
 tools:
-  - type: PythonFunctionTool
+
+- type: PythonFunctionTool
     id: my_calculator
     name: calculate
     description: Performs mathematical calculations
@@ -309,7 +331,8 @@ Calls an HTTP API endpoint:
 
 ```yaml
 tools:
-  - type: APITool
+
+- type: APITool
     id: weather_api
     name: get_weather
     description: Fetches weather data
@@ -334,7 +357,8 @@ Chain tools where each step uses the previous output (like our example):
 
 ```yaml
 steps:
-  - type: InvokeTool
+
+- type: InvokeTool
     tool: fetch_data
     output_bindings: {result: raw_data}
   
@@ -354,19 +378,23 @@ Pass flow input variables to tools:
 
 ```yaml
 flows:
-  - type: Flow
+
+- type: Flow
     id: timezone_converter
     variables:
-      - id: user_timezone
+
+- id: user_timezone
         type: text
       - id: current_time
         type: datetime
       - id: converted_time
         type: datetime
     inputs:
-      - user_timezone
+
+- user_timezone
     steps:
-      - type: InvokeTool
+
+- type: InvokeTool
         tool: get_current_timestamp
         output_bindings: {result: current_time}
       
@@ -395,6 +423,7 @@ input_bindings:
 Now that you understand tools:
 
 **Want to dive deeper?**
+
 - [Tool Concept](../Concepts/Core/tool.md) - Full tool architecture
 - [InvokeTool Step](../components/InvokeTool.md) - Complete API reference
 - [Create Python Tools](../How-To%20Guides/Tools/python-tools.md) - Build your own tools
