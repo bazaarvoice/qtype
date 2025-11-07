@@ -5,17 +5,18 @@ description: |
   
   This example includes two flows:
   
-  1. document_ingestion: Ingest documents into the vector store
+  1. rag_chat: Chat with your documents using RAG
+     - Accept user questions as ChatMessage
+     - Extract text content from chat message using FieldExtractor
+     - Search vector index for relevant context using VectorSearch
+     - Generate contextual responses using Amazon Nova Lite
+     - Maintain conversation history with memory
+  
+  2. document_ingestion: Ingest documents into the vector store
      - Load documents from tests/rag_files directory
      - Split documents into manageable chunks
      - Generate embeddings using AWS Bedrock Titan Embed Text v2
-     - Store embedded chunks in Qdrant vector database
-  
-  2. rag_chat: Chat with your documents using RAG
-     - Accept user questions as ChatMessage
-     - Search vector index for relevant context
-     - Generate contextual responses using Claude 3.5 Sonnet
-     - Maintain conversation history with memory
+     - Store embedded chunks in Qdrant vector database using IndexUpsert
   
   Prerequisites:
   - AWS credentials configured (via AWS CLI profile or environment variables)
