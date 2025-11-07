@@ -1,6 +1,10 @@
-# Tutorial: Adding Tools and Function Calling
+# Adding Tools and Function Calling
 
-**What you'll learn:** In 20 minutes, you'll learn how to extend your QType applications with tools - reusable functions that can perform calculations, call APIs, or execute custom logic.
+**Time:** 20 minutes  
+**Prerequisites:** [Tutorial 1: Build Your First QType Application](01-first-qtype-application.md), [Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)  
+**Example:** [`time_utilities.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/time_utilities.qtype.yaml)
+
+**What you'll learn:** Extend your QType applications with tools - reusable functions that can perform calculations, call APIs, or execute custom logic.
 
 **What you'll build:** A time utilities application that gets the current time, formats timestamps, and calculates time differences using Python functions.
 
@@ -8,7 +12,7 @@
 
 You should have completed:
 
-- **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, and flows
+- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, and flows
 - **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Understanding conversational flows
 
 Make sure you have:
@@ -419,8 +423,6 @@ input_bindings:
 ---
 
 ## Next Steps
-
-Now that you understand tools:
 
 **Want to dive deeper?**
 

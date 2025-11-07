@@ -1,6 +1,10 @@
-# Tutorial: Build a Conversational Chatbot
+# Build a Conversational Chatbot
 
-**What you'll learn:** In 20 minutes, you'll add memory to your QType application and create a chatbot that remembers previous messages in the conversation.
+**Time:** 20 minutes  
+**Prerequisites:** [Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)  
+**Example:** [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml)
+
+**What you'll learn:** Add memory to your QType application and create a chatbot that remembers previous messages in the conversation.
 
 **What you'll build:** A stateful chatbot that maintains conversation history and provides contextual responses.
 
@@ -8,7 +12,7 @@
 
 You should have completed:
 
-- **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows, and steps
+- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows, and steps
 
 Make sure you have:
 
@@ -389,8 +393,6 @@ Congratulations! You've mastered:
 ---
 
 ## Next Steps
-
-Now that you can build conversational applications:
 
 **Want to dive deeper?**
 

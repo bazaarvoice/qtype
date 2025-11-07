@@ -60,6 +60,49 @@ Your work is strictly guided by the principles and structure of the Diátaxis Fr
    3. Third concept
    ```
 
+## TUTORIAL FORMATTING GUIDELINES
+
+**CRITICAL:** All tutorials must follow this standardized format:
+
+1. **Title:** Do NOT use "Tutorial:" or "Tutorial N:" prefix. Use clean, descriptive titles.
+   - ❌ WRONG: `# Tutorial: Build Your First Application`
+   - ✅ CORRECT: `# Build Your First Application`
+
+2. **Header Section:** Every tutorial must start with this metadata format:
+   ```markdown
+   # [Tutorial Title]
+   
+   **Time:** [X] minutes  
+   **Prerequisites:** [Links to required tutorials or "None"]  
+   **Example:** [`filename.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/filename.qtype.yaml)
+   
+   **What you'll learn:** [Brief description]
+   
+   **What you'll build:** [Brief description]
+   ```
+
+3. **Example Links:** Always link to the full GitHub path for example files:
+   - ❌ WRONG: `[example.yaml](../../examples/example.yaml)`
+   - ✅ CORRECT: `[example.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/example.yaml)`
+
+4. **No "Next Tutorial" References:** Do NOT include "next tutorial" or "coming up" sections at the end.
+   - ❌ WRONG: `**Next:** In the next tutorial, we'll explore...`
+   - ❌ WRONG: `**Coming up:** We'll learn about...`
+   - ✅ CORRECT: End with reference links or challenges without mentioning future tutorials
+
+5. **Example of Complete Tutorial Header:**
+   ```markdown
+   # Build a Conversational Chatbot
+   
+   **Time:** 20 minutes  
+   **Prerequisites:** [Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)  
+   **Example:** [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml)
+   
+   **What you'll learn:** Add memory to your QType application and create a chatbot that remembers previous messages.
+   
+   **What you'll build:** A stateful chatbot that maintains conversation history and provides contextual responses.
+   ```
+
 ## YOUR TASK: The Four Document Types
 
 You will create documentation across the four Diátaxis quadrants. You must understand the distinct purpose of each:

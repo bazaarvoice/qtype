@@ -1,8 +1,8 @@
-# Tutorial 5: Multi-Flow Applications
+# Multi-Flow Applications
 
 **Time:** 20 minutes  
 **Prerequisites:** Tutorials 1-4  
-**Example:** [`multi_flow_example.qtype.yaml`](../../examples/multi_flow_example.qtype.yaml)
+**Example:** [`multi_flow_example.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/multi_flow_example.qtype.yaml)
 
 ## What You'll Learn
 
@@ -268,11 +268,8 @@ You now understand how to:
 
 **Challenge:** Extend the example to add a fourth flow called `format_report` that takes a `customer_name`, `validation_result`, and `customer_profile` as inputs and formats them into a professional customer service report.
 
-**Coming up:** In the next tutorial, we'll explore how to use the `InvokeFlow` step to compose flows together, allowing one flow to call another and pass data between them.
-
 ## Reference
 
 - [Flow Reference](../components/Flow.md)
 - [PromptTemplate Reference](../components/PromptTemplate.md)
 - [LLMInference Reference](../components/LLMInference.md)
-- [Variable Scoping Concept](../Concepts/variable-scoping.md)

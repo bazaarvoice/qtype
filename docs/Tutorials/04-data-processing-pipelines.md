@@ -1,6 +1,10 @@
-# Tutorial: Data Processing Pipelines
+# Data Processing Pipelines
 
-**What you'll learn:** In 15 minutes, you'll build a data processing flow that loads records from a CSV file and aggregates them. You'll learn how QType handles one-to-many operations.
+**Time:** 15 minutes  
+**Prerequisites:** [Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)  
+**Example:** [`data_processor.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/data_processor.qtype.yaml)
+
+**What you'll learn:** Build a data processing flow that loads records from a CSV file and aggregates them. You'll learn how QType handles one-to-many operations.
 
 **What you'll build:** A simple data pipeline that counts customer records from a CSV file.
 
@@ -8,7 +12,7 @@
 
 You should have completed:
 
-- **[Tutorial 1: Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows
+- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows
 
 Make sure you have:
 
@@ -331,8 +335,6 @@ This is why FileSource is so powerful - it lets you process entire datasets with
 
 ## Next Steps
 
-Now that you understand data processing:
-
 **Want to dive deeper?**
 
 - [FileSource Reference](../components/FileSource.md) - All file formats
@@ -356,8 +358,6 @@ Now that you understand data processing:
 ---
 
 ## Complete Code
-
-**Download:** [data_processor.qtype.yaml](../../examples/data_processor.qtype.yaml)
 
 Here's your complete application:
 

@@ -1,6 +1,10 @@
-# Tutorial: Build Your First QType Application
+# Build Your First QType Application
 
-**What you'll learn:** In 15 minutes, you'll build a working AI-powered question-answering application and understand the core concepts of QType.
+**Time:** 15 minutes  
+**Prerequisites:** None  
+**Example:** [`hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml)
+
+**What you'll learn:** Build a working AI-powered question-answering application and understand the core concepts of QType.
 
 **What you'll build:** A simple app that takes a question, sends it to an AI model, and returns an answer.
 
@@ -226,10 +230,6 @@ Congratulations! You've learned:
 ---
 
 ## Next Steps
-
-Now that you understand the basics:
-
-1. **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Make your app remember previous messages
 
 **Want to dive deeper?**
 
