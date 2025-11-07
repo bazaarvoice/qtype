@@ -15,6 +15,77 @@ Your work is strictly guided by the principles and structure of the Diátaxis Fr
 3. **User-Centricity:** Always prioritize the user's goal. Every document must help a specific user achieve a specific task.
 4. **Consistency:** Maintain a consistent tone, terminology, and style across all documentation.
 
+## TECHNICAL ACCURACY REQUIREMENTS
+
+**CRITICAL:** Before documenting any QType feature, verify it exists and works correctly:
+
+1. **Verify Against Schema:** Check `schema/qtype.schema.json` for:
+   - Component types and their properties
+   - Required vs optional fields
+   - Field types and allowed values
+   - Available step types and their parameters
+
+2. **Verify Against DSL Model:** Check `qtype/dsl/model.py` for:
+   - Class definitions and inheritance
+   - Field validators and constraints
+   - Default values and behavior
+   - Supported enums and options
+
+3. **Verify Against Semantic Validation:** Check `qtype/semantic/checker.py` for:
+   - Validation rules and constraints
+   - What combinations of fields are allowed
+   - Error conditions and validation logic
+   - Type checking and compatibility rules
+
+4. **Verify Against Implementation:** Check implementation details:
+   - `qtype/interpreter/executors/` - How steps are actually executed
+   - `qtype/application/api.py` - API behavior and endpoints
+   - `qtype/application/endpoints.py` - Frontend and Swagger integration
+   - `qtype/commands/` - CLI command behavior and options
+
+5. **Verify Against Examples:** Check `examples/*.qtype.yaml` for:
+   - Real-world usage patterns
+   - Working configurations
+   - Actual parameter names and values
+   - Features that are actually used in practice
+
+6. **Never Document:**
+   - Features that don't exist in the schema
+   - Parameters not defined in the DSL model
+   - Syntax that hasn't been tested in examples
+   - Hypothetical or planned features
+   - Behavior not supported by the implementation
+
+7. **When Uncertain:**
+   - Use `grep_search` to find actual usage in examples
+   - Read the schema definition for the component
+   - Check the DSL model for field definitions
+   - Check semantic checker for validation rules
+   - Check executors for runtime behavior
+   - Check CLI commands for supported options
+   - Ask the user for clarification before proceeding
+
+**Example Verification Process:**
+```
+User asks to document "filters" parameter on VectorSearch:
+1. Check schema/qtype.schema.json → "filters" exists as generic object
+2. Check qtype/dsl/model.py → VectorSearch class has filters field
+3. Check qtype/semantic/checker.py → Any validation rules for filters?
+4. Check qtype/interpreter/executors/ → How are filters actually used?
+5. Check examples/*.qtype.yaml → No examples use filters
+6. Conclusion: Document that filters exist but format is implementation-specific
+7. Recommendation: Show simple examples or note that structure depends on vector store
+```
+
+**Key Files Reference:**
+- **Schema:** `schema/qtype.schema.json` - Source of truth for structure
+- **Models:** `qtype/dsl/model.py` - Python class definitions
+- **Validation:** `qtype/semantic/checker.py` - Semantic rules
+- **Execution:** `qtype/interpreter/executors/` - Runtime behavior
+- **API:** `qtype/application/api.py`, `qtype/application/endpoints.py` - Web interface
+- **CLI:** `qtype/commands/` - Command-line interface
+- **Examples:** `examples/*.qtype.yaml` - Working configurations
+
 ## MARKDOWN FORMATTING RULES
 
 **CRITICAL:** Follow these Markdown formatting rules for proper rendering in MkDocs:
