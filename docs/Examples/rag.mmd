@@ -19,23 +19,23 @@ Chat with the document collection using RAG"]
 
     subgraph FLOW_1 ["🔄 Flow: document_ingestion
 Load LlamaIndex Q&A pairs from HuggingFace, split, embed, and index documents"]
-        direction LR
+        direction TB
         FLOW_1_S0@{shape: rect, label: "⚙️ Step: load_documents"}
         FLOW_1_S1@{shape: rect, label: "⚙️ Step: split_documents"}
         FLOW_1_S2@{shape: rect, label: "⚙️ Step: embed_chunks"}
         FLOW_1_S3@{shape: rect, label: "⚙️ Step: index_chunks"}
         FLOW_1_S0 -->|raw_document: RAGDocument'>| FLOW_1_S1
         FLOW_1_S1 -->|document_chunk: RAGChunk'>| FLOW_1_S2
-        FLOW_1_S3 -->|embedded_chunk: RAGChunk'>| FLOW_1_S3
+        FLOW_1_S2 -->|embedded_chunk: RAGChunk'>| FLOW_1_S3
     end
 
     subgraph RESOURCES ["🔧 Shared Resources"]
         direction LR
         AUTH_AWS_AUTH@{shape: hex, label: "🔐 aws_auth\nAWS"}
-        MODEL_TITAN_EMBED_V2@{shape: rounded, label: "✨ titan_embed_v2 (aws-bedrock)" }
-        MODEL_TITAN_EMBED_V2 -.->|uses| AUTH_AWS_AUTH
         MODEL_CLAUDE_SONNET@{shape: rounded, label: "✨ claude_sonnet (aws-bedrock)" }
         MODEL_CLAUDE_SONNET -.->|uses| AUTH_AWS_AUTH
+        MODEL_TITAN_EMBED_V2@{shape: rounded, label: "✨ titan_embed_v2 (aws-bedrock)" }
+        MODEL_TITAN_EMBED_V2 -.->|uses| AUTH_AWS_AUTH
     end
 
     end

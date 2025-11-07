@@ -342,6 +342,19 @@ Here's the full RAG configuration:
 
 You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/rag.qtype.yaml).
 
+## The Architecture
+
+Here's a visual representation of the complete RAG system:
+
+```mermaid
+--8<-- "Examples/rag.mmd"
+```
+
+The diagram shows:
+- **rag_chat flow** (left-right): The conversational interface with user interaction
+- **document_ingestion flow** (top-down): The linear pipeline for loading and indexing documents
+- **Shared Resources**: Models and authentication used by both flows
+
 ## Running the RAG System
 
 ### Step 1: Start Qdrant
