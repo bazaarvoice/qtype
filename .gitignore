@@ -222,3 +222,5 @@ ui/.env*
 
 # Stuff I don't want to see in my editor
 ignored
+
+qdrant_storage

@@ -106,3 +106,7 @@ plugins:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
   - awesome-pages:
       collapse_single_pages: false
+
+watch:
+  - docs
+  - examples

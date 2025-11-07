@@ -50,6 +50,11 @@ interpreter = [
     "langfuse>=3.9.0",
     "opentelemetry-exporter-otlp>=1.35.0",
     "opentelemetry-sdk>=1.35.0",
+    "docx2txt>=0.9",
+    "llama-index-vector-stores-qdrant>=0.8.6",
+    "jsonpath-ng>=1.7.0",
+    "llama-index-readers-huggingface-fs>=0.4.1",
+    "datasets>=4.4.1",
 ]
 
 [dependency-groups]

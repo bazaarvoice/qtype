@@ -36,21 +36,22 @@ class DocumentSourceExecutor(StepExecutor):
             ImportError: If the reader class cannot be imported.
         """
         # Parse the reader module path
-        # Format: 'google.GoogleDocsReader' -> llama_index.readers.google.GoogleDocsReader
-        full_module_path = f"llama_index.readers.{self.step.reader_module}"
-        # Get the class name
-        class_name = full_module_path.split(".")[-1]
+        # Format: 'file.SimpleDirectoryReader' -> llama_index.readers.file + SimpleDirectoryReader
+        # Special case: 'file.SimpleDirectoryReader' is actually in llama_index.core
+        parts = self.step.reader_module.split(".")
+        module_path = ".".join(parts[:-1])
+        class_name = parts[-1]
 
-        # Dynamically import the reader module
+        # Dynamically import the reader module and get the class
         try:
-            reader_module = importlib.import_module(full_module_path)
-            reader_class = getattr(reader_module, class_name)
+            module = importlib.import_module(module_path)
+            reader_class = getattr(module, class_name)
             return reader_class
         except (ImportError, AttributeError) as e:
             raise ImportError(
                 (
-                    f"Failed to import reader class '{class_name}' from "
-                    f"'{full_module_path}': {e}"
+                    f"Failed to import reader class '{class_name}' "
+                    f"from '{module_path}': {e}"
                 )
             ) from e
 
@@ -92,8 +93,9 @@ class DocumentSourceExecutor(StepExecutor):
                         "does not have a 'load_data' method"
                     )
                 )
+            load_args = self.step.loader_args or {}
 
-            llama_documents = loader.load_data(**combined_args)
+            llama_documents = loader.load_data(**load_args)
 
             # Convert LlamaIndex Documents to RAGDocuments
             rag_documents = [

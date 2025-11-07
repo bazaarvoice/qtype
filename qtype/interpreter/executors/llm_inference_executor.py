@@ -13,6 +13,7 @@ from qtype.interpreter.conversions import (
     to_chat_message,
     to_llm,
     to_memory,
+    variable_to_chat_message,
 )
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import LLMInference
@@ -91,8 +92,9 @@ class LLMInferenceExecutor(StepExecutor):
         inputs = []
         for input_var in self.step.inputs:
             value = message.variables.get(input_var.id)
-            if value and isinstance(value, ChatMessage):
-                inputs.append(to_chat_message(value))
+            # Convert any value type to ChatMessage, then to LlamaChatMessage
+            chat_msg = variable_to_chat_message(value, input_var)
+            inputs.append(to_chat_message(chat_msg))
 
         # Get session ID for memory isolation
         session_id = message.session.session_id

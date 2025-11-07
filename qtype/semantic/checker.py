@@ -17,6 +17,7 @@ from qtype.semantic.model import (
     DocumentSource,
     DocumentSplitter,
     Echo,
+    FieldExtractor,
     Flow,
     IndexUpsert,
     LLMInference,
@@ -276,6 +277,26 @@ def _validate_echo(step: Echo) -> None:
         raise QTypeSemanticError(error_msg)
 
 
+def _validate_field_extractor(step: FieldExtractor) -> None:
+    """
+    Validate FieldExtractor step has exactly one input and one output.
+
+    Args:
+        step: The FieldExtractor step to validate
+
+    Raises:
+        QTypeSemanticError: If validation fails
+    """
+    _validate_exact_input_count(step, 1)
+    _validate_exact_output_count(step, 1)
+
+    # Validate json_path is not empty
+    if not step.json_path or not step.json_path.strip():
+        raise QTypeSemanticError(
+            f"FieldExtractor step '{step.id}' must have a non-empty json_path."
+        )
+
+
 def _validate_sql_source(step: SQLSource) -> None:
     """Validate SQLSource has output variables defined."""
     _validate_min_output_count(step, 1)
@@ -315,8 +336,13 @@ def _validate_index_upsert(step: IndexUpsert) -> None:
 
 
 def _validate_vector_search(step: VectorSearch) -> None:
-    """Validate VectorSearch has exactly one text input for the query."""
+    """Validate VectorSearch has exactly one text input and one list[RAGSearchResult] output."""
+    from qtype.dsl.model import ListType
+
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
+    _validate_exact_output_count(
+        step, 1, ListType(element_type="RAGSearchResult")
+    )
 
 
 def _validate_document_search(step: DocumentSearch) -> None:
@@ -506,6 +532,7 @@ _VALIDATORS = {
     LLMInference: _validate_llm_inference,
     Decoder: _validate_decoder,
     Echo: _validate_echo,
+    FieldExtractor: _validate_field_extractor,
     SQLSource: _validate_sql_source,
     DocumentSource: _validate_document_source,
     DocToTextConverter: _validate_doc_to_text_converter,

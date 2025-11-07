@@ -37,14 +37,14 @@ class IndexUpsertExecutor(BatchedStepExecutor):
         if isinstance(self.step.index, VectorIndex):
             # Vector index for RAGChunk embeddings
             self._vector_store, _ = to_llama_vector_store_and_retriever(
-                self.step.index
+                self.step.index, self.context.secret_manager
             )
             self._opensearch_client = None
             self.index_type = "vector"
         elif isinstance(self.step.index, DocumentIndex):
             # Document index for text-based search
             self._opensearch_client = to_opensearch_client(
-                self.step.index, self._secret_manager
+                self.step.index, self.context.secret_manager
             )
             self._vector_store = None
             self.index_type = "document"
@@ -146,16 +146,16 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             if isinstance(item, RAGChunk):
                 node = TextNode(
                     id_=item.chunk_id,
-                    text=item.content,
-                    metadata=item.metadata or {},
-                    embedding=item.embedding,
+                    text=str(item.content),
+                    metadata=item.metadata,
+                    embedding=item.vector,
                 )
             else:  # RAGDocument
                 # For documents, use file_id and convert content to string
                 node = TextNode(
                     id_=item.file_id,
                     text=str(item.content),
-                    metadata=item.metadata or {},
+                    metadata=item.metadata,
                     embedding=None,  # Documents don't have embeddings
                 )
             nodes.append(node)
@@ -186,12 +186,12 @@ class IndexUpsertExecutor(BatchedStepExecutor):
                 )
                 # Add document content
                 doc = {
-                    "text": item.content,
-                    "metadata": item.metadata or {},
+                    "text": str(item.content),
+                    "metadata": item.metadata,
                 }
                 # Include embedding if available
-                if item.embedding:
-                    doc["embedding"] = item.embedding
+                if item.vector:
+                    doc["embedding"] = item.vector
                 bulk_body.append(doc)
             else:  # RAGDocument
                 # Add index action
@@ -206,7 +206,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
                 # Add document content
                 doc = {
                     "text": str(item.content),
-                    "metadata": item.metadata or {},
+                    "metadata": item.metadata,
                     "file_name": item.file_name,
                 }
                 if item.uri:

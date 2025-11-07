@@ -216,14 +216,12 @@ Settings are in `.pre-commit-config.yaml`:
 
 ### How To: Expand The DSL
 
-The core of qtype is the DSL specified in [qtype/dsl/model.py](model.py). All functionality is rooted in the pydantic classes in that file. To expand the dsl with new classes, types, etc., edit this file.
+The core of qtype is the DSL specified in [qtype/dsl/model.py](model.py). All functionality is rooted in the pydantic classes in that file. To expand the dsl with new classes, types, etc., edit this file. If your new class is a subtype (like a Step, etc) you should make sure you update any unions (like `StepType` etc)
 
 Once you have it to your liking, you can generate the new schema:
 ```
 qtype generate schema -o schema/qtype.schema.json 
 ```
-
-Next, make a canonical example of your new type in the `examples` folder (e.g., `examples/new_type_example.qtype.yaml`).
 
 You can make vscode validate it with your newly generated schema by adding it to your `settings.json`:
 ```
@@ -232,16 +230,14 @@ You can make vscode validate it with your newly generated schema by adding it to
 },
 ```
 
-The semantic model for your new class can be generated automatically as well:
+The semantic version of [qtype/semantic/model.py](model.py) can also be automatically generated:
 ```
 qtype generate semantic-model
 ```
-This command updates `qtype/semantic/model.py` with any new types in the `qtype/dsl/model.py` using the following rules:
-* Class names that end in `List` are ignored
-* Any member that has an `<DSLClass> | str` type are switched to `<DSLClass>` (as it assumes the `str` is a reference)
-* All `List | None` types are switched to `List` as omitted lists are replaced with empty lists in the semantic representation.
 
-Next, ensure your new types can be validated:
+Next, update [qtype/semantic/checker.py](checker.py) to enforce any semantic rules for your step.
+
+Next, make a canonical example of your new type in the `examples` folder (e.g., `examples/new_type_example.qtype.yaml`) and it can be validated:
 ```
 qtype validate examples/new_type_example.qtype.yaml
 ```
@@ -251,7 +247,7 @@ The docstrings in the types are used to update the documentation with:
 qtype generate dsl-docs
 ```
 
-Finally, if desired, you can update the interpreter to support your new type.
+Finally, if desired, you can update the interpreter to support your new type. If your new type is a `Step`, you can add an `executor` in the [qtype/interpreter/executors](executors) folder and then update the [qtype/interpreter/base/factory.py](factory).
 
 
 ### Adding New Dependencies

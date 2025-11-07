@@ -105,7 +105,7 @@ class DocumentSearchExecutor(StepExecutor):
                     content=content,
                     chunk_id=doc_id,
                     document_id=source.get("document_id", doc_id),
-                    embedding=None,  # Document search doesn't return embeddings
+                    vector=None,  # Document search doesn't return embeddings
                     metadata=metadata,
                 )
 

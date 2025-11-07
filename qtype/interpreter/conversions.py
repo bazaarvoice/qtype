@@ -29,8 +29,8 @@ from qtype.semantic.model import (
     APIKeyAuthProvider,
     DocumentIndex,
     DocumentSplitter,
-    Index,
     Model,
+    VectorIndex,
 )
 
 from .resource_cache import cached_resource
@@ -147,7 +147,7 @@ def from_llama_document(doc: LlamaDocument) -> RAGDocument:
         file_id=file_id,
         file_name=file_name,
         uri=uri,
-        metadata=doc.metadata.copy() if doc.metadata else None,
+        metadata=doc.metadata.copy() if doc.metadata else {},
         type=content_type,
     )
 
@@ -272,29 +272,23 @@ def to_llm(
 
 @cached_resource
 def to_vector_store(
-    index: Index, secret_manager: SecretManagerBase
+    index: VectorIndex, secret_manager: SecretManagerBase
 ) -> BasePydanticVectorStore:
     """Convert a qtype Index to a LlamaIndex vector store."""
-    full_module_path = "llama_index.core.vector_stores" + index.args.get(
-        "module", "SimpleVectorStore"
-    )
-    class_name = full_module_path.split(".")[-1]
+    module_path = ".".join(index.module.split(".")[:-1])
+    class_name = index.module.split(".")[-1]
     # Dynamically import the reader module
     try:
-        reader_module = importlib.import_module(full_module_path)
+        reader_module = importlib.import_module(module_path)
         reader_class = getattr(reader_module, class_name)
     except (ImportError, AttributeError) as e:
         raise ImportError(
-            f"Failed to import reader class '{class_name}' from '{full_module_path}': {e}"
+            f"Failed to import reader class '{class_name}' from '{module_path}': {e}"
         ) from e
 
     # Resolve any SecretReferences in args
     context = f"index '{index.id}'"
     resolved_args = secret_manager.resolve_secrets_in_dict(index.args, context)
-
-    if "module" in resolved_args:
-        del resolved_args["module"]
-
     index_instance = reader_class(**resolved_args)
 
     return index_instance
@@ -304,7 +298,7 @@ def to_vector_store(
 def to_embedding_model(model: Model) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
-    if model.provider in {"bedrock", "aws", "aws-bedrock"}:
+    if model.provider == "aws-bedrock":
         from llama_index.embeddings.bedrock import (  # type: ignore[import-untyped]
             BedrockEmbedding,
         )
@@ -408,6 +402,61 @@ def to_content_block(content: ChatContent) -> ContentBlock:
     )
 
 
+def variable_to_chat_message(
+    value: Any, variable: Any, default_role: str = "user"
+) -> ChatMessage:
+    """Convert any variable value to a ChatMessage based on the variable's type.
+
+    Args:
+        value: The value to convert (can be any primitive type or ChatMessage)
+        variable: The Variable definition with type information
+        default_role: The default message role to use (default: "user")
+
+    Returns:
+        ChatMessage with appropriate content blocks
+
+    Raises:
+        InterpreterError: If the value type cannot be converted
+    """
+    # If already a ChatMessage, return as-is
+    if isinstance(value, ChatMessage):
+        return value
+
+    # Convert based on the variable's declared type
+    var_type = variable.type
+    # Handle primitive types based on variable declaration
+    if isinstance(var_type, PrimitiveTypeEnum):
+        # Numeric/boolean types get converted to text
+        if var_type in (
+            PrimitiveTypeEnum.int,
+            PrimitiveTypeEnum.float,
+            PrimitiveTypeEnum.boolean,
+        ):
+            content = ChatContent(
+                type=PrimitiveTypeEnum.text, content=str(value)
+            )
+        # All other primitive types pass through as-is
+        else:
+            content = ChatContent(type=var_type, content=value)
+    elif isinstance(var_type, str) and (
+        var_type.startswith("list[") or var_type.startswith("dict[")
+    ):
+        # Handle list and dict types - convert to JSON string
+        import json
+
+        content = ChatContent(
+            type=PrimitiveTypeEnum.text, content=json.dumps(value)
+        )
+    else:
+        # Unsupported type - raise an error
+        raise InterpreterError(
+            f"Cannot convert variable '{variable.id}' of unsupported type "
+            f"'{var_type}' to ChatMessage"
+        )
+
+    return ChatMessage(role=default_role, blocks=[content])  # type: ignore
+
+
 def to_chat_message(message: ChatMessage) -> LlamaChatMessage:
     """Convert a ChatMessage to a LlamaChatMessage."""
     blocks = [to_content_block(content) for content in message.blocks]
@@ -487,7 +536,7 @@ def to_text_splitter(splitter: DocumentSplitter) -> Any:
 
 
 def to_llama_vector_store_and_retriever(
-    index,
+    index: VectorIndex, secret_manager: SecretManagerBase
 ) -> tuple[BasePydanticVectorStore, Any]:
     """Create a LlamaIndex vector store and retriever from a VectorIndex.
 
@@ -500,7 +549,7 @@ def to_llama_vector_store_and_retriever(
     from llama_index.core import VectorStoreIndex
 
     # Get the vector store using existing function
-    vector_store = to_vector_store(index)
+    vector_store = to_vector_store(index, secret_manager)
 
     # Get the embedding model
     embedding_model = to_embedding_model(index.embedding_model)
@@ -530,22 +579,18 @@ def from_node_with_score(node_with_score) -> Any:
 
     node = node_with_score.node
 
-    # Extract embedding if available
-    embedding = None
+    # Extract vector if available
+    vector = None
     if hasattr(node, "embedding") and node.embedding is not None:
-        from qtype.dsl.domain_types import Embedding
-
-        embedding = Embedding(
-            vector=node.embedding, source_text=node.text, metadata=None
-        )
+        vector = node.embedding
 
     # Create RAGChunk from node
     chunk = RAGChunk(
         content=node.text or "",
         chunk_id=node.node_id,
         document_id=node.metadata.get("document_id", node.node_id),
-        embedding=embedding,
-        metadata=node.metadata,
+        vector=vector,
+        metadata=node.metadata or {},
     )
 
     # Wrap in RAGSearchResult with score

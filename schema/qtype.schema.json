@@ -1232,14 +1232,20 @@
           "type": "array"
         },
         "reader_module": {
-          "description": "Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+          "description": "Module path of the LlamaIndex Reader).",
           "title": "Reader Module",
           "type": "string"
         },
         "args": {
           "additionalProperties": true,
-          "description": "Reader-specific arguments to pass to the LlamaIndex constructor.",
+          "description": "Reader-specific arguments to pass to the Reader constructor.",
           "title": "Args",
+          "type": "object"
+        },
+        "loader_args": {
+          "additionalProperties": true,
+          "description": "Loader-specific arguments to pass to the load_data method.",
+          "title": "Loader Args",
           "type": "object"
         },
         "auth": {
@@ -1485,6 +1491,69 @@
       "title": "EmbeddingModel",
       "type": "object"
     },
+    "FieldExtractor": {
+      "additionalProperties": false,
+      "description": "Extracts specific fields from input data using JSONPath expressions.\n\nThis step uses JSONPath syntax to extract data from structured inputs\n(Pydantic models, dicts, lists). The input is first converted to a dict\nusing model_dump() if it's a Pydantic model, then the JSONPath expression\nis evaluated.\n\nIf the JSONPath matches multiple values, the step yields multiple output\nmessages (1-to-many cardinality). If it matches a single value, it yields\none output message. If it matches nothing, it raises an error.\n\nThe extracted data is used to construct the output variable by passing it\nas keyword arguments to the output type's constructor.\n\nExample JSONPath expressions:\n- `$.field_name` - Extract a single field\n- `$.items[*]` - Extract all items from a list\n- `$.items[?(@.price > 10)]` - Filter items by condition",
+      "properties": {
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "FieldExtractor",
+          "default": "FieldExtractor",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "json_path": {
+          "description": "JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
+          "title": "Json Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "json_path"
+      ],
+      "title": "FieldExtractor",
+      "type": "object"
+    },
     "FileSource": {
       "additionalProperties": false,
       "description": "File source that reads data from a file using fsspec-compatible URIs.",
@@ -1681,6 +1750,7 @@
                     "DocumentSource": "#/$defs/DocumentSource",
                     "DocumentSplitter": "#/$defs/DocumentSplitter",
                     "Echo": "#/$defs/Echo",
+                    "FieldExtractor": "#/$defs/FieldExtractor",
                     "FileSource": "#/$defs/FileSource",
                     "FileWriter": "#/$defs/FileWriter",
                     "IndexUpsert": "#/$defs/IndexUpsert",
@@ -1723,6 +1793,9 @@
                     "$ref": "#/$defs/Echo"
                   },
                   {
+                    "$ref": "#/$defs/FieldExtractor"
+                  },
+                  {
                     "$ref": "#/$defs/FileSource"
                   },
                   {
@@ -1755,7 +1828,7 @@
                 ]
               },
               {
-                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
               }
             ]
           },
@@ -2647,7 +2720,7 @@
       "title": "Reference[Annotated[Union[APITool, PythonFunctionTool], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
-    "Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
+    "Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
           "title": "$Ref",
@@ -2657,7 +2730,7 @@
       "required": [
         "$ref"
       ],
-      "title": "Reference[Annotated[Union[Agent, Aggregate, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "title": "Reference[Annotated[Union[Agent, Aggregate, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
     "Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {

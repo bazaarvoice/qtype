@@ -120,9 +120,14 @@ def _generate_flow_subgraph(
     # Add more spacing and line breaks for better SVG rendering
     description = f"\n{flow.description}" if flow.description else ""
 
+    # Choose direction based on flow characteristics:
+    # - Flows with interface (e.g., Conversational) use LR (left-right)
+    # - Linear pipelines without interface use TB (top-bottom)
+    direction = "LR" if flow.interface else "TB"
+
     lines = [
         f'    subgraph {flow_id} ["🔄 Flow: {flow.id}{description}"]',
-        "        direction LR",
+        f"        direction {direction}",
     ]
 
     # Generate nodes for each step
@@ -254,22 +259,23 @@ def _generate_step_connections(
     """Generate connections between steps based on variable flow."""
     lines = []
 
-    # Create a map of output variables to their producing steps
+    # If we have a start node and flow inputs, add them to initial output map
     output_map: dict[str, str] = {}
-    for node_id, step in step_nodes:
-        for output_var in step.outputs:
-            output_map[output_var.id] = node_id
-
-    # If we have a start node and flow inputs, add them to the output map
     if start_node_id and flow_inputs:
         for flow_input in flow_inputs:
             output_map[flow_input.id] = start_node_id
 
-    # Connect steps based on input requirements
+    # Process each step: connect inputs, then register outputs
+    # This ensures we connect to the previous producer before updating map
     for node_id, step in step_nodes:
+        # First, connect this step's inputs to their producers
         for input_var in step.inputs:
             if input_var.id in output_map:
                 producer_id = output_map[input_var.id]
+                # Skip self-referencing connections (when a step both
+                # consumes and produces the same variable)
+                if producer_id == node_id:
+                    continue
                 # Get a simple string representation of the variable type
                 var_type = str(input_var.type).split(".")[
                     -1
@@ -285,6 +291,10 @@ def _generate_step_connections(
                 lines.append(
                     f"        {producer_id} -->|{var_id_and_type}| {node_id}"
                 )
+
+        # Then, register this step's outputs for future steps
+        for output_var in step.outputs:
+            output_map[output_var.id] = node_id
 
     # If no connections were made, create a simple sequential flow
     if not lines and len(step_nodes) > 1:
