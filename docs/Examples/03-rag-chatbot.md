@@ -1,37 +1,128 @@
-# Building a RAG (Retrieval Augmented Generation) Chatbot
+# Building Your First RAG Chatbot
 
-This example demonstrates how to build a complete RAG system that can answer questions based on a knowledge base. RAG combines document retrieval with language models to provide accurate, context-aware responses grounded in your data.
+This hands-on tutorial teaches you how to build a complete Retrieval Augmented Generation (RAG) chatbot from scratch. You'll learn how RAG prevents AI hallucinations by grounding responses in real documents, and you'll create a working system that can answer questions about LlamaIndex documentation.
 
-We'll create a system that loads 1,235 LlamaIndex documentation Q&A pairs from HuggingFace, indexes them in a vector database, and enables conversational queries over that knowledge base.
+**What you'll learn:**
 
-## What is RAG?
+- What RAG is and why it's better than vanilla chatbots
+- How to split documents into searchable chunks
+- How vector embeddings enable semantic search
+- How to combine retrieval with language models
+- How to structure multi-flow QType applications
 
-**RAG (Retrieval Augmented Generation)** enhances language models by:
+**What you'll build:**
 
-1. **Retrieving** relevant documents from a knowledge base
-2. **Augmenting** the LLM prompt with retrieved context
-3. **Generating** accurate answers based on that context
+A two-flow RAG system that:
 
-This prevents hallucinations and grounds responses in factual data.
+1. **Ingests** 1,235 LlamaIndex Q&A pairs into a vector database
+2. **Retrieves** relevant context when users ask questions
+3. **Generates** accurate answers grounded in real documentation
+
+**Time to complete:** 30-45 minutes
 
 ## Prerequisites
 
-Before starting, you'll need:
+Before starting, you should have:
 
-### 1. Qdrant Vector Database
+- **QType installed** with interpreter support: `pip install qtype[interpreter]`
+- **Basic YAML familiarity** from the [chatbot tutorial](../Getting%20Started/01-chatbot-example.md)
+- **AWS account** with Bedrock access (for embeddings and LLM)
+- **Docker installed** (for running Qdrant locally)
 
-Install and run Qdrant locally using Docker:
+Don't worry if you're new to RAG - we'll explain everything as we go!
+
+---
+
+## Understanding RAG: The Big Picture
+
+Before we start coding, let's understand *why* RAG exists.
+
+### The Problem with Basic Chatbots
+
+When you ask a regular chatbot a question, it generates answers from its training data. This has two big problems:
+
+1. **Outdated information** - Training data has a cutoff date
+2. **Hallucinations** - The model might confidently make up facts
+
+### How RAG Solves This
+
+**RAG (Retrieval Augmented Generation)** adds a search step before generation:
+
+```
+User Question → Search Documents → Find Relevant Context → Generate Answer
+```
+
+Instead of answering from memory alone, the AI:
+
+1. **Retrieves** relevant passages from your documents
+2. **Augments** its prompt with that context
+3. **Generates** an answer based on real information
+
+This grounds responses in facts and eliminates hallucinations.
+
+### The Two Flows We'll Build
+
+Our RAG system has two distinct jobs:
+
+```mermaid
+flowchart LR
+    subgraph Ingestion["📥 Ingestion Flow (Run Once)"]
+        A[Load Docs] --> B[Split into Chunks]
+        B --> C[Generate Embeddings]
+        C --> D[Store in Database]
+    end
+    
+    subgraph Chat["💬 Chat Flow (Run Many Times)"]
+        E[User Question] --> F[Search Database]
+        F --> G[Retrieve Context]
+        G --> H[Generate Answer]
+    end
+    
+    D -.->|"Indexed Documents"| F
+```
+
+1. **Ingestion Flow** (one-time setup)
+   - Loads your documents
+   - Splits them into chunks
+   - Converts chunks to vectors (embeddings)
+   - Stores vectors in a searchable database
+
+2. **Chat Flow** (interactive)
+   - Takes user questions
+   - Searches for relevant chunks
+   - Sends chunks + question to the LLM
+   - Returns contextual answers
+
+**Key insight:** The ingestion flow is like creating an index in a book - you do it once so you can quickly look things up later.
+
+---
+
+## Step 1: Set Up Your Environment
+
+### 1.1 Start the Vector Database
+
+RAG needs a place to store document embeddings. We'll use **Qdrant** because it's fast, open-source, and runs locally.
+
+Start Qdrant with Docker:
 
 ```bash
 docker pull qdrant/qdrant
-docker run -p 6333:6333 qdrant/qdrant
+docker run -p 6333:6333 -p 6334:6334 \
+    -v "$(pwd)/qdrant_storage:/qdrant/storage:z" \
+    qdrant/qdrant
 ```
 
-For more details, see the [Qdrant Quick Start](https://qdrant.tech/documentation/quickstart/).
+**What this does:**
 
-### 2. Create the Vector Collection
+- `-p 6333:6333` - Exposes REST API at [localhost:6333](http://localhost:6333/)
+- `-p 6334:6334` - Exposes GRPC API
+- `-v` - Persists data to your local filesystem
 
-Qdrant will automatically create the collection when you run the ingestion flow, or you can create it manually:
+Verify it's running by visiting [localhost:6333/dashboard](http://localhost:6333/dashboard)
+
+### 1.2 Create the Vector Collection
+
+Qdrant stores vectors in **collections**. Create one for our documents:
 
 ```bash
 curl -X PUT 'http://localhost:6333/collections/documents' \
@@ -44,39 +135,65 @@ curl -X PUT 'http://localhost:6333/collections/documents' \
   }'
 ```
 
-**Note:** We use dimension 1024 because AWS Bedrock Titan Embed Text v2 produces 1024-dimensional vectors.
+**Why these settings?**
 
-### 3. AWS Credentials
+- `size: 1024` - AWS Titan Embed produces 1024-dimensional vectors
+- `distance: "Cosine"` - Measures semantic similarity between vectors
 
-Configure AWS credentials for Bedrock access:
+**Think of it like this:** Each document chunk becomes a point in 1024-dimensional space. Semantically similar chunks are close together, so searching means finding nearby points.
+
+### 1.3 Configure AWS Credentials
+
+We'll use AWS Bedrock for embeddings and LLM inference. Configure your credentials:
 
 ```bash
 aws configure
-# or for SSO:
+# OR for SSO:
 aws sso login --profile your-profile
 export AWS_PROFILE=your-profile
 ```
 
-## Step 1: Configure Authentication
+**Verify access:**
 
-First, set up AWS authentication for Bedrock:
+```bash
+aws bedrock list-foundation-models --query 'modelSummaries[?contains(modelId, `titan-embed`)]'
+```
+
+You should see Titan embedding models listed.
+
+---
+
+## Step 2: Create Your QType Configuration
+
+Create a file called `my_rag_chatbot.qtype.yaml`:
+
+```yaml
+id: my_rag_chatbot
+description: My first RAG chatbot that answers questions about LlamaIndex
+```
+
+Now let's build it piece by piece.
+
+### 2.1 Configure AWS Authentication
+
+First, tell QType how to access AWS:
 
 ```yaml
 auths:
   - type: aws
     id: aws_auth
-    profile_name: ${AWS_PROFILE}  # Uses AWS_PROFILE env var
+    profile_name: ${AWS_PROFILE}
 ```
 
-This allows QType to access AWS Bedrock for embeddings and LLM inference.
+**What's happening:**
 
-## Step 2: Define the Models
+- `type: aws` - Uses AWS SDK authentication
+- `profile_name: ${AWS_PROFILE}` - Reads from environment variable
+- `id: aws_auth` - We'll reference this ID in our models
 
-We need two types of models for RAG:
+### 2.2 Define the Embedding Model
 
-### Embedding Model
-
-Converts text into vectors for semantic search:
+Embeddings convert text into vectors. Add this model definition:
 
 ```yaml
 models:
@@ -88,13 +205,22 @@ models:
     auth: aws_auth
 ```
 
-**Key Points:**
-- `dimensions: 1024` - Titan v2 produces 1024-dimensional embeddings
-- Used for both document indexing and query embedding
+**Understanding embeddings:**
 
-### Generative Model
+- Embeddings capture *meaning* as numbers
+- Similar text produces similar vectors
+- `dimensions: 1024` means each chunk becomes 1,024 numbers
+- Must match the collection size in Qdrant
 
-Produces natural language responses:
+**Why Titan Embed v2?**
+
+- Fast and cost-effective
+- Good quality for English text
+- 1024 dimensions balance size and accuracy
+
+### 2.3 Define the Language Model
+
+This model generates natural language responses:
 
 ```yaml
   - type: Model
@@ -107,9 +233,16 @@ Produces natural language responses:
     auth: aws_auth
 ```
 
+**Parameter choices:**
+
+- `temperature: 0.7` - Balanced creativity (0=deterministic, 1=random)
+- `max_tokens: 2048` - Long enough for detailed answers
+
+---
+
 ## Step 3: Configure the Vector Index
 
-Define the Qdrant vector store:
+The index connects your QType flows to the Qdrant database:
 
 ```yaml
 indexes:
@@ -121,23 +254,33 @@ indexes:
     args:
       collection_name: documents
       url: http://localhost:6333
-      api_key: ""  # Empty for local Qdrant
+      api_key: ""
 ```
 
-**Important:**
-- `collection_name: documents` - Must match the collection you created
+**Field breakdown:**
+
+- `module` - LlamaIndex integration with Qdrant
 - `embedding_model: titan_embed_v2` - Links to our embedding model
-- `api_key: ""` - Required (even empty) due to a library validation requirement
+- `collection_name: documents` - Must match what we created in Step 1.2
+- `api_key: ""` - Empty for local Qdrant (library requires this field)
 
-## Step 4: Document Ingestion Flow
+**Why LlamaIndex?** QType uses LlamaIndex under the hood for vector store operations. This keeps the implementation clean and well-maintained.
 
-The ingestion flow loads, chunks, embeds, and indexes documents:
+---
+
+## Step 4: Build the Ingestion Flow
+
+Now for the exciting part! Let's build the flow that loads and indexes documents.
+
+### 4.1 Define Flow Variables
+
+Every flow needs to declare its data types:
 
 ```yaml
 flows:
   - type: Flow
     id: document_ingestion
-    description: Load LlamaIndex Q&A pairs from HuggingFace, split, embed, and index documents
+    description: Load, chunk, embed, and index documents from HuggingFace
     
     variables:
       - id: raw_document
@@ -151,7 +294,15 @@ flows:
       - embedded_chunk
 ```
 
-### Step 4.1: Load Documents from HuggingFace
+**Understanding the types:**
+
+- [`RAGDocument`](../components/RAGDocument.md) - A complete document with metadata
+- [`RAGChunk`](../components/RAGChunk.md) - A piece of a document with optional embedding
+- We output `embedded_chunk` so we can verify the process worked
+
+### 4.2 Load Documents from HuggingFace
+
+Add the first step:
 
 ```yaml
     steps:
@@ -164,12 +315,19 @@ flows:
           - raw_document
 ```
 
-**What Happens:**
-- Uses HuggingFace's filesystem API to stream documents
-- Loads 1,235 LlamaIndex Q&A pairs directly from HuggingFace
-- No local file storage required
+**What this does:**
 
-### Step 4.2: Split Documents into Chunks
+- `DocumentSource` - Loads documents from external sources
+- `reader_module` - Uses HuggingFace's dataset reader
+- `path` - Points to 1,235 LlamaIndex Q&A pairs
+- `outputs: [raw_document]` - Each document flows to the next step
+
+**Why HuggingFace?** No local file downloads needed! The reader streams directly from HuggingFace's API.
+
+
+### 4.3 Split Documents into Chunks
+
+Large documents must be split into searchable pieces:
 
 ```yaml
       - id: split_documents
@@ -183,12 +341,23 @@ flows:
           - document_chunk
 ```
 
-**Why Chunking?**
-- Large documents exceed context windows
-- Smaller chunks improve retrieval precision
-- `chunk_overlap: 50` maintains context across boundaries
+**Why chunk documents?**
 
-### Step 4.3: Generate Embeddings
+1. **Context window limits** - LLMs can't process entire books
+2. **Retrieval precision** - Smaller chunks = more relevant results
+3. **Embedding quality** - Embeddings work best on focused text
+
+**Parameter tuning:**
+
+- `chunk_size: 512` - About 2-3 paragraphs of text
+- `chunk_overlap: 50` - Preserves context across boundaries
+- `SentenceSplitter` - Splits on sentence boundaries (cleaner than character-based)
+
+**Example:** A 2,000-token document becomes ~4 chunks with some overlap to maintain meaning.
+
+### 4.4 Generate Embeddings
+
+Convert text chunks to vectors:
 
 ```yaml
       - id: embed_chunks
@@ -202,11 +371,17 @@ flows:
           - embedded_chunk
 ```
 
-**Performance:**
-- `num_workers: 5` - Processes 5 chunks concurrently
-- Speeds up embedding generation significantly
+**Performance optimization:**
 
-### Step 4.4: Index in Qdrant
+- `num_workers: 5` - Processes 5 chunks in parallel
+- For 1,235 documents → ~5,000 chunks
+- Serial: ~10 minutes, Parallel: ~2 minutes
+
+**What's in an embedding?** Each chunk becomes a list of 1,024 floating-point numbers that capture its semantic meaning.
+
+### 4.5 Index in Qdrant
+
+Finally, store the embeddings:
 
 ```yaml
       - id: index_chunks
@@ -220,18 +395,71 @@ flows:
           - embedded_chunk
 ```
 
-**Batching:**
-- Uploads 25 chunks at a time to Qdrant
-- Balances throughput and memory usage
+**Batching explained:**
 
-## Step 5: RAG Chat Flow
+- `batch_size: 25` - Uploads 25 chunks per request
+- Balances speed and memory usage
+- Too small = slow, too large = memory errors
 
-The chat flow retrieves context and generates responses:
+**Complete ingestion flow diagram:**
+
+```mermaid
+flowchart LR
+    A[HuggingFace<br/>1,235 docs] -->|DocumentSource| B[Raw<br/>Documents]
+    B -->|DocumentSplitter| C[~5,000<br/>Chunks]
+    C -->|DocumentEmbedder| D[Embedded<br/>Chunks]
+    D -->|IndexUpsert| E[Qdrant<br/>Database]
+```
+
+---
+
+## Step 5: Run the Ingestion Flow
+
+Time to load your documents! Run:
+
+```bash
+uv run python -m qtype.cli run my_rag_chatbot.qtype.yaml --flow document_ingestion
+```
+
+**What you'll see:**
+
+```
+INFO: Loaded 1235 documents
+INFO: Processing document 1/1235...
+INFO: Successfully upserted 25 items to vector index in batch
+INFO: Successfully upserted 25 items to vector index in batch
+...
+INFO: Ingestion complete! Indexed 5,127 chunks
+```
+
+**This takes 2-5 minutes.** Perfect time for a coffee break! ☕
+
+**Verify in Qdrant Dashboard:**
+
+Visit [localhost:6333/dashboard](http://localhost:6333/dashboard) and check:
+
+- Collection `documents` exists
+- Point count matches your chunks (~5,000)
+- Dimensions = 1024
+
+**Troubleshooting:**
+
+- **AWS credentials error?** Run `aws sso login` again
+- **Connection refused?** Verify Qdrant is running: `docker ps`
+- **Out of memory?** Reduce `num_workers` to 3
+
+---
+
+## Step 6: Build the Chat Flow
+
+Now let's build the interactive chat interface!
+
+### 6.1 Define Chat Variables
 
 ```yaml
   - type: Flow
     id: rag_chat
-    description: Chat with the document collection using RAG
+    description: Answer questions using retrieved document context
     
     interface:
       type: Conversational
@@ -254,7 +482,15 @@ The chat flow retrieves context and generates responses:
       - assistant_response
 ```
 
-### Step 5.1: Extract User Question
+**Key differences from ingestion flow:**
+
+- `interface: Conversational` - Enables chat UI
+- `ChatMessage` types - Support multi-turn conversations
+- `list[RAGSearchResult]` - Holds retrieved chunks
+
+### 6.2 Extract the User's Question
+
+Chat messages can contain multiple content blocks. Extract just the text:
 
 ```yaml
     steps:
@@ -267,11 +503,17 @@ The chat flow retrieves context and generates responses:
           - user_question
 ```
 
-**Purpose:**
-- Extracts plain text from the ChatMessage structure
-- Uses JSONPath to filter text content blocks
+**Why extract?** [`ChatMessage`](../components/ChatMessage.md) supports text, images, audio, etc. We need plain text for search.
 
-### Step 5.2: Search the Vector Index
+**JSONPath explanation:**
+
+- `$.blocks` - Array of content blocks
+- `[?(@.type == 'text')]` - Filter to text blocks only
+- `.content` - Extract the actual text
+
+### 6.3 Search for Relevant Context
+
+This is where RAG magic happens:
 
 ```yaml
       - id: search_index
@@ -284,12 +526,25 @@ The chat flow retrieves context and generates responses:
           - search_results
 ```
 
-**How It Works:**
-1. Embeds the user's question using `titan_embed_v2`
-2. Performs cosine similarity search in Qdrant
-3. Returns top 5 most relevant chunks
+**What VectorSearch does:**
 
-### Step 5.3: Build Context Prompt
+1. Embeds the question using `titan_embed_v2`
+2. Finds the 5 most similar chunks in Qdrant
+3. Returns chunks with similarity scores
+
+**Why top_k=5?**
+
+- Too few (1-2): Miss relevant context
+- Too many (>10): Noise overwhelms the LLM
+- 5 is a sweet spot for most use cases
+
+**Example:** 
+- Question: "How do I create a vector index?"
+- Retrieves: 5 chunks about VectorStoreIndex, SimpleVectorStore, etc.
+
+### 6.4 Build the Context Prompt
+
+Combine retrieved chunks with the user's question:
 
 ```yaml
       - id: build_prompt
@@ -310,12 +565,26 @@ The chat flow retrieves context and generates responses:
           - context_prompt
 ```
 
-**Prompt Engineering:**
-- Clearly separates context from question
-- Instructs the model to acknowledge when context is insufficient
-- Prevents hallucination
+**Prompt engineering tips:**
 
-### Step 5.4: Generate Response
+- **Clear separation** - "Context:" and "Question:" sections prevent confusion
+- **Acknowledgment clause** - "If context doesn't contain..." prevents hallucination
+- **Instruction tone** - Sets expectations for grounded responses
+
+**The template fills like this:**
+
+```
+Context from documents:
+[Chunk 1 about vector indexes...]
+[Chunk 2 about creating indexes...]
+...
+
+User question: How do I create a vector index?
+```
+
+### 6.5 Generate the Final Response
+
+Send everything to the LLM:
 
 ```yaml
       - id: generate_response
@@ -328,254 +597,291 @@ The chat flow retrieves context and generates responses:
           - assistant_response
 ```
 
-**Final Step:**
-- LLM generates answer using retrieved context
-- `system_message` reinforces context-grounded behavior
-
-## Complete Example
-
-Here's the full RAG configuration:
-
-```yaml
---8<-- "../examples/rag.qtype.yaml"
-```
-
-You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/rag.qtype.yaml).
-
-## The Architecture
-
-Here's a visual representation of the complete RAG system:
+**Complete RAG chat flow diagram:**
 
 ```mermaid
---8<-- "Examples/rag.mmd"
+sequenceDiagram
+    participant User
+    participant Extract as Extract Question
+    participant Search as Vector Search
+    participant Prompt as Build Prompt
+    participant LLM as Generate Response
+    
+    User->>Extract: "How do I create a vector index?"
+    Extract->>Search: "How do I create a vector index?"
+    Search->>Search: Embed question
+    Search->>Search: Find top 5 similar chunks
+    Search->>Prompt: [5 relevant chunks]
+    User->>Prompt: Original question
+    Prompt->>LLM: Context + Question
+    LLM->>User: Grounded answer
 ```
 
-The diagram shows:
-- **rag_chat flow** (left-right): The conversational interface with user interaction
-- **document_ingestion flow** (top-down): The linear pipeline for loading and indexing documents
-- **Shared Resources**: Models and authentication used by both flows
+---
 
-## Running the RAG System
+## Step 7: Start the Chat Interface
 
-### Step 1: Start Qdrant
+Start the server:
 
 ```bash
-docker run -p 6333:6333 qdrant/qdrant
+qtype serve my_rag_chatbot.qtype.yaml --flow rag_chat
 ```
 
-### Step 2: Run Document Ingestion
+**Visit:** [localhost:8000/ui](http://localhost:8000/ui)
 
-This loads and indexes all documents (takes a few minutes):
+![alt text](rag_chat_ui.png)
 
-```bash
-uv run python -m qtype.cli run examples/rag.qtype.yaml --flow document_ingestion
+### Try These Questions
+
+Ask questions about LlamaIndex to see RAG in action:
+
+1. **Basic:**
+   - "How do I create a vector index in LlamaIndex?"
+   - "What is the difference between a query engine and a chat engine?"
+
+2. **Technical:**
+   - "How do I configure custom embeddings?"
+   - "What callback handlers are available?"
+
+3. **Edge cases:**
+   - "Who won the 2024 Olympics?" (Should say "not in context")
+   - "Tell me about pandas dataframes" (Should decline or acknowledge lack of context)
+
+**Notice the difference:**
+
+| Without RAG | With RAG |
+|-------------|----------|
+| "I think you can use VectorStore..." (guessing) | "Based on the documentation, use `VectorStoreIndex.from_documents()`..." (citing) |
+| Generic advice | Specific code examples |
+| Possible hallucinations | Grounded in real docs |
+
+---
+
+## Understanding What You Built
+
+Let's reflect on the complete system:
+
+### The Full Architecture
+
+```mermaid
+flowchart TB
+    subgraph Ingestion["Ingestion Flow (One-Time)"]
+        A[Load 1,235<br/>Documents] --> B[Split into<br/>~5,000 Chunks]
+        B --> C[Generate<br/>Embeddings]
+        C --> D[Store in<br/>Qdrant]
+    end
+    
+    subgraph Chat["Chat Flow (Interactive)"]
+        E[User<br/>Question] --> F[Search<br/>Vectors]
+        F --> G[Retrieve<br/>Top 5 Chunks]
+        G --> H[Build<br/>Prompt]
+        H --> I[Generate<br/>Answer]
+    end
+    
+    D -.->|"Indexed Knowledge"| F
+    
+    style Ingestion fill:#e3f2fd
+    style Chat fill:#f3e5f5
 ```
 
-You'll see progress as documents are loaded, chunked, embedded, and indexed:
+### Key Concepts You Learned
 
-```
-INFO: Loaded 1235 documents
-INFO: Successfully upserted 25 items to vector index in batch
-INFO: Successfully upserted 25 items to vector index in batch
-...
-```
+1. **Embeddings** - Converting text to semantic vectors
+2. **Vector search** - Finding similar meanings, not just keywords
+3. **Chunking strategies** - Balancing context and precision
+4. **Prompt engineering** - Grounding LLM responses in facts
+5. **Multi-flow applications** - Separating ingestion from interaction
 
-### Step 3: Start the Chat Server
+### Why This Architecture?
 
-```bash
-qtype serve examples/rag.qtype.yaml --flow rag_chat
-```
+- **Separation of concerns** - Ingestion runs once, chat runs many times
+- **Scalability** - Add millions of documents without slowing chat
+- **Accuracy** - Retrieval prevents hallucinations
+- **Transparency** - Can show users which chunks informed the answer
 
-### Step 4: Open the Chat UI
+---
 
-Visit [http://localhost:8000/ui](http://localhost:8000/ui)
+## Experiment and Extend
 
-## Try It Out
+Now that you have a working RAG chatbot, try:
 
-Ask questions about LlamaIndex:
+### 1. Use Your Own Documents
 
-- "How do I create a vector index in LlamaIndex?"
-- "What is the difference between a query engine and a chat engine?"
-- "How do I configure custom embeddings?"
-- "What callback handlers are available in LlamaIndex?"
+Replace the HuggingFace source:
 
-Notice how the responses are:
-- **Accurate** - Based on real documentation
-- **Cited** - Grounded in retrieved context
-- **Specific** - Contains code examples and details
-
-## Understanding the Data Flow
-
-### Ingestion (One-Time)
-```
-HuggingFace Dataset 
-  → DocumentSource (load)
-  → DocumentSplitter (chunk)
-  → DocumentEmbedder (vectorize)
-  → IndexUpsert (store in Qdrant)
+```yaml
+- id: load_documents
+  type: DocumentSource
+  reader_module: llama_index.readers.file.FlatReader
+  loader_args:
+    input_dir: "./my_documents"
+    recursive: true
+  outputs:
+    - raw_document
 ```
 
-### Query (Every Chat Turn)
-```
-User Question
-  → FieldExtractor (extract text)
-  → VectorSearch (retrieve relevant chunks)
-  → PromptTemplate (build context prompt)
-  → LLMInference (generate answer)
-  → User
-```
-
-## Advanced Customization
-
-### Adjust Retrieval Settings
-
-Retrieve more or fewer chunks:
+### 2. Tune Retrieval Parameters
 
 ```yaml
 - id: search_index
   type: VectorSearch
   index: rag_index
-  default_top_k: 10  # Retrieve top 10 instead of 5
+  default_top_k: 10  # Try 3, 5, 10
+  inputs:
+    - user_question
 ```
 
-### Change Chunking Strategy
+**Experiment:**
+- Fewer chunks = faster but might miss context
+- More chunks = comprehensive but noisier
 
-Modify chunk size and overlap:
+### 3. Add Document Conversion
+
+Process PDFs, DOCX, etc.:
+
+```yaml
+- id: convert_documents
+  type: DocToTextConverter
+  inputs:
+    - raw_document
+  outputs:
+    - text_document
+```
+
+See [`DocToTextConverter`](../components/DocToTextConverter.md) for details.
+
+### 4. Improve Chunking Strategy
+
+Try semantic chunking:
 
 ```yaml
 - id: split_documents
   type: DocumentSplitter
-  splitter_name: "SentenceSplitter"
-  chunk_size: 1024  # Larger chunks
-  chunk_overlap: 100  # More overlap
+  splitter_name: "SemanticSplitter"
+  buffer_size: 1
+  inputs:
+    - raw_document
 ```
 
-### Use Different Embeddings
+**When to use:**
+- `SentenceSplitter` - General purpose, fast
+- `SemanticSplitter` - Better context preservation, slower
+- `TokenTextSplitter` - Precise token control
 
-Switch to a different embedding model:
+### 5. Add Citations
 
-```yaml
-models:
-  - type: EmbeddingModel
-    id: custom_embeddings
-    provider: openai
-    model_id: text-embedding-3-large
-    dimensions: 3072
-```
-
-**Important:** Update the Qdrant collection dimensions to match!
-
-### Add Reranking
-
-Improve retrieval quality with a reranker:
+Show users where answers came from:
 
 ```yaml
-- id: rerank_results
-  type: Reranker
-  model: cohere-rerank-v3
-  top_n: 5
+- id: extract_sources
+  type: FieldExtractor
+  json_path: "$.chunk.metadata.file_name"
   inputs:
     - search_results
   outputs:
-    - reranked_results
+    - source_files
 ```
 
-## Monitoring and Debugging
+Then modify your prompt template to include `{source_files}`.
 
-### Check Qdrant Collection
+---
 
-View collection stats:
+## Troubleshooting Common Issues
 
+### Ingestion Fails
+
+**Problem:** "Connection refused" error
+
+**Solution:**
 ```bash
-curl http://localhost:6333/collections/documents
+# Verify Qdrant is running
+docker ps | grep qdrant
+
+# Restart if needed
+docker restart <container-id>
 ```
 
-### View Retrieved Context
+**Problem:** AWS authentication errors
 
-Add a debug step to see what's being retrieved:
+**Solution:**
+```bash
+# Re-authenticate
+aws sso login --profile your-profile
 
+# Verify
+aws bedrock list-foundation-models --region us-east-1
+```
+
+### Poor Search Results
+
+**Problem:** Chat returns irrelevant answers
+
+**Diagnosis:**
+1. Check chunk sizes: `chunk_size: 512` might be too large/small
+2. Verify embeddings: Different embedding models aren't compatible
+3. Test search directly in Qdrant dashboard
+
+**Solution:**
 ```yaml
-- id: debug_context
-  type: Echo
-  inputs:
-    - search_results
+# Try smaller chunks
+chunk_size: 256
+chunk_overlap: 25
+
+# Or different splitter
+splitter_name: "SemanticSplitter"
 ```
 
-### Enable Telemetry
+### Slow Performance
 
-Add OpenTelemetry tracking:
+**Problem:** Ingestion takes >10 minutes
 
+**Solution:**
 ```yaml
-telemetry:
-  id: rag_telemetry
-  endpoint: http://localhost:6006/v1/traces
+# Increase concurrency
+concurrency_config:
+  num_workers: 10  # Was 5
+
+# Or batch more aggressively
+batch_config:
+  batch_size: 50  # Was 25
 ```
 
-Then run `phoenix serve` and visit [http://localhost:6006](http://localhost:6006).
+**Trade-off:** More workers = faster but higher memory usage
 
-## Production Considerations
-
-### Use Qdrant Cloud
-
-For production, switch to hosted Qdrant:
-
-```yaml
-indexes:
-  - type: VectorIndex
-    module: llama_index.vector_stores.qdrant.QdrantVectorStore
-    id: rag_index
-    name: documents
-    embedding_model: titan_embed_v2
-    args:
-      collection_name: documents
-      url: https://your-cluster.qdrant.io
-      api_key: ${QDRANT_API_KEY}
-```
-
-### Scale Embedding Generation
-
-Increase concurrency for faster ingestion:
-
-```yaml
-- id: embed_chunks
-  type: DocumentEmbedder
-  model: titan_embed_v2
-  concurrency_config:
-    num_workers: 20  # Process 20 chunks at once
-```
-
-### Implement Caching
-
-Cache frequently retrieved chunks to reduce latency.
-
-### Add Metadata Filtering
-
-Filter results by metadata:
-
-```yaml
-- id: search_index
-  type: VectorSearch
-  index: rag_index
-  default_top_k: 5
-  filters:
-    category: ["tutorial", "api-reference"]
-```
-
-## Learn More
-
-- [DocumentSource Component](../components/DocumentSource.md) - Loading documents
-- [VectorSearch Component](../components/VectorSearch.md) - Semantic search
-- [IndexUpsert Component](../components/IndexUpsert.md) - Vector indexing
-- [RAG Concepts](../Concepts/rag.md) - Deep dive into RAG architecture
+---
 
 ## Next Steps
 
-Try extending this example:
+Congratulations! You've built a production-ready RAG chatbot. 🎉
 
-1. **Add your own documents** - Replace the HuggingFace dataset with your data
-2. **Implement hybrid search** - Combine vector search with keyword search
-3. **Add citations** - Include source references in responses
-4. **Multi-modal RAG** - Index images and text together
-5. **Conversation memory** - Add context from previous turns
+### Learn More About RAG
 
-RAG opens up powerful possibilities for building AI systems that are accurate, trustworthy, and grounded in your data!
+- [LlamaIndex RAG Guide](https://docs.llamaindex.ai/en/stable/getting_started/concepts/)
+- [Qdrant Documentation](https://qdrant.tech/documentation/)
+- [AWS Bedrock Models](https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html)
+
+### Explore QType Features
+
+- **[Agent Tutorial](02-simple-agent.md)** - Add tool-calling to your chatbot
+- **[Memory Concepts](../Concepts/memory.md)** - Maintain conversation history
+- **[Custom Types Guide](../Getting%20Started/How%20To/03-custom-types.md)** - Define domain-specific data
+
+### Production Considerations
+
+Before deploying to production:
+
+1. **Authentication** - Add API key auth to your endpoints
+2. **Rate limiting** - Prevent abuse with quotas
+3. **Monitoring** - Add OpenTelemetry for observability
+4. **Error handling** - Handle edge cases gracefully
+5. **Cost management** - Track AWS Bedrock usage
+
+### Community and Support
+
+- [GitHub Issues](https://github.com/bazaarvoice/qtype/issues) - Report bugs
+- [Discussions](https://github.com/bazaarvoice/qtype/discussions) - Ask questions
+- [Contributing Guide](../Development/contributing.md) - Improve QType
+
+---
+
+Happy building! If you found this tutorial helpful, give the [QType repo](https://github.com/bazaarvoice/qtype) a ⭐ on GitHub.
