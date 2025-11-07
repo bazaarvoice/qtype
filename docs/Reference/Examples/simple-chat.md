@@ -14,7 +14,7 @@ There is also a version for [AWS Bedrock](https://github.com/bazaarvoice/qtype/b
 ### The Architecture 
 
 ```mermaid
---8<-- "Examples/chat_with_telemetry.mmd"
+--8<-- "Reference/Examples/chat_with_telemetry.mmd"
 ```
 
 ### Authorization

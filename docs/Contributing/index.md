@@ -6,13 +6,12 @@ Welcome to the QType development guide! This document provides comprehensive ins
 
 - [Prerequisites](#prerequisites)
 - [Development Environment Setup](#development-environment-setup)
-- [Installing QType for Development](#installing-qtype-for-development)
+- [Using QType Commands](#using-qtype-commands)
 - [Running Tests](#running-tests)
 - [Code Quality and Standards](#code-quality-and-standards)
 - [Project Structure](#project-structure)
 - [Making Changes](#making-changes)
-- [CLI Usage](#cli-usage)
-- [Troubleshooting](#troubleshooting)
+- [Next Steps](#next-steps)
 
 ## Prerequisites
 
@@ -216,7 +215,7 @@ Settings are in `.pre-commit-config.yaml`:
 
 ### How To: Expand The DSL
 
-The core of qtype is the DSL specified in [qtype/dsl/model.py](model.py). All functionality is rooted in the pydantic classes in that file. To expand the dsl with new classes, types, etc., edit this file. If your new class is a subtype (like a Step, etc) you should make sure you update any unions (like `StepType` etc)
+The core of qtype is the DSL specified in [qtype/dsl/model.py](https://github.com/bazaarvoice/qtype/blob/main/qtype/dsl/model.py). All functionality is rooted in the pydantic classes in that file. To expand the dsl with new classes, types, etc., edit this file. If your new class is a subtype (like a Step, etc) you should make sure you update any unions (like `StepType` etc)
 
 Once you have it to your liking, you can generate the new schema:
 ```
@@ -230,12 +229,12 @@ You can make vscode validate it with your newly generated schema by adding it to
 },
 ```
 
-The semantic version of [qtype/semantic/model.py](model.py) can also be automatically generated:
+The semantic version of [qtype/semantic/model.py](https://github.com/bazaarvoice/qtype/blob/main/qtype/semantic/model.py) can also be automatically generated:
 ```
 qtype generate semantic-model
 ```
 
-Next, update [qtype/semantic/checker.py](checker.py) to enforce any semantic rules for your step.
+Next, update [qtype/semantic/checker.py](https://github.com/bazaarvoice/qtype/blob/main/qtype/semantic/checker.py) to enforce any semantic rules for your step.
 
 Next, make a canonical example of your new type in the `examples` folder (e.g., `examples/new_type_example.qtype.yaml`) and it can be validated:
 ```
@@ -247,7 +246,7 @@ The docstrings in the types are used to update the documentation with:
 qtype generate dsl-docs
 ```
 
-Finally, if desired, you can update the interpreter to support your new type. If your new type is a `Step`, you can add an `executor` in the [qtype/interpreter/executors](executors) folder and then update the [qtype/interpreter/base/factory.py](factory).
+Finally, if desired, you can update the interpreter to support your new type. If your new type is a `Step`, you can add an `executor` in the [qtype/interpreter/executors](https://github.com/bazaarvoice/qtype/tree/main/qtype/interpreter/executors) folder and then update the [qtype/interpreter/base/factory.py](https://github.com/bazaarvoice/qtype/blob/main/qtype/interpreter/base/factory.py).
 
 
 ### Adding New Dependencies

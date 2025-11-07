@@ -75,7 +75,7 @@ qtype serve hello_world.qtype.yaml
 
 And go to [http://localhost:8000/ui](http://localhost:8000/ui) to see the user interface for your application:
 
-![Example UI](example_ui.png)
+![Example UI](Tutorials/example_ui.png)
 
 
-Check out the [Getting Started](./Getting%20Started/installation.md) guide to learn more.
+Check out the [Tutorials](Tutorials/01-first-chatbot.md) guide to learn more.

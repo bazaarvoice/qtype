@@ -6,10 +6,10 @@ QType allows you to automatically convert Python functions into QType tools. Thi
 
 Before following this tutorial, make sure you understand:
 
-- [Variables and types](../../Concepts/variable.md) in QType
+- [Variables and types](../../Concepts/Core/variable.md) in QType
 - [Primitive types](../../components/PrimitiveTypeEnum.md) 
-- [Domain types](./domain-types.md)
-- [Custom types](./custom-types.md)
+- [Domain types](../Data%20Types/domain-types.md)
+- [Custom types](../Data%20Types/custom-types.md)
 
 ## Overview
 

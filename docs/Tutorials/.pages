@@ -1,0 +1,7 @@
+title: Tutorials
+nav:
+  - index.md
+  - 01-first-chatbot.md
+  - 02-complete-pipeline.md
+  - 03-rag-chatbot.md
+  - 04-agent-with-tools.md

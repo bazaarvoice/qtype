@@ -52,6 +52,6 @@ flows:
 
 ## Related Concepts
 
-Indexes are used by search [Steps](Steps/index.md) and require [Model](model.md) configurations (especially embedding models for vector indexes). They may also reference [AuthorizationProvider](authorization-provider.md) for secure access.
+Indexes are used by search [Steps](../Steps/index.md) and require [Model](model.md) configurations (especially embedding models for vector indexes). They may also reference [AuthorizationProvider](authorization-provider.md) for secure access.
 
 ## Example Usage

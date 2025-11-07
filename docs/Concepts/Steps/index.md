@@ -2,7 +2,7 @@
 
 A step represents any executable component that can take inputs and produce outputs within a QType application. Steps are the fundamental building blocks of workflows, providing a consistent interface for operations ranging from simple prompt templates to complex AI agent interactions.
 
-All steps share common properties (ID, inputs, outputs) while implementing specific behaviors for their domain. Steps can be composed into [Flows](flow.md) to create sophisticated pipelines, and they can reference each other to build modular, reusable applications.
+All steps share common properties (ID, inputs, outputs) while implementing specific behaviors for their domain. Steps can be composed into [Flows](../Core/flow.md) to create sophisticated pipelines, and they can reference each other to build modular, reusable applications.
 
 ## Rules and Behaviors
 
@@ -28,16 +28,15 @@ QType provides several categories of steps for different use cases:
 - **[PromptTemplate](prompt-template.md)** - Dynamic prompt generation with variable substitution
 
 ### Tool and Integration Steps
-- **[Tool](../tool.md)** - External integrations and function execution (Tools can also be used as steps)
+- **[Tool](../Core/tool.md)** - External integrations and function execution (Tools can also be used as steps)
 
 ### Search and Retrieval Steps
 - **[Search Steps](search.md)** - Vector similarity search and document search operations
 
 ### Control Flow and Processing Steps
-- **[Flow](../flow.md)** - Orchestration of multiple steps (see [Flow concept](flow.md) for detailed information)
-- **[Condition](condition.md)** - Conditional branching logic
+- **[Flow](../Core/flow.md)** - Orchestration of multiple steps (see [Flow concept](../Core/flow.md) for detailed information)
 - **[Decoder](decoder.md)** - Structured data parsing and extraction
 
 ## Related Concepts
 
-Steps are orchestrated by [Flows](../flow.md), may reference [Models](../model.md) for AI operations, can use [Tools](../tool.md) for external integrations, and access [Indexes](../index-concept.md) for search operations. They also define and consume [Variables](../variable.md) for data flow.
+Steps are orchestrated by [Flows](../Core/flow.md), may reference [Models](../Core/model.md) for AI operations, can use [Tools](../Core/tool.md) for external integrations, and access [Indexes](../Core/indexes.md) for search operations. They also define and consume [Variables](../Core/variable.md) for data flow.

@@ -54,6 +54,7 @@ The base QType package provides core functionality for defining, validating, and
 - **Observability**: Integrated telemetry and tracing with OpenTelemetry
 
 ### Additional dependencies:
+(These are installed by default with the `interpreter` package)
 - `boto3` - AWS SDK for Bedrock and other AWS services
 - `fastapi` - Web framework for serving APIs
 - `uvicorn` - ASGI server for FastAPI

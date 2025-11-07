@@ -21,7 +21,7 @@ A one-shot Q&A pipeline that:
 
 ## Step 1: Understand the Application
 
-Every QType program starts with an [Application](../Concepts/application.md). The application is the top-level container for your flows, models, tools, and configuration.
+Every QType program starts with an [Application](../Concepts/Core/application.md). The application is the top-level container for your flows, models, tools, and configuration.
 
 Start your YAML with an application `id`:
 
@@ -33,7 +33,7 @@ The `id` uniquely identifies your application within QType.
 
 ## Step 2: Define a Flow
 
-A [Flow](../Concepts/flow.md) is an ordered sequence of steps. For a simple pipeline, we only need one flow and one step.
+A [Flow](../Concepts/Core/flow.md) is an ordered sequence of steps. For a simple pipeline, we only need one flow and one step.
 
 Add a flow to your YAML:
 
@@ -162,7 +162,7 @@ or visit [http://localhost:8000/ui](http://localhost:8000/ui) to execute the flo
 
 ## Complete vs Chat Flows
 
-From the [Flow docs](../Concepts/flow.md):
+From the [Flow docs](../Concepts/Core/flow.md):
 
 - Complete flows (this tutorial):
   - Default mode for flows

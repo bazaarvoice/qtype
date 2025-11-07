@@ -23,7 +23,7 @@ Before we start, make sure you have:
 
 ## Step 1: Understanding the Application Structure
 
-Every QType program starts with an [Application](../Concepts/application.md). Think of an application as the blueprint for your entire AI-powered program - it's the top-level container that holds all your models, flows, tools, and configuration.
+Every QType program starts with an [Application](../Concepts/Core/application.md). Think of an application as the blueprint for your entire AI-powered program - it's the top-level container that holds all your models, flows, tools, and configuration.
 
 Let's create a new file called `hello_world_chat.qtype.yaml` and start with the basic application structure:
 
@@ -35,7 +35,7 @@ The `id` field is required and gives your application a unique identifier. This 
 
 ## Step 2: Defining Your Model
 
-Before creating a flow, we need to define the AI [Model](../Concepts/model.md) our chatbot will use. Models in QType represent the configuration for connecting to AI providers like OpenAI.
+Before creating a flow, we need to define the AI [Model](../Concepts/Core/model.md) our chatbot will use. Models in QType represent the configuration for connecting to AI providers like OpenAI.
 
 Add this to your YAML file:
 
@@ -63,7 +63,7 @@ Breaking this down:
 
 ## Step 3: Defining Memory
 
-A good chatbot remembers previous conversation turns. Let's add a [Memory](../Concepts/memory.md) configuration:
+A good chatbot remembers previous conversation turns. Let's add a [Memory](../Concepts/Core/memory.md) configuration:
 
 ```yaml
 id: hello_world
@@ -84,7 +84,7 @@ This creates a memory store that will keep track of conversation history. The `t
 
 ## Step 4: Defining Your Flow
 
-Next, we need to define a [Flow](../Concepts/flow.md). A flow is a sequence of steps that work together to accomplish a specific task. For our chatbot, we need a conversational flow.
+Next, we need to define a [Flow](../Concepts/Core/flow.md). A flow is a sequence of steps that work together to accomplish a specific task. For our chatbot, we need a conversational flow.
 
 Add this to your YAML file:
 
@@ -106,7 +106,7 @@ Here's what each field means:
 
 ## Step 5: Declaring Variables
 
-All data flowing through a flow must be declared as [Variables](../Concepts/variable.md). For our chatbot, we need variables for the user's message and the AI's response:
+All data flowing through a flow must be declared as [Variables](../Concepts/Core/variable.md). For our chatbot, we need variables for the user's message and the AI's response:
 
 ```yaml
 flows:
@@ -131,7 +131,7 @@ The key principle here is **explicit variable declaration**:
 - `variables`: Lists all variables used in the flow
 - `inputs`: Specifies which variables are inputs (by referencing their IDs)
 - `outputs`: Specifies which variables are outputs (by referencing their IDs)
-- `ChatMessage` is a [Domain Type](./How%20To/02-domain-types.md) specifically for chat applications
+- `ChatMessage` is a [Domain Type](../How-To%20Guides/Data%20Types/domain-types.md) specifically for chat applications
 
 ## Step 6: Adding Steps to Your Flow
 
@@ -261,7 +261,7 @@ Visit:
 * [http://localhost:8000/ui](http://localhost:8000/ui) to see a web UI where you can use your prototype.
 * [http://localhost:8000/docs](http://localhost:8000/docs) to see swagger docs for the automatically generated API.
 
-![Example UI](../example_ui.png)
+![Example UI](example_ui.png)
 
 ## Understanding What Happens at Runtime
 
@@ -280,5 +280,5 @@ Now that you have a basic chatbot, you might want to:
 
 - Experiment with different system messages to change your bot's personality
 - Try different OpenAI models (like `gpt-4` or `gpt-3.5-turbo`)
-- Add [Tools](../Concepts/tool.md) to give your chatbot additional capabilities
+- Add [Tools](../Concepts/Core/tool.md) to give your chatbot additional capabilities
 - Explore other [Step types](../Concepts/Steps/index.md) to create more complex workflows

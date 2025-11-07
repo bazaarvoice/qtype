@@ -43,6 +43,6 @@ models:
 
 ## Related Concepts
 
-AuthorizationProvider is referenced by [Model](model.md), [Tool](tool.md), [Index](index.md), and other components that need external API access.
+AuthorizationProvider is referenced by [Model](model.md), [Tool](tool.md), [Index](indexes.md), and other components that need external API access.
 
 ## Example Usage

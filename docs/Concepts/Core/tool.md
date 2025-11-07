@@ -3,8 +3,8 @@
 A tool represents an external capability that can be invoked to perform specific tasks, integrate with external services, or execute custom functions. Tools provide the bridge between QType applications and the outside world, enabling workflows to interact with APIs, databases, file systems, and custom business logic.
 
 Tools are defined at the application level and can be:
-- Invoked directly using the [InvokeTool](../components/InvokeTool.md) step
-- Made available to [Agents](Steps/agent.md) for autonomous decision-making
+- Invoked directly using the InvokeTool step
+- Made available to [Agents](../Steps/agent.md) for autonomous decision-making
 
 ## Key Principles
 
@@ -59,5 +59,5 @@ flows:
 
 ## Related Concepts
 
-Tools integrate with [AuthorizationProvider](authorization-provider.md) for secure access, can be used as [Steps](Steps/index.md) in [Flows](flow.md), and are essential for [Agent](Steps/agent.md) capabilities. They consume and produce [Variables](variable.md) for data flow and may interact with [Models](model.md) and [Indexes](index-concept.md).
+Tools integrate with [AuthorizationProvider](authorization-provider.md) for secure access, can be used as [Steps](../Steps/index.md) in [Flows](flow.md), and are essential for [Agent](../Steps/agent.md) capabilities. They consume and produce [Variables](variable.md) for data flow and may interact with [Models](model.md) and [Indexes](indexes.md).
 

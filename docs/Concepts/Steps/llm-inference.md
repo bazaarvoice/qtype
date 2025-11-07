@@ -57,6 +57,6 @@ flows:
 
 ## Related Concepts
 
-LLMInference steps require [Model](../Concepts/model.md) configurations, may use [Memory](../Concepts/memory.md) for context retention, often consume output from [PromptTemplate](prompt-template.md) steps, and are extended by [Agent](agent.md) steps for tool-enabled interactions.
+LLMInference steps require [Model](../Core/model.md) configurations, may use [Memory](../Core/memory.md) for context retention, often consume output from [PromptTemplate](prompt-template.md) steps, and are extended by [Agent](agent.md) steps for tool-enabled interactions.
 
 ## Example Usage

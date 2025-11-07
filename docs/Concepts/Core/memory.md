@@ -42,7 +42,7 @@ Steps reference memory configurations by their ID (as a string), not by embeddin
 
 ## Related Concepts
 
-Memory is primarily used by LLM-based steps like [LLMInference](llm-inference.md) and [Agent](agent.md) to maintain conversational context.
+Memory is primarily used by LLM-based steps like [LLMInference](../Steps/llm-inference.md) and [Agent](../Steps/agent.md) to maintain conversational context.
 
 ## Example Usage
 

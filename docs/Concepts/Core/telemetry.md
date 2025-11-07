@@ -13,7 +13,7 @@ Only one telemetry sink can be configured per application. For multiple destinat
 
 ## Related Concepts
 
-Telemetry observes all QType components including [Steps](Steps/index.md), [Flows](flow.md), [Models](model.md), [Tools](tool.md), and [Memory](memory.md). It integrates with [AuthorizationProvider](authorization-provider.md) for secure data export and provides insights for optimizing [Variable](variable.md) data flow.
+Telemetry observes all QType components including [Steps](../Steps/index.md), [Flows](flow.md), [Models](model.md), [Tools](tool.md), and [Memory](memory.md). It integrates with [AuthorizationProvider](authorization-provider.md) for secure data export and provides insights for optimizing [Variable](variable.md) data flow.
 
 ## Example Usage
 

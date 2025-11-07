@@ -99,7 +99,7 @@ qtype visualize examples/chat_with_telemetry.qtype.yaml -o chat_with_telemetry.m
 Generates this Mermaid diagram:
 
 ```mermaid
---8<-- "Getting Started/chat_with_telemetry.mermaid"
+--8<-- "Tutorials/chat_with_telemetry.mermaid"
 ```
 
 ## Understanding the Diagram

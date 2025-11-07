@@ -1,8 +1,8 @@
 # Flow
 
-A flow defines a sequence of [Steps](Steps/index.md) that work together to accomplish a specific task or workflow. Flows are the primary orchestration mechanism in QType, allowing you to chain multiple operations such as LLM inference, tool calls, and data processing into coherent, reusable workflows.
+A flow defines a sequence of [Steps](../Steps/index.md) that work together to accomplish a specific task or workflow. Flows are the primary orchestration mechanism in QType, allowing you to chain multiple operations such as LLM inference, tool calls, and data processing into coherent, reusable workflows.
 
-Flows can be invoked from other flows using the [InvokeFlow](../components/InvokeFlow.md) step, enabling composability where common patterns can be extracted into reusable flow components.
+Flows can be invoked from other flows using the InvokeFlow step, enabling composability where common patterns can be extracted into reusable flow components.
 
 ## Key Principles
 

@@ -1,6 +1,6 @@
 # Variable
 
-Variables are the fundamental data containers in QType. All data flowing between [Steps](Steps/index.md) must be explicitly declared as variables. This "declare before use" principle creates clear data contracts and enables static validation.
+Variables are the fundamental data containers in QType. All data flowing between [Steps](../Steps/index.md) must be explicitly declared as variables. This "declare before use" principle creates clear data contracts and enables static validation.
 
 ## Variable Scoping
 

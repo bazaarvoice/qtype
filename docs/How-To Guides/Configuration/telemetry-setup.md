@@ -1,6 +1,6 @@
 # Observe with Telemetry
 
-QType supports telemetry for all applications out of the box -- simply add the [Telemetry](../../Concepts/telemetry.md) field to your application.
+QType supports telemetry for all applications out of the box -- simply add the [Telemetry](../../Concepts/Core/telemetry.md) field to your application.
 
 QType integrates with popular observability platforms to help you understand, debug, and optimize your LLM applications. This guide covers how to set up telemetry with Phoenix and Langfuse.
 
@@ -256,4 +256,4 @@ telemetry:
 - [Phoenix Documentation](https://phoenix.arize.com/)
 - [Langfuse Documentation](https://langfuse.com/docs)
 - [Langfuse OpenTelemetry Integration](https://langfuse.com/docs/integrations/opentelemetry)
-- [QType Telemetry Concepts](../../Concepts/telemetry.md)
+- [QType Telemetry Concepts](../../Concepts/Core/telemetry.md)

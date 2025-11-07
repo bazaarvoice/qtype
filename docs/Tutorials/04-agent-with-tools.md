@@ -129,7 +129,7 @@ steps:
       - qtype.application.commons.tools.format_datetime
 ```
 
-This approach promotes reusability and keeps your specifications clean. See [File Inclusion](../Getting%20Started/How%20To/01-file-inclusion.md) for more details.
+This approach promotes reusability and keeps your specifications clean. See [File Inclusion](../How-To%20Guides/Configuration/modular-yaml.md) for more details.
 
 ## Step 3: Add Memory
 
@@ -265,7 +265,7 @@ This happens automatically - you just provide the tools and system message!
 
 ## Learn More
 
-- [Tool Concepts](../Concepts/tool.md) - Deep dive into creating and using tools
+- [Tool Concepts](../Concepts/Core/tool.md) - Deep dive into creating and using tools
 - [Agent API Reference](../components/Agent.md) - Full Agent configuration options
 - [Memory Configuration](../components/Memory.md) - Advanced memory management
 

@@ -25,7 +25,7 @@ A two-flow RAG system that:
 Before starting, you should have:
 
 - **QType installed** with interpreter support: `pip install qtype[interpreter]`
-- **Basic YAML familiarity** from the [chatbot tutorial](../Getting%20Started/01-chatbot-example.md)
+- **Basic YAML familiarity** from the [chatbot tutorial](01-first-chatbot.md)
 - **AWS account** with Bedrock access (for embeddings and LLM)
 - **Docker installed** (for running Qdrant locally)
 
@@ -862,9 +862,9 @@ Congratulations! You've built a production-ready RAG chatbot. 🎉
 
 ### Explore QType Features
 
-- **[Agent Tutorial](02-simple-agent.md)** - Add tool-calling to your chatbot
-- **[Memory Concepts](../Concepts/memory.md)** - Maintain conversation history
-- **[Custom Types Guide](../Getting%20Started/How%20To/03-custom-types.md)** - Define domain-specific data
+- **[Agent Tutorial](04-agent-with-tools.md)** - Add tool-calling to your chatbot
+- **[Memory Concepts](../Concepts/Core/memory.md)** - Maintain conversation history
+- **[Custom Types Guide](../How-To%20Guides/Data%20Types/custom-types.md)** - Define domain-specific data
 
 ### Production Considerations
 
@@ -880,7 +880,7 @@ Before deploying to production:
 
 - [GitHub Issues](https://github.com/bazaarvoice/qtype/issues) - Report bugs
 - [Discussions](https://github.com/bazaarvoice/qtype/discussions) - Ask questions
-- [Contributing Guide](../Development/contributing.md) - Improve QType
+- [Contributing Guide](../Contributing/index.md) - Improve QType
 
 ---
 
