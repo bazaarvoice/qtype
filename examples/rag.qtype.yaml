@@ -13,7 +13,8 @@ description: |
      - Maintain conversation history with memory
   
   2. document_ingestion: Ingest documents into the vector store
-     - Load documents from tests/rag_files directory
+     - Load LlamaIndex Q&A pairs from HuggingFace (1235 instruction-output pairs)
+     - Uses AlignmentLab-AI/llama-index dataset via HuggingFaceFSReader
      - Split documents into manageable chunks
      - Generate embeddings using AWS Bedrock Titan Embed Text v2
      - Store embedded chunks in Qdrant vector database using IndexUpsert
@@ -21,6 +22,7 @@ description: |
   Prerequisites:
   - AWS credentials configured (via AWS CLI profile or environment variables)
   - Qdrant running locally on port 6333 (or update the index args for Qdrant Cloud)
+  - Python dependencies: llama-index-readers-huggingface-fs (install with: uv add llama-index-readers-huggingface-fs --optional interpreter)
   
   To run ingestion:
     uv run python -m qtype.cli run examples/rag.qtype.yaml --flow document_ingestion
@@ -146,7 +148,7 @@ flows:
 
   - type: Flow
     id: document_ingestion
-    description: Load, split, embed, and index documents from the rag_files directory
+    description: Load LlamaIndex Q&A pairs from HuggingFace, split, embed, and index documents
     
     variables:
       - id: raw_document
@@ -160,13 +162,13 @@ flows:
       - embedded_chunk
     
     steps:
-      # Step 1: Load documents from the directory
+      # Step 1: Load documents directly from HuggingFace using HuggingFaceFSReader
+      # This dataset contains 1235 LlamaIndex instruction-output Q&A pairs
       - id: load_documents
         type: DocumentSource
-        reader_module: llama_index.core.SimpleDirectoryReader
-        args:
-          input_dir: "tests/rag_files"
-          recursive: false
+        reader_module: llama_index.readers.huggingface_fs.HuggingFaceFSReader
+        loader_args:
+          path: "datasets/AlignmentLab-AI/llama-index/modified_dataset.jsonl"
         outputs:
           - raw_document
       
