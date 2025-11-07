@@ -157,7 +157,6 @@ flows:
 - Application decomposition strategies
 - Flow input/output binding
 - Reusable flow components
-- Error handling across flows
 
 **YAML concepts introduced:**
 ```yaml

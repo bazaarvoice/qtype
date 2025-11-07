@@ -1,0 +1,125 @@
+id: multi_flow_example
+description: Multi-flow application demonstrating multiple independent flows and variable scoping
+
+models:
+  - type: Model
+    id: gpt4o-mini
+    provider: openai
+    model_id: gpt-4o-mini
+    inference_params:
+      temperature: 0.7
+
+flows:
+  # Flow 1: Clean customer names
+  - type: Flow
+    id: clean_names
+    description: Clean and standardize customer names
+    
+    variables:
+      - id: raw_name
+        type: text
+      - id: clean_prompt
+        type: text
+      - id: clean_name
+        type: text
+    
+    inputs:
+      - raw_name
+    
+    outputs:
+      - clean_name
+    
+    steps:
+      # Create prompt to clean the name
+      - id: create_clean_prompt
+        type: PromptTemplate
+        template: "Clean this name by trimming whitespace and converting to title case: {{raw_name}}. Return ONLY the cleaned name, nothing else."
+        inputs:
+          - raw_name
+        outputs:
+          - clean_prompt
+      
+      # Call LLM to clean the name
+      - id: clean_step
+        type: LLMInference
+        model: gpt4o-mini
+        inputs:
+          - clean_prompt
+        outputs:
+          - clean_name
+
+  # Flow 2: Validate names
+  - type: Flow
+    id: validate_names
+    description: Validate that a name is a valid person name
+    
+    variables:
+      - id: name_to_validate
+        type: text
+      - id: validate_prompt
+        type: text
+      - id: validation_result
+        type: text
+    
+    inputs:
+      - name_to_validate
+    
+    outputs:
+      - validation_result
+    
+    steps:
+      # Create validation prompt
+      - id: create_validate_prompt
+        type: PromptTemplate
+        template: "Is '{{name_to_validate}}' a valid person name? Reply with just 'Valid' or 'Invalid: <reason>'"
+        inputs:
+          - name_to_validate
+        outputs:
+          - validate_prompt
+      
+      # Call LLM to validate
+      - id: validate_step
+        type: LLMInference
+        model: gpt4o-mini
+        inputs:
+          - validate_prompt
+        outputs:
+          - validation_result
+
+  # Flow 3: Generate customer profile
+  - type: Flow
+    id: generate_profile
+    description: Generate a customer profile with account details
+    
+    variables:
+      - id: customer_name
+        type: text
+      - id: profile_prompt
+        type: text
+      - id: customer_profile
+        type: text
+    
+    inputs:
+      - customer_name
+    
+    outputs:
+      - customer_profile
+    
+    steps:
+      # Create profile generation prompt
+      - id: create_profile_prompt
+        type: PromptTemplate
+        template: "Generate realistic customer information for: {{customer_name}}. Include: account number, member since date, and status (Gold/Silver/Bronze). Format as a brief profile."
+        inputs:
+          - customer_name
+        outputs:
+          - profile_prompt
+      
+      # Call LLM to generate profile
+      - id: generate_step
+        type: LLMInference
+        model: gpt4o-mini
+        inputs:
+          - profile_prompt
+        outputs:
+          - customer_profile
