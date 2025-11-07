@@ -1,7 +1,1 @@
 title: Tutorials
-nav:
-  - index.md
-  - 01-first-qtype-application.md
-  - 02-conversational-chatbot.md
-  - 03-rag-chatbot.md
-  - 04-agent-with-tools.md

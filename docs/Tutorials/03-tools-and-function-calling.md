@@ -418,7 +418,7 @@ Before moving on, try modifying your time utilities application:
 Here's your complete `time_utilities.qtype.yaml`:
 
 ```yaml
---8<-- "examples/time_utilities.qtype.yaml"
+--8<-- "../examples/time_utilities.qtype.yaml"
 ```
 
 **Download:** [time_utilities.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/time_utilities.qtype.yaml)
