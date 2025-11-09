@@ -131,8 +131,6 @@ def run_flow(args: Any) -> None:
         logger.error(f"❌ Validation failed: {e}")
     except InterpreterError as e:
         logger.error(f"❌ Execution failed: {e}")
-    except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}", exc_info=True)
 
 
 def parser(subparsers: argparse._SubParsersAction) -> None:

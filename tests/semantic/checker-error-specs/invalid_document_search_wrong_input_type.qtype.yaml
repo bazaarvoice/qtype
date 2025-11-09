@@ -8,6 +8,7 @@ models:
 indexes:
   - id: test_index
     type: DocumentIndex
+    endpoint: https://localhost:9200
     name: test_doc_index
 flows:
   - id: test_flow
@@ -15,7 +16,7 @@ flows:
       - id: chunk_input
         type: RAGChunk
       - id: result
-        type: RAGDocument
+        type: RAGSearchResult
     inputs:
       - chunk_input
     outputs:

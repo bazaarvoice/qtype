@@ -103,8 +103,8 @@ def completion_request_to_input_model(
     """
     Convert a CompletionRequest to a flow's input model.
 
-    The CompletionRequest has a required 'prompt' field plus any additional
-    fields. This function maps the request data to the flow's input shape.
+    The CompletionRequest has a required 'prompt' field.
+    This function maps the request data to the flow's input shape.
 
     Args:
         request: The Vercel CompletionRequest with prompt and additional fields
@@ -116,13 +116,24 @@ def completion_request_to_input_model(
     Raises:
         ValueError: If required fields are missing or data doesn't match schema
     """
-    # Get all fields from the request (including extra fields from model_config)
-    request_data = request.model_dump()
 
-    # Create instance of the input model
-    # This will automatically validate that all required fields are present
+    prompt_str = request.prompt
+
+    # Get the field name from the input model
+    # The semantic checker ensures there's exactly one field for Complete flows
+    field_names = list(input_model.model_fields.keys())
+    if len(field_names) != 1:
+        raise ValueError(
+            (
+                f"Expected exactly one input field for Complete flow, "
+                f"found {len(field_names)}: {field_names}"
+            )
+        )
+    field_name = field_names[0]
+
+    # Create instance of the input model with the prompt mapped to the field
     try:
-        return input_model(**request_data)
+        return input_model(**{field_name: prompt_str})
     except Exception as e:
         raise ValueError(
             f"Failed to map CompletionRequest to input model: {e}"

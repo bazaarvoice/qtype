@@ -1,6 +1,6 @@
 from typing import AsyncIterator
 
-from qtype.dsl.domain_types import Embedding, RAGChunk
+from qtype.dsl.domain_types import RAGChunk
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_embedding_model
@@ -53,22 +53,15 @@ class DocumentEmbedderExecutor(StepExecutor):
 
             # Generate embedding for the chunk content
             vector = self.embedding_model.get_text_embedding(
-                text=chunk.content
+                text=str(chunk.content)
             )
 
-            # Create an Embedding object
-            embedding = Embedding(
-                vector=vector,
-                source_text=chunk.content,
-                metadata=chunk.metadata,
-            )
-
-            # Create the output chunk with the embedding
+            # Create the output chunk with the vector
             embedded_chunk = RAGChunk(
+                vector=vector,
                 content=chunk.content,
                 chunk_id=chunk.chunk_id,
                 document_id=chunk.document_id,
-                embedding=embedding,
                 metadata=chunk.metadata,
             )
 

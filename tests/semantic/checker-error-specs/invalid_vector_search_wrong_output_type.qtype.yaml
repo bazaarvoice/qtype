@@ -1,4 +1,4 @@
-# VectorSearch must have exactly one text input - no inputs
+# VectorSearch must have exactly one output of type List[RAGSearchResult] - wrong type
 id: test_app
 models:
   - id: embed_model
@@ -14,14 +14,19 @@ indexes:
 flows:
   - id: test_flow
     variables:
+      - id: query_text
+        type: text
       - id: result
-        type: RAGChunk
+        type: text
+    inputs:
+      - query_text
     outputs:
       - result
     steps:
       - id: search1
         type: VectorSearch
         index: test_index
-        inputs: []
+        inputs:
+          - query_text
         outputs:
           - result

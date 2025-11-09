@@ -123,8 +123,18 @@ You should, however, use features that are available in Python 3.10. Some exampl
     - Pattern matching with `match`/`case` statements (new in 3.10)
 
 Other coding guidelines for python:
- - Don't use `if TYPE_CHECKING` unless absolutely necessary to break a cicurlar dependency
+ - Don't use `if TYPE_CHECKING` unless absolutely necessary to break a circular dependency
  - Don't try then raise -- this is an antipattern -- unless it's absolutely necessary to transform an exception type.
+ - **Avoid premature optimization**: Don't add complexity for theoretical performance gains
+   * Follow YAGNI (You Aren't Gonna Need It) principle
+   * Optimize only when there's a measured performance problem
+   * Prefer simple, readable code over "clever" optimizations
+   * Don't use advanced patterns unless they solve a real, current problem
+ - **Strictly follow these guidelines**: These are project standards, not suggestions
+   * Every guideline here has been chosen deliberately for this codebase
+   * Don't deviate from guidelines based on personal preferences or "common practices" from other projects
+   * If a guideline seems wrong for a specific case, ask before breaking it
+   * Consistency across the codebase is more valuable than individual "improvements"
 
 
 All React code in this repository *must*:
