@@ -38,6 +38,7 @@ export default function FlowInput({
     switch (property.qtype_type) {
       case "text":
       case "thinking":
+      case "citation_url":
         return (
           <TextInput
             name={name}
@@ -108,6 +109,7 @@ export default function FlowInput({
 
       case "bytes":
       case "file":
+      case "citation_document":
       case "image":
       case "audio":
       case "video":

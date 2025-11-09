@@ -9,7 +9,7 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
-import { Audio, File, Thinking, Video } from "./outputs";
+import { Audio, CitationUrl, File, Thinking, Video } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -55,7 +55,8 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
         const { mime, bytes_base64 } = JSON.parse(String(value));
         return <Audio mime={mime} bytesBase64={bytes_base64} />;
       }
-      case "file": {
+      case "file":
+      case "citation_document": {
         const { mime, filename, bytes_base64 } = JSON.parse(String(value));
         return (
           <File fileName={filename} mime={mime} bytesBase64={bytes_base64} />
@@ -63,6 +64,9 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
       }
       case "thinking": {
         return <Thinking reasoningContent={String(value)} />;
+      }
+      case "citation_url": {
+        return <CitationUrl url={String(value)} />;
       }
       default:
         <Alert variant="destructive">
