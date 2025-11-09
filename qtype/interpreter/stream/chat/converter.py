@@ -162,6 +162,18 @@ class StreamEventConverter:
         if chunk_id:
             yield TextDeltaChunk(id=chunk_id, delta=event.delta)
 
+    def _convert_reasoning_stream_delta(
+        self, event: ReasoningStreamDeltaEvent
+    ) -> Iterator[UIMessageChunk]:
+        """
+        Convert ReasoningStreamDeltaEvent to ReasoningDeltaChunk.
+
+        Uses the chunk ID registered during text_stream_start.
+        """
+        chunk_id = self._active_streams.get(event.stream_id)
+        if chunk_id:
+            yield ReasoningDeltaChunk(id=chunk_id, delta=event.delta)
+
     def _convert_text_stream_end(
         self, event: TextStreamEndEvent
     ) -> Iterator[UIMessageChunk]:

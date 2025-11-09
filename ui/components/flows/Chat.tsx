@@ -9,11 +9,11 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { generateId } from "ai";
 import { Send, Bot, Loader2, MessageSquarePlus, Paperclip } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
-import AttachmentDisplay from "@/components/chat/AttachmentDisplay";
-import MessageBubble from "@/components/chat/MessageBubble";
+import { AttachmentDisplay, MessageBubble } from "@/components/chat";
 import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Button } from "@/components/ui/Button";
 import {
@@ -27,10 +27,10 @@ import { Input } from "@/components/ui/Input";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { apiClient } from "@/lib/apiClient";
 
-import type { FileAttachment, FlowMetadata } from "@/types";
+import { useFileAttachments } from "../../hooks/useFileAttachments";
 
-const generateId = () =>
-  `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+import type { Message as ChatMessage } from "@/components/chat/types";
+import type { FlowMetadata } from "@/types";
 
 interface ChatFlowProps {
   flow: FlowMetadata;
@@ -42,14 +42,20 @@ function ChatFlow({ flow }: ChatFlowProps) {
   const description = flow.description;
   const [conversationId, setConversationId] = useState(() => generateId());
   const [input, setInput] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([]);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const {
+    files: selectedFiles,
+    fileError,
+    handleFileSelect,
+    removeFile,
+    clearFiles,
+    reset: resetFiles,
+    fileInputRef,
+  } = useFileAttachments();
   const [lastSubmission, setLastSubmission] = useState<{
     input: string;
-    files: FileAttachment[];
+    files: typeof selectedFiles;
   } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(
@@ -87,7 +93,6 @@ function ChatFlow({ flow }: ChatFlowProps) {
   useEffect(() => {
     if (error && lastSubmission) {
       setInput(lastSubmission.input);
-      setSelectedFiles(lastSubmission.files);
       setLastSubmission(null); // Clear after restoring
       setMessages((prev) => {
         // remove empty assistant messages
@@ -107,10 +112,8 @@ function ChatFlow({ flow }: ChatFlowProps) {
 
   const clearForm = useCallback(() => {
     setInput("");
-    setSelectedFiles([]);
-    setFileError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+    resetFiles();
+  }, [resetFiles]);
 
   const handleNewConversation = useCallback(() => {
     setConversationId(generateId());
@@ -118,56 +121,6 @@ function ChatFlow({ flow }: ChatFlowProps) {
     setLastSubmission(null);
     clearForm();
   }, [setMessages, clearForm]);
-
-  const convertFileToDataUrl = useCallback(
-    (file: File): Promise<string> =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      }),
-    [],
-  );
-
-  const handleFileSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (!files) return;
-
-      setFileError(null);
-
-      try {
-        const newFiles = await Promise.all(
-          Array.from(files).map(async (file): Promise<FileAttachment> => {
-            const url = await convertFileToDataUrl(file);
-            return {
-              type: "file",
-              mediaType: file.type || "application/octet-stream",
-              filename: file.name,
-              url,
-              size: file.size,
-            };
-          }),
-        );
-        setSelectedFiles((prev) => [...prev, ...newFiles]);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        setFileError(`Failed to process files: ${errorMessage}`);
-      }
-    },
-    [convertFileToDataUrl],
-  );
-
-  const removeFile = useCallback((index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const clearFiles = useCallback(() => {
-    setSelectedFiles([]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -237,15 +190,18 @@ function ChatFlow({ flow }: ChatFlowProps) {
                 <p>Start a conversation!</p>
               </div>
             ) : (
-              messages.map((message, index) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isStreaming={
-                    status === "streaming" && index === messages.length - 1
-                  }
-                />
-              ))
+              messages.map((message, index) => {
+                const bubbleMessage = message as unknown as ChatMessage;
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={bubbleMessage}
+                    isStreaming={
+                      status === "streaming" && index === messages.length - 1
+                    }
+                  />
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>

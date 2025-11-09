@@ -522,6 +522,33 @@ class StartChunk(BaseModel):
     )
 
 
+# temp
+class ToolStarted(BaseModel):
+    """Start chunk.
+
+    Reproduces: Tool Started from ui/ui-message-chunks.ts
+    """
+
+    type: Literal["tool_started"] = "tool_started"
+    message_id: str | None = Field(default=None, alias="messageId")
+    message_metadata: dict[str, Any] | None = Field(
+        default=None, alias="messageMetadata"
+    )
+
+
+class ToolResultReceived(BaseModel):
+    """Start chunk.
+
+    Reproduces: Tool Result Received from ui/ui-message-chunks.ts
+    """
+
+    type: Literal["tool_result_received"] = "tool_result_received"
+    message_id: str | None = Field(default=None, alias="messageId")
+    message_metadata: dict[str, Any] | None = Field(
+        default=None, alias="messageMetadata"
+    )
+
+
 class FinishChunk(BaseModel):
     """Finish chunk - marks the completion of message streaming.
 

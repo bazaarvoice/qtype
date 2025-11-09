@@ -220,9 +220,11 @@ class ErrorEvent(BaseModel):
 StreamEvent = Union[
     TextStreamStartEvent,
     TextStreamDeltaEvent,
-    TextStreamEndEvent,
     ReasoningStreamStartEvent,
     ReasoningStreamDeltaEvent,
+    ReasoningStreamEndEvent,
+    TextStreamEndEvent,
+    ReasoningStreamStartEvent,
     ReasoningStreamEndEvent,
     StatusEvent,
     StepStartEvent,

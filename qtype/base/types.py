@@ -51,6 +51,7 @@ class PrimitiveTypeEnum(str, Enum):
     text = "text"
     time = "time"
     video = "video"
+    thinking = "thinking"
 
 
 class StepCardinality(str, Enum):

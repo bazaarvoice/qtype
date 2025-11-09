@@ -9,7 +9,7 @@ models:
       temperature: 0.7
       max_tokens: 512
 references:
-  - !include ../common/tools.qtype.yaml
+  - !include ../../common/tools.qtype.yaml
 memories:
   - id: chat_memory
     token_limit: 10000
@@ -17,14 +17,14 @@ flows:
   - type: Flow
     id: agent_chat
     interface:
-      type: Complete
+      type: Conversational
     variables:
-      - id: prompt
-        type: text
+      - id: user_message
+        type: ChatMessage
       - id: response
-        type: text
+        type: ChatMessage
     inputs:
-      - prompt
+      - user_message
     outputs:
       - response
     steps:
@@ -38,7 +38,7 @@ flows:
           - qtype.application.commons.tools.format_datetime
           - qtype.application.commons.tools.timedelta
         inputs:
-          - prompt
+          - user_message
         outputs:
           - response
 telemetry:

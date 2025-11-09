@@ -13,7 +13,7 @@ interface AttachmentDisplayProps {
 const formatFileSize = (bytes: number) =>
   `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-export default function AttachmentDisplay({
+function AttachmentDisplay({
   files,
   onRemoveFile,
   onClearAll,
@@ -63,3 +63,5 @@ export default function AttachmentDisplay({
     </div>
   );
 }
+
+export { AttachmentDisplay };

@@ -35,6 +35,25 @@ class LLMInferenceExecutor(StepExecutor):
             )
         self.step: LLMInference = step
 
+    def __extract_stream_reasoning_(self, response):
+        raw = response.raw
+        content_block_delta = raw.get("contentBlockDelta")
+        block_index = (
+            content_block_delta.get("contentBlockIndex")
+            if isinstance(content_block_delta, dict)
+            else None
+        )
+
+        reasoning_text = None
+        if block_index == 0:
+            reasoning_text = (
+                content_block_delta.get("delta", {})
+                .get("reasoningContent", {})
+                .get("text")
+            )
+
+        return reasoning_text
+
     async def process_message(
         self,
         message: FlowMessage,
@@ -138,11 +157,27 @@ class LLMInferenceExecutor(StepExecutor):
             )
             inputs = [to_chat_message(system_message)] + inputs
 
-        # Perform inference with streaming if callback provided
         chat_result: ChatResponse
         if self.context.on_stream_event:
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
+            async with self.stream_emitter.reasoning_stream(
+                f"llm-{self.step.id}-{id(message)}-reasoning"
+            ) as reasoning:
+                generator = model.stream_chat(
+                    messages=inputs,
+                    **(
+                        self.step.model.inference_params
+                        if self.step.model.inference_params
+                        else {}
+                    ),
+                )
+                for complete_response in generator:
+                    reasoning_text = self.__extract_stream_reasoning_(
+                        complete_response
+                    )
+                    if reasoning_text:
+                        await reasoning.delta(reasoning_text)
 
             async with self.stream_emitter.text_stream(stream_id) as streamer:
                 generator = model.stream_chat(
@@ -154,7 +189,9 @@ class LLMInferenceExecutor(StepExecutor):
                     ),
                 )
                 for chat_response in generator:
-                    await streamer.delta(chat_response.delta)
+                    chat_text = chat_response.delta
+                    if chat_text.strip() != "":
+                        await streamer.delta(chat_response.delta)
             # Get the final result
             chat_result = chat_response
         else:
@@ -213,9 +250,12 @@ class LLMInferenceExecutor(StepExecutor):
                         else {}
                     ),
                 )
+
                 for complete_response in generator:
-                    await streamer.delta(complete_response.delta)
-            # Get the final result
+                    text = complete_response.delta
+                    if complete_response.text.strip() != "":
+                        await streamer.delta(text)
+
             complete_result = complete_response
         else:
             complete_result = model.complete(
@@ -227,7 +267,6 @@ class LLMInferenceExecutor(StepExecutor):
                 ),
             )
 
-        # Return result
-        return message.copy_with_variables(
-            {output_variable_id: complete_result.text}
-        )
+        response: dict[str, str] = {output_variable_id: complete_result.text}
+
+        return message.copy_with_variables(response)
