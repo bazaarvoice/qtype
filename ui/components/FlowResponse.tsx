@@ -9,7 +9,15 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
-import { Audio, CitationUrl, DateTime, File, Thinking, Video } from "./outputs";
+import {
+  Audio,
+  Bytes,
+  CitationUrl,
+  DateTime,
+  File,
+  Thinking,
+  Video,
+} from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -70,6 +78,12 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
       }
       case "datetime": {
         return <DateTime value={String(value)} />;
+      }
+      case "bytes": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
+        return (
+          <Bytes fileName={filename} mime={mime} bytesBase64={bytes_base64} />
+        );
       }
       default:
         <Alert variant="destructive">
