@@ -9,6 +9,7 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { Audio } from "./Audio";
+import { File } from "./File";
 import { MarkdownContainer } from "./MarkdownContainer";
 import { Video } from "./Video";
 
@@ -48,22 +49,29 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
             </p>
           </div>
         );
-      case "video":
-        return <Video value={value} />;
-      case "audio":
-        return <Audio value={value} />;
-
-      default:
+      case "video": {
+        const { mime, bytes_base64 } = JSON.parse(String(value));
+        return <Video mime={mime} bytesBase64={bytes_base64} />;
+      }
+      case "audio": {
+        const { mime, bytes_base64 } = JSON.parse(String(value));
+        return <Audio mime={mime} bytesBase64={bytes_base64} />;
+      }
+      case "file": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
         return (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Unsupported response type:{" "}
-              <code className="font-mono text-sm">
-                {property.qtype_type || property.type}
-              </code>
-            </AlertDescription>
-          </Alert>
+          <File fileName={filename} mime={mime} bytesBase64={bytes_base64} />
         );
+      }
+      default:
+        <Alert variant="destructive">
+          <AlertDescription>
+            Unsupported response type:{" "}
+            <code className="font-mono text-sm">
+              {property.qtype_type || property.type}
+            </code>
+          </AlertDescription>
+        </Alert>;
     }
   };
 

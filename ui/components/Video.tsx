@@ -1,16 +1,7 @@
 import { useEffect, useState } from "react";
-
-type VideoValue =
-  | string // raw base64 (no data: prefix)
-  | {
-      bytes_base64: string;
-      mime_type?: string;
-      filename?: string;
-    };
-
 interface VideoProps {
-  value: VideoValue;
-  className?: string;
+  mime: string;
+  bytesBase64: string;
 }
 
 function base64ToBlob(b64: string, mime: string): Blob {
@@ -23,31 +14,28 @@ function base64ToBlob(b64: string, mime: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-function Video({ value, className }: VideoProps) {
+function Video({ mime, bytesBase64 }: VideoProps) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!value) {
+    if (!bytesBase64) {
       setSrc(null);
       return;
     }
 
-    const base64 = typeof value === "string" ? value : value.bytes_base64;
-    const mime = (typeof value === "object" && value.mime_type) || "video/mp4";
-
-    if (!base64) {
+    if (!bytesBase64) {
       setSrc(null);
       return;
     }
 
-    const blob = base64ToBlob(base64, mime);
+    const blob = base64ToBlob(bytesBase64, mime);
     const url = URL.createObjectURL(blob);
     setSrc(url);
 
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [value]);
+  }, [bytesBase64, mime]);
 
   if (!src) {
     return (
@@ -57,7 +45,7 @@ function Video({ value, className }: VideoProps) {
     );
   }
 
-  return <video className={className} controls src={src} preload="metadata" />;
+  return <video controls src={src} preload="metadata" />;
 }
 
 export { Video };

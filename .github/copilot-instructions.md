@@ -126,6 +126,23 @@ Other coding guidelines for python:
  - Don't use `if TYPE_CHECKING` unless absolutely necessary to break a cicurlar dependency
  - Don't try then raise -- this is an antipattern -- unless it's absolutely necessary to transform an exception type.
 
+
+All React code in this repository *must*:
+    - Follow best practices for React and TypeScript, including clear naming, component structure, and type safety
+    - Use functional components and React hooks
+    - Avoid unused imports and variables
+    - Use explicit typing with TypeScript
+    - Write readable, maintainable, and testable code
+    - Use consistent indentation (2 spaces)
+    - Avoid long lines (>80 chars) unless necessary
+    - Use template literals for string interpolation
+    - Prefer camelCase for functions and variables, PascalCase for components and types
+    - Add JSDoc comments to all public functions, components, and modules
+    - Must not use the following types: `any`, `unknown`, `object`
+    - Use type assertions sparingly and only when absolutely necessary
+    - Use ESLint and Prettier for code formatting and linting
+    - Must not use the following React hooks; useMemo, useCallback
+
 # Virtual Environment
 
 This is a `uv` project, so all commands should be run inside the virtual environment like:

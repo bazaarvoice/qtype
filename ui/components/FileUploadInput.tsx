@@ -96,7 +96,12 @@ export default function FileUploadInput({
           const buffer = await file.arrayBuffer();
           // Send base64 string (Pydantic will decode to bytes)
           const base64 = arrayBufferToBase64(buffer);
-          onChange?.(name, base64);
+          const output = JSON.stringify({
+            filename: file.name,
+            mime: file.type || "application/octet-stream",
+            bytes_base64: base64,
+          });
+          onChange?.(name, output);
         } catch (e) {
           setError(
             e instanceof Error
