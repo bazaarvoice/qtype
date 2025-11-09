@@ -9,7 +9,7 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
-import { Audio, File, Video } from "./outputs";
+import { Audio, File, Thinking, Video } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -60,6 +60,9 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
         return (
           <File fileName={filename} mime={mime} bytesBase64={bytes_base64} />
         );
+      }
+      case "thinking": {
+        return <Thinking reasoningContent={String(value)} />;
       }
       default:
         <Alert variant="destructive">

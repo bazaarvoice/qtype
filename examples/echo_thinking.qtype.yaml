@@ -1,0 +1,20 @@
+id: echo-thinking
+description: Test the Echo step for thinking
+
+flows:
+  - id: echo-thinking
+    description: Simple flow to test the Echo step
+    variables:
+      - id: user_input
+        type: thinking
+    inputs:
+      - user_input
+    outputs:
+      - user_input
+    steps:
+      - id: echo_debug
+        type: Echo
+        inputs:
+          - user_input
+        outputs:
+          - user_input

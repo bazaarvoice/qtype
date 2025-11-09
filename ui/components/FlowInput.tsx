@@ -37,6 +37,7 @@ export default function FlowInput({
   const renderInput = () => {
     switch (property.qtype_type) {
       case "text":
+      case "thinking":
         return (
           <TextInput
             name={name}

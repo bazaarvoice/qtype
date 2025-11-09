@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -5662,7 +5662,7 @@ requires-dist = [
     { name = "llama-index-embeddings-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.5.2" },
     { name = "llama-index-embeddings-openai", marker = "extra == 'interpreter'", specifier = ">=0.3.1" },
     { name = "llama-index-llms-bedrock", marker = "extra == 'interpreter'", specifier = ">=0.3.8" },
-    { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.7.4" },
+    { name = "llama-index-llms-bedrock-converse", marker = "extra == 'interpreter'", specifier = ">=0.10.5" },
     { name = "llama-index-llms-vertex", marker = "extra == 'interpreter'", specifier = ">=0.6.1" },
     { name = "llama-index-readers-huggingface-fs", marker = "extra == 'interpreter'", specifier = ">=0.4.1" },
     { name = "llama-index-vector-stores-qdrant", marker = "extra == 'interpreter'", specifier = ">=0.8.6" },

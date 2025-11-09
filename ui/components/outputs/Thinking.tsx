@@ -1,17 +1,13 @@
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useState } from "react";
 
-interface ThinkingPanelProps {
+interface ThinkingProps {
   reasoningContent: string;
   initiallyOpen?: boolean;
   className?: string;
 }
 
-function ThinkingPanel({
-  reasoningContent,
-  initiallyOpen = false,
-  className = "",
-}: ThinkingPanelProps) {
+function Thinking({ reasoningContent, initiallyOpen = false }: ThinkingProps) {
   const [open, setOpen] = useState(initiallyOpen);
 
   if (!reasoningContent || reasoningContent.trim() === "") {
@@ -24,7 +20,7 @@ function ThinkingPanel({
     .filter((p) => p.length > 0);
 
   return (
-    <div className={`text-sm ${className}`}>
+    <div className={"text-sm"}>
       <button
         type="button"
         role="button"
@@ -62,4 +58,4 @@ function ThinkingPanel({
   );
 }
 
-export { ThinkingPanel };
+export { Thinking };
