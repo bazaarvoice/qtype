@@ -9,7 +9,7 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
-import { Audio, CitationUrl, File, Thinking, Video } from "./outputs";
+import { Audio, CitationUrl, DateTime, File, Thinking, Video } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -67,6 +67,9 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
       }
       case "citation_url": {
         return <CitationUrl url={String(value)} />;
+      }
+      case "datetime": {
+        return <DateTime value={String(value)} />;
       }
       default:
         <Alert variant="destructive">
