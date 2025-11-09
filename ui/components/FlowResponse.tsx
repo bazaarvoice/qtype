@@ -17,6 +17,7 @@ import {
   File,
   Thinking,
   Video,
+  Image,
 } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
@@ -59,6 +60,12 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
         const { mime, bytes_base64 } = JSON.parse(String(value));
         return <Video mime={mime} bytesBase64={bytes_base64} />;
       }
+      case "image": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
+        return (
+          <Image mime={mime} fileName={filename} bytesBase64={bytes_base64} />
+        );
+      }
       case "audio": {
         const { mime, bytes_base64 } = JSON.parse(String(value));
         return <Audio mime={mime} bytesBase64={bytes_base64} />;
@@ -77,7 +84,13 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
         return <CitationUrl url={String(value)} />;
       }
       case "datetime": {
-        return <DateTime value={String(value)} />;
+        return <DateTime value={String(value)} date time />;
+      }
+      case "date": {
+        return <DateTime value={String(value)} date />;
+      }
+      case "time": {
+        return <DateTime value={String(value)} time />;
       }
       case "bytes": {
         const { mime, filename, bytes_base64 } = JSON.parse(String(value));

@@ -5,3 +5,4 @@ export { Thinking } from "./Thinking";
 export { CitationUrl } from "./CitationUrl";
 export { DateTime } from "./DateTime";
 export { Bytes } from "./Bytes";
+export { Image } from "./Image";
