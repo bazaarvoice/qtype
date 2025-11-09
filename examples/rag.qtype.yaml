@@ -1,0 +1,207 @@
+id: rag_example
+description: |
+  End-to-end RAG (Retrieval Augmented Generation) example that processes documents 
+  into a Qdrant vector store and enables conversational chat with the indexed content.
+  
+  This example includes two flows:
+  
+  1. rag_chat: Chat with your documents using RAG
+     - Accept user questions as ChatMessage
+     - Extract text content from chat message using FieldExtractor
+     - Search vector index for relevant context using VectorSearch
+     - Generate contextual responses using Amazon Nova Lite
+     - Maintain conversation history with memory
+  
+  2. document_ingestion: Ingest documents into the vector store
+     - Load LlamaIndex Q&A pairs from HuggingFace (1235 instruction-output pairs)
+     - Uses AlignmentLab-AI/llama-index dataset via HuggingFaceFSReader
+     - Split documents into manageable chunks
+     - Generate embeddings using AWS Bedrock Titan Embed Text v2
+     - Store embedded chunks in Qdrant vector database using IndexUpsert
+  
+  Prerequisites:
+  - AWS credentials configured (via AWS CLI profile or environment variables)
+  - Qdrant running locally on port 6333 (or update the index args for Qdrant Cloud)
+  - Python dependencies: llama-index-readers-huggingface-fs (install with: uv add llama-index-readers-huggingface-fs --optional interpreter)
+  
+  To run ingestion:
+    uv run python -m qtype.cli run examples/rag.qtype.yaml --flow document_ingestion
+  
+  To start chat:
+    uv run python -m qtype.cli run examples/rag.qtype.yaml --flow rag_chat
+
+# AWS Authentication for Bedrock
+auths:
+  - type: aws
+    id: aws_auth
+    profile_name: ${AWS_PROFILE}  # Uses AWS_PROFILE env var
+
+# Models
+models:
+  # Embedding model using AWS Bedrock Titan v2
+  - type: EmbeddingModel
+    id: titan_embed_v2
+    provider: aws-bedrock
+    model_id: amazon.titan-embed-text-v2:0
+    dimensions: 1024
+    auth: aws_auth
+  
+  # Generative model for chat
+  - type: Model
+    id: claude_sonnet
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 2048
+    auth: aws_auth
+
+# Qdrant vector index for storing embedded documents
+indexes:
+  - type: VectorIndex
+    module: llama_index.vector_stores.qdrant.QdrantVectorStore
+    id: rag_index
+    name: documents
+    embedding_model: titan_embed_v2
+    args:
+      # Qdrant vector store arguments.
+      # See https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/qdrant/
+      collection_name: documents
+      url: http://localhost:6333
+      api_key: ""  # Empty string for local Qdrant (library validation bug requires this)
+
+# Flow to ingest documents into the vector store
+flows:
+  # Flow for conversational RAG
+  - type: Flow
+    id: rag_chat
+    description: Chat with the document collection using RAG
+    
+    interface:
+      type: Conversational
+    
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: user_question
+        type: text
+      - id: search_results
+        type: list[RAGSearchResult]
+      - id: context_prompt
+        type: text
+      - id: assistant_response
+        type: ChatMessage
+    
+    inputs:
+      - user_message
+    
+    outputs:
+      - assistant_response
+    
+    steps:
+      # Step 1: Extract text content from chat message blocks where type is text
+      - id: extract_question
+        type: FieldExtractor
+        json_path: "$.blocks[?(@.type == 'text')].content"
+        inputs:
+          - user_message
+        outputs:
+          - user_question
+      
+      # Step 2: Search the vector index for relevant chunks (VectorSearch handles embedding internally)
+      - id: search_index
+        type: VectorSearch
+        index: rag_index
+        default_top_k: 5
+        inputs:
+          - user_question
+        outputs:
+          - search_results
+      
+      # Step 3: Build context prompt with retrieved chunks
+      - id: build_prompt
+        type: PromptTemplate
+        template: |
+          You are a helpful assistant that answers questions based on the provided context.
+          
+          Context from documents:
+          {search_results}
+          
+          User question: {user_question}
+          
+          Please provide a detailed answer based on the context above. If the context doesn't contain relevant information, say so.
+        inputs:
+          - search_results
+          - user_question
+        outputs:
+          - context_prompt
+      
+      # Step 4: Generate response using LLM with context
+      - id: generate_response
+        type: LLMInference
+        model: claude_sonnet
+        system_message: "You are a helpful assistant that answers questions based on provided document context. Be concise and accurate."
+        inputs:
+          - context_prompt
+        outputs:
+          - assistant_response
+
+  - type: Flow
+    id: document_ingestion
+    description: Load LlamaIndex Q&A pairs from HuggingFace, split, embed, and index documents
+    
+    variables:
+      - id: raw_document
+        type: RAGDocument
+      - id: document_chunk
+        type: RAGChunk
+      - id: embedded_chunk
+        type: RAGChunk
+    
+    outputs:
+      - embedded_chunk
+    
+    steps:
+      # Step 1: Load documents directly from HuggingFace using HuggingFaceFSReader
+      # This dataset contains 1235 LlamaIndex instruction-output Q&A pairs
+      - id: load_documents
+        type: DocumentSource
+        reader_module: llama_index.readers.huggingface_fs.HuggingFaceFSReader
+        loader_args:
+          path: "datasets/AlignmentLab-AI/llama-index/modified_dataset.jsonl"
+        outputs:
+          - raw_document
+      
+      # Step 2: Split documents into chunks
+      - id: split_documents
+        type: DocumentSplitter
+        splitter_name: "SentenceSplitter"
+        chunk_size: 512
+        chunk_overlap: 50
+        inputs:
+          - raw_document
+        outputs:
+          - document_chunk
+      
+      # Step 3: Generate embeddings for each chunk
+      - id: embed_chunks
+        type: DocumentEmbedder
+        model: titan_embed_v2
+        concurrency_config:
+          num_workers: 5
+        inputs:
+          - document_chunk
+        outputs:
+          - embedded_chunk
+      
+      # Step 4: Upsert embedded chunks into Qdrant
+      - id: index_chunks
+        type: IndexUpsert
+        index: rag_index
+        batch_config:
+          batch_size: 25
+        inputs:
+          - embedded_chunk
+        outputs:
+          - embedded_chunk
+

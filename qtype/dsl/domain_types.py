@@ -14,11 +14,12 @@ class Embedding(StrictBaseModel):
     vector: list[float] = Field(
         ..., description="The vector representation of the embedding."
     )
-    source_text: str | None = Field(
-        None, description="The original text that was embedded."
+    content: Any | None = Field(
+        None, description="The original content that was embedded."
     )
-    metadata: dict[str, str] | None = Field(
-        None, description="Optional metadata associated with the embedding."
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata associated with the embedding.",
     )
 
 
@@ -68,8 +69,9 @@ class RAGDocument(StrictBaseModel):
     uri: str | None = Field(
         None, description="The URI where the document can be found."
     )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata associated with the document."
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata associated with the document.",
     )
     type: PrimitiveTypeEnum = Field(
         ...,
@@ -77,21 +79,29 @@ class RAGDocument(StrictBaseModel):
     )
 
 
-class RAGChunk(StrictBaseModel):
+class RAGChunk(Embedding):
     """A standard, built-in representation of a chunk of a document used in Retrieval-Augmented Generation (RAG)."""
 
-    content: str = Field(..., description="The text content of the chunk.")
     chunk_id: str = Field(
         ..., description="An unique identifier for the chunk."
     )
     document_id: str = Field(
         ..., description="The identifier of the parent document."
     )
-    embedding: Embedding | None = Field(
-        None, description="Optional embedding associated with the chunk."
+    vector: list[float] | None = Field(
+        None, description="Optional vector embedding for the chunk."
     )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata associated with the chunk."
+
+
+class RAGSearchResult(StrictBaseModel):
+    """A standard, built-in representation of a search result from a RAG vector search."""
+
+    chunk: RAGChunk = Field(
+        ..., description="The RAG chunk returned as a search result."
+    )
+    score: float = Field(
+        ...,
+        description="The similarity score of the chunk with respect to the query.",
     )
 
 

@@ -13,6 +13,7 @@ indexes:
   - type: VectorIndex
     id: test_index
     name: my_collection
+    module: qdrant.QdrantVectorStore
     embedding_model: embedding_model
 
 flows:

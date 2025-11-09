@@ -84,15 +84,17 @@ class DocumentSplitterExecutor(StepExecutor):
 
             # Create a RAGChunk for each node and yield (fan-out)
             for node in nodes:
+                merged_metadata = {}
+                merged_metadata.update(document.metadata)
+                if node.metadata:
+                    merged_metadata.update(node.metadata)
+
                 chunk = RAGChunk(
                     content=node.text,
                     chunk_id=node.node_id,
                     document_id=document.file_id,
-                    embedding=None,  # Embedding will be added later
-                    metadata={
-                        **(document.metadata or {}),
-                        **(node.metadata or {}),
-                    },
+                    vector=None,  # Embedding will be added later
+                    metadata=merged_metadata,
                 )
                 yield message.copy_with_variables({output_id: chunk})
 

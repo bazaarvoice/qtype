@@ -535,6 +535,45 @@ class Decoder(Step):
     )
 
 
+class Echo(Step):
+    """Defines a step that echoes its inputs as outputs.
+
+    Useful for debugging flows by inspecting variable values at a specific
+    point in the execution pipeline. The step simply passes through all input
+    variables as outputs without modification.
+    """
+
+    type: Literal["Echo"] = "Echo"
+
+
+class FieldExtractor(Step):
+    """Extracts specific fields from input data using JSONPath expressions.
+
+    This step uses JSONPath syntax to extract data from structured inputs
+    (Pydantic models, dicts, lists). The input is first converted to a dict
+    using model_dump() if it's a Pydantic model, then the JSONPath expression
+    is evaluated.
+
+    If the JSONPath matches multiple values, the step yields multiple output
+    messages (1-to-many cardinality). If it matches a single value, it yields
+    one output message. If it matches nothing, it raises an error.
+
+    The extracted data is used to construct the output variable by passing it
+    as keyword arguments to the output type's constructor.
+
+    Example JSONPath expressions:
+    - `$.field_name` - Extract a single field
+    - `$.items[*]` - Extract all items from a list
+    - `$.items[?(@.price > 10)]` - Filter items by condition
+    """
+
+    type: Literal["FieldExtractor"] = "FieldExtractor"
+    json_path: str = Field(
+        ...,
+        description="JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
+    )
+
+
 class InvokeTool(Step, ConcurrentStepMixin):
     """Invokes a tool with input and output bindings."""
 
@@ -932,11 +971,15 @@ class DocumentSource(Source):
     type: Literal["DocumentSource"] = "DocumentSource"
     reader_module: str = Field(
         ...,
-        description="Module path of the LlamaIndex Reader without 'llama_index.readers' (e.g., 'google.GoogleDriveReader', 'file.IPYNBReader').",
+        description="Module path of the LlamaIndex Reader).",
     )
     args: dict[str, Any] = Field(
         default_factory=dict,
-        description="Reader-specific arguments to pass to the LlamaIndex constructor.",
+        description="Reader-specific arguments to pass to the Reader constructor.",
+    )
+    loader_args: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Loader-specific arguments to pass to the load_data method.",
     )
     auth: Reference[AuthProviderType] | str | None = Field(
         default=None,
@@ -1015,6 +1058,10 @@ class VectorIndex(Index):
     """Vector database index for similarity search using embeddings."""
 
     type: Literal["VectorIndex"] = "VectorIndex"
+    module: str = Field(
+        ...,
+        description="Python module path for the vector store implementation (e.g., 'llama_index.vector_stores.qdrant.QdrantVectorStore').",
+    )
     embedding_model: Reference[EmbeddingModel] | str = Field(
         ...,
         description="Embedding model used to vectorize queries and documents.",
@@ -1025,7 +1072,10 @@ class DocumentIndex(Index):
     """Document search index for text-based search (e.g., Elasticsearch, OpenSearch)."""
 
     type: Literal["DocumentIndex"] = "DocumentIndex"
-    pass
+    endpoint: str = Field(
+        ...,
+        description="URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
+    )
 
 
 class Search(Step, ABC):
@@ -1101,10 +1151,12 @@ StepType = Annotated[
         DocumentSearch,
         DocumentSplitter,
         DocumentSource,
-        InvokeEmbedding,
-        FileWriter,
+        Echo,
+        FieldExtractor,
         FileSource,
+        FileWriter,
         IndexUpsert,
+        InvokeEmbedding,
         InvokeFlow,
         InvokeTool,
         LLMInference,

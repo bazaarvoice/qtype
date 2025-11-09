@@ -1,0 +1,137 @@
+# Example demonstrating the FieldExtractor step
+# This shows how to extract fields from structured data using JSONPath
+
+id: field_extractor_demo
+description: |
+  Demonstrates the FieldExtractor step for extracting specific fields from input data.
+  Shows both single value extraction and multiple value extraction (1-to-many).
+
+types:
+  - id: Person
+    description: A person with name and age
+    properties:
+      name: text
+      age: int
+
+  - id: DataRecord
+    description: A complex data record with nested structure
+    properties:
+      timestamp: text
+      metadata: text
+      items: list[text]
+
+flows:
+  # Example 1: Extract a single field from input
+  - id: extract_single_field
+    description: Extract the name field from a Person
+    variables:
+      - id: person_data
+        type: Person
+      - id: person_name
+        type: text
+    
+    steps:
+      - type: FieldExtractor
+        id: extract_name
+        json_path: $.name
+        inputs:
+          - person_data
+        outputs:
+          - person_name
+    
+    inputs:
+      - person_data
+    outputs:
+      - person_name
+
+  # Example 2: Extract multiple items (1-to-many)
+  - id: extract_multiple_items
+    description: Extract all items from a list, yielding one output per item
+    variables:
+      - id: data_record
+        type: DataRecord
+      - id: item
+        type: text
+    
+    steps:
+      - type: FieldExtractor
+        id: extract_items
+        json_path: $.items[*]
+        inputs:
+          - data_record
+        outputs:
+          - item
+    
+    inputs:
+      - data_record
+    outputs:
+      - item
+
+  # Example 3: Extract nested fields
+  - id: extract_nested_field
+    description: Extract a field from nested data structure
+    variables:
+      - id: complex_data
+        type: text  # JSON string
+      - id: parsed_data
+        type: text
+      - id: nested_value
+        type: text
+    
+    steps:
+      # First decode the JSON string
+      - type: Decoder
+        id: decode_json
+        format: json
+        inputs:
+          - complex_data
+        outputs:
+          - parsed_data
+      
+      # Then extract a specific nested field
+      - type: FieldExtractor
+        id: extract_nested
+        json_path: $.data.value
+        inputs:
+          - parsed_data
+        outputs:
+          - nested_value
+    
+    inputs:
+      - complex_data
+    outputs:
+      - nested_value
+
+  # Example 4: Extract with filtering
+  - id: extract_filtered_items
+    description: Extract items that match a condition using JSONPath filter
+    variables:
+      - id: product_list
+        type: text  # JSON array
+      - id: products
+        type: text
+      - id: expensive_item
+        type: text
+    
+    steps:
+      - type: Decoder
+        id: decode_products
+        format: json
+        inputs:
+          - product_list
+        outputs:
+          - products
+      
+      # Extract only products with price > 100
+      - type: FieldExtractor
+        id: filter_expensive
+        json_path: $[?(@.price > 100)]
+        inputs:
+          - products
+        outputs:
+          - expensive_item
+    
+    inputs:
+      - product_list
+    outputs:
+      - expensive_item
