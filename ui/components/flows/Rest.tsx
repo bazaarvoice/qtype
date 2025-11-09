@@ -40,6 +40,11 @@ function RestFlow({ flow }: FlowProps) {
     setInputs(newInputs);
   };
 
+  const handleReset = () => {
+    setShowInput(true);
+    handleInputChange({});
+  };
+
   const executeFlow = async () => {
     setShowInput(false);
     setIsExecuting(true);
@@ -66,6 +71,7 @@ function RestFlow({ flow }: FlowProps) {
       setIsExecuting(false);
     }
   };
+
   return (
     <div className="space-y-6">
       {/* Flow Header */}
@@ -88,11 +94,14 @@ function RestFlow({ flow }: FlowProps) {
       )}
       <div className="mt-6 pt-4 border-t">
         {!showInput ? (
-          <Button disabled={isExecuting} onClick={() => setShowInput(true)}>
+          <Button disabled={isExecuting} onClick={handleReset}>
             Reset
           </Button>
         ) : (
-          <Button disabled={isExecuting} onClick={executeFlow}>
+          <Button
+            disabled={isExecuting || !Object.keys(inputs).length}
+            onClick={executeFlow}
+          >
             {isExecuting ? "Executing..." : "Execute Flow"}
           </Button>
         )}

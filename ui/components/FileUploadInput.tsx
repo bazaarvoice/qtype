@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-import type { SchemaProperty, FlowInputValue } from "@/types";
+import type { FlowInputValue, SchemaProperty } from "@/types";
 
 interface FileUploadInputProps {
   name: string;
@@ -14,6 +14,31 @@ interface FileUploadInputProps {
 }
 
 const BINARY_TYPES = new Set(["bytes", "file", "image", "audio", "video"]);
+const DEFAULT_MIME = "application/octet-stream";
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+function humanSize(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let size = bytes;
+  let idx = 0;
+  while (size >= 1024 && idx < units.length - 1) {
+    size /= 1024;
+    idx += 1;
+  }
+  return idx === 0
+    ? `${size} ${units[idx]}`
+    : `${size.toFixed(1)} ${units[idx]}`;
+}
 
 export default function FileUploadInput({
   name,
@@ -30,6 +55,9 @@ export default function FileUploadInput({
     size: number;
     type: string;
   } | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const typeKey = property.qtype_type || "file";
 
   const acceptMap: Record<string, Record<string, string[]>> = {
     image: { "image/*": [] },
@@ -38,86 +66,59 @@ export default function FileUploadInput({
     file: { "*/*": [] },
     bytes: { "*/*": [] },
   };
-  const typeKey = property.qtype_type || "file";
   const accept = acceptMap[typeKey] ?? { "*/*": [] };
 
-  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-    // Chunk to avoid call stack overflow on large files
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode(...chunk);
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
+
+  async function handleDrop(files: File[]) {
+    setError(null);
+    const file = files[0];
+    if (!file) return;
+
+    const mime = file.type || DEFAULT_MIME;
+    setFileMeta({ name: file.name, size: file.size, type: mime });
+
+    if (property.maxLength && file.size > property.maxLength) {
+      setError(
+        `File exceeds max size (${property.maxLength} bytes). Got ${file.size}.`,
+      );
+      return;
     }
-    return btoa(binary);
-  };
 
-  const humanSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${kb.toFixed(1)} KB`;
-    const mb = kb / 1024;
-    if (mb < 1024) return `${mb.toFixed(1)} MB`;
-    const gb = mb / 1024;
-    return `${gb.toFixed(1)} GB`;
-  };
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    if (mime.startsWith("image/") || mime.startsWith("video/")) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
+    }
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const handleDrop = useCallback(
-    async (files: File[]) => {
-      setError(null);
-      const file = files[0];
-      if (!file) return;
-      setFileMeta({
-        name: file.name,
-        size: file.size,
-        type: file.type || "application/octet-stream",
-      });
-
-      if (property.maxLength && file.size > property.maxLength) {
+    if (BINARY_TYPES.has(typeKey)) {
+      try {
+        setIsReading(true);
+        const buffer = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(buffer);
+        const output = JSON.stringify({
+          filename: file.name,
+          mime,
+          bytes_base64: base64,
+        });
+        onChange?.(name, output);
+      } catch (e) {
         setError(
-          `File exceeds max size (${property.maxLength} bytes). Got ${file.size}.`,
+          e instanceof Error
+            ? `Failed to read file: ${e.message}`
+            : "Failed to read file",
         );
-        return;
+      } finally {
+        setIsReading(false);
       }
-
-      // Preview for image/video only
-      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-        setFilePreview(URL.createObjectURL(file));
-      } else {
-        setFilePreview(null);
-      }
-
-      if (BINARY_TYPES.has(typeKey)) {
-        try {
-          setIsReading(true);
-          const buffer = await file.arrayBuffer();
-          // Send base64 string (Pydantic will decode to bytes)
-          const base64 = arrayBufferToBase64(buffer);
-          const output = JSON.stringify({
-            filename: file.name,
-            mime: file.type || "application/octet-stream",
-            bytes_base64: base64,
-          });
-          onChange?.(name, output);
-        } catch (e) {
-          setError(
-            e instanceof Error
-              ? `Failed to read file: ${e.message}`
-              : "Failed to read file",
-          );
-        } finally {
-          setIsReading(false);
-        }
-      } else {
-        // Fallback: pass File (should not happen for configured binary types)
-        onChange?.(name, file as unknown as FlowInputValue);
-      }
-    },
-    [name, onChange, property.maxLength, typeKey],
-  );
+      return;
+    }
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,
@@ -125,17 +126,8 @@ export default function FileUploadInput({
     accept,
   });
 
-  const renderSelectedInfo = () => {
-    if (!value) return null;
-    if (typeof value === "string" && BINARY_TYPES.has(typeKey)) {
-      return (
-        <p className="mt-2 text-xs text-gray-700 dark:text-gray-300">
-          Bytes (base64) length: {value.length}
-        </p>
-      );
-    }
-    return null;
-  };
+  const showSelectedInfo =
+    value && typeof value === "string" && BINARY_TYPES.has(typeKey);
 
   return (
     <div className="space-y-2">
@@ -158,7 +150,11 @@ export default function FileUploadInput({
             Reading file...
           </p>
         )}
-        {renderSelectedInfo()}
+        {showSelectedInfo && (
+          <p className="mt-2 text-xs text-gray-700 dark:text-gray-300">
+            Bytes (base64) length: {String(value).length}
+          </p>
+        )}
       </div>
 
       {filePreview && fileMeta && (
@@ -195,7 +191,7 @@ export default function FileUploadInput({
                 if (filePreview) URL.revokeObjectURL(filePreview);
                 setFilePreview(null);
                 setFileMeta(null);
-                onChange?.(name, null);
+                onChange?.(name, null as FlowInputValue);
               }}
               className="rounded bg-black/60 px-2 py-1 text-[10px] font-medium text-white hover:bg-black/80"
             >
