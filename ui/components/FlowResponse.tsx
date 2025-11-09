@@ -8,10 +8,8 @@
 
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
-import { Audio } from "./Audio";
-import { File } from "./File";
 import { MarkdownContainer } from "./MarkdownContainer";
-import { Video } from "./Video";
+import { Audio, File, Video } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {

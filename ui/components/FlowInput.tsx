@@ -8,10 +8,10 @@
 
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
-import FileUploadInput from "./FileUploadInput";
 import BooleanInput from "./inputs/BooleanInput";
 import DatePickerInput from "./inputs/DatePickerInput";
 import DateTimeInput from "./inputs/DatetimeInput";
+import FileUploadInput from "./inputs/FileUploadInput";
 import NumberInput from "./inputs/NumberInput";
 import TextInput from "./inputs/TextInput";
 import TimeInput from "./inputs/TimeInput";
