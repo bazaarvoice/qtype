@@ -1,18 +1,22 @@
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ThinkingPanelProps {
   reasoningContent: string;
-  initiallyOpen?: boolean;
+  isOpen?: boolean;
   className?: string;
 }
 
 function ThinkingPanel({
   reasoningContent,
-  initiallyOpen = false,
+  isOpen = false,
   className = "",
 }: ThinkingPanelProps) {
-  const [open, setOpen] = useState(initiallyOpen);
+  const [open, setOpen] = useState(isOpen);
+
+  useEffect(() => {
+    setOpen(isOpen);
+  }, [isOpen]);
 
   if (!reasoningContent || reasoningContent.trim() === "") {
     return null;

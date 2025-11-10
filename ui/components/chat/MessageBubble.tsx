@@ -28,6 +28,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     message,
     MessagePartWithTextContent.Reasoning,
   );
+
   const textContent = getPartContent(message, MessagePartWithTextContent.Text);
 
   const fileAttachments: FileAttachment[] =
@@ -35,8 +36,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     message.experimental_attachments ||
     (message.parts?.filter((p): p is FileAttachment => p.type === "file") ??
       []);
-
-  const excludedPartTypes = new Set(["text", "file"]);
+  const excludedPartTypes = new Set(["file"]);
   const statusParts = (message.parts ?? []).filter(
     (p) => !excludedPartTypes.has(p.type),
   ) as StreamingPart[];
@@ -76,7 +76,10 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
         </div>
 
         {reasoningContent && (
-          <ThinkingPanel reasoningContent={reasoningContent} />
+          <ThinkingPanel
+            reasoningContent={reasoningContent}
+            isOpen={!textContent}
+          />
         )}
 
         {textContent && (
