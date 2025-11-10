@@ -3,17 +3,23 @@ import remarkGfm from "remark-gfm";
 interface MarkdownContainerProps {
   children: string;
   theme?: "light" | "dark";
+  chatBubble?: boolean;
   className?: string;
 }
 
 function MarkdownContainer({
   children,
   theme = "light",
+  chatBubble = false,
   className,
 }: MarkdownContainerProps) {
   const rootClass =
     `${theme === "dark" ? "dark " : ""}${className ?? ""}`.trim();
-  const bg = theme === "dark" ? "bg-primary" : "bg-muted";
+  const bg = chatBubble
+    ? theme === "dark"
+      ? "bg-primary"
+      : "bg-muted"
+    : "bg-transparent";
   return (
     <div className={`${bg} rounded-lg px-3 py-2`}>
       <div className={rootClass}>

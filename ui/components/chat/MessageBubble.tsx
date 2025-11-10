@@ -82,7 +82,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
         )}
 
         {textContent && (
-          <MarkdownContainer theme={isUser ? "dark" : "light"}>
+          <MarkdownContainer chatBubble theme={isUser ? "dark" : "light"}>
             {textContent}
           </MarkdownContainer>
         )}

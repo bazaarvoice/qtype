@@ -27,7 +27,9 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
     // Handle different qtype_type values
     switch (property.qtype_type) {
       case "text":
-        return <MarkdownContainer>{String(value)}</MarkdownContainer>;
+        return (
+          <MarkdownContainer chatBubble>{String(value)}</MarkdownContainer>
+        );
 
       case "boolean":
         return (
