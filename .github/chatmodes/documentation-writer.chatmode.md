@@ -135,6 +135,8 @@ User asks to document "filters" parameter on VectorSearch:
 
 **CRITICAL:** All tutorials must follow this standardized format:
 
+### Tutorial Structure
+
 1. **Title:** Do NOT use "Tutorial:" or "Tutorial N:" prefix. Use clean, descriptive titles.
    - ❌ WRONG: `# Tutorial: Build Your First Application`
    - ✅ CORRECT: `# Build Your First Application`
@@ -156,12 +158,7 @@ User asks to document "filters" parameter on VectorSearch:
    - ❌ WRONG: `[example.yaml](../../examples/example.yaml)`
    - ✅ CORRECT: `[example.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/example.yaml)`
 
-4. **No "Next Tutorial" References:** Do NOT include "next tutorial" or "coming up" sections at the end.
-   - ❌ WRONG: `**Next:** In the next tutorial, we'll explore...`
-   - ❌ WRONG: `**Coming up:** We'll learn about...`
-   - ✅ CORRECT: End with reference links or challenges without mentioning future tutorials
-
-5. **Example of Complete Tutorial Header:**
+4. **Example of Complete Tutorial Header:**
    ```markdown
    # Build a Conversational Chatbot
    
@@ -173,6 +170,77 @@ User asks to document "filters" parameter on VectorSearch:
    
    **What you'll build:** A stateful chatbot that maintains conversation history and provides contextual responses.
    ```
+
+### Tutorial Closing Structure
+
+**CRITICAL:** Tutorials must end with ONLY these three sections in this exact order:
+
+1. **What You've Learned** (Required)
+   - Use checkmarks (✅) for each learning outcome
+   - Be specific about concepts, not just steps
+   - Example:
+     ```markdown
+     ## What You've Learned
+     
+     Congratulations! You've learned:
+     
+     ✅ **Memory configuration** - Storing conversation state  
+     ✅ **Conversational flows** - Multi-turn interactions  
+     ✅ **ChatMessage type** - Domain-specific data types  
+     ```
+
+2. **Next Steps** (Required)
+   - Link to the complete example file on GitHub (always first)
+   - Link to reference documentation
+   - Link to related concepts or how-to guides
+   - Example:
+     ```markdown
+     ## Next Steps
+     
+     **Reference the complete example:**
+     
+     - [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml) - Full working example
+     
+     **Learn more:**
+     
+     - [Memory Concept](../Concepts/Core/memory.md) - Advanced memory strategies
+     - [ChatMessage Reference](../How-To%20Guides/Data%20Types/domain-types.md) - Full type specification
+     ```
+
+3. **Common Questions** (Required)
+   - FAQ format with Q&A pairs
+   - Address actual user pain points
+   - Keep answers concise
+   - Example:
+     ```markdown
+     ## Common Questions
+     
+     **Q: Why do I need `ChatMessage` instead of `text`?**  
+     A: `ChatMessage` includes metadata (role, attachments) that QType uses to properly format conversation history for the LLM.
+     
+     **Q: Can I have multiple memory configurations?**  
+     A: Yes! You can define multiple memories in the `memories:` section and reference different ones in different flows.
+     ```
+
+### What NOT to Include in Tutorial Endings
+
+**NEVER include these sections:**
+
+- ❌ **Complete Code** - Link to example file instead, don't duplicate entire YAML
+- ❌ **Try These Extensions** - Don't give users homework or challenges
+- ❌ **Challenge** - Don't add programming exercises
+- ❌ **Production Considerations** - Save for How-To Guides
+- ❌ **Common Issues and Solutions** - Move key items to Common Questions FAQ
+- ❌ **Next Tutorial References** - Don't say "In the next tutorial..." or "Coming up..."
+- ❌ **Experiment** or "Try this" suggestions - Users should complete the tutorial, not do extra work
+
+### Why This Structure?
+
+- **Educational:** Users know exactly what they learned
+- **Actionable:** Clear next steps for continued learning
+- **Supportive:** Common Questions addresses known pain points
+- **Maintainable:** Example files are the source of truth, not duplicated code
+- **Focused:** No distractions from optional exercises or future content
 
 ## YOUR TASK: The Four Document Types
 

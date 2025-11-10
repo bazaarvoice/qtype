@@ -34,15 +34,10 @@ Today you'll work with **data pipelines** that process multiple records:
 
 ```
 Load CSV file → Count records
-     (many)          (one)
+   (stream)         (summary)
 ```
 
 ### Key Concepts
-
-**Step Cardinality** - Does a step emit one result or many?
-
-- `cardinality: one` - Takes input(s), emits 1 output per input
-- `cardinality: many` - Takes input(s), emits 0...N outputs per input
 
 **Streaming Processing** - Processing multiple records
 
@@ -74,7 +69,7 @@ Load CSV file → Count records
 └──────────────┘
 ```
 
-**Key insight:** FileSource has `cardinality: many` - it takes one input (file path) and emits many outputs (one per row).
+**Key insight:** FileSource emits multiple outputs (one per row) from a single input (file path).
 
 ---
 
@@ -145,20 +140,15 @@ flows:
     outputs:
 
 - stats
-      - name
-      - region
-      - purchases
 ```
 
 **What's happening:**
 
 - We declare 5 variables for each stage of processing
 - Only `file_path` is required as input (the file path)
-- All four fields are returned as outputs: `stats` (aggregate summary) plus the three data fields
+- Only `stats` is returned as output (the aggregate summary)
 - The intermediate variables (`name`, `region`, `purchases`) flow between steps
 - `AggregateStats` is a built-in type with success/failure counts
-
-**Why return all fields?** This lets you see both the individual records AND the aggregate summary in the output.
 
 **Check your work:**
 
@@ -193,10 +183,11 @@ Add the first step to read the file:
 
 - `path: file_path` - Reference to variable containing file path
 - Automatically detects format from file extension (`.csv`, `.parquet`, `.json`, `.jsonl`)
-- `cardinality: many` (implicit) - Emits one output per row
-- Output variable names must match CSV column names
+- Emits one output per row (streaming)
+- Output variable names should match CSV column names
 
 **How it works:**
+
 ```
 Input: file_path = "examples/data/customers.csv"
 Process: Read file row by row
@@ -223,14 +214,14 @@ Add a step to count all the records:
 - stats
 ```
 
-**`Aggregate` step** - Combines many items into one result
+**`Aggregate` step** - Combines many items into one summary
 
 - Counts how many items flow through
-- `cardinality: one` - Takes many inputs, emits 1 output
 - Waits for all upstream items before computing
-- Outputs `AggregateStats` with success/failure counts
+- Emits a single summary with `AggregateStats` containing success/failure counts
 
 **What this does:**
+
 ```
 Input:  5 records flow through (one at a time)
 Output: stats = AggregateStats(num_successful=5, num_failed=0, num_total=5)
@@ -254,35 +245,31 @@ uv run qtype run -i '{"file_path":"examples/data/customers.csv"}' examples/data_
 ```
 
 **Expected output:**
+
 ```
 INFO: Executing workflow from examples/data_processor.qtype.yaml
 INFO: ✅ Flow execution completed successfully
-INFO: Processed 6 input(s)
+INFO: Processed 1 input(s)
 INFO: 
 Results:
-                                       stats     name region  purchases
-0                                       None    Alice   West        5.0
-1                                       None      Bob   East        3.0
-2                                       None  Charlie   West        7.0
-3                                       None    Diana  North        2.0
-4                                       None      Eve   East        4.0
-5  num_successful=5 num_failed=0 num_total=5     None   None        NaN
+                                     stats
+0  num_successful=5 num_failed=0 num_total=5
 ```
 
 **What happened:**
 
 1. FileSource read 5 rows from CSV
 2. Each row became a FlowMessage with name, region, purchases
-3. All 5 messages flowed through to Aggregate
-4. Aggregate counted them and output final stats
-5. You see 5 data rows (0-4) with customer info + 1 final stats row (5)
+3. All 5 messages streamed through to Aggregate
+4. Aggregate counted them and emitted a single final summary with stats
 
 **Understanding the output:**
 
-- **Rows 0-4:** Individual customer records with `stats=None` (data hasn't been aggregated yet)
-- **Row 5:** Aggregate summary with `stats=AggregateStats(...)` and data fields as `None`/`NaN`
+The Aggregate step produces one summary result with statistics about the data that flowed through:
 
-**Why 6 outputs?** The Aggregate step passes through all input messages (rows 0-4) and then adds one final summary message (row 5) with the stats.
+- `num_successful=5` - 5 records processed successfully
+- `num_failed=0` - 0 records had errors
+- `num_total=5` - 5 total records processed
 
 ---
 
@@ -292,32 +279,8 @@ Congratulations! You've mastered:
 
 ✅ **FileSource step** - Reading data from CSV files (also supports Parquet, JSON, JSONL)  
 ✅ **Aggregate step** - Counting and combining results  
-✅ **Step cardinality** - Understanding one-to-many operations  
+✅ **Streaming data** - Processing records one at a time  
 ✅ **Variable naming** - Output names must match column names
-
----
-
-## Understanding One-to-Many Operations
-
-QType steps have different cardinalities:
-
-**`cardinality: many`** - One input produces multiple outputs:
-```
-FileSource: 1 file path → 5 records (one per row)
-```
-
-**`cardinality: one`** - Each input produces one output:
-```
-Decoder: 1 string → 1 parsed object
-LLMInference: 1 prompt → 1 response
-```
-
-**Many-to-one aggregation** - Multiple inputs produce one output:
-```
-Aggregate: 5 records → 1 summary statistic
-```
-
-This is why FileSource is so powerful - it lets you process entire datasets with a simple file path input!
 
 ---
 
@@ -335,93 +298,15 @@ This is why FileSource is so powerful - it lets you process entire datasets with
 
 ## Next Steps
 
-**Want to dive deeper?**
+**Reference the complete example:**
+
+- [`data_processor.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/data_processor.qtype.yaml) - Full working example
+
+**Learn more:**
 
 - [FileSource Reference](../components/FileSource.md) - All file formats
 - [Aggregate Reference](../components/Aggregate.md) - Statistics details
 - [AggregateStats Reference](../components/AggregateStats.md) - Output structure
-
-**Try These Extensions:**
-
-1. **Add a FileWriter:**
-   - Add a `FileWriter` step after Aggregate
-   - Write the stats to an output CSV file
-
-2. **Process multiple files:**
-   - Call the flow multiple times with different file paths
-   - Compare counts across different datasets
-
-3. **Add data transformation:**
-   - Use Tutorial 3's FieldExtractor to filter or transform records
-   - Chain multiple steps together
-
----
-
-## Complete Code
-
-Here's your complete application:
-
-```yaml
-id: data_processor
-description: Process CSV data to extract and summarize information
-
-flows:
-
-- type: Flow
-    id: process_customers
-    description: Load customer data and count records
-    
-    variables:
-
-- id: file_path
-        type: text
-      - id: name
-        type: text
-      - id: region
-        type: text
-      - id: purchases
-        type: int
-      - id: stats
-        type: AggregateStats
-    
-    inputs:
-
-- file_path
-    
-    outputs:
-
-- stats
-      - name
-      - region
-      - purchases
-    
-    steps:
-      # Step 1: Read CSV file (emits many records, one per row)
-      - id: load_file
-        type: FileSource
-        path: file_path
-        inputs:
-
-- file_path
-        outputs:
-
-- name
-          - region
-          - purchases
-      
-      # Step 2: Count all records
-      - id: count_records
-        type: Aggregate
-        inputs:
-
-- region
-        outputs:
-
-- stats
-          - name
-          - region
-          - purchases
-```
 
 ---
 
@@ -439,14 +324,11 @@ A: Use the `FieldExtractor` step (from Tutorial 3) or `Decoder` step to parse an
 **Q: How do I process data from databases?**  
 A: Use `SQLSource` step instead of `FileSource`. It works similarly but connects to databases and executes SQL queries.
 
-**Q: What's the difference between `cardinality: one` and `cardinality: many`?**  
-A:
+**Q: How does streaming work with FileSource?**  
+A: FileSource reads and emits records one at a time rather than loading the entire file into memory. This allows processing large files efficiently.
 
-- `one` - Each input produces exactly one output (transforms, LLM calls)
-- `many` - Each input can produce 0, 1, or more outputs (file reading, searches)
-
-**Q: Why do I see multiple rows of output for Aggregate?**  
-A: Aggregate passes through all input messages first (so you can see the data flowing through), then adds one final summary row with the aggregate stats.
+**Q: What does Aggregate output?**  
+A: Aggregate outputs a single summary message with `AggregateStats` containing counts of successful, failed, and total messages that flowed through the step.
 
 **Q: Can FileSource read from URLs or S3?**  
 A: Yes! FileSource uses fsspec, so it supports many protocols like `s3://`, `http://`, `gs://`, etc. Just provide the full URI as the file path.

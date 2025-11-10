@@ -47,7 +47,22 @@ QType includes a built-in library of common tools at `qtype.application.commons.
 
 ### Generate the Commons Library
 
-Run this command to see all available tools:
+**Directory Structure:**
+
+For this tutorial, we'll generate the commons library in a `common/` directory at the root of your project:
+
+```
+your-project/
+├── common/              # Generated commons library
+│   ├── tools.qtype.yaml
+│   └── aws.bedrock.models.qtype.yaml
+└── examples/            # Your tutorial files
+    └── time_utilities.qtype.yaml
+```
+
+**Generate the files:**
+
+From your project root, run:
 
 ```bash
 qtype generate commons --prefix ./common/
@@ -424,35 +439,16 @@ input_bindings:
 
 ## Next Steps
 
-**Want to dive deeper?**
+**Reference the complete example:**
+
+- [`time_utilities.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/time_utilities.qtype.yaml) - Full working example
+
+**Learn more:**
 
 - [Tool Concept](../Concepts/Core/tool.md) - Full tool architecture
 - [InvokeTool Step](../components/InvokeTool.md) - Complete API reference
 - [Create Python Tools](../How-To%20Guides/Tools/python-tools.md) - Build your own tools
 - [Create API Tools](../How-To%20Guides/Tools/api-tools.md) - Integrate external APIs
-
-**Try These Extensions:**
-
-Before moving on, try modifying your time utilities application:
-
-1. Calculate time differences for different hour amounts (try 24 hours, 7 days)
-2. Use the `parse_duration_string` tool to parse human-readable durations
-3. Chain multiple `timedelta` operations together
-4. Add variables to make the hours input dynamic
-
-**Challenge:** Create a flow that takes a duration string as input (e.g., "2 days 3 hours") and calculates a future timestamp.
-
----
-
-## Complete Code
-
-Here's your complete `time_utilities.qtype.yaml`:
-
-```yaml
---8<-- "../examples/time_utilities.qtype.yaml"
-```
-
-**Download:** [time_utilities.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/time_utilities.qtype.yaml)
 
 ---
 

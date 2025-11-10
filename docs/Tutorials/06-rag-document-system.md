@@ -17,12 +17,39 @@ You should have completed:
 - **[Tutorial 4: Data Processing Pipelines](04-data-processing-pipelines.md)** - Multi-step data processing
 - **[Tutorial 5: Multi-Flow Applications](05-multi-flow-applications.md)** - Multiple flows in one app
 
-Make sure you have:
+### Prerequisites Checklist
 
-- QType installed: `pip install qtype[interpreter]`
-- AWS credentials configured (for Bedrock)
-- Docker installed (for Qdrant)
-- 30 minutes
+Before starting, verify your environment is ready:
+
+**Required Software:**
+
+- [ ] QType installed: `pip install qtype[interpreter]`
+- [ ] Docker installed and running: `docker --version`
+- [ ] AWS CLI configured: `aws sts get-caller-identity`
+
+**Required Accounts/Keys:**
+
+- [ ] AWS account with Bedrock access
+- [ ] Your AWS profile set: `export AWS_PROFILE=your-profile-name`
+
+**Required Python Packages:**
+
+- [ ] HuggingFace reader: `uv add llama-index-readers-huggingface-fs --optional interpreter`
+
+**Verify Your Setup:**
+
+```bash
+# Check Docker is running
+docker ps
+
+# Check AWS credentials
+aws sts get-caller-identity
+
+# Check Python packages
+pip list | grep llama-index-readers-huggingface-fs
+```
+
+**Time Required:** 30 minutes
 
 ---
 
@@ -532,13 +559,28 @@ You should see 3247 vectors in the collection.
 
 **`VectorSearch` step:**
 
-- Embeds the question (using `titan_embed_v2` from index config)
+- Embeds the question automatically using the index's embedding model
 - Searches for similar chunks in Qdrant
 - Returns top 5 most relevant chunks
 
+**How VectorSearch Handles Embedding:**
+
+VectorSearch automatically embeds your query using the `embedding_model` specified in the `VectorIndex` configuration. You don't need a separate DocumentEmbedder step for queries! 
+
+```yaml
+# The index configuration tells VectorSearch which model to use
+indexes:
+  - type: VectorIndex
+    embedding_model: titan_embed_v2  # ← VectorSearch uses this
+
+# VectorSearch automatically embeds user_question with titan_embed_v2
+- type: VectorSearch
+  index: rag_index  # Uses the embedding_model from this index
+```
+
 **How similarity works:**
 
-1. Question → embedding vector
+1. Question → embedding vector (using `titan_embed_v2`)
 2. Compare to all stored chunk vectors
 3. Return chunks with closest vectors (cosine similarity)
 
@@ -704,6 +746,60 @@ Congratulations! You've mastered:
 ✅ **VectorSearch** - Semantic similarity search  
 ✅ **Two-flow applications** - Separate ingestion and retrieval  
 ✅ **Production RAG patterns** - Complete end-to-end system
+
+---
+
+## Next Steps
+
+**Reference the complete example:**
+
+- [`rag.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/rag.qtype.yaml) - Full working example
+
+**Learn more:**
+
+- [VectorIndex Reference](../components/VectorIndex.md) - All vector store options
+- [DocumentSource Reference](../components/DocumentSource.md) - Document readers
+- [VectorSearch Reference](../components/VectorSearch.md) - Advanced search features
+- [RAG Best Practices](../How-To%20Guides/rag-best-practices.md) - Production patterns
+
+---
+
+## Common Questions
+
+**Q: Why separate ingestion and chat flows?**  
+A: Ingestion is expensive (embedding thousands of chunks) and runs once. Chat is fast (embedding one query) and runs per request. Separating them optimizes both performance and cost.
+
+**Q: How do I run ingestion before chat?**  
+A: Always run the ingestion flow first: `uv run qtype run examples/rag.qtype.yaml --flow document_ingestion`, then start chat: `uv run qtype serve examples/rag.qtype.yaml --flow rag_chat`
+
+**Q: Can I use different embedding models for ingestion and search?**  
+A: No, you must use the same model for both. The VectorIndex configuration specifies one `embedding_model` that's used by both DocumentEmbedder (ingestion) and VectorSearch (queries).
+
+**Q: How do I check if documents were ingested successfully?**  
+A: Query Qdrant directly: `curl http://localhost:6333/collections/documents` to see collection stats and document count.
+
+**Q: What if my documents are too large?**  
+A: Adjust the DocumentSplitter `chunk_size` parameter. Smaller chunks (256-512 tokens) work better for precise retrieval. Larger chunks (1024+ tokens) preserve more context.
+
+**Q: How do I improve answer quality?**  
+A: Try: (1) Adjust `default_top_k` to retrieve more chunks, (2) Improve your system message to enforce context-only answers, (3) Experiment with chunk size and overlap, (4) Use metadata filters to narrow search scope.
+
+**Q: Can I add memory to the chat flow?**  
+A: Yes! Add a `memories:` section and reference it in the LLMInference step with `memory: chat_memory`. This lets the chatbot remember conversation history.
+
+---
+
+## Congratulations! 🎉
+
+You've completed the QType tutorial series! You now know how to:
+
+- Build stateless and stateful applications
+- Work with tools and function calling
+- Process data in pipelines
+- Compose multi-flow applications
+- Build production RAG systems
+
+**Ready for more?** Check out the [How-To Guides](../How-To%20Guides/) for advanced patterns and production deployments.
 
 ---
 

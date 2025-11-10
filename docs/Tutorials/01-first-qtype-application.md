@@ -93,6 +93,8 @@ flows:
 
 - id: question
         type: text
+      - id: formatted_prompt
+        type: text
       - id: answer
         type: text
     inputs:
@@ -108,6 +110,7 @@ flows:
 - `flows:` - The processing logic section
 - `variables:` - Declares the data your app uses:
   - `question` - What the user asks
+  - `formatted_prompt` - The formatted prompt for the AI
   - `answer` - What the AI responds
 - `inputs:` and `outputs:` - Which variables go in and out
 
@@ -125,13 +128,22 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 ```yaml
     steps:
 
-- id: llm_step
-        type: LLMInference
-        model: gpt-4
-        system_message: "You are a helpful assistant."
+- id: format_prompt
+        type: PromptTemplate
+        template: "You are a helpful assistant. Answer the following question:\n{question}\n"
         inputs:
 
 - question
+        outputs:
+
+- formatted_prompt
+      
+      - id: llm_step
+        type: LLMInference
+        model: gpt-4
+        inputs:
+
+- formatted_prompt
         outputs:
 
 - answer
@@ -140,11 +152,14 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 **What this means:**
 
 - `steps:` - The actual processing instructions
-- `type: LLMInference` - "Send this to an AI model"
-- `model: gpt-4` - Use the model we defined earlier (by its `id`)
-- `system_message:` - Instructions for the AI
-- `inputs: [question]` - Give the AI the user's question
-- `outputs: [answer]` - Put the AI's response in `answer`
+- **Step 1: PromptTemplate** - Formats your question into a proper prompt
+  - `template:` - Text with placeholders like `{question}`
+  - Takes the user's `question` and creates `formatted_prompt`
+- **Step 2: LLMInference** - Sends the prompt to the AI
+  - `model: gpt-4` - Use the model we defined earlier
+  - Takes `formatted_prompt` and returns `answer`
+
+**Why two steps?** Separating prompt formatting from AI inference makes your app more maintainable and testable.
 
 **Check your work:**
 
@@ -160,7 +175,7 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 Create a file called `.env` in the same folder:
 
 ```
-OPENAI_API_KEY=sk-your-key-here
+OPENAI_KEY=sk-your-key-here
 ```
 
 Replace `sk-your-key-here` with your actual OpenAI API key.
@@ -212,8 +227,6 @@ qtype run -i '{"question":"What is the capital of France?"}' my_first_app.qtype.
 qtype run -i '{"question":"Explain photosynthesis in one sentence"}' my_first_app.qtype.yaml
 ```
 
-**Experiment:** Try changing the `system_message` to "You are a pirate" and run it again. What happens?
-
 ---
 
 ## What You've Learned
@@ -224,68 +237,21 @@ Congratulations! You've learned:
 ✅ **Models** - How to configure AI providers  
 ✅ **Flows** - Where processing logic lives  
 ✅ **Variables** - How data moves through your app  
-✅ **Steps** - Individual processing units  
+✅ **Steps** - Individual processing units (PromptTemplate, LLMInference)  
 ✅ **Validation** - How to check your work before running  
 
 ---
 
 ## Next Steps
 
-**Want to dive deeper?**
+**Reference the complete example:**
+
+- [`hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml) - Full working example
+
+**Learn more:**
 
 - [Application Concept](../Concepts/Core/application.md) - Full specification
 - [All Step Types](../Concepts/Steps/index.md) - What else can you build?
-
----
-
-## Complete Code
-
-Here's your complete `my_first_app.qtype.yaml`:
-
-```yaml
-id: hello_world
-description: My first QType application
-
-models:
-
-- type: Model
-    id: gpt-4
-    provider: openai
-    model_id: gpt-4-turbo
-    inference_params:
-      temperature: 0.7
-
-flows:
-
-- type: Flow
-    id: simple_example
-    variables:
-
-- id: question
-        type: text
-      - id: answer
-        type: text
-    inputs:
-
-- question
-    outputs:
-
-- answer
-    steps:
-
-- id: llm_step
-        type: LLMInference
-        model: gpt-4
-        system_message: "You are a helpful assistant."
-        inputs:
-
-- question
-        outputs:
-
-- answer
-```
-
-**Download:** You can find a similar example at [examples/hello_world.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml)
 
 ---
 

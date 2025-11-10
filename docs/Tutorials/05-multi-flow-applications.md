@@ -257,18 +257,24 @@ The diagram shows:
 - The `PromptTemplate` → `LLMInference` pattern in each flow
 - A shared model resource (`gpt4o-mini`) used by all flows
 
-## Next Steps
+## What You've Learned
 
 You now understand how to:
 
-- ✅ Structure applications with multiple flows
-- ✅ Scope variables within flows
-- ✅ Run specific flows with the `-f` flag
-- ✅ Design modular, testable workflows
+✅ **Structure applications with multiple flows**  
+✅ **Scope variables within flows**  
+✅ **Run specific flows with the `-f` flag**  
+✅ **Design modular, testable workflows**  
 
-**Challenge:** Extend the example to add a fourth flow called `format_report` that takes a `customer_name`, `validation_result`, and `customer_profile` as inputs and formats them into a professional customer service report.
+---
 
-## Reference
+## Next Steps
+
+**Reference the complete example:**
+
+- [`multi_flow_example.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/multi_flow_example.qtype.yaml) - Full working example
+
+**Learn more:**
 
 - [Flow Reference](../components/Flow.md)
 - [PromptTemplate Reference](../components/PromptTemplate.md)

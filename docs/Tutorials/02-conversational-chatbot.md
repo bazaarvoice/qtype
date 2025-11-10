@@ -190,15 +190,32 @@ flows:
 **New concepts explained:**
 
 **`interface.type: Conversational`** - This is the key difference from Tutorial 1!
+
 - Tells QType this flow maintains conversation state
 - Automatically manages message history
 - Required when using memory in LLMInference steps
 
 **`ChatMessage` type** - A special domain type for chat applications
+
 - Represents a single message in a conversation
-- Contains both the message content and metadata (role, timestamp, etc.)
+- Contains structured blocks (text, images, files, etc.) and metadata
 - Different from the simple `text` type you used in Tutorial 1
-- Learn more: [Domain Types Reference](../components/ChatMessage.md)
+
+**ChatMessage Structure:**
+
+```yaml
+ChatMessage:
+  blocks:
+    - type: text
+      content: "Hello, how can I help?"
+    - type: image
+      url: "https://example.com/image.jpg"
+  role: assistant  # or 'user', 'system'
+  metadata:
+    timestamp: "2025-11-08T10:30:00Z"
+```
+
+The `blocks` list allows multimodal messages (text + images + files), while `role` indicates who sent the message. QType automatically handles this structure when managing conversation history.
 
 **Why two variables?**
 
@@ -394,72 +411,15 @@ Congratulations! You've mastered:
 
 ## Next Steps
 
-**Want to dive deeper?**
+**Reference the complete example:**
+
+- [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml) - Full working example
+
+**Learn more:**
 
 - [Memory Concept](../Concepts/Core/memory.md) - Advanced memory strategies
 - [ChatMessage Reference](../How-To%20Guides/Data%20Types/domain-types.md) - Full type specification
 - [Flow Interfaces](../Concepts/Core/flow.md) - Complete vs Conversational
-
----
-
-## Complete Code
-
-Here's your complete `my_chatbot.qtype.yaml`:
-
-```yaml
-id: my_chatbot
-description: A conversational chatbot with memory
-
-models:
-
-- type: Model
-    id: gpt-4
-    provider: openai
-    model_id: gpt-4-turbo
-    inference_params:
-      temperature: 0.7
-
-memories:
-
-- id: chat_memory
-    token_limit: 50000
-    chat_history_token_ratio: 0.7
-
-flows:
-
-- type: Flow
-    id: chat_flow
-    description: Main chat flow with conversation memory
-    interface:
-      type: Conversational
-    variables:
-
-- id: user_message
-        type: ChatMessage
-      - id: response_message
-        type: ChatMessage
-    inputs:
-
-- user_message
-    outputs:
-
-- response_message
-    steps:
-
-- type: LLMInference
-        id: chat_step
-        model: gpt-4
-        memory: chat_memory
-        system_message: "You are a helpful assistant. Be friendly and conversational."
-        inputs:
-
-- user_message
-        outputs:
-
-- response_message
-```
-
-**Download:** See a similar example at [examples/hello_world_chat.qtype.yaml](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml)
 
 ---
 
