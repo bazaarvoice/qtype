@@ -242,7 +242,7 @@ class LLMInferenceExecutor(StepExecutor):
             stream_id = f"llm-{self.step.id}-{id(message)}"
 
             async with self.stream_emitter.text_stream(stream_id) as streamer:
-                generator = model.stream_complete(
+                generator = await model.astream_complete(
                     prompt=input_value,
                     **(
                         self.step.model.inference_params
@@ -251,7 +251,7 @@ class LLMInferenceExecutor(StepExecutor):
                     ),
                 )
 
-                for complete_response in generator:
+                async for complete_response in generator:
                     text = complete_response.delta
                     if complete_response.text.strip() != "":
                         await streamer.delta(text)
