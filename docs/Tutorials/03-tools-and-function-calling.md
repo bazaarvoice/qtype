@@ -6,20 +6,7 @@
 
 **What you'll learn:** Extend your QType applications with tools - reusable functions that can perform calculations, call APIs, or execute custom logic.
 
-**What you'll build:** A time utilities application that gets the current time, formats timestamps, and calculates time differences using Python functions.
-
-## Before You Begin
-
-You should have completed:
-
-- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, and flows
-- **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Understanding conversational flows
-
-Make sure you have:
-
-- QType installed: `pip install qtype[interpreter]`
-- A text editor
-- 20 minutes
+**What you'll build:** A time zone calculator that uses a real-world API tool to calculate time differences between cities.
 
 ---
 

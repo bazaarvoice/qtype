@@ -8,17 +8,6 @@
 
 **What you'll build:** A simple app that takes a question, sends it to an AI model, and returns an answer.
 
-## Before You Begin
-
-Make sure you have:
-
-- QType installed: `pip install qtype[interpreter]`
-- Either an AWS Bedrock account OR an OpenAI API key
-- A text editor
-- 15 minutes
-
-**Don't worry if:** You've never used YAML before - we'll explain everything as we go.
-
 ---
 
 ## Part 1: Your First QType File (5 minutes)

@@ -8,33 +8,24 @@
 
 **What you'll build:** A complete RAG application with two flows: one to ingest documents into a vector database, and one to chat with those documents using contextual retrieval.
 
-## Before You Begin
-
-You should have completed:
-
-- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Applications, models, flows
-- **[Tutorial 2: Build a Conversational Chatbot](02-conversational-chatbot.md)** - Memory and conversational interfaces
-- **[Tutorial 4: Data Processing Pipelines](04-data-processing-pipelines.md)** - Multi-step data processing
-- **[Tutorial 5: Multi-Flow Applications](05-multi-flow-applications.md)** - Multiple flows in one app
-
-### Prerequisites Checklist
+## Prerequisites Checklist
 
 Before starting, verify your environment is ready:
 
 **Required Software:**
 
-- [ ] QType installed: `pip install qtype[interpreter]`
-- [ ] Docker installed and running: `docker --version`
-- [ ] AWS CLI configured: `aws sts get-caller-identity`
+- QType installed: `pip install qtype[interpreter]`
+- Docker installed and running: `docker --version`
+- AWS CLI configured: `aws sts get-caller-identity`
 
 **Required Accounts/Keys:**
 
-- [ ] AWS account with Bedrock access
-- [ ] Your AWS profile set: `export AWS_PROFILE=your-profile-name`
+- AWS account with Bedrock access
+- Your AWS profile set: `export AWS_PROFILE=your-profile-name`
 
 **Required Python Packages:**
 
-- [ ] HuggingFace reader: `uv add llama-index-readers-huggingface-fs --optional interpreter`
+- HuggingFace reader: `uv add llama-index-readers-huggingface-fs --optional interpreter`
 
 **Verify Your Setup:**
 
@@ -510,8 +501,8 @@ You should see 3247 vectors in the collection.
 
 **Key points:**
 
-- `interface: Conversational` - Maintains chat history (from Tutorial 2)
-- `ChatMessage` - Rich message type with text blocks (from Tutorial 2)
+- `interface: Conversational` - Maintains chat history (from [Build a Conversational Chatbot](02-conversational-chatbot.md))
+- `ChatMessage` - Rich message type with text blocks (from [Build a Conversational Chatbot](02-conversational-chatbot.md))
 - `list[RAGSearchResult]` - Built-in type for search results
 - All variables flow through the pipeline
 

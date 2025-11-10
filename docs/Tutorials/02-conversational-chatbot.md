@@ -8,24 +8,11 @@
 
 **What you'll build:** A stateful chatbot that maintains conversation history and provides contextual responses.
 
-## Before You Begin
-
-You should have completed:
-
-- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows, and steps
-
-Make sure you have:
-
-- QType installed: `pip install qtype[interpreter]`
-- An OpenAI API key (or AWS Bedrock access)
-- Your `my_first_app.qtype.yaml` from Tutorial 1
-- 20 minutes
-
 ---
 
-## Understanding Stateful vs Stateless Applications
+## Part 1: Stateless vs. Stateful Applications (3 minutes)
 
-In Tutorial 1, you built a **stateless** application - it processed each question independently with no memory of previous interactions:
+In [Build Your First QType Application](01-first-qtype-application.md), you built a **stateless** application - it processed each question independently with no memory of previous interactions:
 
 ```
 You: What is 2+2?
@@ -53,7 +40,7 @@ This requires two new concepts: **Memory** and **Conversational Interface**.
 
 QType flows have two interface types that control how they process requests:
 
-### Complete Interface (Tutorial 1)
+### Complete Interface (from previous tutorial)
 
 - **Default behavior** - You don't need to specify it
 - Processes one request → one response
@@ -81,25 +68,27 @@ flows:
 
 - **Explicit configuration** - You must specify it
 - Maintains conversation history
-- Each message adds to the context
-- Enables memory and multi-turn interactions
-- Like a chat session
+- Tracks message roles (user/assistant)
+- Perfect for back-and-forth interaction
 
 **Example use cases:**
 
 - Chatbots
 - Virtual assistants
-- Contextual Q&A systems
+- Multi-turn dialogues
 
 **In YAML (required):**
 ```yaml
 flows:
-
-- type: Flow
+  - type: Flow
     id: chat_flow
     interface:
-      type: Conversational  # Required for memory
+      type: Conversational  # Required for conversation memory
 ```
+
+Let's compare the interfaces:
+
+| Feature | Complete Interface | Conversational Interface |
 
 **Key Rule:** Memory only works with Conversational interface. If your flow uses memory, it must declare `interface.type: Conversational`.
 
@@ -109,7 +98,7 @@ flows:
 
 ### Create Your Chatbot File
 
-Create a new file called `my_chatbot.qtype.yaml`. Start by copying your application structure from Tutorial 1:
+Create a new file called `my_chatbot.qtype.yaml`. Start by copying your application structure from the previous tutorial:
 
 ```yaml
 id: my_chatbot
@@ -189,7 +178,7 @@ flows:
 
 **New concepts explained:**
 
-**`interface.type: Conversational`** - This is the key difference from Tutorial 1!
+**`interface.type: Conversational`** - This is the key difference from the previous Complete interface!
 
 - Tells QType this flow maintains conversation state
 - Automatically manages message history
@@ -199,7 +188,7 @@ flows:
 
 - Represents a single message in a conversation
 - Contains structured blocks (text, images, files, etc.) and metadata
-- Different from the simple `text` type you used in Tutorial 1
+- Different from the simple `text` type used in stateless applications
 
 **ChatMessage Structure:**
 
@@ -250,14 +239,14 @@ Add the LLM inference step that connects to your memory:
 - response_message
 ```
 
-**What's new from Tutorial 1:**
+**What's new:**
 
 **`memory: chat_memory`** - Links this step to the memory configuration
 - Automatically sends conversation history with each request
 - Updates memory after each exchange
 - This line is what enables "remembering" previous messages
 
-**`system_message` with personality** - Unlike Tutorial 1's generic message, this shapes the AI's behavior for conversation
+**`system_message` with personality** - Unlike the previous generic message, this shapes the AI's behavior for conversation
 
 **Check your work:**
 
@@ -294,7 +283,7 @@ And update the step to use `model: claude`.
 
 ### Start the Chat Interface
 
-Unlike Tutorial 1 where you used `qtype run` for one-off questions, conversational applications work better with the web interface:
+Unlike the previous tutorial where you used `qtype run` for one-off questions, conversational applications work better with the web interface:
 
 ```bash
 qtype serve my_chatbot.qtype.yaml
@@ -397,9 +386,9 @@ Congratulations! You've mastered:
 
 ---
 
-## Compare: Tutorial 1 vs Tutorial 2
+## Compare: Complete vs Conversational Interfaces
 
-| Feature | Tutorial 1 (Complete) | Tutorial 2 (Conversational) |
+| Feature | Complete Interface | Conversational Interface |
 |---------|----------------------|----------------------------|
 | **Interface** | `Complete` (default) | `Conversational` (explicit) |
 | **Memory** | None | `chat_memory` configuration |

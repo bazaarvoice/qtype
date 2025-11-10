@@ -6,19 +6,17 @@
 
 **What you'll learn:** Build a data processing flow that loads records from a CSV file and aggregates them. You'll learn how QType handles one-to-many operations.
 
-**What you'll build:** A simple data pipeline that counts customer records from a CSV file.
+**What you'll build:** A data processor that reads a CSV file, analyzes multiple rows, and produces summary statistics.
 
-## Before You Begin
+---
 
-You should have completed:
+## Part 1: Data Processing Patterns (3 minutes)
 
-- **[Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)** - Understanding applications, models, flows
+All previous tutorials followed a simple pattern:
 
-Make sure you have:
-
-- QType installed: `pip install qtype[interpreter]`
-- A text editor
-- 15 minutes
+- [Build Your First QType Application](01-first-qtype-application.md): One question → one answer
+- [Build a Conversational Chatbot](02-conversational-chatbot.md): One message → one response  
+- [Tools and Function Calling](03-tools-and-function-calling.md): Get time → calculate difference → return result
 
 ---
 
@@ -286,7 +284,9 @@ Congratulations! You've mastered:
 
 ## Compare: Conversational vs Complete Flows
 
-| Feature | Conversational (Tutorial 2) | Complete (Tutorial 4) |
+### Memory Comparison
+
+| Feature | Conversational (Build a Conversational Chatbot) | Complete (This Tutorial) |
 |---------|----------------------------|----------------------|
 | **Interface** | `interface: {type: Conversational}` | Default (no interface specified) |
 | **Memory** | Required (stores chat history) | Not used |
@@ -319,7 +319,7 @@ A: CSV, Parquet, JSON, and JSONL. The format is automatically detected from the 
 A: Not currently. Output variable names must match the column names in the file exactly.
 
 **Q: How do I filter or transform data?**  
-A: Use the `FieldExtractor` step (from Tutorial 3) or `Decoder` step to parse and transform the data before aggregating.
+A: Use the `FieldExtractor` step (from [Tools and Function Calling](03-tools-and-function-calling.md)) or `Decoder` step to parse and transform the data before aggregating.
 
 **Q: How do I process data from databases?**  
 A: Use `SQLSource` step instead of `FileSource`. It works similarly but connects to databases and executes SQL queries.
