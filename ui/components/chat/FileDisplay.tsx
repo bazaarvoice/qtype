@@ -7,15 +7,7 @@ interface FileDisplayProps {
   size?: number;
 }
 
-const formatFileSize = (bytes: number) =>
-  `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-
-export default function FileDisplay({
-  mediaType,
-  filename,
-  url,
-  size,
-}: FileDisplayProps) {
+function FileDisplay({ mediaType, filename, url, size }: FileDisplayProps) {
   if (!url) return null;
 
   const isImage = mediaType?.startsWith("image/");
@@ -46,3 +38,8 @@ export default function FileDisplay({
     </div>
   );
 }
+
+const formatFileSize = (bytes: number) =>
+  `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+export { FileDisplay };

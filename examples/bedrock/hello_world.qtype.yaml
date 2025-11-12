@@ -1,0 +1,39 @@
+id: hello_world
+description: A simple hello world application using AWS Bedrock
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+flows:
+  - type: Flow
+    id: simple_example
+    variables:
+      - id: question
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: answer
+        type: text
+    inputs:
+      - question
+    outputs:
+      - answer
+    steps:
+      - id: question_prompt
+        type: PromptTemplate
+        template: "You are a helpful assistant. Answer the following question:\n{question}\n"
+        inputs:
+          - question
+        outputs:
+          - formatted_prompt
+      - id: llm_inference_step
+        type: LLMInference
+        model: nova_lite
+        inputs:
+          - formatted_prompt
+        outputs:
+          - answer

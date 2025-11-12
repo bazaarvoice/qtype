@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     ImageBlock,
     TextBlock,
+    ThinkingBlock,
 )
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
@@ -465,7 +466,7 @@ def to_chat_message(message: ChatMessage) -> LlamaChatMessage:
 
 def from_chat_message(message: LlamaChatMessage) -> ChatMessage:
     """Convert a LlamaChatMessage to a ChatMessage."""
-    blocks = []
+    blocks: list[ChatContent] = []
     for block in message.blocks:
         if isinstance(block, TextBlock):
             blocks.append(
@@ -483,12 +484,14 @@ def from_chat_message(message: LlamaChatMessage) -> ChatMessage:
             blocks.append(
                 ChatContent(type=PrimitiveTypeEnum.file, content=block.data)
             )
+        elif isinstance(block, ThinkingBlock):
+            continue
         else:
             raise InterpreterError(
                 f"Unsupported content block type: {type(block)}"
             )
 
-    return ChatMessage(role=message.role, blocks=blocks)  # type: ignore
+    return ChatMessage(role=message.role, blocks=blocks)
 
 
 def to_text_splitter(splitter: DocumentSplitter) -> Any:
