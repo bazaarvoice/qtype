@@ -98,7 +98,7 @@ function StreamFlow({ flow }: StreamFlowProps) {
         )}
         {completion && (
           <ScrollArea className="flex-1 min-h-0">
-            <MarkdownContainer>{completion}</MarkdownContainer>
+            <MarkdownContainer chatBubble>{completion}</MarkdownContainer>
           </ScrollArea>
         )}
       </div>

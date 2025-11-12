@@ -2,6 +2,8 @@ import { Bot, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
+import { MarkdownContainer } from "../MarkdownContainer";
+
 import { MessagePartWithTextContent } from "./constants";
 import { deriveStatusFromParts } from "./utils/deriveStatusFromParts";
 
@@ -80,13 +82,9 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
         )}
 
         {textContent && (
-          <div
-            className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
-              isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-            }`}
-          >
+          <MarkdownContainer chatBubble theme={isUser ? "dark" : "light"}>
             {textContent}
-          </div>
+          </MarkdownContainer>
         )}
 
         {fileAttachments.map((file, index) => (
