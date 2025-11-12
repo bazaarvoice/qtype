@@ -224,3 +224,5 @@ ui/.env*
 ignored
 
 qdrant_storage
+
+.qtype-cache

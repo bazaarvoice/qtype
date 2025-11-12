@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 from qtype.base.types import (  # noqa: F401
     BatchableStepMixin,
     BatchConfig,
+    CachedStepMixin,
     ConcurrencyConfig,
     ConcurrentStepMixin,
 )
@@ -89,7 +90,7 @@ class SecretManager(BaseModel):
     )
 
 
-class Step(BaseModel):
+class Step(CachedStepMixin, BaseModel):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
