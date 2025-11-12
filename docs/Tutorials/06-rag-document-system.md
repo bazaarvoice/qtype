@@ -751,7 +751,6 @@ Congratulations! You've mastered:
 - [VectorIndex Reference](../components/VectorIndex.md) - All vector store options
 - [DocumentSource Reference](../components/DocumentSource.md) - Document readers
 - [VectorSearch Reference](../components/VectorSearch.md) - Advanced search features
-- [RAG Best Practices](../How-To%20Guides/rag-best-practices.md) - Production patterns
 
 ---
 

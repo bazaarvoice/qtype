@@ -5,11 +5,11 @@ This example creates a simple chat bot that you can converse with in the include
 ### The QType File
 
 ```yaml
---8<-- "../examples/chat_with_telemetry.qtype.yaml"
+--8<-- "../examples/openai/hello_world_chat_with_telemetry.qtype.yaml"
 ```
 
-You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/chat_with_telemetry.qtype.yaml).
-There is also a version for [AWS Bedrock](https://github.com/bazaarvoice/qtype/blob/main/examples/chat_with_telemetry_bedrock.qtype.yaml).
+You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/openai/hello_world_chat_with_telemetry.qtype.yaml).
+There is also a version for [AWS Bedrock](https://github.com/bazaarvoice/qtype/blob/main/examples/bedrock/hello_world_chat_with_telemetry.qtype.yaml).
 
 ### The Architecture 
 
