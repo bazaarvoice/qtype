@@ -1,6 +1,7 @@
 nav:
   - index.md
-  - Getting Started
-  - Examples
+  - Tutorials
+  - How-To Guides
   - Concepts
-  - Development
+  - Reference
+  - Contributing

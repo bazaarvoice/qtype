@@ -44,6 +44,6 @@ Uses standard string formatting with curly braces `{variable_name}` for placehol
 
 ## Related Concepts
 
-PromptTemplate steps are often used before [LLMInference](llm-inference.md) or [Agent](agent.md) steps to prepare prompts, and they consume [Variables](../Concepts/variable.md) for dynamic content generation.
+PromptTemplate steps are often used before [LLMInference](llm-inference.md) or [Agent](agent.md) steps to prepare prompts, and they consume [Variables](../Core/variable.md) for dynamic content generation.
 
 ## Example Usage

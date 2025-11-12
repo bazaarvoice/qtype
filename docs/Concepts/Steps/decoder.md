@@ -48,6 +48,6 @@ Decoders are essential for building robust data pipelines that can handle the va
 
 ## Related Concepts
 
-Decoder steps often process outputs from [LLMInference](llm-inference.md) or [Agent](agent.md) steps, work within [Flows](../Concepts/flow.md) for data transformation pipelines, and may validate extracted data against [Variable](../Concepts/variable.md) type definitions. They integrate with other [Steps](../Concepts/step.md) for comprehensive data processing workflows.
+Decoder steps often process outputs from [LLMInference](llm-inference.md) or [Agent](agent.md) steps, work within [Flows](../Core/flow.md) for data transformation pipelines, and may validate extracted data against [Variable](../Core/variable.md) type definitions. They integrate with other [Steps](index.md) for comprehensive data processing workflows.
 
 ## Example Usage

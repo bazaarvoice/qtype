@@ -1,0 +1,64 @@
+id: time_utilities
+description: |
+  A simple application demonstrating tool usage with the commons library.
+  
+  This example shows how to:
+  - Import tools from the commons library
+  - Invoke Python functions as tools
+  - Pass data between tool invocations
+  - Work with datetime types
+  
+  The flow gets the current timestamp, formats it, calculates a future time,
+  and determines the time difference.
+
+# Import the commons tools library
+references:
+  - !include ../common/tools.qtype.yaml
+
+flows:
+  - type: Flow
+    id: time_info_flow
+    description: Get and format the current timestamp
+    
+    variables:
+      - id: current_time
+        type: datetime
+      
+      - id: time_two_hours_later
+        type: datetime
+      
+      - id: time_difference
+        type: TimeDifferenceResultType
+    
+    outputs:
+      - current_time
+      - time_difference
+    
+    steps:
+      # Step 1: Get current timestamp
+      - id: get_time
+        type: InvokeTool
+        tool: qtype.application.commons.tools.get_current_timestamp
+        input_bindings: {}
+        output_bindings:
+          result: current_time
+      
+      # Step 2: Calculate time 2 hours from now
+      - id: add_hours
+        type: InvokeTool
+        tool: qtype.application.commons.tools.timedelta
+        input_bindings:
+          timestamp: current_time
+          hours: "2"
+        output_bindings:
+          result: time_two_hours_later
+      
+      # Step 3: Calculate the time difference
+      - id: calc_difference
+        type: InvokeTool
+        tool: qtype.application.commons.tools.calculate_time_difference
+        input_bindings:
+          start_time: current_time
+          end_time: time_two_hours_later
+        output_bindings:
+          result: time_difference

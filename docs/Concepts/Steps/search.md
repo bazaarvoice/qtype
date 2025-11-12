@@ -2,7 +2,7 @@
 
 Search steps enable information retrieval from indexed data using different search strategies. QType provides both vector-based semantic search and traditional document search capabilities, allowing applications to find relevant information based on user queries.
 
-Search steps integrate with [Indexes](../Concepts/index-concept.md) to perform efficient retrieval operations and can be combined with other steps to build sophisticated question-answering and information retrieval workflows.
+Search steps integrate with [Indexes](../Core/indexes.md) to perform efficient retrieval operations and can be combined with other steps to build sophisticated question-answering and information retrieval workflows.
 
 ## Rules and Behaviors
 
@@ -51,6 +51,6 @@ Document search performs traditional text-based search using keyword matching an
 
 ## Related Concepts
 
-Search steps work with [Indexes](../Concepts/index-concept.md) for data storage and retrieval, may use [Models](../Concepts/model.md) for embedding generation in vector search, and integrate with [Flows](../Concepts/flow.md) for complex information retrieval pipelines. Results are typically consumed by other [Steps](../Concepts/step.md) for further processing.
+Search steps work with [Indexes](../Core/indexes.md) for data storage and retrieval, may use [Models](../Core/model.md) for embedding generation in vector search, and integrate with [Flows](../Core/flow.md) for complex information retrieval pipelines. Results are typically consumed by other [Steps](index.md) for further processing.
 
 ## Example Usage
