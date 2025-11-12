@@ -320,6 +320,18 @@
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -434,6 +446,18 @@
       "additionalProperties": false,
       "description": "A terminal step that consumes an entire input stream and produces a single\nsummary message with success/error counts.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -747,6 +771,64 @@
       "title": "BearerTokenAuthProvider",
       "type": "object"
     },
+    "CacheConfig": {
+      "properties": {
+        "directory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "format": "path",
+              "type": "string"
+            }
+          ],
+          "default": ".qtype-cache",
+          "description": "Base cache directory.",
+          "title": "Directory"
+        },
+        "namespace": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Logical namespace for cache keys.",
+          "title": "Namespace"
+        },
+        "version": {
+          "default": "1.0",
+          "description": "Bump to invalidate old cache.",
+          "title": "Version",
+          "type": "string"
+        },
+        "compress": {
+          "default": false,
+          "description": "Compress stored data.",
+          "title": "Compress",
+          "type": "boolean"
+        },
+        "ttl": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional time-to-live in seconds.",
+          "title": "Ttl"
+        }
+      },
+      "title": "CacheConfig",
+      "type": "object"
+    },
     "ConcurrencyConfig": {
       "description": "Configuration for concurrent processing.\n\nAttributes:\n    num_workers: Number of async workers for batch operations.",
       "properties": {
@@ -815,6 +897,18 @@
       "additionalProperties": false,
       "description": "Defines a step that decodes string data into structured outputs.\n\nIf parsing fails, the step will raise an error and halt execution.\nUse conditional logic in your flow to handle potential parsing errors.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -889,6 +983,18 @@
         "concurrency_config": {
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
         },
         "id": {
           "description": "Unique ID of this component.",
@@ -974,6 +1080,18 @@
         "concurrency_config": {
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
         },
         "id": {
           "description": "Unique ID of this component.",
@@ -1107,6 +1225,18 @@
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -1183,6 +1313,18 @@
       "additionalProperties": false,
       "description": "A source of documents that will be used in retrieval augmented generation.\nIt uses LlamaIndex readers to load one or more raw Documents\nfrom a specified path or system (e.g., Google Drive, web page).\nSee https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of the data source.",
           "title": "Id",
@@ -1280,6 +1422,18 @@
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -1363,6 +1517,18 @@
       "additionalProperties": false,
       "description": "Defines a step that echoes its inputs as outputs.\n\nUseful for debugging flows by inspecting variable values at a specific\npoint in the execution pipeline. The step simply passes through all input\nvariables as outputs without modification.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -1495,6 +1661,18 @@
       "additionalProperties": false,
       "description": "Extracts specific fields from input data using JSONPath expressions.\n\nThis step uses JSONPath syntax to extract data from structured inputs\n(Pydantic models, dicts, lists). The input is first converted to a dict\nusing model_dump() if it's a Pydantic model, then the JSONPath expression\nis evaluated.\n\nIf the JSONPath matches multiple values, the step yields multiple output\nmessages (1-to-many cardinality). If it matches a single value, it yields\none output message. If it matches nothing, it raises an error.\n\nThe extracted data is used to construct the output variable by passing it\nas keyword arguments to the output type's constructor.\n\nExample JSONPath expressions:\n- `$.field_name` - Extract a single field\n- `$.items[*]` - Extract all items from a list\n- `$.items[?(@.price > 10)]` - Filter items by condition",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -1558,6 +1736,18 @@
       "additionalProperties": false,
       "description": "File source that reads data from a file using fsspec-compatible URIs.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of the data source.",
           "title": "Id",
@@ -1636,6 +1826,18 @@
         "batch_config": {
           "$ref": "#/$defs/BatchConfig",
           "description": "Configuration for processing the input stream in batches. If omitted, the step processes items one by one."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
         },
         "id": {
           "description": "Unique ID of the data writer.",
@@ -1930,6 +2132,18 @@
           "$ref": "#/$defs/BatchConfig",
           "description": "Configuration for processing the input stream in batches. If omitted, the step processes items one by one."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of the data writer.",
           "title": "Id",
@@ -2004,6 +2218,18 @@
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -2074,6 +2300,18 @@
       "additionalProperties": false,
       "description": "Invokes a flow with input and output bindings.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -2172,6 +2410,18 @@
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
         },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -2263,6 +2513,18 @@
         "concurrency_config": {
           "$ref": "#/$defs/ConcurrencyConfig",
           "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
         },
         "id": {
           "description": "Unique ID of this component.",
@@ -2587,6 +2849,18 @@
       "additionalProperties": false,
       "description": "Defines a prompt template with a string format and variable bindings.\nThis is used to generate prompts dynamically based on input variables.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of this component.",
           "title": "Id",
@@ -2829,6 +3103,18 @@
       "additionalProperties": false,
       "description": "SQL database source that executes queries and emits rows.",
       "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
         "id": {
           "description": "Unique ID of the data source.",
           "title": "Id",
@@ -3195,6 +3481,18 @@
         "batch_config": {
           "$ref": "#/$defs/BatchConfig",
           "description": "Configuration for processing the input stream in batches. If omitted, the step processes items one by one."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
         },
         "id": {
           "description": "Unique ID of this component.",
