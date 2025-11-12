@@ -19,7 +19,6 @@ function deriveStatusFromParts(
   if (!parts || parts.length === 0) return "Processing...";
 
   let status = "Processing...";
-  let reasoningContent = "";
 
   for (const part of parts) {
     switch (part.type) {
@@ -29,18 +28,11 @@ function deriveStatusFromParts(
       case "finish-step":
         status = "Step completed";
         break;
-      case "reasoning-start":
+      case "reasoning":
         status = "Thinking...";
-        reasoningContent = "";
         break;
-      case "reasoning-delta":
-        if ("delta" in part && typeof part.delta === "string") {
-          reasoningContent += part.delta;
-          status = `Thinking... ${reasoningContent}`;
-        }
-        break;
-      case "reasoning-end":
-        status = "Finished thinking";
+      case "text":
+        status = "Generating response...";
         break;
       default:
         if (part.type.startsWith("tool-")) {
