@@ -139,7 +139,7 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             from pydantic import BaseModel, Field, RootModel
 
             # Import enums, mixins, and type aliases
-            from qtype.base.types import BatchableStepMixin, BatchConfig, ConcurrencyConfig, ConcurrentStepMixin  # noqa: F401
+            from qtype.base.types import BatchableStepMixin, BatchConfig, CachedStepMixin, ConcurrencyConfig, ConcurrentStepMixin  # noqa: F401
             from qtype.dsl.model import (  # noqa: F401
                 CustomType,
                 DecoderFormat,
@@ -476,9 +476,14 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
                 # Tools should inherit from Step and be immutable
                 inheritance = f"{semantic_base}, ImmutableModel"
 
-        # Add mixins to the inheritance
+        # Add mixins to the inheritance - must come BEFORE BaseModel for correct MRO
         if mixin_bases:
-            inheritance = f"{inheritance}, {', '.join(mixin_bases)}"
+            if inheritance == "BaseModel":
+                # Mixins must come before BaseModel
+                inheritance = f"{', '.join(mixin_bases)}, BaseModel"
+            else:
+                # If we have other bases, append mixins
+                inheritance = f"{inheritance}, {', '.join(mixin_bases)}"
 
     # Get field information from the class - only fields defined on this class, not inherited
     fields = []

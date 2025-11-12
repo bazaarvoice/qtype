@@ -12,6 +12,7 @@ from openinference.semconv.trace import (
 from opentelemetry import context, trace
 from opentelemetry.trace import Status, StatusCode
 
+from qtype.interpreter.base.cache import cache_key, create_cache
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.progress_tracker import ProgressTracker
 from qtype.interpreter.base.stream_emitter import StreamEmitter
@@ -68,7 +69,7 @@ class StepExecutor(ABC):
         # Hook for subclasses to customize the processing function
         # Base uses process_message with telemetry wrapping,
         # BatchedStepExecutor uses process_batch
-        self._processor = self._process_message_with_telemetry
+        self._processor = self._process_message_with_cache
         # Convenience properties from context
         self._secret_manager = context.secret_manager
         self._tracer = context.tracer or trace.get_tracer(__name__)
@@ -185,6 +186,10 @@ class StepExecutor(ABC):
         ctx = trace.set_span_in_context(span)
         token = context.attach(ctx) if span.is_recording() else None
 
+        # Initialize the cache
+        # this is done once per execution so re-runs are fast
+        self.cache = create_cache(self.step.cache_config, self.step.id)
+
         # Start step boundary for visual grouping in UI
         async with self.stream_emitter.step_boundary():
             try:
@@ -253,6 +258,10 @@ class StepExecutor(ABC):
                         error_count += 1
                     yield msg
 
+                # Close the cache
+                if self.cache:
+                    self.cache.close()
+
                 # Record metrics in span
                 span.set_attribute("step.messages.total", message_count)
                 span.set_attribute("step.messages.errors", error_count)
@@ -304,6 +313,28 @@ class StepExecutor(ABC):
             Zero or more processed messages
         """
         yield  # type: ignore[misc]
+
+    async def _process_message_with_cache(
+        self, message: FlowMessage
+    ) -> AsyncIterator[FlowMessage]:
+        downstream = self._process_message_with_telemetry
+        if self.cache is not None:
+            key = cache_key(message)
+            cached_result = self.cache.get(key)
+            if cached_result is not None:
+                for msg in cached_result:
+                    yield FlowMessage.model_validate(msg)  # type: ignore
+            else:
+                buf = []
+                async for output_msg in downstream(message):
+                    buf.append(
+                        output_msg.model_dump(mode="json", exclude_none=True)
+                    )
+                    yield output_msg
+                self.cache.set(key, buf, expire=self.step.cache_config.ttl)  # type: ignore
+        else:
+            async for output_msg in downstream(message):
+                yield output_msg
 
     async def _process_message_with_telemetry(
         self, message: FlowMessage

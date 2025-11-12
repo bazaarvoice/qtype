@@ -6,7 +6,16 @@ import pathlib
 import types
 import typing
 from enum import Enum
-from typing import Any, Generic, Type, TypeVar, Union, get_args, get_origin
+from typing import (
+    Any,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel
 from pydantic import ConfigDict as PydanticConfigDict
@@ -200,6 +209,32 @@ class BatchableStepMixin(BaseModel):
     batch_config: BatchConfig = Field(
         default_factory=BatchConfig,
         description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
+    )
+
+
+class CacheConfig(BaseModel):
+    directory: PathLike = Field(
+        default=pathlib.Path("./.qtype-cache"),
+        description="Base cache directory.",
+    )
+    namespace: Optional[str] = Field(
+        default=None, description="Logical namespace for cache keys."
+    )
+    version: str = Field(
+        default="1.0", description="Bump to invalidate old cache."
+    )
+    compress: bool = Field(default=False, description="Compress stored data.")
+    ttl: Optional[int] = Field(
+        default=None, description="Optional time-to-live in seconds."
+    )
+
+
+class CachedStepMixin(BaseModel):
+    """A mixin for steps that support caching."""
+
+    cache_config: CacheConfig | None = Field(
+        default=None,
+        description="Configuration for caching step outputs. If omitted, caching is disabled.",
     )
 
 
