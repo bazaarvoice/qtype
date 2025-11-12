@@ -215,10 +215,10 @@ Then visit [http://localhost:6006](http://localhost:6006)
 Here's the full YAML file:
 
 ```yaml
---8<-- "../examples/simple_agent.qtype.yaml"
+--8<-- "../examples/bedrock/simple_agent_chat.qtype.yaml"
 ```
 
-You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/simple_agent.qtype.yaml).
+You can download it [here](https://github.com/bazaarvoice/qtype/blob/main/examples/bedrock/simple_agent_chat.qtype.yaml).
 
 ## Running the Agent
 
