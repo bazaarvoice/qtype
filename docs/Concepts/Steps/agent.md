@@ -49,6 +49,6 @@ Agents have all the capabilities of LLMInference steps, including:
 
 ## Related Concepts
 
-Agent steps extend [LLMInference](llm-inference.md) and require [Model](../Concepts/model.md) configurations and [Tool](../Concepts/tool.md) access. They may use [Memory](../Concepts/memory.md) for persistent context and can be orchestrated within [Flows](../Concepts/flow.md).
+Agent steps extend [LLMInference](llm-inference.md) and require [Model](../Core/model.md) configurations and [Tool](../Core/tool.md) access. They may use [Memory](../Core/memory.md) for persistent context and can be orchestrated within [Flows](../Core/flow.md).
 
 ## Example Usage

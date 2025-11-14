@@ -1,23 +1,24 @@
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+import { MarkdownContainer } from "../MarkdownContainer";
 
 interface ThinkingProps {
   reasoningContent: string;
-  initiallyOpen?: boolean;
+  isOpen?: boolean;
   className?: string;
 }
 
-function Thinking({ reasoningContent, initiallyOpen = false }: ThinkingProps) {
-  const [open, setOpen] = useState(initiallyOpen);
+function Thinking({ reasoningContent, isOpen = false }: ThinkingProps) {
+  const [open, setOpen] = useState(isOpen);
+
+  useEffect(() => {
+    setOpen(isOpen);
+  }, [isOpen]);
 
   if (!reasoningContent || reasoningContent.trim() === "") {
     return null;
   }
-
-  const paragraphs = reasoningContent
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
 
   return (
     <div className={"text-sm"}>
@@ -43,14 +44,10 @@ function Thinking({ reasoningContent, initiallyOpen = false }: ThinkingProps) {
         <div className="flex pb-3 pt-1 pr-3" id="thinking-panel-content">
           <div
             aria-hidden="true"
-            className="mr-4 w-px bg-neutral-400/40 rounded-sm"
+            className="w-px bg-neutral-400/40 rounded-sm"
           />
-          <div className="flex-1 space-y-3">
-            {paragraphs.map((para, idx) => (
-              <p key={idx} className="leading-relaxed whitespace-pre-wrap">
-                {para}
-              </p>
-            ))}
+          <div className="flex-1">
+            <MarkdownContainer>{reasoningContent}</MarkdownContainer>
           </div>
         </div>
       )}

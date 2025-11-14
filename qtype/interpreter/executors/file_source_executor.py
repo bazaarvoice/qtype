@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from pathlib import Path
 from typing import AsyncIterator
 
 import fsspec
@@ -52,9 +55,28 @@ class FileSourceExecutor(StepExecutor):
                 f"Reading file from path: {file_path}"
             )
 
+        # Determine file format from extension
+        file_path_str = (
+            file_path.uri if isinstance(file_path, ConstantPath) else file_path
+        )
+        extension = Path(file_path_str).suffix.lower()
+
         # Use fsspec to open the file and read with pandas
-        with fsspec.open(file_path, "rb") as file_handle:
-            df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
+        with fsspec.open(file_path_str, "rb") as file_handle:
+            if extension == ".csv":
+                df = pd.read_csv(file_handle)  # type: ignore[arg-type]
+            elif extension == ".parquet":
+                df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
+            elif extension == ".json":
+                df = pd.read_json(file_handle)  # type: ignore[arg-type]
+            elif extension == ".jsonl":
+                df = pd.read_json(
+                    file_handle,
+                    lines=True,  # type: ignore[arg-type]
+                )
+            else:
+                # Default to parquet if no extension or unknown
+                df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
 
         # confirm the outputs exist in the dataframe
         columns = set(df.columns)
@@ -62,7 +84,7 @@ class FileSourceExecutor(StepExecutor):
         if missing_columns:
             raise ValueError(
                 (
-                    f"File {file_path} missing expected columns: "
+                    f"File {file_path_str} missing expected columns: "
                     f"{', '.join(missing_columns)}. Available columns: "
                     f"{', '.join(columns)}"
                 )
@@ -75,5 +97,5 @@ class FileSourceExecutor(StepExecutor):
             }
             yield message.copy_with_variables(new_variables=row)
         await self.stream_emitter.status(
-            f"Emitted {len(df)} rows from: {file_path}"
+            f"Emitted {len(df)} rows from: {file_path_str}"
         )

@@ -2,6 +2,8 @@ import { Bot, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
+import { MarkdownContainer } from "../MarkdownContainer";
+
 import { Thinking } from "../outputs";
 
 import { MessagePartWithTextContent } from "./constants";
@@ -30,6 +32,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     message,
     MessagePartWithTextContent.Reasoning,
   );
+
   const textContent = getPartContent(message, MessagePartWithTextContent.Text);
 
   const fileAttachments: FileAttachment[] =
@@ -37,8 +40,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     message.experimental_attachments ||
     (message.parts?.filter((p): p is FileAttachment => p.type === "file") ??
       []);
-
-  const excludedPartTypes = new Set(["text", "file"]);
+  const excludedPartTypes = new Set(["file"]);
   const statusParts = (message.parts ?? []).filter(
     (p) => !excludedPartTypes.has(p.type),
   ) as StreamingPart[];
@@ -77,16 +79,12 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
           )}
         </div>
 
-        {reasoningContent && <Thinking reasoningContent={reasoningContent} />}
+        {reasoningContent && <Thinking reasoningContent={reasoningContent} isOpen={!textContent} />}
 
         {textContent && (
-          <div
-            className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
-              isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-            }`}
-          >
+          <MarkdownContainer chatBubble theme={isUser ? "dark" : "light"}>
             {textContent}
-          </div>
+          </MarkdownContainer>
         )}
 
         {fileAttachments.map((file, index) => (

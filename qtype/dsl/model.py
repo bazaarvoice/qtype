@@ -19,6 +19,7 @@ import qtype.dsl.domain_types as domain_types
 from qtype.base.types import (
     BatchableStepMixin,
     BatchConfig,
+    CachedStepMixin,
     ConcurrentStepMixin,
     PrimitiveTypeEnum,
     Reference,
@@ -344,7 +345,7 @@ class Memory(StrictBaseModel):
 #
 
 
-class Step(StrictBaseModel, ABC):
+class Step(CachedStepMixin, StrictBaseModel, ABC):
     """Base class for components that take inputs and produce outputs."""
 
     id: str = Field(..., description="Unique ID of this component.")
@@ -367,7 +368,7 @@ class PromptTemplate(Step):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
 
-    type: Literal["PromptTemplate"] = "PromptTemplate"
+    type: Literal["PromptTemplate"] = "PromptTemplate"  # type: ignore
     template: str = Field(
         ...,
         description="String template for the prompt with variable placeholders.",

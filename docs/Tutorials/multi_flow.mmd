@@ -1,0 +1,58 @@
+flowchart TD
+    subgraph APP ["📱 Application: multi_flow_example"]
+        direction TB
+
+    subgraph FLOW_0 ["🔄 Flow: clean_names
+Clean and standardize customer names"]
+        direction TB
+        FLOW_0_START@{shape: circle, label: "▶️ Start"}
+        FLOW_0_S0@{shape: doc, label: "📄 Template: create_clean_prompt"}
+        FLOW_0_S1@{shape: rounded, label: "✨ clean_step"}
+        FLOW_0_START -->|raw_name: text| FLOW_0_S0
+        FLOW_0_S0 -->|clean_prompt: text| FLOW_0_S1
+    end
+
+    subgraph FLOW_1 ["🔄 Flow: validate_names
+Validate that a name is a valid person name"]
+        direction TB
+        FLOW_1_START@{shape: circle, label: "▶️ Start"}
+        FLOW_1_S0@{shape: doc, label: "📄 Template: create_validate_prompt"}
+        FLOW_1_S1@{shape: rounded, label: "✨ validate_step"}
+        FLOW_1_START -->|name_to_validate: text| FLOW_1_S0
+        FLOW_1_S0 -->|validate_prompt: text| FLOW_1_S1
+    end
+
+    subgraph FLOW_2 ["🔄 Flow: generate_profile
+Generate a customer profile with account details"]
+        direction TB
+        FLOW_2_START@{shape: circle, label: "▶️ Start"}
+        FLOW_2_S0@{shape: doc, label: "📄 Template: create_profile_prompt"}
+        FLOW_2_S1@{shape: rounded, label: "✨ generate_step"}
+        FLOW_2_START -->|customer_name: text| FLOW_2_S0
+        FLOW_2_S0 -->|profile_prompt: text| FLOW_2_S1
+    end
+
+    subgraph RESOURCES ["🔧 Shared Resources"]
+        direction LR
+        MODEL_GPT4O_MINI@{shape: rounded, label: "✨ gpt4o-mini (openai)" }
+    end
+
+    end
+
+    FLOW_0_S1 -.->|uses| MODEL_GPT4O_MINI
+    FLOW_1_S1 -.->|uses| MODEL_GPT4O_MINI
+    FLOW_2_S1 -.->|uses| MODEL_GPT4O_MINI
+
+    %% Styling
+    classDef appBox fill:none,stroke:#495057,stroke-width:3px
+    classDef flowBox fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef llmNode fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef modelNode fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef authNode fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef telemetryNode fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef resourceBox fill:#f5f5f5,stroke:#616161,stroke-width:1px
+
+    class APP appBox
+    class FLOW_0 flowBox
+    class RESOURCES resourceBox
+    class TELEMETRY telemetryNode
