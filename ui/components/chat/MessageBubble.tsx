@@ -3,11 +3,12 @@ import { Bot, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
 import { MarkdownContainer } from "../MarkdownContainer";
+import { Thinking } from "../outputs";
 
 import { MessagePartWithTextContent } from "./constants";
 import { deriveStatusFromParts } from "./utils/deriveStatusFromParts";
 
-import { FileDisplay, ThinkingPanel } from ".";
+import { FileDisplay } from ".";
 
 import type { Message } from "./types";
 import type { MessagePartWithText } from "./types/MessagePart";
@@ -78,10 +79,7 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
         </div>
 
         {reasoningContent && (
-          <ThinkingPanel
-            reasoningContent={reasoningContent}
-            isOpen={!textContent}
-          />
+          <Thinking reasoningContent={reasoningContent} isOpen={!textContent} />
         )}
 
         {textContent && (

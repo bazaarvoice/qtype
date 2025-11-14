@@ -34,12 +34,19 @@ function RestFlow({ flow }: FlowProps) {
     errors: Array<Record<string, unknown>>;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showInput, setShowInput] = useState(true);
 
   const handleInputChange = (newInputs: FlowInputValues) => {
     setInputs(newInputs);
   };
 
+  const handleReset = () => {
+    setShowInput(true);
+    handleInputChange({});
+  };
+
   const executeFlow = async () => {
+    setShowInput(false);
     setIsExecuting(true);
     setError(null);
     setResponseData(null);
@@ -64,6 +71,7 @@ function RestFlow({ flow }: FlowProps) {
       setIsExecuting(false);
     }
   };
+
   return (
     <div className="space-y-6">
       {/* Flow Header */}
@@ -78,11 +86,26 @@ function RestFlow({ flow }: FlowProps) {
           <p className="text-gray-600 dark:text-gray-300 mt-2">{description}</p>
         )}
       </div>
-
-      <FlowInputs
-        requestSchema={requestSchema || null}
-        onInputChange={handleInputChange}
-      />
+      {showInput && (
+        <FlowInputs
+          requestSchema={requestSchema || null}
+          onInputChange={handleInputChange}
+        />
+      )}
+      <div className="mt-6 pt-4 border-t">
+        {!showInput ? (
+          <Button disabled={isExecuting} onClick={handleReset}>
+            Reset
+          </Button>
+        ) : (
+          <Button
+            disabled={isExecuting || !Object.keys(inputs).length}
+            onClick={executeFlow}
+          >
+            {isExecuting ? "Executing..." : "Execute Flow"}
+          </Button>
+        )}
+      </div>
 
       <div>
         {error && (
@@ -118,29 +141,32 @@ function RestFlow({ flow }: FlowProps) {
             )}
 
             {/* Show outputs if any */}
-            {responseData.outputs && responseData.outputs.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Outputs ({responseData.outputs.length})
-                </h4>
-                {responseData.outputs.map((output, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                  >
-                    {responseData.outputs.length > 1 && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        Result {idx + 1}
-                      </div>
-                    )}
-                    <FlowResponse
-                      responseSchema={flow.output_schema}
-                      responseData={output}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            {responseData.outputs &&
+              responseData.outputs.length > 0 &&
+              !showInput && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Outputs ({responseData.outputs.length})
+                  </h4>
+                  {responseData.outputs.map((output, idx) => (
+                    <div
+                      key={idx}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      {responseData.outputs.length > 1 && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          Result {idx + 1}
+                        </div>
+                      )}
+
+                      <FlowResponse
+                        responseSchema={flow.output_schema}
+                        responseData={output}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
             {/* Show message if no outputs and no errors */}
             {(!responseData.outputs || responseData.outputs.length === 0) &&
@@ -151,12 +177,6 @@ function RestFlow({ flow }: FlowProps) {
               )}
           </div>
         )}
-      </div>
-
-      <div className="mt-6 pt-4 border-t">
-        <Button disabled={isExecuting} onClick={executeFlow}>
-          {isExecuting ? "Executing..." : "Execute Flow"}
-        </Button>
       </div>
     </div>
   );

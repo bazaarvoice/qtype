@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/Alert";
 import BooleanInput from "./inputs/BooleanInput";
 import DatePickerInput from "./inputs/DatePickerInput";
 import DateTimeInput from "./inputs/DatetimeInput";
+import FileUploadInput from "./inputs/FileUploadInput";
 import NumberInput from "./inputs/NumberInput";
 import TextInput from "./inputs/TextInput";
 import TimeInput from "./inputs/TimeInput";
@@ -36,6 +37,8 @@ export default function FlowInput({
   const renderInput = () => {
     switch (property.qtype_type) {
       case "text":
+      case "thinking":
+      case "citation_url":
         return (
           <TextInput
             name={name}
@@ -106,15 +109,18 @@ export default function FlowInput({
 
       case "bytes":
       case "file":
+      case "citation_document":
       case "image":
       case "audio":
       case "video":
         return (
-          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              File upload input coming soon...
-            </p>
-          </div>
+          <FileUploadInput
+            name={name}
+            property={property}
+            required={required}
+            value={value}
+            onChange={onChange}
+          />
         );
 
       default:

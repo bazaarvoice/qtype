@@ -3,17 +3,13 @@ import { useState, useEffect } from "react";
 
 import { MarkdownContainer } from "../MarkdownContainer";
 
-interface ThinkingPanelProps {
+interface ThinkingProps {
   reasoningContent: string;
   isOpen?: boolean;
   className?: string;
 }
 
-function ThinkingPanel({
-  reasoningContent,
-  isOpen = false,
-  className = "",
-}: ThinkingPanelProps) {
+function Thinking({ reasoningContent, isOpen = false }: ThinkingProps) {
   const [open, setOpen] = useState(isOpen);
 
   useEffect(() => {
@@ -25,7 +21,7 @@ function ThinkingPanel({
   }
 
   return (
-    <div className={`text-sm ${className} mb-4`}>
+    <div className={"text-sm"}>
       <button
         type="button"
         role="button"
@@ -59,4 +55,4 @@ function ThinkingPanel({
   );
 }
 
-export { ThinkingPanel };
+export { Thinking };

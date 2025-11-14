@@ -9,6 +9,16 @@
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
+import {
+  Audio,
+  Bytes,
+  CitationUrl,
+  DateTime,
+  File,
+  Thinking,
+  Video,
+  Image,
+} from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
 interface FlowResponseProps {
@@ -48,18 +58,57 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
             </p>
           </div>
         );
-
-      default:
+      case "video": {
+        const { mime, bytes_base64 } = JSON.parse(String(value));
+        return <Video mime={mime} bytesBase64={bytes_base64} />;
+      }
+      case "image": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
         return (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Unsupported response type:{" "}
-              <code className="font-mono text-sm">
-                {property.qtype_type || property.type}
-              </code>
-            </AlertDescription>
-          </Alert>
+          <Image mime={mime} fileName={filename} bytesBase64={bytes_base64} />
         );
+      }
+      case "audio": {
+        const { mime, bytes_base64 } = JSON.parse(String(value));
+        return <Audio mime={mime} bytesBase64={bytes_base64} />;
+      }
+      case "file":
+      case "citation_document": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
+        return (
+          <File fileName={filename} mime={mime} bytesBase64={bytes_base64} />
+        );
+      }
+      case "thinking": {
+        return <Thinking reasoningContent={String(value)} />;
+      }
+      case "citation_url": {
+        return <CitationUrl url={String(value)} />;
+      }
+      case "datetime": {
+        return <DateTime value={String(value)} date time />;
+      }
+      case "date": {
+        return <DateTime value={String(value)} date />;
+      }
+      case "time": {
+        return <DateTime value={String(value)} time />;
+      }
+      case "bytes": {
+        const { mime, filename, bytes_base64 } = JSON.parse(String(value));
+        return (
+          <Bytes fileName={filename} mime={mime} bytesBase64={bytes_base64} />
+        );
+      }
+      default:
+        <Alert variant="destructive">
+          <AlertDescription>
+            Unsupported response type:{" "}
+            <code className="font-mono text-sm">
+              {property.qtype_type || property.type}
+            </code>
+          </AlertDescription>
+        </Alert>;
     }
   };
 
