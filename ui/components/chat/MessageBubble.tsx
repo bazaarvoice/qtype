@@ -3,7 +3,6 @@ import { Bot, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 
 import { MarkdownContainer } from "../MarkdownContainer";
-
 import { Thinking } from "../outputs";
 
 import { MessagePartWithTextContent } from "./constants";
@@ -79,7 +78,9 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
           )}
         </div>
 
-        {reasoningContent && <Thinking reasoningContent={reasoningContent} isOpen={!textContent} />}
+        {reasoningContent && (
+          <Thinking reasoningContent={reasoningContent} isOpen={!textContent} />
+        )}
 
         {textContent && (
           <MarkdownContainer chatBubble theme={isUser ? "dark" : "light"}>
