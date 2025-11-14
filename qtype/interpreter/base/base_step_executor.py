@@ -12,9 +12,14 @@ from openinference.semconv.trace import (
 from opentelemetry import context, trace
 from opentelemetry.trace import Status, StatusCode
 
-from qtype.interpreter.base.cache import cache_key, create_cache
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.progress_tracker import ProgressTracker
+from qtype.interpreter.base.step_cache import (
+    cache_key,
+    create_cache,
+    from_cache_value,
+    to_cache_value,
+)
 from qtype.interpreter.base.stream_emitter import StreamEmitter
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import SecretReference, Step
@@ -318,23 +323,33 @@ class StepExecutor(ABC):
         self, message: FlowMessage
     ) -> AsyncIterator[FlowMessage]:
         downstream = self._process_message_with_telemetry
-        if self.cache is not None:
-            key = cache_key(message)
-            cached_result = self.cache.get(key)
-            if cached_result is not None:
-                for msg in cached_result:
-                    yield FlowMessage.model_validate(msg)  # type: ignore
-            else:
-                buf = []
-                async for output_msg in downstream(message):
-                    buf.append(
-                        output_msg.model_dump(mode="json", exclude_none=True)
-                    )
-                    yield output_msg
-                self.cache.set(key, buf, expire=self.step.cache_config.ttl)  # type: ignore
-        else:
+        if self.cache is None:
             async for output_msg in downstream(message):
                 yield output_msg
+        else:
+            key = cache_key(message, self.step)
+            cached_result = self.cache.get(key)
+            if cached_result is not None:
+                result = [from_cache_value(d, message) for d in cached_result]  # type: ignore
+                # cache hit
+                for msg in result:
+                    yield msg
+            else:
+                # cache miss -- process downstream and store result
+                buf = []
+                async for output_msg in downstream(message):
+                    buf.append(output_msg)
+                    yield output_msg
+
+                # store the results in the cache of there are no errors or if instructed to do so
+                if (
+                    all(not msg.is_failed() for msg in buf)
+                    or self.step.cache_config.on_error == "Cache"  # type: ignore
+                ):
+                    serialized = [to_cache_value(m, self.step) for m in buf]
+                    self.cache.set(
+                        key, serialized, expire=self.step.cache_config.ttl
+                    )  # type: ignore
 
     async def _process_message_with_telemetry(
         self, message: FlowMessage
