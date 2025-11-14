@@ -9,6 +9,7 @@ from enum import Enum
 from typing import (
     Any,
     Generic,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -220,6 +221,7 @@ class CacheConfig(BaseModel):
     namespace: Optional[str] = Field(
         default=None, description="Logical namespace for cache keys."
     )
+    on_error: Literal["Cache", "Drop"] = "Drop"
     version: str = Field(
         default="1.0", description="Bump to invalidate old cache."
     )
