@@ -75,8 +75,10 @@ def to_semantic_ir(
         # If the object is a list, we will resolve each item in the list.
         return [to_semantic_ir(item, symbol_table) for item in dslobj]  # type: ignore
 
-    if isinstance(dslobj, dsl.Enum):
-        # if the variable is an enum, just return it. The semantic classes use the same class
+    # Return these types as-is as they are not changed
+    if isinstance(dslobj, dsl.Enum) or isinstance(
+        dslobj, base_types.CacheConfig
+    ):
         return dslobj
 
     if _is_dsl_type(_resolve_forward_ref(type(dslobj))):

@@ -12,6 +12,7 @@ from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base import factory
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.tqdm_progress import TQDMProgressCallback
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import Flow
 
@@ -19,7 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 async def run_flow(
-    flow: Flow, initial: list[FlowMessage] | FlowMessage, **kwargs
+    flow: Flow,
+    initial: list[FlowMessage] | FlowMessage,
+    show_progress: bool = False,
+    **kwargs,
 ) -> list[FlowMessage]:
     """
     Main entrypoint for executing a flow.
@@ -38,11 +42,16 @@ async def run_flow(
 
     # Extract or create ExecutorContext
     exec_context = kwargs.pop("context", None)
+    progress_callback = TQDMProgressCallback() if show_progress else None
     if exec_context is None:
         exec_context = ExecutorContext(
             secret_manager=NoOpSecretManager(),
             tracer=trace.get_tracer(__name__),
+            on_progress=progress_callback,
         )
+    else:
+        if exec_context.on_progress is None and show_progress:
+            exec_context.on_progress = progress_callback
 
     # Use tracer from context
     tracer = exec_context.tracer or trace.get_tracer(__name__)
@@ -110,6 +119,9 @@ async def run_flow(
         # 4. Collect the final results from the last stream
         final_results = [state async for state in current_stream]
 
+        # Close the progress bars if any
+        if progress_callback is not None:
+            progress_callback.close()
         # Record flow completion metrics
         span.set_attribute("flow.output_count", len(final_results))
         error_count = sum(1 for msg in final_results if msg.is_failed())

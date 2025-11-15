@@ -87,7 +87,10 @@ def run_flow(args: Any) -> None:
         # Execute the workflow using the facade (now async, returns DataFrame)
         result_df = asyncio.run(
             facade.execute_workflow(
-                spec_path, flow_name=args.flow, inputs=input
+                spec_path,
+                flow_name=args.flow,
+                inputs=input,
+                show_progress=args.progress,
             )
         )
 
@@ -171,6 +174,11 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         type=str,
         default=None,
         help="Path to save output data. If input is a DataFrame, output will be saved as parquet. If single result, saved as JSON.",
+    )
+    cmd_parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="Show progress bars during flow execution.",
     )
 
     cmd_parser.add_argument(
