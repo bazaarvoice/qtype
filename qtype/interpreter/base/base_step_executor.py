@@ -212,7 +212,6 @@ class StepExecutor(ABC):
                     num_workers = (
                         self.step.concurrency_config.num_workers  # type: ignore[attr-defined]
                     )
-
                 span.set_attribute("step.concurrency", num_workers)
 
                 # Prepare messages for processing (batching hook)

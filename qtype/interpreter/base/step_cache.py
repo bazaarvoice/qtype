@@ -4,7 +4,8 @@ import pathlib
 from typing import Any
 
 import diskcache as dc
-from openai import BaseModel
+from pydantic import BaseModel
+from pydantic.json import pydantic_encoder
 
 from qtype.base.types import CacheConfig
 from qtype.interpreter.types import FlowMessage
@@ -41,7 +42,7 @@ def cache_key(message: FlowMessage, step: Step) -> str:
             raise ValueError(
                 f"Input variable '{var.id}' not found in message -- caching can not be performed."
             )
-    input_str = json.dumps(inputs, sort_keys=True)
+    input_str = json.dumps(inputs, sort_keys=True, default=pydantic_encoder)
     return hashlib.sha256(input_str.encode("utf-8")).hexdigest()
 
 

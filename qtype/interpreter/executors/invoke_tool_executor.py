@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import importlib
+import inspect
 import logging
 import time
 import uuid
@@ -86,7 +88,10 @@ class ToolExecutionMixin:
                         )
                     )
 
-                result = function(**inputs)
+                if inspect.iscoroutinefunction(function):
+                    result = await function(**inputs)
+                else:
+                    result = await asyncio.to_thread(function, **inputs)
                 await tool_ctx.complete(result)
                 return result
 
