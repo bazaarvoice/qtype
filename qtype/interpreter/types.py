@@ -261,6 +261,8 @@ class ProgressCallback(Protocol):
         items_in_error: int,
         items_succeeded: int,
         total_items: int | None,
+        cache_hits: int | None,
+        cache_misses: int | None,
     ) -> None: ...
 
 

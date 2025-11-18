@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
-from qtype.base.logging import get_logger
 from qtype.base.types import PathLike
 from qtype.semantic.model import Application as SemanticApplication
 from qtype.semantic.model import DocumentType as SemanticDocumentType
@@ -14,7 +14,7 @@ from qtype.semantic.model import DocumentType as SemanticDocumentType
 # That's the whole point of this facade - to avoid importing optional
 # dependencies unless these methods are called.
 
-logger = get_logger("application.facade")
+logger = logging.getLogger(__name__)
 
 
 class QTypeFacade:

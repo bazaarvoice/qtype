@@ -20,6 +20,8 @@ class ProgressTracker:
         self.items_processed = 0
         self.items_in_error = 0
         self.total_items = total_items
+        self.cache_hits = None
+        self.cache_misses = None
 
     @property
     def items_succeeded(self) -> int:
@@ -36,6 +38,8 @@ class ProgressTracker:
         on_progress: ProgressCallback | None,
         processed_delta: int,
         error_delta: int,
+        hit_delta: int | None = None,
+        miss_delta: int | None = None,
     ) -> None:
         """
         Update progress counters and invoke the progress callback.
@@ -51,6 +55,19 @@ class ProgressTracker:
         self.items_processed += processed_delta
         self.items_in_error += error_delta
 
+        if hit_delta is not None:
+            self.cache_hits = (
+                self.cache_hits + hit_delta
+                if self.cache_hits is not None
+                else hit_delta
+            )
+        if miss_delta is not None:
+            self.cache_misses = (
+                self.cache_misses + miss_delta
+                if self.cache_misses is not None
+                else miss_delta
+            )
+
         if on_progress:
             on_progress(
                 self.step_id,
@@ -58,6 +75,8 @@ class ProgressTracker:
                 self.items_in_error,
                 self.items_succeeded,
                 self.total_items,
+                self.cache_hits,
+                self.cache_misses,
             )
 
     def update_for_message(
@@ -73,3 +92,19 @@ class ProgressTracker:
             on_progress: Optional callback to notify of progress updates
         """
         self.update(on_progress, 1, 1 if message.is_failed() else 0)
+
+    def increment_cache(
+        self,
+        on_progress: ProgressCallback | None,
+        hit_delta: int = 0,
+        miss_delta: int = 0,
+    ) -> None:
+        """
+        Increment cache hit/miss counters.
+
+        Args:
+            on_progress: Optional callback to notify of progress updates
+            hit_delta: Number of cache hits to add
+            miss_delta: Number of cache misses to add
+        """
+        self.update(on_progress, 0, 0, hit_delta, miss_delta)

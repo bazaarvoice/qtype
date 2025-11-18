@@ -7,15 +7,26 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import warnings
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from pydantic.warnings import UnsupportedFieldAttributeWarning
 
 from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import InterpreterError, LoadError, ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+# Supress specific pydantic warnings that llamaindex needs to fix
+warnings.filterwarnings("ignore", category=UnsupportedFieldAttributeWarning)
+
+
+# supress qdrant logging
+for name in ["httpx", "urllib3", "qdrant_client"]:
+    logging.getLogger(name).setLevel(logging.WARNING)
 
 
 def read_data_from_file(file_path: str) -> pd.DataFrame:
@@ -98,7 +109,7 @@ def run_flow(args: Any) -> None:
 
         # Display results
         if len(result_df) > 0:
-            logger.info(f"Processed {len(result_df)} input(s)")
+            logger.info(f"Processed {len(result_df)} em")
 
             # Remove 'row' and 'error' columns for display if all errors are None
             display_df = result_df.copy()
@@ -111,7 +122,7 @@ def run_flow(args: Any) -> None:
                 display_df = display_df.drop(columns=["row"])
 
             if len(display_df) > 1:
-                logger.info(f"\nResults:\n{display_df.to_string()}")
+                logger.info(f"\nResults:\n{display_df[0:10].to_string()}\n...")
             else:
                 # Print the first row with column_name: value one per line
                 fmt_str = []

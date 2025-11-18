@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import uuid
 from typing import Any
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -305,7 +306,8 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
         )
 
         bedrock_embedding: BaseEmbedding = BedrockEmbedding(
-            model_name=model.model_id if model.model_id else model.id
+            model_name=model.model_id if model.model_id else model.id,
+            max_retries=100,
         )
         return bedrock_embedding
     elif model.provider == "openai":
@@ -506,26 +508,30 @@ def to_text_splitter(splitter: DocumentSplitter) -> Any:
     Raises:
         InterpreterError: If the splitter class cannot be found or instantiated.
     """
-    from llama_index.core.node_parser import SentenceSplitter
 
-    # Map common splitter names to their classes
-    splitter_classes = {
-        "SentenceSplitter": SentenceSplitter,
-    }
+    module_path = "llama_index.core.node_parser"
+    class_name = splitter.splitter_name
+    try:
+        reader_module = importlib.import_module(module_path)
+        splitter_class = getattr(reader_module, class_name)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(
+            f"Failed to import reader class '{class_name}' from '{module_path}': {e}"
+        ) from e
+    from llama_index.core.schema import BaseNode
 
-    # Get the splitter class
-    splitter_class = splitter_classes.get(splitter.splitter_name)
+    # TODO: let the user specify a custom ID namespace
+    namespace = uuid.UUID("12345678-1234-5678-1234-567812345678")
 
-    if splitter_class is None:
-        raise InterpreterError(
-            f"Unsupported text splitter: {splitter.splitter_name}. "
-            f"Supported splitters: {', '.join(splitter_classes.keys())}"
-        )
+    def id_func(i: int, doc: BaseNode) -> str:
+        u = uuid.uuid5(namespace, f"{doc.node_id}_{i}")
+        return str(u)
 
     # Prepare arguments for the splitter
     splitter_args = {
         "chunk_size": splitter.chunk_size,
         "chunk_overlap": splitter.chunk_overlap,
+        "id_func": id_func,
         **splitter.args,
     }
 

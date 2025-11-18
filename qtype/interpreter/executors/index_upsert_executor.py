@@ -65,7 +65,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
         Yields:
             FlowMessages: Success messages after upserting to the index
         """
-        logger.info(
+        logger.debug(
             f"Executing IndexUpsert step: {self.step.id} with batch size: {len(batch)}"
         )
 
@@ -102,7 +102,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
                 else:  # document index
                     await self._upsert_to_document_index(items_to_upsert)
 
-                logger.info(
+                logger.debug(
                     f"Successfully upserted {len(items_to_upsert)} items "
                     f"to {self.index_type} index in batch"
                 )

@@ -12,7 +12,7 @@ from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base import factory
 from qtype.interpreter.base.executor_context import ExecutorContext
-from qtype.interpreter.tqdm_progress import TQDMProgressCallback
+from qtype.interpreter.rich_progress import RichProgressCallback
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import Flow
 
@@ -42,7 +42,7 @@ async def run_flow(
 
     # Extract or create ExecutorContext
     exec_context = kwargs.pop("context", None)
-    progress_callback = TQDMProgressCallback() if show_progress else None
+    progress_callback = RichProgressCallback() if show_progress else None
     if exec_context is None:
         exec_context = ExecutorContext(
             secret_manager=NoOpSecretManager(),

@@ -330,6 +330,11 @@ class StepExecutor(ABC):
             cached_result = self.cache.get(key)
             if cached_result is not None:
                 result = [from_cache_value(d, message) for d in cached_result]  # type: ignore
+                self.progress.increment_cache(
+                    self.context.on_progress,
+                    hit_delta=len(result),
+                    miss_delta=0,
+                )
                 # cache hit
                 for msg in result:
                     yield msg
@@ -340,6 +345,9 @@ class StepExecutor(ABC):
                     buf.append(output_msg)
                     yield output_msg
 
+                self.progress.increment_cache(
+                    self.context.on_progress, hit_delta=0, miss_delta=len(buf)
+                )
                 # store the results in the cache of there are no errors or if instructed to do so
                 if (
                     all(not msg.is_failed() for msg in buf)
