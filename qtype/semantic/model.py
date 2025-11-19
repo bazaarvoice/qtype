@@ -627,7 +627,7 @@ class PromptTemplate(Step):
     )
 
 
-class Reranker(Step, BatchableStepMixin):
+class Reranker(Step):
     """Reranks a list of documents based on relevance to a query using an LLM."""
 
     type: Literal["Reranker"] = Field("Reranker")
@@ -713,7 +713,7 @@ class Agent(LLMInference):
     )
 
 
-class BedrockReranker(Reranker):
+class BedrockReranker(Reranker, ConcurrentStepMixin):
     """Reranks documents using an AWS Bedrock model."""
 
     type: Literal["BedrockReranker"] = Field("BedrockReranker")

@@ -569,7 +569,26 @@ def _validate_bedrock_reranker(reranker: BedrockReranker) -> None:
     _validate_exact_output_count(
         reranker, 1, ListType(element_type="SearchResult")
     )
-    _validate_exact_input_count(reranker, 1, PrimitiveTypeEnum.text)
+    _validate_exact_input_count(reranker, 2)
+    # Confirm at least one input is text (the query)
+    input_types = {inp.type for inp in reranker.inputs}  # type: ignore
+    if PrimitiveTypeEnum.text not in input_types:
+        raise QTypeSemanticError(
+            (
+                f"BedrockReranker step '{reranker.id}' must have at least one "
+                f"input of type 'text' for the query, found input types: "
+                f"{input_types}."
+            )
+        )
+    # Confirm at least one input is list[SearchResult] (the results to rerank)
+    if ListType(element_type="SearchResult") not in input_types:
+        raise QTypeSemanticError(
+            (
+                f"BedrockReranker step '{reranker.id}' must have at least one "
+                f"input of type 'list[SearchResult]' for the results to rerank, "
+                f"found input types: {input_types}."
+            )
+        )
 
 
 # Mapping of types to their validation functions

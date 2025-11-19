@@ -771,6 +771,110 @@
       "title": "BearerTokenAuthProvider",
       "type": "object"
     },
+    "BedrockReranker": {
+      "additionalProperties": false,
+      "description": "Reranks documents using an AWS Bedrock model.",
+      "properties": {
+        "concurrency_config": {
+          "$ref": "#/$defs/ConcurrencyConfig",
+          "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "BedrockReranker",
+          "default": "BedrockReranker",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AWSAuthProvider"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS authorization provider for Bedrock access."
+        },
+        "model_id": {
+          "description": "Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
+          "title": "Model Id",
+          "type": "string"
+        },
+        "num_results": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Return this many results.",
+          "title": "Num Results"
+        }
+      },
+      "required": [
+        "id",
+        "model_id"
+      ],
+      "title": "BedrockReranker",
+      "type": "object"
+    },
     "CacheConfig": {
       "properties": {
         "directory": {
@@ -1997,6 +2101,7 @@
                   "mapping": {
                     "Agent": "#/$defs/Agent",
                     "Aggregate": "#/$defs/Aggregate",
+                    "BedrockReranker": "#/$defs/BedrockReranker",
                     "Decoder": "#/$defs/Decoder",
                     "DocToTextConverter": "#/$defs/DocToTextConverter",
                     "DocumentEmbedder": "#/$defs/DocumentEmbedder",
@@ -2024,6 +2129,9 @@
                   },
                   {
                     "$ref": "#/$defs/Aggregate"
+                  },
+                  {
+                    "$ref": "#/$defs/BedrockReranker"
                   },
                   {
                     "$ref": "#/$defs/Decoder"
@@ -2082,7 +2190,7 @@
                 ]
               },
               {
-                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
               }
             ]
           },
@@ -3047,7 +3155,7 @@
       "title": "Reference[Annotated[Union[APITool, PythonFunctionTool], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
-    "Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
+    "Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
           "title": "$Ref",
@@ -3057,7 +3165,7 @@
       "required": [
         "$ref"
       ],
-      "title": "Reference[Annotated[Union[Agent, Aggregate, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "title": "Reference[Annotated[Union[Agent, Aggregate, BedrockReranker, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
     "Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {

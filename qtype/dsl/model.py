@@ -1123,7 +1123,7 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     )
 
 
-class Reranker(Step, BatchableStepMixin):
+class Reranker(Step):
     """Reranks a list of documents based on relevance to a query using an LLM."""
 
     type: Literal["Reranker"] = "Reranker"
@@ -1132,7 +1132,7 @@ class Reranker(Step, BatchableStepMixin):
 # TODO: create a reranker that supports llamaindex rerankers...
 
 
-class BedrockReranker(Reranker):
+class BedrockReranker(Reranker, ConcurrentStepMixin):
     """Reranks documents using an AWS Bedrock model."""
 
     type: Literal["BedrockReranker"] = "BedrockReranker"
@@ -1189,6 +1189,7 @@ StepType = Annotated[
     Union[
         Agent,
         Aggregate,
+        BedrockReranker,
         Decoder,
         DocToTextConverter,
         DocumentEmbedder,

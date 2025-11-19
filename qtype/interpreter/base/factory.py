@@ -1,5 +1,8 @@
 from qtype.interpreter.executors.agent_executor import AgentExecutor
 from qtype.interpreter.executors.aggregate_executor import AggregateExecutor
+from qtype.interpreter.executors.bedrock_reranker_executor import (
+    BedrockRerankerExecutor,
+)
 from qtype.interpreter.executors.decoder_executor import DecoderExecutor
 from qtype.interpreter.executors.doc_to_text_executor import (
     DocToTextConverterExecutor,
@@ -43,6 +46,7 @@ from qtype.interpreter.executors.vector_search_executor import (
 from qtype.semantic.model import (
     Agent,
     Aggregate,
+    BedrockReranker,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -72,6 +76,7 @@ from .executor_context import ExecutorContext
 EXECUTOR_REGISTRY = {
     Agent: AgentExecutor,
     Aggregate: AggregateExecutor,
+    BedrockReranker: BedrockRerankerExecutor,
     Decoder: DecoderExecutor,
     DocToTextConverter: DocToTextConverterExecutor,
     DocumentEmbedder: DocumentEmbedderExecutor,
