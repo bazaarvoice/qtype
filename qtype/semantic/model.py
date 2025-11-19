@@ -627,6 +627,12 @@ class PromptTemplate(Step):
     )
 
 
+class Reranker(Step, BatchableStepMixin):
+    """Reranks a list of documents based on relevance to a query using an LLM."""
+
+    type: Literal["Reranker"] = Field("Reranker")
+
+
 class Search(Step):
     """Base class for search operations against indexes."""
 
@@ -638,7 +644,7 @@ class Search(Step):
         ..., description="Index to search against (object or ID reference)."
     )
     default_top_k: int | None = Field(
-        50,
+        10,
         description="Number of top results to retrieve if not provided in the inputs.",
     )
 
@@ -707,18 +713,33 @@ class Agent(LLMInference):
     )
 
 
+class BedrockReranker(Reranker):
+    """Reranks documents using an AWS Bedrock model."""
+
+    type: Literal["BedrockReranker"] = Field("BedrockReranker")
+    auth: AWSAuthProvider | None = Field(
+        None, description="AWS authorization provider for Bedrock access."
+    )
+    model_id: str = Field(
+        ...,
+        description="Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
+    )
+    num_results: int | None = Field(
+        None, description="Return this many results."
+    )
+
+
 class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = Field("DocumentSearch")
-    query_args: dict[str, Any] = Field(
-        default={
-            "type": "best_fields",
-            "fields": ["*"],
-        },
-        description="Query arguments to pass to the elasticsearch multi-match query. "
-        + "See https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html "
-        + " default: type: best_fields, fields: ['*']",
+    query_fields: list[str] = Field(
+        ["*"],
+        description="The fields list to specify to the query (can be wildcards, see https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-multi-match-query#field-boost).",
+    )
+    query_type: str = Field(
+        "best_fields",
+        description="The type of query to perform (see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#query-dsl-multi-match-query-types).",
     )
 
 

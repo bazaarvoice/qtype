@@ -21,7 +21,12 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from opensearchpy import AWSV4SignerAuth, OpenSearch
 
 from qtype.base.types import PrimitiveTypeEnum
-from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
+from qtype.dsl.domain_types import (
+    ChatContent,
+    ChatMessage,
+    RAGDocument,
+    RAGSearchResult,
+)
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
 from qtype.interpreter.auth.generic import auth
@@ -575,7 +580,7 @@ def to_llama_vector_store_and_retriever(
     return vector_store, retriever
 
 
-def from_node_with_score(node_with_score) -> Any:
+def from_node_with_score(node_with_score) -> RAGSearchResult:
     """Convert a LlamaIndex NodeWithScore to a RAGSearchResult.
 
     Args:
@@ -603,4 +608,8 @@ def from_node_with_score(node_with_score) -> Any:
     )
 
     # Wrap in RAGSearchResult with score
-    return RAGSearchResult(chunk=chunk, score=node_with_score.score or 0.0)
+    return RAGSearchResult(
+        content=chunk,
+        doc_id=chunk.document_id,
+        score=node_with_score.score or 0.0,
+    )

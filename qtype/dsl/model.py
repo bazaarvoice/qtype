@@ -1123,6 +1123,33 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     )
 
 
+class Reranker(Step, BatchableStepMixin):
+    """Reranks a list of documents based on relevance to a query using an LLM."""
+
+    type: Literal["Reranker"] = "Reranker"
+
+
+# TODO: create a reranker that supports llamaindex rerankers...
+
+
+class BedrockReranker(Reranker):
+    """Reranks documents using an AWS Bedrock model."""
+
+    type: Literal["BedrockReranker"] = "BedrockReranker"
+    auth: AWSAuthProvider | None = Field(
+        default=None,
+        description="AWS authorization provider for Bedrock access.",
+    )
+    model_id: str = Field(
+        ...,
+        description="Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
+    )
+    num_results: int | None = Field(
+        default=None,
+        description="Return this many results.",
+    )
+
+
 # Create a union type for all tool types
 ToolType = Annotated[
     Union[

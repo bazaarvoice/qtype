@@ -93,11 +93,32 @@ class RAGChunk(Embedding):
     )
 
 
-class RAGSearchResult(StrictBaseModel):
-    """A standard, built-in representation of a search result from a RAG vector search."""
+class SearchResult(StrictBaseModel):
+    """A standard, built-in representation of a search result."""
 
-    chunk: RAGChunk = Field(
+    content: Any = Field(..., description="The content of the search result.")
+    doc_id: str = Field(
+        ...,
+        description="The identifier of the document from which the result was retrieved.",
+    )
+    score: float = Field(
+        ...,
+        description="The relevance score of the search result with respect to the query.",
+    )
+
+
+class RAGSearchResult(SearchResult):
+    """A standard, built-in representation of a search result from a RAG vector search.
+
+    Note: doc_id is duplicated from content.document_id for convenience.
+    """
+
+    content: RAGChunk = Field(
         ..., description="The RAG chunk returned as a search result."
+    )
+    doc_id: str = Field(
+        ...,
+        description="The document ID (duplicated from content.document_id).",
     )
     score: float = Field(
         ...,

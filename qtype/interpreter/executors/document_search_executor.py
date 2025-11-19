@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, AsyncIterator
 
+from qtype.dsl.domain_types import SearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_opensearch_client
@@ -99,13 +100,14 @@ class DocumentSearchExecutor(StepExecutor):
             # Execute the search asynchronously
             response = await self._search_opensearch(search_body)
 
-            # Process each hit and yield as RAGSearchResult
+            # Process each hit and yield as SearchResult
+            # TODO: add support for decomposing a RAGSearchResult for hybrid search
             search_results = []
             for hit in response["hits"]["hits"]:
                 doc = hit["_source"].copy()
                 doc["_search_score"] = hit["_score"]
                 doc["_search_id"] = hit["_id"]
-                search_results.append(doc)
+                search_results.append(SearchResult(**doc))
             yield message.copy_with_variables({output_id: search_results})
 
         except Exception as e:

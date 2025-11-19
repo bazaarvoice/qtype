@@ -10,6 +10,7 @@ from qtype.dsl.model import AWSAuthProvider
 from qtype.semantic.model import (
     Agent,
     Application,
+    BedrockReranker,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -21,6 +22,7 @@ from qtype.semantic.model import (
     FieldExtractor,
     Flow,
     IndexUpsert,
+    ListType,
     LLMInference,
     PromptTemplate,
     SecretReference,
@@ -348,7 +350,6 @@ def _validate_index_upsert(step: IndexUpsert) -> None:
 
 def _validate_vector_search(step: VectorSearch) -> None:
     """Validate VectorSearch has exactly one text input and one list[RAGSearchResult] output."""
-    from qtype.dsl.model import ListType
 
     if not isinstance(step.index, VectorIndex):
         raise QTypeSemanticError(
@@ -369,7 +370,25 @@ def _validate_document_search(step: DocumentSearch) -> None:
             f"DocumentSearch step '{step.id}' must reference a DocumentIndex."
         )
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
-    _validate_exact_output_count(step, 1, ListType(element_type="dict"))
+    _validate_exact_output_count(
+        step, 1, ListType(element_type="SearchResult")
+    )
+    # TODO: Restore below when ready to decompose into RAG search results for hybrid search
+    # actual_type = step.outputs[0].type
+    # acceptable_types = set(
+    #     [
+    #         ListType(element_type="RAGSearchResult"),
+    #         ListType(element_type="SearchResult"),
+    #     ]
+    # )
+    # if actual_type not in acceptable_types:
+    #     raise QTypeSemanticError(
+    #         (
+    #             f"DocumentSearch step '{step.id}' output must be of type "
+    #             f"'list[RAGSearchResult]' or 'list[SearchResult]', found "
+    #             f"'{actual_type}'."
+    #         )
+    #     )
 
 
 def _validate_flow(flow: Flow) -> None:
@@ -545,25 +564,34 @@ def _validate_application(application: Application) -> None:
                 )
 
 
+def _validate_bedrock_reranker(reranker: BedrockReranker) -> None:
+    """Validate BedrockReranker configuration."""
+    _validate_exact_output_count(
+        reranker, 1, ListType(element_type="SearchResult")
+    )
+    _validate_exact_input_count(reranker, 1, PrimitiveTypeEnum.text)
+
+
 # Mapping of types to their validation functions
 _VALIDATORS = {
     Agent: _validate_agent,
     Application: _validate_application,
-    PromptTemplate: _validate_prompt_template,
     AWSAuthProvider: _validate_aws_auth,
-    LLMInference: _validate_llm_inference,
+    BedrockReranker: _validate_bedrock_reranker,
     Decoder: _validate_decoder,
+    DocToTextConverter: _validate_doc_to_text_converter,
+    DocumentEmbedder: _validate_document_embedder,
+    DocumentSearch: _validate_document_search,
+    DocumentSource: _validate_document_source,
+    DocumentSplitter: _validate_document_splitter,
     Echo: _validate_echo,
     FieldExtractor: _validate_field_extractor,
-    SQLSource: _validate_sql_source,
-    DocumentSource: _validate_document_source,
-    DocToTextConverter: _validate_doc_to_text_converter,
-    DocumentSplitter: _validate_document_splitter,
-    DocumentEmbedder: _validate_document_embedder,
-    IndexUpsert: _validate_index_upsert,
-    VectorSearch: _validate_vector_search,
-    DocumentSearch: _validate_document_search,
     Flow: _validate_flow,
+    IndexUpsert: _validate_index_upsert,
+    LLMInference: _validate_llm_inference,
+    PromptTemplate: _validate_prompt_template,
+    SQLSource: _validate_sql_source,
+    VectorSearch: _validate_vector_search,
 }
 
 
