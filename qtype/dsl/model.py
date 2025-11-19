@@ -1077,6 +1077,14 @@ class DocumentIndex(Index):
         ...,
         description="URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
     )
+    id_field: str | None = Field(
+        default=None,
+        description=(
+            "Field name to use as document ID. "
+            "If not specified, auto-detects from: _id, id, doc_id, document_id, or uuid. "
+            "If all are missing, a UUID is generated."
+        ),
+    )
 
 
 class Search(Step, ABC):
@@ -1089,22 +1097,30 @@ class Search(Step, ABC):
     index: Reference[IndexType] | str = Field(
         ..., description="Index to search against (object or ID reference)."
     )
+    default_top_k: int | None = Field(
+        default=10,
+        description="Number of top results to retrieve if not provided in the inputs.",
+    )
 
 
 class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = "VectorSearch"
-    default_top_k: int | None = Field(
-        default=50,
-        description="Number of top results to retrieve if not provided in the inputs.",
-    )
 
 
 class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = "DocumentSearch"
+    query_fields: list[str] = Field(
+        default=["*"],
+        description="The fields list to specify to the query (can be wildcards, see https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-multi-match-query#field-boost).",
+    )
+    query_type: str = Field(
+        default="best_fields",
+        description="The type of query to perform (see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#query-dsl-multi-match-query-types).",
+    )
 
 
 # Create a union type for all tool types

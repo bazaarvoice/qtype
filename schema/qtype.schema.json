@@ -1216,6 +1216,19 @@
           "description": "URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
           "title": "Endpoint",
           "type": "string"
+        },
+        "id_field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Field name to use as document ID. If not specified, auto-detects from: _id, id, doc_id, document_id, or uuid. If all are missing, a UUID is generated.",
+          "title": "Id Field"
         }
       },
       "required": [
@@ -1309,6 +1322,36 @@
           ],
           "description": "Index to search against (object or ID reference).",
           "title": "Index"
+        },
+        "default_top_k": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 10,
+          "description": "Number of top results to retrieve if not provided in the inputs.",
+          "title": "Default Top K"
+        },
+        "query_fields": {
+          "default": [
+            "*"
+          ],
+          "description": "The fields list to specify to the query (can be wildcards, see https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-multi-match-query#field-boost).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Query Fields",
+          "type": "array"
+        },
+        "query_type": {
+          "default": "best_fields",
+          "description": "The type of query to perform (see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#query-dsl-multi-match-query-types).",
+          "title": "Query Type",
+          "type": "string"
         }
       },
       "required": [
@@ -3576,7 +3619,7 @@
               "type": "null"
             }
           ],
-          "default": 50,
+          "default": 10,
           "description": "Number of top results to retrieve if not provided in the inputs.",
           "title": "Default Top K"
         }

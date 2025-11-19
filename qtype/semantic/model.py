@@ -637,6 +637,10 @@ class Search(Step):
     index: Index = Field(
         ..., description="Index to search against (object or ID reference)."
     )
+    default_top_k: int | None = Field(
+        50,
+        description="Number of top results to retrieve if not provided in the inputs.",
+    )
 
 
 class Source(Step):
@@ -662,6 +666,10 @@ class DocumentIndex(Index):
     endpoint: str = Field(
         ...,
         description="URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
+    )
+    id_field: str | None = Field(
+        None,
+        description="Field name to use as document ID. If not specified, auto-detects from: _id, id, doc_id, document_id, or uuid. If all are missing, a UUID is generated.",
     )
 
 
@@ -703,16 +711,21 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = Field("DocumentSearch")
+    query_args: dict[str, Any] = Field(
+        default={
+            "type": "best_fields",
+            "fields": ["*"],
+        },
+        description="Query arguments to pass to the elasticsearch multi-match query. "
+        + "See https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html "
+        + " default: type: best_fields, fields: ['*']",
+    )
 
 
 class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = Field("VectorSearch")
-    default_top_k: int | None = Field(
-        50,
-        description="Number of top results to retrieve if not provided in the inputs.",
-    )
 
 
 class DocumentSource(Source):
