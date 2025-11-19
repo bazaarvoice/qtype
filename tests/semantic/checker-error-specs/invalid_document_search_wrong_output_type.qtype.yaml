@@ -1,0 +1,29 @@
+# VectorSearch must have exactly one text input - no inputs
+id: test_app
+models:
+  - id: embed_model
+    type: EmbeddingModel
+    provider: openai
+    dimensions: 768
+indexes:
+  - id: test_index
+    type: DocumentIndex
+    name: test_vector_index
+    endpoint: somewhere
+flows:
+  - id: test_flow
+    variables:
+      - id: query
+        type: text
+      - id: result
+        type: text
+    inputs:
+      - query
+    steps:
+      - id: search1
+        type: DocumentSearch
+        index: test_index
+        inputs:
+          - query
+        outputs:
+          - result
