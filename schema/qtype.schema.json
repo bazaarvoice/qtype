@@ -800,6 +800,15 @@
           "description": "Logical namespace for cache keys.",
           "title": "Namespace"
         },
+        "on_error": {
+          "default": "Drop",
+          "enum": [
+            "Cache",
+            "Drop"
+          ],
+          "title": "On Error",
+          "type": "string"
+        },
         "version": {
           "default": "1.0",
           "description": "Bump to invalidate old cache.",
