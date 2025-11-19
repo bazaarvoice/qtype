@@ -313,12 +313,16 @@ class TestStepExecutor:
             items_in_error: int,
             items_succeeded: int,
             total_items: int | None,
+            cache_hits: int | None,
+            cache_misses: int | None,
         ):
             progress_calls.append(
                 {
                     "processed": items_processed,
                     "errors": items_in_error,
                     "succeeded": items_succeeded,
+                    "cache_hits": cache_hits,
+                    "cache_misses": cache_misses,
                 }
             )
 
@@ -342,11 +346,9 @@ class TestStepExecutor:
         # Should have 5 progress updates (one per message)
         assert len(progress_calls) == 5
         # Final counts: 5 processed, 2 errors, 3 succeeded
-        assert progress_calls[-1] == {
-            "processed": 5,
-            "errors": 2,
-            "succeeded": 3,
-        }
+        assert progress_calls[-1]["processed"] == 5
+        assert progress_calls[-1]["errors"] == 2
+        assert progress_calls[-1]["succeeded"] == 3
         assert len(results) == 5
 
     # async def test_streaming_events(self, simple_step, session, executor_context):

@@ -58,13 +58,13 @@ class InvokeEmbeddingExecutor(StepExecutor):
             if input_type == PrimitiveTypeEnum.text:
                 if not isinstance(input_value, str):
                     input_value = str(input_value)
-                vector = self.embedding_model.get_text_embedding(
+                vector = await self.embedding_model.aget_text_embedding(
                     text=input_value
                 )
                 content = input_value
             elif input_type == PrimitiveTypeEnum.image:
                 # For image embeddings
-                vector = self.embedding_model.get_image_embedding(
+                vector = await self.embedding_model.aget_image_embedding(
                     image_path=input_value
                 )
                 content = input_value

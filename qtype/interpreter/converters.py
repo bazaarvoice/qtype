@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+from pydantic import BaseModel
 
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Flow
@@ -54,7 +55,10 @@ def flow_messages_to_dataframe(
         # Extract output variables
         for var in flow.outputs:
             if var.id in message.variables:
-                row_data[var.id] = message.variables[var.id]
+                value = message.variables[var.id]
+                if isinstance(value, BaseModel):
+                    value = value.model_dump()
+                row_data[var.id] = value
             else:
                 row_data[var.id] = None
 

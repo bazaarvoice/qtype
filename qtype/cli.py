@@ -7,6 +7,10 @@ import importlib
 import logging
 from pathlib import Path
 
+from qtype.base.logging import get_logger
+
+logger = get_logger("application.facade")
+
 try:
     from importlib.metadata import entry_points
 except ImportError:

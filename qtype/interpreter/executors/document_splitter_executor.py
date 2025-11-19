@@ -72,7 +72,7 @@ class DocumentSplitterExecutor(StepExecutor):
             llama_doc = LlamaDocument(
                 text=content_text,
                 metadata=document.metadata or {},
-                id_=document.file_id,
+                doc_id=document.file_id,
             )
 
             # Split the document using the LlamaIndex splitter
