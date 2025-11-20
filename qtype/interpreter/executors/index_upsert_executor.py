@@ -57,13 +57,16 @@ class IndexUpsertExecutor(BatchedStepExecutor):
                 f"Unsupported index type: {type(self.step.index)}"
             )
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - clean up resources."""
+    async def finalize(self) -> AsyncIterator[FlowMessage]:
+        """Clean up resources after all messages are processed."""
         if hasattr(self, "_opensearch_client") and self._opensearch_client:
             try:
                 await self._opensearch_client.close()
             except Exception:
                 pass
+        # Make this an async generator
+        return
+        yield  # type: ignore[unreachable]
 
     async def process_batch(
         self, batch: list[FlowMessage]

@@ -1113,13 +1113,12 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = "DocumentSearch"
-    query_fields: list[str] = Field(
-        default=["*"],
-        description="The fields list to specify to the query (can be wildcards, see https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-multi-match-query#field-boost).",
-    )
-    query_type: str = Field(
-        default="best_fields",
-        description="The type of query to perform (see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#query-dsl-multi-match-query-types).",
+    query_args: dict[str, Any] = Field(
+        default={
+            "type": "best_fields",
+            "fields": ["*"],
+        },
+        description="The arguments (other than 'query') to specify to the query shape (see https://docs.opensearch.org/latest/query-dsl/full-text/multi-match/).",
     )
 
 

@@ -1440,22 +1440,17 @@
           "description": "Number of top results to retrieve if not provided in the inputs.",
           "title": "Default Top K"
         },
-        "query_fields": {
-          "default": [
-            "*"
-          ],
-          "description": "The fields list to specify to the query (can be wildcards, see https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-multi-match-query#field-boost).",
-          "items": {
-            "type": "string"
+        "query_args": {
+          "additionalProperties": true,
+          "default": {
+            "type": "best_fields",
+            "fields": [
+              "*"
+            ]
           },
-          "title": "Query Fields",
-          "type": "array"
-        },
-        "query_type": {
-          "default": "best_fields",
-          "description": "The type of query to perform (see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#query-dsl-multi-match-query-types).",
-          "title": "Query Type",
-          "type": "string"
+          "description": "The arguments (other than 'query') to specify to the query shape (see https://docs.opensearch.org/latest/query-dsl/full-text/multi-match/).",
+          "title": "Query Args",
+          "type": "object"
         }
       },
       "required": [

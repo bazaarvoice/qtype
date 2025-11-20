@@ -31,17 +31,16 @@ class DocumentSearchExecutor(StepExecutor):
         )
         self.index_name = self.step.index.name
 
-    async def __aenter__(self):
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - clean up resources."""
+    async def finalize(self) -> AsyncIterator[FlowMessage]:
+        """Clean up resources after all messages are processed."""
         if hasattr(self, "client") and self.client:
             try:
                 await self.client.close()
             except Exception:
                 pass
+        # Make this an async generator
+        return
+        yield  # type: ignore[unreachable]
 
     async def process_message(
         self,
@@ -98,10 +97,13 @@ class DocumentSearchExecutor(StepExecutor):
             # TODO: add support for decomposing a RAGSearchResult for hybrid search
             search_results = []
             for hit in response["hits"]["hits"]:
-                doc = hit["_source"].copy()
-                doc["_search_score"] = hit["_score"]
-                doc["_search_id"] = hit["_id"]
-                search_results.append(SearchResult(**doc))
+                search_results.append(
+                    SearchResult(
+                        content=hit["_source"],
+                        doc_id=hit["_id"],
+                        score=hit["_score"],
+                    )
+                )
             yield message.copy_with_variables({output_id: search_results})
 
         except Exception as e:
