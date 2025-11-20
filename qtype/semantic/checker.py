@@ -571,7 +571,7 @@ def _validate_bedrock_reranker(reranker: BedrockReranker) -> None:
     )
     _validate_exact_input_count(reranker, 2)
     # Confirm at least one input is text (the query)
-    input_types = {inp.type for inp in reranker.inputs}  # type: ignore
+    input_types = [inp.type for inp in reranker.inputs]  # type: ignore
     if PrimitiveTypeEnum.text not in input_types:
         raise QTypeSemanticError(
             (

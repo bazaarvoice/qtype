@@ -49,6 +49,13 @@ class BedrockRerankerExecutor(StepExecutor):
             query = self._query(message)
             docs = self._docs(message)
 
+            if len(docs) == 0:
+                # No documents to rerank, yield original message
+                yield message.copy_with_variables(
+                    {self.step.outputs[0].id: docs}
+                )
+                return
+
             # Authorize aws
             if self.step.auth is not None:
                 with aws(self.step.auth, self.context.secret_manager) as s:
@@ -80,6 +87,16 @@ class BedrockRerankerExecutor(StepExecutor):
                             },
                         }
                     )
+                elif isinstance(doc.content, dict):
+                    documents.append(
+                        {
+                            "type": "INLINE",
+                            "inlineDocumentSource": {
+                                "type": "JSON",
+                                "jsonDocument": doc.content,
+                            },
+                        }
+                    )
                 elif isinstance(doc.content, BaseModel):
                     documents.append(
                         {
@@ -98,18 +115,21 @@ class BedrockRerankerExecutor(StepExecutor):
             reranking_configuration = {
                 "type": "BEDROCK_RERANKING_MODEL",
                 "bedrockRerankingConfiguration": {
-                    "numberOfResults": self.step.num_results,
+                    "numberOfResults": self.step.num_results or len(docs),
                     "modelConfiguration": {
                         "modelArn": f"arn:aws:bedrock:{session.region_name}::foundation-model/{self.step.model_id}"
                     },
                 },
             }
 
-            response = await asyncio.to_thread(
-                client.rerank,
-                queries=queries,
-                sources=documents,
-                rerankingConfiguration=reranking_configuration,
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.rerank(
+                    queries=queries,
+                    sources=documents,
+                    rerankingConfiguration=reranking_configuration,
+                ),
             )
 
             results = []

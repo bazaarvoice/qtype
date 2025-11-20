@@ -1135,7 +1135,7 @@ class BedrockReranker(Reranker, ConcurrentStepMixin):
     """Reranks documents using an AWS Bedrock model."""
 
     type: Literal["BedrockReranker"] = "BedrockReranker"
-    auth: AWSAuthProvider | None = Field(
+    auth: Reference[AWSAuthProvider] | str | None = Field(
         default=None,
         description="AWS authorization provider for Bedrock access.",
     )
