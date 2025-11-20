@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore", category=UnsupportedFieldAttributeWarning)
 
 
 # supress qdrant logging
-for name in ["httpx", "urllib3", "qdrant_client"]:
+for name in ["httpx", "urllib3", "qdrant_client", "opensearch"]:
     logging.getLogger(name).setLevel(logging.WARNING)
 
 
@@ -40,12 +40,16 @@ def read_data_from_file(file_path: str) -> pd.DataFrame:
     mime_type = magic.Magic(mime=True).from_file(file_path)
 
     if mime_type == "text/csv":
-        return pd.read_csv(file_path)
+        # TODO: Restore na values and convert to optional once we support them https://github.com/bazaarvoice/qtype/issues/101
+        df = pd.read_csv(file_path)
+        return df.fillna("")
     elif mime_type == "text/plain":
         # For text/plain, use file extension to determine format
         file_ext = Path(file_path).suffix.lower()
         if file_ext == ".csv":
-            return pd.read_csv(file_path)
+            # TODO: Restore na values and convert to optional once we support them https://github.com/bazaarvoice/qtype/issues/101
+            df = pd.read_csv(file_path)
+            return df.fillna("")
         elif file_ext == ".json":
             return pd.read_json(file_path)
         else:

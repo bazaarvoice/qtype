@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
-from typing import Any, AsyncIterator
+from typing import AsyncIterator
 
 from llama_index.core.schema import TextNode
-from opensearchpy import OpenSearch
+from opensearchpy import AsyncOpenSearch
 from pydantic import BaseModel
 
 from qtype.dsl.domain_types import RAGChunk, RAGDocument
@@ -46,7 +45,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             self.index_type = "vector"
         elif isinstance(self.step.index, DocumentIndex):
             # Document index for text-based search
-            self._opensearch_client: OpenSearch = to_opensearch_client(
+            self._opensearch_client: AsyncOpenSearch = to_opensearch_client(
                 self.step.index, self.context.secret_manager
             )
             self._vector_store = None
@@ -57,6 +56,14 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             raise ValueError(
                 f"Unsupported index type: {type(self.step.index)}"
             )
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - clean up resources."""
+        if hasattr(self, "_opensearch_client") and self._opensearch_client:
+            try:
+                await self._opensearch_client.close()
+            except Exception:
+                pass
 
     async def process_batch(
         self, batch: list[FlowMessage]
@@ -146,22 +153,6 @@ class IndexUpsertExecutor(BatchedStepExecutor):
         for message in batch:
             yield message
 
-    async def _bulk_upsert_opensearch(
-        self, bulk_body: list[dict[str, Any]]
-    ) -> dict[str, Any]:
-        """Execute OpenSearch bulk upsert in a thread pool.
-
-        Args:
-            bulk_body: Bulk API request body
-
-        Returns:
-            OpenSearch bulk response
-        """
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, lambda: self._opensearch_client.bulk(body=bulk_body)
-        )
-
     async def _upsert_to_document_index(
         self, batch: list[FlowMessage]
     ) -> AsyncIterator[FlowMessage]:
@@ -219,7 +210,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             message_by_id[doc_id] = message
 
         # Execute bulk request asynchronously
-        response = await self._bulk_upsert_opensearch(bulk_body)
+        response = await self._opensearch_client.bulk(body=bulk_body)
 
         num_inserted = 0
         for item in response["items"]:

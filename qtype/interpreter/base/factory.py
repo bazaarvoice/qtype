@@ -1,48 +1,3 @@
-from qtype.interpreter.executors.agent_executor import AgentExecutor
-from qtype.interpreter.executors.aggregate_executor import AggregateExecutor
-from qtype.interpreter.executors.bedrock_reranker_executor import (
-    BedrockRerankerExecutor,
-)
-from qtype.interpreter.executors.decoder_executor import DecoderExecutor
-from qtype.interpreter.executors.doc_to_text_executor import (
-    DocToTextConverterExecutor,
-)
-from qtype.interpreter.executors.document_embedder_executor import (
-    DocumentEmbedderExecutor,
-)
-from qtype.interpreter.executors.document_search_executor import (
-    DocumentSearchExecutor,
-)
-from qtype.interpreter.executors.document_source_executor import (
-    DocumentSourceExecutor,
-)
-from qtype.interpreter.executors.document_splitter_executor import (
-    DocumentSplitterExecutor,
-)
-from qtype.interpreter.executors.echo_executor import EchoExecutor
-from qtype.interpreter.executors.field_extractor_executor import (
-    FieldExtractorExecutor,
-)
-from qtype.interpreter.executors.file_source_executor import FileSourceExecutor
-from qtype.interpreter.executors.file_writer_executor import FileWriterExecutor
-from qtype.interpreter.executors.index_upsert_executor import (
-    IndexUpsertExecutor,
-)
-from qtype.interpreter.executors.invoke_embedding_executor import (
-    InvokeEmbeddingExecutor,
-)
-from qtype.interpreter.executors.invoke_flow_executor import InvokeFlowExecutor
-from qtype.interpreter.executors.invoke_tool_executor import InvokeToolExecutor
-from qtype.interpreter.executors.llm_inference_executor import (
-    LLMInferenceExecutor,
-)
-from qtype.interpreter.executors.prompt_template_executor import (
-    PromptTemplateExecutor,
-)
-from qtype.interpreter.executors.sql_source_executor import SQLSourceExecutor
-from qtype.interpreter.executors.vector_search_executor import (
-    VectorSearchExecutor,
-)
 from qtype.semantic.model import (
     Agent,
     Aggregate,
@@ -71,30 +26,30 @@ from qtype.semantic.model import (
 from .batch_step_executor import StepExecutor
 from .executor_context import ExecutorContext
 
-# ... import other executors
-
+# Lazy-load executor classes only when needed
+# This avoids importing heavy dependencies until actually required
 EXECUTOR_REGISTRY = {
-    Agent: AgentExecutor,
-    Aggregate: AggregateExecutor,
-    BedrockReranker: BedrockRerankerExecutor,
-    Decoder: DecoderExecutor,
-    DocToTextConverter: DocToTextConverterExecutor,
-    DocumentEmbedder: DocumentEmbedderExecutor,
-    DocumentSearch: DocumentSearchExecutor,
-    DocumentSource: DocumentSourceExecutor,
-    DocumentSplitter: DocumentSplitterExecutor,
-    Echo: EchoExecutor,
-    FieldExtractor: FieldExtractorExecutor,
-    FileSource: FileSourceExecutor,
-    FileWriter: FileWriterExecutor,
-    IndexUpsert: IndexUpsertExecutor,
-    InvokeEmbedding: InvokeEmbeddingExecutor,
-    InvokeFlow: InvokeFlowExecutor,
-    InvokeTool: InvokeToolExecutor,
-    LLMInference: LLMInferenceExecutor,
-    PromptTemplate: PromptTemplateExecutor,
-    SQLSource: SQLSourceExecutor,
-    VectorSearch: VectorSearchExecutor,
+    Agent: "qtype.interpreter.executors.agent_executor.AgentExecutor",
+    Aggregate: "qtype.interpreter.executors.aggregate_executor.AggregateExecutor",
+    BedrockReranker: "qtype.interpreter.executors.bedrock_reranker_executor.BedrockRerankerExecutor",
+    Decoder: "qtype.interpreter.executors.decoder_executor.DecoderExecutor",
+    DocToTextConverter: "qtype.interpreter.executors.doc_to_text_executor.DocToTextConverterExecutor",
+    DocumentEmbedder: "qtype.interpreter.executors.document_embedder_executor.DocumentEmbedderExecutor",
+    DocumentSearch: "qtype.interpreter.executors.document_search_executor.DocumentSearchExecutor",
+    DocumentSource: "qtype.interpreter.executors.document_source_executor.DocumentSourceExecutor",
+    DocumentSplitter: "qtype.interpreter.executors.document_splitter_executor.DocumentSplitterExecutor",
+    Echo: "qtype.interpreter.executors.echo_executor.EchoExecutor",
+    FieldExtractor: "qtype.interpreter.executors.field_extractor_executor.FieldExtractorExecutor",
+    FileSource: "qtype.interpreter.executors.file_source_executor.FileSourceExecutor",
+    FileWriter: "qtype.interpreter.executors.file_writer_executor.FileWriterExecutor",
+    IndexUpsert: "qtype.interpreter.executors.index_upsert_executor.IndexUpsertExecutor",
+    InvokeEmbedding: "qtype.interpreter.executors.invoke_embedding_executor.InvokeEmbeddingExecutor",
+    InvokeFlow: "qtype.interpreter.executors.invoke_flow_executor.InvokeFlowExecutor",
+    InvokeTool: "qtype.interpreter.executors.invoke_tool_executor.InvokeToolExecutor",
+    LLMInference: "qtype.interpreter.executors.llm_inference_executor.LLMInferenceExecutor",
+    PromptTemplate: "qtype.interpreter.executors.prompt_template_executor.PromptTemplateExecutor",
+    SQLSource: "qtype.interpreter.executors.sql_source_executor.SQLSourceExecutor",
+    VectorSearch: "qtype.interpreter.executors.vector_search_executor.VectorSearchExecutor",
 }
 
 
@@ -112,11 +67,18 @@ def create_executor(
     Returns:
         StepExecutor: Configured executor instance
     """
-    executor_class = EXECUTOR_REGISTRY.get(type(step))
-    if not executor_class:
+    executor_path = EXECUTOR_REGISTRY.get(type(step))
+    if not executor_path:
         raise ValueError(
             f"No executor found for step type: {type(step).__name__}"
         )
+
+    # Lazy-load the executor class
+    module_path, class_name = executor_path.rsplit(".", 1)
+    import importlib
+
+    module = importlib.import_module(module_path)
+    executor_class = getattr(module, class_name)
 
     # This assumes the constructor takes the step, context, then dependencies
     return executor_class(step, context, **dependencies)

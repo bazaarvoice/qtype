@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import logging
+from collections.abc import AsyncIterator
 
 from openinference.semconv.trace import (
     OpenInferenceSpanKindValues,
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 async def run_flow(
     flow: Flow,
-    initial: list[FlowMessage] | FlowMessage,
+    initial: list[FlowMessage] | AsyncIterator[FlowMessage] | FlowMessage,
     show_progress: bool = False,
     **kwargs,
 ) -> list[FlowMessage]:
@@ -77,38 +79,38 @@ async def run_flow(
         # 1. Get the execution plan is just the steps in order
         execution_plan = flow.steps
 
-        # 2. Initialize the stream
-        if not isinstance(initial, list):
+        # 2. Convert the initial input to an iterable of some kind. Record telemetry if possible.
+        if isinstance(initial, FlowMessage):
+            span.set_attribute("flow.input_count", 1)
+            input_vars = {k: v for k, v in initial.variables.items()}
+            span.set_attribute(
+                SpanAttributes.INPUT_VALUE,
+                json.dumps(input_vars, default=str),
+            )
+            span.set_attribute(
+                SpanAttributes.INPUT_MIME_TYPE, "application/json"
+            )
             initial = [initial]
 
-        span.set_attribute("flow.input_count", len(initial))
+        if isinstance(initial, list):
+            span.set_attribute("flow.input_count", len(initial))
 
-        # Record input variables for observability
-        if initial:
-            import json
+            # convert to async iterator
+            async def list_stream():
+                for message in initial:
+                    yield message
 
-            try:
-                input_vars = {
-                    k: v for msg in initial for k, v in msg.variables.items()
-                }
-                span.set_attribute(
-                    SpanAttributes.INPUT_VALUE,
-                    json.dumps(input_vars, default=str),
-                )
-                span.set_attribute(
-                    SpanAttributes.INPUT_MIME_TYPE, "application/json"
-                )
-            except Exception:
-                # If serialization fails, skip it
-                pass
+            current_stream = list_stream()
+        elif isinstance(initial, AsyncIterator):
+            # We can't know the count ahead of time
+            current_stream = initial
+        else:
+            raise ValueError(
+                "Initial input must be a FlowMessage, list of FlowMessages, "
+                "or AsyncIterator of FlowMessages"
+            )
 
-        async def initial_stream():
-            for message in initial:
-                yield message
-
-        current_stream = initial_stream()
-
-        # 3. Chain executors together in the main loop
+        # 4. Chain executors together in the main loop
         for step in execution_plan:
             executor = factory.create_executor(step, exec_context, **kwargs)
             output_stream = executor.execute(
@@ -116,7 +118,7 @@ async def run_flow(
             )
             current_stream = output_stream
 
-        # 4. Collect the final results from the last stream
+        # 5. Collect the final results from the last stream
         final_results = [state async for state in current_stream]
 
         # Close the progress bars if any
@@ -128,9 +130,7 @@ async def run_flow(
         span.set_attribute("flow.error_count", error_count)
 
         # Record output variables for observability
-        if final_results:
-            import json
-
+        if len(final_results) == 1 and span.is_recording():
             try:
                 output_vars = {
                     k: v

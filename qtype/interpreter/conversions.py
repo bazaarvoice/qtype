@@ -18,7 +18,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from opensearchpy import AWSV4SignerAuth, OpenSearch
+from opensearchpy import AsyncOpenSearch, AWSV4SignerAuth
 
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import (
@@ -333,7 +333,7 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
 @cached_resource
 def to_opensearch_client(
     index: DocumentIndex, secret_manager: SecretManagerBase
-) -> OpenSearch:
+) -> AsyncOpenSearch:
     """
     Convert a DocumentIndex to an OpenSearch/Elasticsearch client.
 
@@ -382,7 +382,7 @@ def to_opensearch_client(
                 f"Unsupported authentication type for DocumentIndex: {type(index.auth)}"
             )
 
-    return OpenSearch(**client_kwargs)
+    return AsyncOpenSearch(**client_kwargs)
 
 
 def to_content_block(content: ChatContent) -> ContentBlock:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-from typing import Any, AsyncIterator
+from typing import AsyncIterator
 
 from qtype.dsl.domain_types import SearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
@@ -32,24 +31,17 @@ class DocumentSearchExecutor(StepExecutor):
         )
         self.index_name = self.step.index.name
 
-    async def _search_opensearch(
-        self, search_body: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Execute OpenSearch search in a thread pool.
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
 
-        Args:
-            search_body: OpenSearch query body
-
-        Returns:
-            OpenSearch search response
-        """
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None,
-            lambda: self.client.search(
-                index=self.index_name, body=search_body
-            ),
-        )
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - clean up resources."""
+        if hasattr(self, "client") and self.client:
+            try:
+                await self.client.close()
+            except Exception:
+                pass
 
     async def process_message(
         self,
@@ -97,8 +89,10 @@ class DocumentSearchExecutor(StepExecutor):
                     }
                 }
 
-            # Execute the search asynchronously
-            response = await self._search_opensearch(search_body)
+            # Execute the search asynchronously using AsyncOpenSearch
+            response = await self.client.search(
+                index=self.index_name, body=search_body
+            )
 
             # Process each hit and yield as SearchResult
             # TODO: add support for decomposing a RAGSearchResult for hybrid search
