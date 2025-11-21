@@ -573,6 +573,10 @@ class FieldExtractor(Step):
         ...,
         description="JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
     )
+    fail_on_missing: bool = Field(
+        default=True,
+        description="Whether to raise an error if the JSONPath matches no data. If False, returns None.",
+    )
 
 
 class InvokeTool(Step, ConcurrentStepMixin):

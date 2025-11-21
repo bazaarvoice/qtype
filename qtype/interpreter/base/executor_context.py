@@ -7,7 +7,8 @@ concerns threaded through the execution pipeline.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 
 from opentelemetry.trace import Tracer
 
@@ -51,6 +52,9 @@ class ExecutorContext:
         on_progress: Optional callback for progress updates during execution.
         tracer: OpenTelemetry tracer for distributed tracing and observability.
             Defaults to a no-op tracer if telemetry is not configured.
+        thread_pool: Shared thread pool for running synchronous operations
+            in async contexts. Defaults to a pool with 100 threads to support
+            high concurrency workloads without thread exhaustion.
 
     Example:
         ```python
@@ -72,3 +76,16 @@ class ExecutorContext:
     on_stream_event: StreamingCallback | None = None
     on_progress: ProgressCallback | None = None
     tracer: Tracer | None = None
+    thread_pool: ThreadPoolExecutor = field(
+        default_factory=lambda: ThreadPoolExecutor(max_workers=100)
+    )
+
+    def cleanup(self) -> None:
+        """
+        Clean up resources held by the context.
+
+        This should be called when the context is no longer needed to ensure
+        proper cleanup of the thread pool and any other resources.
+        """
+        if self.thread_pool:
+            self.thread_pool.shutdown(wait=True)

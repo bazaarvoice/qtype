@@ -167,6 +167,9 @@ async def run_flow(
         span.set_status(Status(StatusCode.ERROR, f"Flow failed: {e}"))
         raise
     finally:
+        # Clean up context resources if we created it
+        if kwargs.get("context") is None:
+            exec_context.cleanup()
         # Detach the context and end the span
         # Only detach if we successfully attached (span was recording)
         if token is not None:

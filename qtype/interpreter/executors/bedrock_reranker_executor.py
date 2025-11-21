@@ -56,16 +56,14 @@ class BedrockRerankerExecutor(StepExecutor):
                 )
                 return
 
-            # Authorize aws
+            # Get session for region info
             if self.step.auth is not None:
                 with aws(self.step.auth, self.context.secret_manager) as s:
-                    session = s
-                    client = session.client("bedrock-agent-runtime")
+                    region_name = s.region_name
             else:
                 import boto3
 
-                session = boto3.Session()
-                client = session.client("bedrock-agent-runtime")
+                region_name = boto3.Session().region_name
 
             # Convert the types
             queries = [
@@ -117,19 +115,35 @@ class BedrockRerankerExecutor(StepExecutor):
                 "bedrockRerankingConfiguration": {
                     "numberOfResults": self.step.num_results or len(docs),
                     "modelConfiguration": {
-                        "modelArn": f"arn:aws:bedrock:{session.region_name}::foundation-model/{self.step.model_id}"
+                        "modelArn": f"arn:aws:bedrock:{region_name}::foundation-model/{self.step.model_id}"
                     },
                 },
             }
 
+            def _call_bedrock_rerank():
+                """Create client and call rerank in executor thread."""
+                if self.step.auth is not None:
+                    with aws(self.step.auth, self.context.secret_manager) as s:
+                        client = s.client("bedrock-agent-runtime")
+                        return client.rerank(
+                            queries=queries,
+                            sources=documents,
+                            rerankingConfiguration=reranking_configuration,
+                        )
+                else:
+                    import boto3
+
+                    session = boto3.Session()
+                    client = session.client("bedrock-agent-runtime")
+                    return client.rerank(
+                        queries=queries,
+                        sources=documents,
+                        rerankingConfiguration=reranking_configuration,
+                    )
+
             loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(
-                None,
-                lambda: client.rerank(
-                    queries=queries,
-                    sources=documents,
-                    rerankingConfiguration=reranking_configuration,
-                ),
+                self.context.thread_pool, _call_bedrock_rerank
             )
 
             results = []
