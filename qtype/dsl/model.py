@@ -1111,12 +1111,18 @@ class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = "VectorSearch"
+    index: Reference[VectorIndex] | str = Field(
+        ..., description="Index to search against (object or ID reference)."
+    )
 
 
 class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = "DocumentSearch"
+    index: Reference[DocumentIndex] | str = Field(
+        ..., description="Index to search against (object or ID reference)."
+    )
     query_args: dict[str, Any] = Field(
         default={
             "type": "best_fields",

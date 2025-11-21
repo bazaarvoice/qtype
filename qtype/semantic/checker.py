@@ -14,7 +14,6 @@ from qtype.semantic.model import (
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
-    DocumentIndex,
     DocumentSearch,
     DocumentSource,
     DocumentSplitter,
@@ -351,10 +350,6 @@ def _validate_index_upsert(step: IndexUpsert) -> None:
 def _validate_vector_search(step: VectorSearch) -> None:
     """Validate VectorSearch has exactly one text input and one list[RAGSearchResult] output."""
 
-    if not isinstance(step.index, VectorIndex):
-        raise QTypeSemanticError(
-            f"VectorSearch step '{step.id}' must reference a VectorIndex."
-        )
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
     _validate_exact_output_count(
         step, 1, ListType(element_type="RAGSearchResult")
@@ -365,10 +360,6 @@ def _validate_document_search(step: DocumentSearch) -> None:
     """Validate DocumentSearch has exactly one text input for the query."""
     from qtype.dsl.model import ListType
 
-    if not isinstance(step.index, DocumentIndex):
-        raise QTypeSemanticError(
-            f"DocumentSearch step '{step.id}' must reference a DocumentIndex."
-        )
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
     _validate_exact_output_count(
         step, 1, ListType(element_type="SearchResult")

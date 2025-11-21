@@ -737,6 +737,9 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = Field("DocumentSearch")
+    index: DocumentIndex = Field(
+        ..., description="Index to search against (object or ID reference)."
+    )
     query_args: dict[str, Any] = Field(
         {"type": "best_fields", "fields": ["*"]},
         description="The arguments (other than 'query') to specify to the query shape (see https://docs.opensearch.org/latest/query-dsl/full-text/multi-match/).",
@@ -747,6 +750,9 @@ class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = Field("VectorSearch")
+    index: VectorIndex = Field(
+        ..., description="Index to search against (object or ID reference)."
+    )
 
 
 class DocumentSource(Source):

@@ -17,3 +17,4 @@ Example JSONPath expressions:
 
 - **type** (`Literal`): (No documentation available.)
 - **json_path** (`str`): JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.
+- **fail_on_missing** (`bool`): Whether to raise an error if the JSONPath matches no data. If False, returns None.

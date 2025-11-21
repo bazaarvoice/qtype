@@ -840,14 +840,18 @@
         "auth": {
           "anyOf": [
             {
-              "$ref": "#/$defs/AWSAuthProvider"
+              "$ref": "#/$defs/Reference_AWSAuthProvider_"
+            },
+            {
+              "type": "string"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "AWS authorization provider for Bedrock access."
+          "description": "AWS authorization provider for Bedrock access.",
+          "title": "Auth"
         },
         "model_id": {
           "description": "Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
@@ -1418,7 +1422,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+              "$ref": "#/$defs/Reference_DocumentIndex_"
             },
             {
               "type": "string"
@@ -1874,6 +1878,12 @@
           "description": "JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
           "title": "Json Path",
           "type": "string"
+        },
+        "fail_on_missing": {
+          "default": true,
+          "description": "Whether to raise an error if the JSONPath matches no data. If False, returns None.",
+          "title": "Fail On Missing",
+          "type": "boolean"
         }
       },
       "required": [
@@ -3137,6 +3147,19 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "Reference_AWSAuthProvider_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[AWSAuthProvider]",
+      "type": "object"
+    },
     "Reference_Annotated_Union_APITool__PythonFunctionTool___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
@@ -3174,6 +3197,19 @@
         "$ref"
       ],
       "title": "Reference[Annotated[Union[DocumentIndex, VectorIndex], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "type": "object"
+    },
+    "Reference_DocumentIndex_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[DocumentIndex]",
       "type": "object"
     },
     "Reference_EmbeddingModel_": {
@@ -3252,6 +3288,19 @@
         "$ref"
       ],
       "title": "Reference[Variable]",
+      "type": "object"
+    },
+    "Reference_VectorIndex_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[VectorIndex]",
       "type": "object"
     },
     "SQLSource": {
@@ -3704,7 +3753,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+              "$ref": "#/$defs/Reference_VectorIndex_"
             },
             {
               "type": "string"
