@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from typing import AsyncIterator
 
-from qtype.dsl.domain_types import RAGChunk, RAGSearchResult
+from qtype.dsl.domain_types import SearchResult
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.conversions import to_opensearch_client
@@ -29,6 +31,17 @@ class DocumentSearchExecutor(StepExecutor):
         )
         self.index_name = self.step.index.name
 
+    async def finalize(self) -> AsyncIterator[FlowMessage]:
+        """Clean up resources after all messages are processed."""
+        if hasattr(self, "client") and self.client:
+            try:
+                await self.client.close()
+            except Exception:
+                pass
+        # Make this an async generator
+        return
+        yield  # type: ignore[unreachable]
+
     async def process_message(
         self,
         message: FlowMessage,
@@ -39,7 +52,7 @@ class DocumentSearchExecutor(StepExecutor):
             message: The FlowMessage to process.
 
         Yields:
-            FlowMessage with search results as RAGSearchResult instances.
+            A list of dictionaries with _source, _search_score, and _search_id fields.
         """
         input_id = self.step.inputs[0].id
         output_id = self.step.outputs[0].id
@@ -58,62 +71,40 @@ class DocumentSearchExecutor(StepExecutor):
             # Build the search query
             search_body = {
                 "query": {
-                    "multi_match": {
-                        "query": query_text,
-                        "fields": ["content^2", "title", "*"],
-                        "type": "best_fields",
-                    }
+                    "multi_match": {"query": query_text} | self.step.query_args
                 },
-                "size": 10,  # Default top 10 results
+                "size": self.step.default_top_k,
             }
 
             # Apply any filters if specified
             if self.step.filters:
-                if "query" in search_body:
-                    search_body["query"] = {
-                        "bool": {
-                            "must": [search_body["query"]],
-                            "filter": [
-                                {"term": {k: v}}
-                                for k, v in self.step.filters.items()
-                            ],
-                        }
+                search_body["query"] = {
+                    "bool": {
+                        "must": [search_body["query"]],
+                        "filter": [
+                            {"term": {k: v}}
+                            for k, v in self.step.filters.items()
+                        ],
                     }
+                }
 
-            # Execute the search
-            response = self.client.search(
+            # Execute the search asynchronously using AsyncOpenSearch
+            response = await self.client.search(
                 index=self.index_name, body=search_body
             )
 
-            # Process each hit and yield as RAGSearchResult
+            # Process each hit and yield as SearchResult
+            # TODO: add support for decomposing a RAGSearchResult for hybrid search
+            search_results = []
             for hit in response["hits"]["hits"]:
-                source = hit["_source"]
-                doc_id = hit["_id"]
-                score = hit["_score"]
-
-                # Extract content (adjust field name based on your schema)
-                content = source.get("content", "")
-
-                # Build metadata from the source, excluding content field
-                metadata = {
-                    k: v for k, v in source.items() if k not in ["content"]
-                }
-
-                # Create a RAGChunk from the search result
-                # Use the document ID as both chunk_id and document_id
-                chunk = RAGChunk(
-                    content=content,
-                    chunk_id=doc_id,
-                    document_id=source.get("document_id", doc_id),
-                    vector=None,  # Document search doesn't return embeddings
-                    metadata=metadata,
+                search_results.append(
+                    SearchResult(
+                        content=hit["_source"],
+                        doc_id=hit["_id"],
+                        score=hit["_score"],
+                    )
                 )
-
-                # Wrap in RAGSearchResult with the score
-                search_result = RAGSearchResult(chunk=chunk, score=score)
-
-                # Yield result for each document
-                yield message.copy_with_variables({output_id: search_result})
+            yield message.copy_with_variables({output_id: search_results})
 
         except Exception as e:
             # Emit error event to stream so frontend can display it

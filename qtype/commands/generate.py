@@ -188,7 +188,7 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
 
         has_semantic_deps = True
     except ImportError:
-        logger.warning(
+        logger.debug(
             "NetworkX or Ruff is not installed. Skipping semantic model generation."
         )
         has_semantic_deps = False

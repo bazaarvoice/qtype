@@ -771,6 +771,114 @@
       "title": "BearerTokenAuthProvider",
       "type": "object"
     },
+    "BedrockReranker": {
+      "additionalProperties": false,
+      "description": "Reranks documents using an AWS Bedrock model.",
+      "properties": {
+        "concurrency_config": {
+          "$ref": "#/$defs/ConcurrencyConfig",
+          "description": "Configuration for processing the input stream concurrently. If omitted, the step processes items sequentially."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "BedrockReranker",
+          "default": "BedrockReranker",
+          "title": "Type",
+          "type": "string"
+        },
+        "cardinality": {
+          "$ref": "#/$defs/StepCardinality",
+          "default": "one",
+          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reference_AWSAuthProvider_"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS authorization provider for Bedrock access.",
+          "title": "Auth"
+        },
+        "model_id": {
+          "description": "Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
+          "title": "Model Id",
+          "type": "string"
+        },
+        "num_results": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Return this many results.",
+          "title": "Num Results"
+        }
+      },
+      "required": [
+        "id",
+        "model_id"
+      ],
+      "title": "BedrockReranker",
+      "type": "object"
+    },
     "CacheConfig": {
       "properties": {
         "directory": {
@@ -1216,6 +1324,19 @@
           "description": "URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
           "title": "Endpoint",
           "type": "string"
+        },
+        "id_field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Field name to use as document ID. If not specified, auto-detects from: _id, id, doc_id, document_id, or uuid. If all are missing, a UUID is generated.",
+          "title": "Id Field"
         }
       },
       "required": [
@@ -1301,7 +1422,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+              "$ref": "#/$defs/Reference_DocumentIndex_"
             },
             {
               "type": "string"
@@ -1309,6 +1430,31 @@
           ],
           "description": "Index to search against (object or ID reference).",
           "title": "Index"
+        },
+        "default_top_k": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 10,
+          "description": "Number of top results to retrieve if not provided in the inputs.",
+          "title": "Default Top K"
+        },
+        "query_args": {
+          "additionalProperties": true,
+          "default": {
+            "type": "best_fields",
+            "fields": [
+              "*"
+            ]
+          },
+          "description": "The arguments (other than 'query') to specify to the query shape (see https://docs.opensearch.org/latest/query-dsl/full-text/multi-match/).",
+          "title": "Query Args",
+          "type": "object"
         }
       },
       "required": [
@@ -1732,6 +1878,12 @@
           "description": "JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
           "title": "Json Path",
           "type": "string"
+        },
+        "fail_on_missing": {
+          "default": true,
+          "description": "Whether to raise an error if the JSONPath matches no data. If False, returns None.",
+          "title": "Fail On Missing",
+          "type": "boolean"
         }
       },
       "required": [
@@ -1954,6 +2106,7 @@
                   "mapping": {
                     "Agent": "#/$defs/Agent",
                     "Aggregate": "#/$defs/Aggregate",
+                    "BedrockReranker": "#/$defs/BedrockReranker",
                     "Decoder": "#/$defs/Decoder",
                     "DocToTextConverter": "#/$defs/DocToTextConverter",
                     "DocumentEmbedder": "#/$defs/DocumentEmbedder",
@@ -1981,6 +2134,9 @@
                   },
                   {
                     "$ref": "#/$defs/Aggregate"
+                  },
+                  {
+                    "$ref": "#/$defs/BedrockReranker"
                   },
                   {
                     "$ref": "#/$defs/Decoder"
@@ -2039,7 +2195,7 @@
                 ]
               },
               {
-                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
               }
             ]
           },
@@ -2991,6 +3147,19 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "Reference_AWSAuthProvider_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[AWSAuthProvider]",
+      "type": "object"
+    },
     "Reference_Annotated_Union_APITool__PythonFunctionTool___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
@@ -3004,7 +3173,7 @@
       "title": "Reference[Annotated[Union[APITool, PythonFunctionTool], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
-    "Reference_Annotated_Union_Agent__Aggregate__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
+    "Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
           "title": "$Ref",
@@ -3014,7 +3183,7 @@
       "required": [
         "$ref"
       ],
-      "title": "Reference[Annotated[Union[Agent, Aggregate, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "title": "Reference[Annotated[Union[Agent, Aggregate, BedrockReranker, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
     "Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
@@ -3028,6 +3197,19 @@
         "$ref"
       ],
       "title": "Reference[Annotated[Union[DocumentIndex, VectorIndex], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "type": "object"
+    },
+    "Reference_DocumentIndex_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[DocumentIndex]",
       "type": "object"
     },
     "Reference_EmbeddingModel_": {
@@ -3106,6 +3288,19 @@
         "$ref"
       ],
       "title": "Reference[Variable]",
+      "type": "object"
+    },
+    "Reference_VectorIndex_": {
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "Reference[VectorIndex]",
       "type": "object"
     },
     "SQLSource": {
@@ -3558,7 +3753,7 @@
         "index": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+              "$ref": "#/$defs/Reference_VectorIndex_"
             },
             {
               "type": "string"
@@ -3576,7 +3771,7 @@
               "type": "null"
             }
           ],
-          "default": 50,
+          "default": 10,
           "description": "Number of top results to retrieve if not provided in the inputs.",
           "title": "Default Top K"
         }

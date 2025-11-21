@@ -27,13 +27,13 @@ class QTypeFacade:
     """
 
     def telemetry(self, spec: SemanticDocumentType) -> None:
+        from qtype.interpreter.telemetry import register
+
         if isinstance(spec, SemanticApplication) and spec.telemetry:
             logger.info(
                 f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
             )
             # Register telemetry if needed
-            from qtype.interpreter.telemetry import register
-
             register(spec.telemetry, self.secret_manager(spec), spec.id)
 
     def secret_manager(self, spec: SemanticDocumentType):
@@ -75,10 +75,16 @@ class QTypeFacade:
             DataFrame with results (one row per input)
         """
         import pandas as pd
+        from opentelemetry import trace
 
+        from qtype.interpreter.base.executor_context import ExecutorContext
+        from qtype.interpreter.converters import (
+            dataframe_to_flow_messages,
+            flow_messages_to_dataframe,
+        )
+        from qtype.interpreter.flow import run_flow
+        from qtype.interpreter.types import Session
         from qtype.semantic.loader import load
-
-        logger.info(f"Executing workflow from {path}")
 
         # Load the semantic application
         semantic_model, type_registry = load(Path(path))
@@ -100,7 +106,10 @@ class QTypeFacade:
             else:
                 raise ValueError("No flows found in application")
 
+        logger.info(f"Executing flow {target_flow.id} from {path}")
+
         # Convert inputs to DataFrame (normalize single dict to 1-row DataFrame)
+
         if isinstance(inputs, dict):
             input_df = pd.DataFrame([inputs])
         elif isinstance(inputs, pd.DataFrame):
@@ -111,12 +120,6 @@ class QTypeFacade:
             )
 
         # Create session
-        from qtype.interpreter.converters import (
-            dataframe_to_flow_messages,
-            flow_messages_to_dataframe,
-        )
-        from qtype.interpreter.types import Session
-
         session = Session(
             session_id=kwargs.pop("session_id", "default"),
             conversation_history=kwargs.pop("conversation_history", []),
@@ -126,12 +129,8 @@ class QTypeFacade:
         initial_messages = dataframe_to_flow_messages(input_df, session)
 
         # Execute the flow
-        from opentelemetry import trace
-
-        from qtype.interpreter.base.executor_context import ExecutorContext
-        from qtype.interpreter.flow import run_flow
-
         secret_manager = self.secret_manager(semantic_model)
+
         context = ExecutorContext(
             secret_manager=secret_manager,
             tracer=trace.get_tracer(__name__),

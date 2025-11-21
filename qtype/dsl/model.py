@@ -573,6 +573,10 @@ class FieldExtractor(Step):
         ...,
         description="JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
     )
+    fail_on_missing: bool = Field(
+        default=True,
+        description="Whether to raise an error if the JSONPath matches no data. If False, returns None.",
+    )
 
 
 class InvokeTool(Step, ConcurrentStepMixin):
@@ -1077,6 +1081,14 @@ class DocumentIndex(Index):
         ...,
         description="URL endpoint for the search cluster (e.g., https://my-cluster.es.amazonaws.com).",
     )
+    id_field: str | None = Field(
+        default=None,
+        description=(
+            "Field name to use as document ID. "
+            "If not specified, auto-detects from: _id, id, doc_id, document_id, or uuid. "
+            "If all are missing, a UUID is generated."
+        ),
+    )
 
 
 class Search(Step, ABC):
@@ -1089,15 +1101,18 @@ class Search(Step, ABC):
     index: Reference[IndexType] | str = Field(
         ..., description="Index to search against (object or ID reference)."
     )
+    default_top_k: int | None = Field(
+        default=10,
+        description="Number of top results to retrieve if not provided in the inputs.",
+    )
 
 
 class VectorSearch(Search, BatchableStepMixin):
     """Performs vector similarity search against a vector index."""
 
     type: Literal["VectorSearch"] = "VectorSearch"
-    default_top_k: int | None = Field(
-        default=50,
-        description="Number of top results to retrieve if not provided in the inputs.",
+    index: Reference[VectorIndex] | str = Field(
+        ..., description="Index to search against (object or ID reference)."
     )
 
 
@@ -1105,6 +1120,43 @@ class DocumentSearch(Search, ConcurrentStepMixin):
     """Performs document search against a document index."""
 
     type: Literal["DocumentSearch"] = "DocumentSearch"
+    index: Reference[DocumentIndex] | str = Field(
+        ..., description="Index to search against (object or ID reference)."
+    )
+    query_args: dict[str, Any] = Field(
+        default={
+            "type": "best_fields",
+            "fields": ["*"],
+        },
+        description="The arguments (other than 'query') to specify to the query shape (see https://docs.opensearch.org/latest/query-dsl/full-text/multi-match/).",
+    )
+
+
+class Reranker(Step):
+    """Reranks a list of documents based on relevance to a query using an LLM."""
+
+    type: Literal["Reranker"] = "Reranker"
+
+
+# TODO: create a reranker that supports llamaindex rerankers...
+
+
+class BedrockReranker(Reranker, ConcurrentStepMixin):
+    """Reranks documents using an AWS Bedrock model."""
+
+    type: Literal["BedrockReranker"] = "BedrockReranker"
+    auth: Reference[AWSAuthProvider] | str | None = Field(
+        default=None,
+        description="AWS authorization provider for Bedrock access.",
+    )
+    model_id: str = Field(
+        ...,
+        description="Bedrock model ID to use for reranking. See https://docs.aws.amazon.com/bedrock/latest/userguide/rerank-supported.html",
+    )
+    num_results: int | None = Field(
+        default=None,
+        description="Return this many results.",
+    )
 
 
 # Create a union type for all tool types
@@ -1146,6 +1198,7 @@ StepType = Annotated[
     Union[
         Agent,
         Aggregate,
+        BedrockReranker,
         Decoder,
         DocToTextConverter,
         DocumentEmbedder,

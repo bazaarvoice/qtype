@@ -18,10 +18,15 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from opensearchpy import AWSV4SignerAuth, OpenSearch
+from opensearchpy import AsyncOpenSearch, AWSV4SignerAuth
 
 from qtype.base.types import PrimitiveTypeEnum
-from qtype.dsl.domain_types import ChatContent, ChatMessage, RAGDocument
+from qtype.dsl.domain_types import (
+    ChatContent,
+    ChatMessage,
+    RAGDocument,
+    RAGSearchResult,
+)
 from qtype.dsl.model import Memory
 from qtype.interpreter.auth.aws import aws
 from qtype.interpreter.auth.generic import auth
@@ -328,7 +333,7 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
 @cached_resource
 def to_opensearch_client(
     index: DocumentIndex, secret_manager: SecretManagerBase
-) -> OpenSearch:
+) -> AsyncOpenSearch:
     """
     Convert a DocumentIndex to an OpenSearch/Elasticsearch client.
 
@@ -377,7 +382,7 @@ def to_opensearch_client(
                 f"Unsupported authentication type for DocumentIndex: {type(index.auth)}"
             )
 
-    return OpenSearch(**client_kwargs)
+    return AsyncOpenSearch(**client_kwargs)
 
 
 def to_content_block(content: ChatContent) -> ContentBlock:
@@ -575,7 +580,7 @@ def to_llama_vector_store_and_retriever(
     return vector_store, retriever
 
 
-def from_node_with_score(node_with_score) -> Any:
+def from_node_with_score(node_with_score) -> RAGSearchResult:
     """Convert a LlamaIndex NodeWithScore to a RAGSearchResult.
 
     Args:
@@ -603,4 +608,8 @@ def from_node_with_score(node_with_score) -> Any:
     )
 
     # Wrap in RAGSearchResult with score
-    return RAGSearchResult(chunk=chunk, score=node_with_score.score or 0.0)
+    return RAGSearchResult(
+        content=chunk,
+        doc_id=chunk.document_id,
+        score=node_with_score.score or 0.0,
+    )

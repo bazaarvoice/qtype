@@ -132,12 +132,17 @@ class FieldExtractorExecutor(StepExecutor):
             matches = self.jsonpath_expr.find(input_dict)
 
             if not matches:
-                raise ValueError(
-                    (
-                        f"JSONPath expression '{self.step.json_path}' "
-                        f"did not match any data in input"
+                if self.step.fail_on_missing:
+                    raise ValueError(
+                        (
+                            f"JSONPath expression '{self.step.json_path}' "
+                            f"did not match any data in input"
+                        )
                     )
-                )
+                else:
+                    # Yield message with None output
+                    yield message.copy_with_variables({output_id: None})
+                    return
 
             await self.stream_emitter.status(
                 f"JSONPath matched {len(matches)} value(s)"

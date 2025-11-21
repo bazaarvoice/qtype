@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from typing import Any, cast
+
 import pandas as pd
 from pydantic import BaseModel
 
@@ -9,11 +12,11 @@ from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Flow
 
 
-def dataframe_to_flow_messages(
+async def dataframe_to_flow_messages(
     df: pd.DataFrame, session: Session
-) -> list[FlowMessage]:
+) -> AsyncIterator[FlowMessage]:
     """
-    Convert a DataFrame to a list of FlowMessages.
+    Convert a DataFrame to an async generator of FlowMessages.
 
     Each row in the DataFrame becomes a FlowMessage with the same session.
 
@@ -21,14 +24,15 @@ def dataframe_to_flow_messages(
         df: DataFrame where each row represents one set of inputs
         session: Session object to use for all messages
 
-    Returns:
-        List of FlowMessages, one per DataFrame row
+    Yields:
+        FlowMessages, one per DataFrame row
     """
-    messages = []
-    for _, row in df.iterrows():
-        variables = row.to_dict()
-        messages.append(FlowMessage(session=session, variables=variables))
-    return messages
+    # Use to_dict with orient='records' - much faster than iterrows
+    # This returns a list of dicts directly without Series overhead
+    records = cast(list[dict[str, Any]], df.to_dict(orient="records"))
+
+    for record in records:
+        yield FlowMessage(session=session, variables=record)
 
 
 def flow_messages_to_dataframe(
@@ -46,8 +50,6 @@ def flow_messages_to_dataframe(
     Returns:
         DataFrame with one row per message, columns for each output variable
     """
-    from typing import Any
-
     results = []
     for idx, message in enumerate(messages):
         row_data: dict[str, Any] = {"row": idx}
