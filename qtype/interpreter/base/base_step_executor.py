@@ -241,7 +241,7 @@ class StepExecutor(ABC):
 
                 # Track message counts for telemetry
                 message_count = 0
-                error_count = len(failed_messages)
+                error_count = 0
 
                 # Stream results and track progress
                 async with all_results.stream() as streamer:
