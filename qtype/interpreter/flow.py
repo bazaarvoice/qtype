@@ -11,9 +11,12 @@ from openinference.semconv.trace import (
 from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
+from rich.console import Console
+from transformers import ProgressCallback
 
 from qtype.interpreter.base import factory
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.logging_progress import LoggingProgressCallback
 from qtype.interpreter.rich_progress import RichProgressCallback
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import Flow
@@ -42,9 +45,17 @@ async def run_flow(
     """
     from qtype.interpreter.base.secrets import NoOpSecretManager
 
+    # Wire up progress callback if requested
+    progress_callback: ProgressCallback | None = None
+    if show_progress:
+        console = Console()
+        if console.is_terminal:
+            progress_callback = RichProgressCallback()
+        else:
+            progress_callback = LoggingProgressCallback(log_every_seconds=120)
+
     # Extract or create ExecutorContext
     exec_context = kwargs.pop("context", None)
-    progress_callback = RichProgressCallback() if show_progress else None
     if exec_context is None:
         exec_context = ExecutorContext(
             secret_manager=NoOpSecretManager(),

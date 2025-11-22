@@ -71,7 +71,7 @@ class DocumentSplitterExecutor(StepExecutor):
             # Convert to LlamaIndex Document for splitting
             llama_doc = LlamaDocument(
                 text=content_text,
-                metadata=document.metadata or {},
+                metadata={},  # ommit metadata here as it's added back later and we don't want the chunk size checks
                 doc_id=document.file_id,
             )
 
