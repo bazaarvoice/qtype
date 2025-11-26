@@ -153,12 +153,12 @@ def _format_validation_errors(
         error_msg = "Validation failed (see details above)"
     else:
         error_msg = "Validation failed:\n"
-        for error in relevant_errors[:5]:  # Show max 5 errors
+        for error in relevant_errors[:30]:  # Show max 5 errors
             loc_path = _simplify_field_path(error["loc"])
             error_msg += f"  {loc_path}: {error['msg']}\n"
 
-        if len(relevant_errors) > 5:
-            error_msg += f"  ... and {len(relevant_errors) - 5} more errors\n"
+        if len(relevant_errors) > 30:
+            error_msg += f"  ... and {len(relevant_errors) - 30} more errors\n"
 
     if source_name:
         error_msg = f"In {source_name}:\n{error_msg}"

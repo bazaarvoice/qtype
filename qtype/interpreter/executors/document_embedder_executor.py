@@ -41,7 +41,7 @@ class DocumentEmbedderExecutor(StepExecutor):
         self.step: DocumentEmbedder = step
         # Initialize the embedding model once for the executor
         self.embedding_model: BaseEmbedding = to_embedding_model(
-            self.step.model
+            self.step.model, context.secret_manager
         )
 
     # TODO: properly abstract this into a mixin
