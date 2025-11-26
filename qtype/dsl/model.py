@@ -765,8 +765,9 @@ class AWSAuthProvider(AuthorizationProvider):
         has_keys = self.access_key_id and self.secret_access_key
         has_profile = self.profile_name
         has_role = self.role_arn
+        has_region = self.region
 
-        if not (has_keys or has_profile or has_role):
+        if not (has_keys or has_profile or has_role or has_region):
             raise ValueError(
                 "AWSAuthProvider must specify at least one authentication method: "
                 "access keys, profile name, or role ARN."

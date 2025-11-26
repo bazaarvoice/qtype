@@ -30,7 +30,9 @@ class InvokeEmbeddingExecutor(StepExecutor):
             )
         self.step: InvokeEmbedding = step
         # Initialize the embedding model once for the executor
-        self.embedding_model = to_embedding_model(self.step.model)
+        self.embedding_model = to_embedding_model(
+            self.step.model, context.secret_manager
+        )
 
     async def process_message(
         self,

@@ -34,6 +34,7 @@ from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.interpreter.types import InterpreterError
 from qtype.semantic.model import (
     APIKeyAuthProvider,
+    AWSAuthProvider,
     DocumentIndex,
     DocumentSplitter,
     Model,
@@ -302,7 +303,9 @@ def to_vector_store(
 
 
 @cached_resource
-def to_embedding_model(model: Model) -> BaseEmbedding:
+def to_embedding_model(
+    model: Model, secret_manager: SecretManagerBase
+) -> BaseEmbedding:
     """Convert a qtype Model to a LlamaIndex embedding model."""
 
     if model.provider == "aws-bedrock":
@@ -310,7 +313,14 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
             BedrockEmbedding,
         )
 
+        session = None
+        if model.auth is not None:
+            assert isinstance(model.auth, AWSAuthProvider)
+            with aws(model.auth, secret_manager) as session:
+                session = session._session
+
         bedrock_embedding: BaseEmbedding = BedrockEmbedding(
+            botocore_session=session,
             model_name=model.model_id if model.model_id else model.id,
             max_retries=100,
         )
@@ -320,8 +330,20 @@ def to_embedding_model(model: Model) -> BaseEmbedding:
             OpenAIEmbedding,
         )
 
+        api_key = None
+        if model.auth:
+            with auth(model.auth, secret_manager) as provider:
+                if not isinstance(provider, APIKeyAuthProvider):
+                    raise InterpreterError(
+                        f"OpenAI provider requires APIKeyAuthProvider, "
+                        f"got {type(provider).__name__}"
+                    )
+                # api_key is guaranteed to be str after auth() resolves it
+                api_key = provider.api_key  # type: ignore[assignment]
+
         openai_embedding: BaseEmbedding = OpenAIEmbedding(
-            model_name=model.model_id if model.model_id else model.id
+            api_key=api_key,
+            model_name=model.model_id if model.model_id else model.id,
         )
         return openai_embedding
     else:
@@ -566,7 +588,7 @@ def to_llama_vector_store_and_retriever(
     vector_store = to_vector_store(index, secret_manager)
 
     # Get the embedding model
-    embedding_model = to_embedding_model(index.embedding_model)
+    embedding_model = to_embedding_model(index.embedding_model, secret_manager)
 
     # Create a VectorStoreIndex with the vector store and embedding model
     vector_index = VectorStoreIndex.from_vector_store(
