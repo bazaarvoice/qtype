@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncIterator
 
 from botocore.exceptions import ClientError
@@ -103,5 +104,9 @@ class DocumentEmbedderExecutor(StepExecutor):
         except Exception as e:
             # Emit error event to stream so frontend can display it
             await self.stream_emitter.error(str(e))
+            logging.error(
+                f"Error processing DocumentEmbedder step {self.step.id}",
+                exc_info=e,
+            )
             message.set_error(self.step.id, e)
             yield message
