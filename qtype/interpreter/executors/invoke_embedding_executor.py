@@ -1,3 +1,4 @@
+import asyncio
 from typing import AsyncIterator
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues
@@ -56,32 +57,41 @@ class InvokeEmbeddingExecutor(StepExecutor):
             if input_value is None:
                 raise ValueError(f"Input variable '{input_id}' is missing")
 
-            # Generate embedding based on input type
-            if input_type == PrimitiveTypeEnum.text:
-                if not isinstance(input_value, str):
-                    input_value = str(input_value)
-                vector = await self.embedding_model.aget_text_embedding(
-                    text=input_value
-                )
-                content = input_value
-            elif input_type == PrimitiveTypeEnum.image:
-                # For image embeddings
-                vector = await self.embedding_model.aget_image_embedding(
-                    image_path=input_value
-                )
-                content = input_value
-            else:
-                raise ValueError(
-                    (
-                        f"Unsupported input type for embedding: "
-                        f"{input_type}. Must be 'text' or 'image'."
+            def _call(input_value=input_value):
+                # Generate embedding based on input type
+                if input_type == PrimitiveTypeEnum.text:
+                    if not isinstance(input_value, str):
+                        input_value = str(input_value)
+                    vector = self.embedding_model.get_text_embedding(
+                        text=input_value
                     )
-                )
+                    content = input_value
+                elif input_type == PrimitiveTypeEnum.image:
+                    # For image embeddings
+                    vector = self.embedding_model.get_image_embedding(
+                        image_path=input_value
+                    )
+                    content = input_value
+                else:
+                    raise ValueError(
+                        (
+                            f"Unsupported input type for embedding: "
+                            f"{input_type}. Must be 'text' or 'image'."
+                        )
+                    )
 
-            # Create the Embedding object
-            embedding = Embedding(
-                vector=vector,
-                content=content,
+                # Create the Embedding object
+                embedding = Embedding(
+                    vector=vector,
+                    content=content,
+                )
+                return embedding
+
+            # TODO: switch back to async once aws auth supports it.
+            # https://github.com/bazaarvoice/qtype/issues/108
+            loop = asyncio.get_running_loop()
+            embedding = await loop.run_in_executor(
+                self.context.thread_pool, _call
             )
 
             # Yield the result
