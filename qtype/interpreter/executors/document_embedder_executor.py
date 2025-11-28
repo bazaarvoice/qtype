@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import AsyncIterator
 
@@ -59,7 +60,17 @@ class DocumentEmbedderExecutor(StepExecutor):
         Returns:
             The embedding vector as a list of floats.
         """
-        return await self.embedding_model.aget_text_embedding(text=text)
+
+        # TODO: switch back to async once aws auth supports it.
+        # https://github.com/bazaarvoice/qtype/issues/108
+        def _call():
+            return self.embedding_model.get_text_embedding(text=text)
+
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(self.context.thread_pool, _call)
+
+        return response
+        # return await self.embedding_model.aget_text_embedding(text=text)
 
     async def process_message(
         self,
