@@ -12,13 +12,12 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 from rich.console import Console
-from transformers import ProgressCallback
 
 from qtype.interpreter.base import factory
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.logging_progress import LoggingProgressCallback
 from qtype.interpreter.rich_progress import RichProgressCallback
-from qtype.interpreter.types import FlowMessage
+from qtype.interpreter.types import FlowMessage, ProgressCallback
 from qtype.semantic.model import Flow
 
 logger = logging.getLogger(__name__)

@@ -5704,7 +5704,7 @@ requires-dist = [
     { name = "psycopg2-binary", marker = "extra == 'interpreter'", specifier = ">=2.9.10" },
     { name = "pyarrow", marker = "extra == 'interpreter'", specifier = ">=21.0.0" },
     { name = "pyathena", extras = ["sqlalchemy"], marker = "extra == 'interpreter'", specifier = ">=3.18.0" },
-    { name = "pydantic", specifier = ">=2.11.5" },
+    { name = "pydantic", specifier = ">=2.12.4" },
     { name = "pydantic-yaml", specifier = ">=1.6.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-magic", marker = "extra == 'interpreter'", specifier = ">=0.4.27" },
