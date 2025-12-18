@@ -316,8 +316,9 @@ class FlowMessage(BaseModel):
     def copy_with_variables(
         self, new_variables: dict[str, Any]
     ) -> "FlowMessage":
-        new_state = self.model_copy(deep=True)
-        new_state.variables.update(new_variables)
+        new_vars = self.variables.copy()
+        new_vars.update(new_variables)
+        new_state = self.model_copy(update={"variables": new_vars})
         return new_state
 
 
