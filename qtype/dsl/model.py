@@ -376,6 +376,16 @@ class Collect(Step, BatchableStepMixin):
     )
 
 
+class Construct(Step):
+    """A step that converts variables into an instance of a Custom or Domain Type"""
+
+    type: Literal["Construct"] = "Construct"
+    field_mapping: dict[str, str] = Field(
+        ...,
+        description="Mapping of type inputs to variable names, if needed.",
+    )
+
+
 class PromptTemplate(Step):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
@@ -1200,6 +1210,7 @@ StepType = Annotated[
         Aggregate,
         BedrockReranker,
         Collect,
+        Construct,
         Decoder,
         DocToTextConverter,
         DocumentEmbedder,

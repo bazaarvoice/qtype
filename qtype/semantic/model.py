@@ -468,6 +468,15 @@ class Collect(Step, BatchableStepMixin):
     )
 
 
+class Construct(Step):
+    """A step that converts variables into an instance of a Custom or Domain Type"""
+
+    type: Literal["Construct"] = Field("Construct")
+    field_mapping: dict[str, str] = Field(
+        ..., description="Mapping of type inputs to variable names, if needed."
+    )
+
+
 class Decoder(Step):
     """Defines a step that decodes string data into structured outputs.
 

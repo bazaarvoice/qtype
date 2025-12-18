@@ -12,6 +12,7 @@ from qtype.semantic.model import (
     Application,
     BedrockReranker,
     Collect,
+    Construct,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -272,6 +273,31 @@ def _validate_explode(step: Explode) -> None:
                 f"Explode step '{step.id}' output type must match the element "
                 f"type of the input list. Input element type: "
                 f"'{input_type.element_type}', Output type: '{output_type}'."
+            )
+        )
+
+
+def _validate_construct(step: Construct) -> None:
+    """Validate Construct step has at least one input, exactly one output, and that the
+    output type is inherited from a pydantic base class (i.e., it is a Custom type or a Domain type)
+    """
+    _validate_exact_output_count(step, 1)
+
+    if len(step.inputs) < 1:
+        raise QTypeSemanticError(
+            (
+                f"Construct step '{step.id}' must have at least one input variable."
+            )
+        )
+
+    output_type = step.outputs[0].type
+    if not (
+        isinstance(output_type, type) and issubclass(output_type, BaseModel)
+    ):
+        raise QTypeSemanticError(
+            (
+                f"Construct step '{step.id}' output type must be a Pydantic "
+                f"BaseModel (Custom type or Domain type), found '{output_type}'."
             )
         )
 
@@ -643,6 +669,7 @@ _VALIDATORS = {
     AWSAuthProvider: _validate_aws_auth,
     BedrockReranker: _validate_bedrock_reranker,
     Collect: _validate_collect,
+    Construct: _validate_construct,
     Decoder: _validate_decoder,
     DocToTextConverter: _validate_doc_to_text_converter,
     DocumentEmbedder: _validate_document_embedder,

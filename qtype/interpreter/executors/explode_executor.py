@@ -31,16 +31,19 @@ class ExplodeExecutor(StepExecutor):
         Yields:
             FlowMessages with the results of processing.
         """
-        input_name = self.step.inputs[0].id
-        output_name = self.step.outputs[0].id
+        try:
+            input_name = self.step.inputs[0].id
+            output_name = self.step.outputs[0].id
 
-        input_value = message.variables.get(input_name)
+            input_value = message.variables.get(input_name)
 
-        if not isinstance(input_value, list):
-            raise ValueError(
-                f"Explode step expected a list for input '{input_name}', "
-                f"but got: {type(input_value).__name__}"
-            )
+            if not isinstance(input_value, list):
+                raise ValueError(
+                    f"Explode step expected a list for input '{input_name}', "
+                    f"but got: {type(input_value).__name__}"
+                )
 
-        for item in input_value:
-            yield message.copy_with_variables({output_name: item})
+            for item in input_value:
+                yield message.copy_with_variables({output_name: item})
+        except Exception as e:
+            yield message.copy_with_error(self.step.id, e)

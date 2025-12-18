@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Type
+from typing import Any, Type, get_origin
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, TypeAdapter, create_model
 
-from qtype.dsl.model import PrimitiveTypeEnum
+from qtype.dsl.model import ListType, PrimitiveTypeEnum
+from qtype.dsl.model import Variable as DSLVariable
 from qtype.dsl.types import PRIMITIVE_TO_PYTHON_TYPE
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Flow, Variable
 
 
-def _get_variable_type(var: Variable) -> tuple[Type, dict[str, Any]]:
+def _get_variable_type(var: DSLVariable) -> tuple[Type, dict[str, Any]]:
     """Get the Python type and metadata for a variable.
 
     Returns:
@@ -23,6 +24,13 @@ def _get_variable_type(var: Variable) -> tuple[Type, dict[str, Any]]:
     if isinstance(var.type, PrimitiveTypeEnum):
         python_type = PRIMITIVE_TO_PYTHON_TYPE.get(var.type, str)
         field_metadata["qtype_type"] = var.type.value
+    elif isinstance(var.type, ListType):
+        python_type = list[
+            _get_variable_type(DSLVariable(id="", type=var.type.element_type))[
+                0
+            ]
+        ]
+        field_metadata["qtype_type"] = f"list[{var.type.element_type}]"
     elif (
         isinstance(var.type, type)
         and issubclass(var.type, BaseModel)
@@ -125,3 +133,39 @@ def flow_results_to_output_container(
             outputs.append(output_instance.model_dump())
 
     return output_container(outputs=outputs, errors=errors)
+
+
+def instantiate_variable(variable: DSLVariable, value: Any) -> Any:
+    """
+    Unified contract to ensure data matches its QType definition.
+    Handles CustomTypes, DomainTypes, and Primitives.
+    """
+    target_type, _ = _get_variable_type(variable)
+
+    # 1. Handle the 'Parameterized Generic' Check (The isinstance fix)
+    # We check if target_type is a generic (like list[T]) vs a simple class.
+    origin = get_origin(target_type)
+
+    if origin is None:
+        # It's a simple type (int, RAGChunk, etc.)
+        if isinstance(value, target_type):
+            return value
+    else:
+        # It's a generic (list[str], etc.).
+        # We skip the identity check and let TypeAdapter handle it.
+        pass
+
+    # 2. Handle Pydantic Models (Custom/Domain Types)
+    if hasattr(target_type, "model_validate"):
+        return target_type.model_validate(value)
+
+    # 3. Handle Primitives & Complex Python Types (List, Optional, Union)
+    try:
+        # TypeAdapter is the "V2 way" to validate things that aren't
+        # full Pydantic models (like List[int] or Optional[str])
+        return TypeAdapter(target_type).validate_python(value)
+    except Exception:
+        # Fallback to your original manual cast if TypeAdapter is overkill
+        if isinstance(target_type, type):
+            return target_type(value)
+        raise ValueError(f"Unsupported target type: {target_type}")
