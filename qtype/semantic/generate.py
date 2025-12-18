@@ -145,7 +145,6 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
                 DecoderFormat,
                 ListType,
                 PrimitiveTypeEnum,
-                StepCardinality,
                 ToolParameter
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401

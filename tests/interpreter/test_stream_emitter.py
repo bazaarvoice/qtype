@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pytest
 
-from qtype.dsl.model import StepCardinality
 from qtype.interpreter.base.stream_emitter import (
     StepBoundaryContext,
     StreamEmitter,
@@ -32,7 +31,7 @@ from qtype.semantic.model import Step
 @pytest.fixture
 def mock_step():
     """Create a mock step for testing."""
-    return Step(id="test-step", type="test", cardinality=StepCardinality.one)
+    return Step(id="test-step", type="test")
 
 
 @pytest.fixture

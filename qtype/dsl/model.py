@@ -23,7 +23,6 @@ from qtype.base.types import (
     ConcurrentStepMixin,
     PrimitiveTypeEnum,
     Reference,
-    StepCardinality,
     StrictBaseModel,
 )
 from qtype.dsl.domain_types import (
@@ -350,10 +349,6 @@ class Step(CachedStepMixin, StrictBaseModel, ABC):
 
     id: str = Field(..., description="Unique ID of this component.")
     type: str = Field(..., description="Type of the step component.")
-    cardinality: StepCardinality = Field(
-        default=StepCardinality.one,
-        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
-    )
     inputs: list[Reference[Variable] | str] = Field(
         default_factory=list,
         description="References to the variables required by this step.",
@@ -892,10 +887,6 @@ class Source(Step):
     """Base class for data sources"""
 
     id: str = Field(..., description="Unique ID of the data source.")
-    cardinality: Literal[StepCardinality.many] = Field(
-        default=StepCardinality.many,
-        description="Sources always emit 0...N instances of the outputs.",
-    )
 
 
 class SQLSource(Source):
@@ -952,7 +943,6 @@ class Aggregate(Step):
     """
 
     type: Literal["Aggregate"] = "Aggregate"
-    cardinality: Literal[StepCardinality.one] = StepCardinality.one
 
     # Outputs are now optional. The user can provide 0, 1, 2, or 3 names.
     # The order will be: success_count, error_count, total_count
@@ -1006,10 +996,6 @@ class DocumentSplitter(Step, ConcurrentStepMixin):
     """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
 
     type: Literal["DocumentSplitter"] = "DocumentSplitter"
-    cardinality: Literal[StepCardinality.many] = Field(
-        default=StepCardinality.many,
-        description="Consumes one document and emits 0...N nodes/chunks.",
-    )
 
     splitter_name: str = Field(
         default="SentenceSplitter",
@@ -1029,10 +1015,6 @@ class DocumentEmbedder(Step, ConcurrentStepMixin):
     """Embeds document chunks using a specified embedding model."""
 
     type: Literal["DocumentEmbedder"] = "DocumentEmbedder"
-    cardinality: Literal[StepCardinality.many] = Field(
-        default=StepCardinality.many,
-        description="Consumes one chunk and emits one embedded chunk.",
-    )
     model: Reference[EmbeddingModel] | str = Field(
         ..., description="Embedding model to use for vectorization."
     )

@@ -8,7 +8,7 @@ from typing import AsyncIterator
 import pytest
 from opentelemetry import trace
 
-from qtype.base.types import ConcurrencyConfig, StepCardinality
+from qtype.base.types import ConcurrencyConfig
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.secrets import NoOpSecretManager
@@ -128,7 +128,6 @@ def simple_step():
     return SimpleStep(
         id="test-step",
         type="SimpleStep",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[],
     )
@@ -140,7 +139,6 @@ def concurrent_step():
     return ConcurrentStep(
         id="concurrent-step",
         type="ConcurrentStep",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[],
         concurrency_config=ConcurrencyConfig(num_workers=2),
@@ -415,7 +413,6 @@ class TestStepExecutor:
         concurrent_step = ConcurrentStep(
             id="perf-test-step",
             type="ConcurrentStep",
-            cardinality=StepCardinality.one,
             inputs=[],
             outputs=[],
             concurrency_config=ConcurrencyConfig(num_workers=10),
