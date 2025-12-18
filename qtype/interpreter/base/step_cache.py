@@ -67,8 +67,8 @@ def from_cache_value(
 ) -> FlowMessage:
     """Reconstructs a FlowMessage from cached output values."""
     if "FlowMessage.__error__" in cache_value:
-        msg = message.model_copy(deep=True)
-        msg.error = cache_value["FlowMessage.__error__"]
-        return msg
+        return message.model_copy(
+            deep=True, update={"error": cache_value["FlowMessage.__error__"]}
+        )
     else:
         return message.copy_with_variables(cache_value)

@@ -292,6 +292,10 @@ class FlowMessage(BaseModel):
     This object is the primary data structure passed between StepExecutors.
     """
 
+    model_config = ConfigDict(
+        frozen=True
+    )  # Enforces immutability at the model level
+
     session: Session
     variables: Dict[str, Any] = Field(
         default_factory=dict,
