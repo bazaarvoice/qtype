@@ -359,6 +359,23 @@ class Step(CachedStepMixin, StrictBaseModel, ABC):
     )
 
 
+class Explode(Step):
+    """A step that takes a list input and produces multiple outputs, one per item in the list."""
+
+    type: Literal["Explode"] = "Explode"
+
+
+class Collect(Step, BatchableStepMixin):
+    """A step that collects all inputs and creates a single list to return."""
+
+    type: Literal["Collect"] = "Collect"
+
+    batch_config: BatchConfig = Field(
+        default_factory=partial(BatchConfig, batch_size=sys.maxsize),
+        description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
+    )
+
+
 class PromptTemplate(Step):
     """Defines a prompt template with a string format and variable bindings.
     This is used to generate prompts dynamically based on input variables."""
@@ -1182,6 +1199,7 @@ StepType = Annotated[
         Agent,
         Aggregate,
         BedrockReranker,
+        Collect,
         Decoder,
         DocToTextConverter,
         DocumentEmbedder,
@@ -1189,6 +1207,7 @@ StepType = Annotated[
         DocumentSplitter,
         DocumentSource,
         Echo,
+        Explode,
         FieldExtractor,
         FileSource,
         FileWriter,

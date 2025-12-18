@@ -11,6 +11,7 @@ from qtype.semantic.model import (
     Agent,
     Application,
     BedrockReranker,
+    Collect,
     Decoder,
     DocToTextConverter,
     DocumentEmbedder,
@@ -18,6 +19,7 @@ from qtype.semantic.model import (
     DocumentSource,
     DocumentSplitter,
     Echo,
+    Explode,
     FieldExtractor,
     Flow,
     IndexUpsert,
@@ -246,6 +248,58 @@ def _validate_decoder(step: Decoder) -> None:
     """Validate Decoder step has exactly one text input and at least one output."""
     _validate_exact_input_count(step, 1, PrimitiveTypeEnum.text)
     _validate_min_output_count(step, 1)
+
+
+def _validate_explode(step: Explode) -> None:
+    """Validate Explode step has exactly one input of type list[T] and one output of type T."""
+    _validate_exact_input_count(step, 1)
+    _validate_exact_output_count(step, 1)
+
+    input_type = step.inputs[0].type
+    output_type = step.outputs[0].type
+
+    if not isinstance(input_type, ListType):
+        raise QTypeSemanticError(
+            (
+                f"Explode step '{step.id}' input must be of type 'list[T]', "
+                f"found '{input_type}'."
+            )
+        )
+
+    if input_type.element_type != output_type:
+        raise QTypeSemanticError(
+            (
+                f"Explode step '{step.id}' output type must match the element "
+                f"type of the input list. Input element type: "
+                f"'{input_type.element_type}', Output type: '{output_type}'."
+            )
+        )
+
+
+def _validate_collect(step: Collect) -> None:
+    """Validate Collect step has exactly one input of type T and one output of type list[T]."""
+    _validate_exact_input_count(step, 1)
+    _validate_exact_output_count(step, 1)
+
+    input_type = step.inputs[0].type
+    output_type = step.outputs[0].type
+
+    if not isinstance(output_type, ListType):
+        raise QTypeSemanticError(
+            (
+                f"Collect step '{step.id}' output must be of type 'list[T]', "
+                f"found '{output_type}'."
+            )
+        )
+
+    if output_type.element_type != input_type:
+        raise QTypeSemanticError(
+            (
+                f"Collect step '{step.id}' output element type must match the "
+                f"input type. Input type: '{input_type}', Output element type: "
+                f"'{output_type.element_type}'."
+            )
+        )
 
 
 def _validate_echo(step: Echo) -> None:
@@ -588,6 +642,7 @@ _VALIDATORS = {
     Application: _validate_application,
     AWSAuthProvider: _validate_aws_auth,
     BedrockReranker: _validate_bedrock_reranker,
+    Collect: _validate_collect,
     Decoder: _validate_decoder,
     DocToTextConverter: _validate_doc_to_text_converter,
     DocumentEmbedder: _validate_document_embedder,
@@ -595,6 +650,7 @@ _VALIDATORS = {
     DocumentSource: _validate_document_source,
     DocumentSplitter: _validate_document_splitter,
     Echo: _validate_echo,
+    Explode: _validate_explode,
     FieldExtractor: _validate_field_extractor,
     Flow: _validate_flow,
     IndexUpsert: _validate_index_upsert,

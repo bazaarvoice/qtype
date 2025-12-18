@@ -458,6 +458,16 @@ class Aggregate(Step):
     )
 
 
+class Collect(Step, BatchableStepMixin):
+    """A step that collects all inputs and creates a single list to return."""
+
+    type: Literal["Collect"] = Field("Collect")
+    batch_config: BatchConfig = Field(
+        default_factory=partial(BatchConfig, batch_size=9223372036854775807),
+        description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
+    )
+
+
 class Decoder(Step):
     """Defines a step that decodes string data into structured outputs.
 
@@ -516,6 +526,12 @@ class Echo(Step):
     """
 
     type: Literal["Echo"] = Field("Echo")
+
+
+class Explode(Step):
+    """A step that takes a list input and produces multiple outputs, one per item in the list."""
+
+    type: Literal["Explode"] = Field("Explode")
 
 
 class FieldExtractor(Step):
