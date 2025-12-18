@@ -6,6 +6,7 @@ import pandas as pd
 
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.executors.collect_executor import _find_common_ancestors
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import ConstantPath, FileWriter, Variable
 
@@ -59,12 +60,11 @@ class FileWriterExecutor(BatchedStepExecutor):
             await self.stream_emitter.status(
                 f"Wrote {len(df)} records to {file_path}"
             )
-            for msg in batch:
-                yield (
-                    msg
-                    if not output_name
-                    else msg.copy_with_variables({output_name: file_path})
-                )
+            # Identify the common ancestors to propagate
+            result_vars = _find_common_ancestors(batch)
+            result_vars[output_name] = file_path  # type: ignore[index]
+            yield FlowMessage(session=batch[0].session, variables=result_vars)
+
         else:
             # Group messages by file path (path is a Variable in this branch)
             if not isinstance(self.step.path, Variable):
@@ -101,10 +101,9 @@ class FileWriterExecutor(BatchedStepExecutor):
                 await self.stream_emitter.status(
                     f"Wrote {len(df_group)} records to {file_path}"
                 )
-                # Re-yield the original messages for this group
-                for msg in batch:
-                    yield (
-                        msg
-                        if not output_name
-                        else msg.copy_with_variables({output_name: file_path})
-                    )
+                # Identify the common ancestors to propagate
+                result_vars = _find_common_ancestors(msg_list)
+                result_vars[output_name] = file_path  # type: ignore[index]
+                yield FlowMessage(
+                    session=msg_list[0].session, variables=result_vars
+                )
