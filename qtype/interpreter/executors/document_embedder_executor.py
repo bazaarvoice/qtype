@@ -119,5 +119,4 @@ class DocumentEmbedderExecutor(StepExecutor):
                 f"Error processing DocumentEmbedder step {self.step.id}",
                 exc_info=e,
             )
-            message.set_error(self.step.id, e)
-            yield message
+            yield message.copy_with_error(self.step.id, e)

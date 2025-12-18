@@ -74,8 +74,7 @@ class DocToTextConverterExecutor(StepExecutor):
         except Exception as e:
             # Emit error event to stream so frontend can display it
             await self.stream_emitter.error(str(e))
-            message.set_error(self.step.id, e)
-            yield message
+            yield message.copy_with_error(self.step.id, e)
 
     def _convert_doc(self, doc: RAGDocument) -> RAGDocument:
         """Convert a RAGDocument to text/markdown format.

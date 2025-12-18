@@ -77,8 +77,9 @@ class FailingMockExecutor(StepExecutor):
     ) -> AsyncIterator[FlowMessage]:
         for value in message.variables.values():
             if value in self.fail_on_values:
-                message.set_error(self.step.id, ValueError(f"Failed: {value}"))
-                yield message
+                yield message.copy_with_error(
+                    self.step.id, ValueError(f"Failed: {value}")
+                )
                 return
         yield message
 
@@ -268,13 +269,17 @@ class TestStepExecutor:
             failed_msg1 = FlowMessage(
                 session=session, variables={"input": "msg3"}
             )
-            failed_msg1.set_error(simple_step.id, ValueError("Pre-failed"))
+            failed_msg1 = failed_msg1.copy_with_error(
+                simple_step.id, ValueError("Pre-failed")
+            )
             yield failed_msg1
             # Pre-failed
             failed_msg2 = FlowMessage(
                 session=session, variables={"input": "msg4"}
             )
-            failed_msg2.set_error(simple_step.id, ValueError("Pre-failed"))
+            failed_msg2 = failed_msg2.copy_with_error(
+                simple_step.id, ValueError("Pre-failed")
+            )
             yield failed_msg2
 
         results = [r async for r in executor.execute(mixed_message_stream())]

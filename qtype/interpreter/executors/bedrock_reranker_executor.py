@@ -160,8 +160,7 @@ class BedrockRerankerExecutor(StepExecutor):
             logger.error(f"Reranking failed: {e}", exc_info=True)
             # Emit error event to stream so frontend can display it
             await self.stream_emitter.error(str(e))
-            message.set_error(self.step.id, e)
-            yield message
+            yield message.copy_with_error(self.step.id, e)
 
     def _query(self, message: FlowMessage) -> str:
         """Extract the query string from the FlowMessage.

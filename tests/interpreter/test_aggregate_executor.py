@@ -40,8 +40,7 @@ async def create_message_stream(
         failed_msg = FlowMessage(
             session=session, variables={"input": f"failed_{i}"}
         )
-        failed_msg.set_error("test-step", ValueError(f"Error {i}"))
-        yield failed_msg
+        yield failed_msg.copy_with_error("test-step", ValueError(f"Error {i}"))
 
 
 class TestAggregateExecutor:

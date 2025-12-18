@@ -303,14 +303,17 @@ class FlowMessage(BaseModel):
         """Checks if this state has encountered an error."""
         return self.error is not None
 
-    def set_error(self, step_id: str, exc: Exception):
-        """Marks this state as failed, capturing error details."""
-        if not self.is_failed():  # Only capture the first error
-            self.error = StepError(
-                step_id=step_id,
-                error_message=str(exc),
-                exception_type=type(exc).__name__,
-            )
+    def copy_with_error(self, step_id: str, exc: Exception) -> "FlowMessage":
+        """Returns a copy of this state marked as failed."""
+        return self.model_copy(
+            update={
+                "error": StepError(
+                    step_id=step_id,
+                    error_message=str(exc),
+                    exception_type=type(exc).__name__,
+                )
+            }
+        )
 
     # It's useful to have copy-on-write style helpers
     def copy_with_variables(
