@@ -343,11 +343,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -467,12 +462,6 @@
           "const": "Aggregate",
           "default": "Aggregate",
           "title": "Type",
-          "type": "string"
-        },
-        "cardinality": {
-          "const": "one",
-          "default": "one",
-          "title": "Cardinality",
           "type": "string"
         },
         "inputs": {
@@ -802,11 +791,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -946,6 +930,74 @@
       "title": "CacheConfig",
       "type": "object"
     },
+    "Collect": {
+      "additionalProperties": false,
+      "description": "A step that collects all inputs and creates a single list to return.",
+      "properties": {
+        "batch_config": {
+          "$ref": "#/$defs/BatchConfig",
+          "description": "Configuration for processing the input stream in batches. If omitted, the step processes items one by one."
+        },
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "Collect",
+          "default": "Collect",
+          "title": "Type",
+          "type": "string"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Collect",
+      "type": "object"
+    },
     "ConcurrencyConfig": {
       "description": "Configuration for concurrent processing.\n\nAttributes:\n    num_workers: Number of async workers for batch operations.",
       "properties": {
@@ -973,6 +1025,79 @@
         "uri"
       ],
       "title": "ConstantPath",
+      "type": "object"
+    },
+    "Construct": {
+      "additionalProperties": false,
+      "description": "A step that converts variables into an instance of a Custom or Domain Type",
+      "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "Construct",
+          "default": "Construct",
+          "title": "Type",
+          "type": "string"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "field_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping of type inputs to variable names, if needed.",
+          "title": "Field Mapping",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "field_mapping"
+      ],
+      "title": "Construct",
       "type": "object"
     },
     "CustomType": {
@@ -1036,11 +1161,6 @@
           "default": "Decoder",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1123,11 +1243,6 @@
           "default": "DocToTextConverter",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1219,13 +1334,6 @@
           "const": "DocumentEmbedder",
           "default": "DocumentEmbedder",
           "title": "Type",
-          "type": "string"
-        },
-        "cardinality": {
-          "const": "many",
-          "default": "many",
-          "description": "Consumes one chunk and emits one embedded chunk.",
-          "title": "Cardinality",
           "type": "string"
         },
         "inputs": {
@@ -1378,11 +1486,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -1491,13 +1594,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "const": "many",
-          "default": "many",
-          "description": "Sources always emit 0...N instances of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -1600,13 +1696,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "const": "many",
-          "default": "many",
-          "description": "Consumes one document and emits 0...N nodes/chunks.",
-          "title": "Cardinality",
-          "type": "string"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -1694,11 +1783,6 @@
           "default": "Echo",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1812,6 +1896,70 @@
       "title": "EmbeddingModel",
       "type": "object"
     },
+    "Explode": {
+      "additionalProperties": false,
+      "description": "A step that takes a list input and produces multiple outputs, one per item in the list.",
+      "properties": {
+        "cache_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CacheConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configuration for caching step outputs. If omitted, caching is disabled."
+        },
+        "id": {
+          "description": "Unique ID of this component.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "Explode",
+          "default": "Explode",
+          "title": "Type",
+          "type": "string"
+        },
+        "inputs": {
+          "description": "References to the variables required by this step.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "References to the variables where output is stored.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Outputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Explode",
+      "type": "object"
+    },
     "FieldExtractor": {
       "additionalProperties": false,
       "description": "Extracts specific fields from input data using JSONPath expressions.\n\nThis step uses JSONPath syntax to extract data from structured inputs\n(Pydantic models, dicts, lists). The input is first converted to a dict\nusing model_dump() if it's a Pydantic model, then the JSONPath expression\nis evaluated.\n\nIf the JSONPath matches multiple values, the step yields multiple output\nmessages (1-to-many cardinality). If it matches a single value, it yields\none output message. If it matches nothing, it raises an error.\n\nThe extracted data is used to construct the output variable by passing it\nas keyword arguments to the output type's constructor.\n\nExample JSONPath expressions:\n- `$.field_name` - Extract a single field\n- `$.items[*]` - Extract all items from a list\n- `$.items[?(@.price > 10)]` - Filter items by condition",
@@ -1838,11 +1986,6 @@
           "default": "FieldExtractor",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -1920,13 +2063,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "const": "many",
-          "default": "many",
-          "description": "Sources always emit 0...N instances of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -1980,6 +2116,19 @@
       "title": "FileSource",
       "type": "object"
     },
+    "FileUploadUI": {
+      "additionalProperties": false,
+      "properties": {
+        "accept": {
+          "default": "*/*",
+          "description": "The mime type(s) to accept in the file upload.",
+          "title": "Accept",
+          "type": "string"
+        }
+      },
+      "title": "FileUploadUI",
+      "type": "object"
+    },
     "FileWriter": {
       "additionalProperties": false,
       "description": "File writer that writes data to a file using fsspec-compatible URIs.",
@@ -2010,11 +2159,6 @@
           "default": "FileWriter",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -2107,6 +2251,8 @@
                     "Agent": "#/$defs/Agent",
                     "Aggregate": "#/$defs/Aggregate",
                     "BedrockReranker": "#/$defs/BedrockReranker",
+                    "Collect": "#/$defs/Collect",
+                    "Construct": "#/$defs/Construct",
                     "Decoder": "#/$defs/Decoder",
                     "DocToTextConverter": "#/$defs/DocToTextConverter",
                     "DocumentEmbedder": "#/$defs/DocumentEmbedder",
@@ -2114,6 +2260,7 @@
                     "DocumentSource": "#/$defs/DocumentSource",
                     "DocumentSplitter": "#/$defs/DocumentSplitter",
                     "Echo": "#/$defs/Echo",
+                    "Explode": "#/$defs/Explode",
                     "FieldExtractor": "#/$defs/FieldExtractor",
                     "FileSource": "#/$defs/FileSource",
                     "FileWriter": "#/$defs/FileWriter",
@@ -2139,6 +2286,12 @@
                     "$ref": "#/$defs/BedrockReranker"
                   },
                   {
+                    "$ref": "#/$defs/Collect"
+                  },
+                  {
+                    "$ref": "#/$defs/Construct"
+                  },
+                  {
                     "$ref": "#/$defs/Decoder"
                   },
                   {
@@ -2158,6 +2311,9 @@
                   },
                   {
                     "$ref": "#/$defs/Echo"
+                  },
+                  {
+                    "$ref": "#/$defs/Explode"
                   },
                   {
                     "$ref": "#/$defs/FieldExtractor"
@@ -2195,7 +2351,7 @@
                 ]
               },
               {
-                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
+                "$ref": "#/$defs/Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Collect__Construct__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__Explode__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____"
               }
             ]
           },
@@ -2320,11 +2476,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -2406,11 +2557,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -2487,11 +2633,6 @@
           "default": "InvokeFlow",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -2598,11 +2739,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -2701,11 +2837,6 @@
           "default": "LLMInference",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -2998,14 +3129,13 @@
         "citation_url",
         "date",
         "datetime",
-        "int",
         "file",
         "float",
         "image",
+        "int",
         "text",
         "time",
-        "video",
-        "thinking"
+        "video"
       ],
       "title": "PrimitiveTypeEnum",
       "type": "string"
@@ -3036,11 +3166,6 @@
           "default": "PromptTemplate",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
@@ -3173,7 +3298,7 @@
       "title": "Reference[Annotated[Union[APITool, PythonFunctionTool], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
-    "Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
+    "Reference_Annotated_Union_Agent__Aggregate__BedrockReranker__Collect__Construct__Decoder__DocToTextConverter__DocumentEmbedder__DocumentSearch__DocumentSplitter__DocumentSource__Echo__Explode__FieldExtractor__FileSource__FileWriter__IndexUpsert__InvokeEmbedding__InvokeFlow__InvokeTool__LLMInference__PromptTemplate__SQLSource__VectorSearch___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
       "properties": {
         "$ref": {
           "title": "$Ref",
@@ -3183,7 +3308,7 @@
       "required": [
         "$ref"
       ],
-      "title": "Reference[Annotated[Union[Agent, Aggregate, BedrockReranker, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
+      "title": "Reference[Annotated[Union[Agent, Aggregate, BedrockReranker, Collect, Construct, Decoder, DocToTextConverter, DocumentEmbedder, DocumentSearch, DocumentSplitter, DocumentSource, Echo, Explode, FieldExtractor, FileSource, FileWriter, IndexUpsert, InvokeEmbedding, InvokeFlow, InvokeTool, LLMInference, PromptTemplate, SQLSource, VectorSearch], FieldInfo(annotation=NoneType, required=True, discriminator='type')]]",
       "type": "object"
     },
     "Reference_Annotated_Union_DocumentIndex__VectorIndex___FieldInfo_annotation_NoneType__required_True__discriminator__type____": {
@@ -3330,13 +3455,6 @@
           "title": "Type",
           "type": "string"
         },
-        "cardinality": {
-          "const": "many",
-          "default": "many",
-          "description": "Sources always emit 0...N instances of the outputs.",
-          "title": "Cardinality",
-          "type": "string"
-        },
         "inputs": {
           "description": "References to the variables required by this step.",
           "items": {
@@ -3438,15 +3556,6 @@
       "title": "SecretReference",
       "type": "object"
     },
-    "StepCardinality": {
-      "description": "Does this step emit 1 (one) or 0...N (many) items?",
-      "enum": [
-        "one",
-        "many"
-      ],
-      "title": "StepCardinality",
-      "type": "string"
-    },
     "TelemetrySink": {
       "additionalProperties": false,
       "description": "Defines an observability endpoint for collecting telemetry data from the QType runtime.",
@@ -3506,6 +3615,26 @@
       ],
       "title": "TelemetrySink",
       "type": "object"
+    },
+    "TextInputUI": {
+      "additionalProperties": false,
+      "properties": {
+        "widget": {
+          "$ref": "#/$defs/TextWidget",
+          "default": "text",
+          "description": "What kind of text ui to present"
+        }
+      },
+      "title": "TextInputUI",
+      "type": "object"
+    },
+    "TextWidget": {
+      "enum": [
+        "text",
+        "textarea"
+      ],
+      "title": "TextWidget",
+      "type": "string"
     },
     "ToolList": {
       "description": "Schema for a standalone list of tools.",
@@ -3592,6 +3721,22 @@
           ],
           "description": "Type of data expected or produced. Either a CustomType or domain specific type.",
           "title": "Type"
+        },
+        "ui": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextInputUI"
+            },
+            {
+              "$ref": "#/$defs/FileUploadUI"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hints for the UI if needed.",
+          "title": "Ui"
         }
       },
       "required": [
@@ -3708,11 +3853,6 @@
           "default": "VectorSearch",
           "title": "Type",
           "type": "string"
-        },
-        "cardinality": {
-          "$ref": "#/$defs/StepCardinality",
-          "default": "one",
-          "description": "Does this step emit 1 (one) or 0...N (many) instances of the outputs?"
         },
         "inputs": {
           "description": "References to the variables required by this step.",
