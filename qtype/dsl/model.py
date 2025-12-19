@@ -25,6 +25,7 @@ from qtype.base.types import (
     Reference,
     StrictBaseModel,
 )
+from qtype.base.ui_shapes import UI_INPUT_TO_TYPE, UIType
 from qtype.dsl.domain_types import (
     ChatContent,
     ChatMessage,
@@ -211,11 +212,23 @@ class Variable(StrictBaseModel):
         ),
     )
 
+    ui: UIType | None = Field(None, description="Hints for the UI if needed.")
+
     @model_validator(mode="before")
     @classmethod
     def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
         """Resolve string-based type references using the shared validator."""
         return _resolve_type_field_validator(data, info)
+
+    @model_validator(mode="after")
+    def validate_ui_type(self) -> Variable:
+        """Ensure at least one credential source is provided."""
+        if self.ui is not None:
+            if (type(self.ui), self.type) not in UI_INPUT_TO_TYPE:
+                raise ValueError(
+                    f"Variable of {self.type} is not comptabile with UI configuration {self.ui}"
+                )
+        return self
 
 
 class SecretReference(StrictBaseModel):

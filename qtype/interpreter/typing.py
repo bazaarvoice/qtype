@@ -48,6 +48,11 @@ def _fields_from_variables(variables: list[Variable]) -> dict:
     fields = {}
     for var in variables:
         python_type, type_metadata = _get_variable_type(var)
+
+        # Add UI config to schema if present (OpenAPI x- extension pattern)
+        if var.ui is not None:
+            type_metadata["x-ui"] = var.ui
+
         field_info = Field(
             title=var.id,
             json_schema_extra=type_metadata,

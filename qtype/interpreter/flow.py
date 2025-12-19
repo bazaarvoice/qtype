@@ -56,12 +56,15 @@ async def run_flow(
     # Extract or create ExecutorContext
     exec_context = kwargs.pop("context", None)
     if exec_context is None:
+        # Track if we created the context so we know to clean it up
+        should_clean_context = True
         exec_context = ExecutorContext(
             secret_manager=NoOpSecretManager(),
             tracer=trace.get_tracer(__name__),
             on_progress=progress_callback,
         )
     else:
+        should_clean_context = False
         if exec_context.on_progress is None and show_progress:
             exec_context.on_progress = progress_callback
 
@@ -177,8 +180,8 @@ async def run_flow(
         span.set_status(Status(StatusCode.ERROR, f"Flow failed: {e}"))
         raise
     finally:
-        # Clean up context resources if we created it
-        if kwargs.get("context") is None:
+        # Clean up context resources ONLY if we created it
+        if should_clean_context:
             exec_context.cleanup()
         # Detach the context and end the span
         # Only detach if we successfully attached (span was recording)
