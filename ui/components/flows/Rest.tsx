@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { LayoutGrid, Table as TableIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { formatFlowName } from "@/components/FlowTabsContainer";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
@@ -14,9 +15,12 @@ import { Button } from "@/components/ui/Button";
 import { apiClient, ApiClientError } from "@/lib/apiClient";
 
 import FlowInputs from "../FlowInputs";
-import FlowResponse from "../FlowResponse";
+import FlowResponseCard from "../FlowResponseCard";
+import FlowResponseTable from "../FlowResponseTable";
 
 import type { FlowMetadata, FlowInputValues, ResponseData } from "@/types";
+
+type ViewMode = "card" | "table";
 
 interface FlowProps {
   flow: FlowMetadata;
@@ -35,6 +39,29 @@ function RestFlow({ flow }: FlowProps) {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showInput, setShowInput] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "card";
+    const stored = localStorage.getItem("flowResponseViewMode");
+    return stored === "table" ? "table" : "card";
+  });
+
+  useEffect(() => {
+    if (!responseData?.outputs) return;
+    if (typeof window === "undefined") return;
+
+    const stored = localStorage.getItem("flowResponseViewMode");
+    if (!stored) {
+      const defaultMode = responseData.outputs.length > 5 ? "table" : "card";
+      setViewMode(defaultMode);
+    }
+  }, [responseData?.outputs]);
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("flowResponseViewMode", mode);
+    }
+  };
 
   const handleInputChange = (newInputs: FlowInputValues) => {
     setInputs(newInputs);
@@ -92,22 +119,25 @@ function RestFlow({ flow }: FlowProps) {
           onInputChange={handleInputChange}
         />
       )}
-      <div className="mt-6 pt-4 border-t">
-        {!showInput ? (
-          <Button disabled={isExecuting} onClick={handleReset}>
-            Reset
-          </Button>
-        ) : (
+
+      {showInput && (
+        <div className="mt-6 pt-4 border-t">
           <Button
             disabled={isExecuting || !Object.keys(inputs).length}
             onClick={executeFlow}
           >
-            {isExecuting ? "Executing..." : "Execute Flow"}
+            Execute Flow
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div>
+        {isExecuting && !showInput && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500 dark:text-gray-400">Executing...</div>
+          </div>
+        )}
+
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>
@@ -145,26 +175,61 @@ function RestFlow({ flow }: FlowProps) {
               responseData.outputs.length > 0 &&
               !showInput && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Outputs ({responseData.outputs.length})
-                  </h4>
-                  {responseData.outputs.map((output, idx) => (
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Outputs ({responseData.outputs.length})
+                    </h4>
                     <div
-                      key={idx}
-                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                      className="inline-flex rounded-md shadow-sm"
+                      role="group"
                     >
-                      {responseData.outputs.length > 1 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                          Result {idx + 1}
-                        </div>
-                      )}
-
-                      <FlowResponse
-                        responseSchema={flow.output_schema}
-                        responseData={output}
-                      />
+                      <Button
+                        variant={viewMode === "card" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleViewModeChange("card")}
+                        className="rounded-r-none"
+                      >
+                        <LayoutGrid className="h-4 w-4 mr-2" />
+                        Cards
+                      </Button>
+                      <Button
+                        variant={viewMode === "table" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleViewModeChange("table")}
+                        className="rounded-l-none"
+                      >
+                        <TableIcon className="h-4 w-4 mr-2" />
+                        Table
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+
+                  {viewMode === "card" ? (
+                    <div className="space-y-4">
+                      {responseData.outputs.map((output, idx) => (
+                        <div
+                          key={idx}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                        >
+                          {responseData.outputs.length > 1 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                              Result {idx + 1}
+                            </div>
+                          )}
+
+                          <FlowResponseCard
+                            responseSchema={flow.output_schema}
+                            responseData={output}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <FlowResponseTable
+                      responseSchema={flow.output_schema}
+                      outputs={responseData.outputs}
+                    />
+                  )}
                 </div>
               )}
 
@@ -178,6 +243,14 @@ function RestFlow({ flow }: FlowProps) {
           </div>
         )}
       </div>
+
+      {!showInput && (
+        <div className="mt-6 pt-4 border-t">
+          <Button disabled={isExecuting} onClick={handleReset}>
+            Reset
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
