@@ -86,8 +86,7 @@ class LLMInferenceExecutor(StepExecutor):
         except Exception as e:
             # Emit error event to stream so frontend can display it
             await self.stream_emitter.error(str(e))
-            message.set_error(self.step.id, e)
-            yield message
+            yield message.copy_with_error(self.step.id, e)
 
     async def _process_chat(
         self,

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from qtype.base.types import StepCardinality
 from qtype.dsl.domain_types import AggregateStats
 from qtype.interpreter.executors.aggregate_executor import AggregateExecutor
 from qtype.interpreter.types import FlowMessage, Session
@@ -25,7 +24,6 @@ def aggregate_step():
     return Aggregate(
         id="aggregate-step",
         type="Aggregate",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[Variable(id="stats", type="AggregateStats", value=None)],
     )
@@ -42,8 +40,7 @@ async def create_message_stream(
         failed_msg = FlowMessage(
             session=session, variables={"input": f"failed_{i}"}
         )
-        failed_msg.set_error("test-step", ValueError(f"Error {i}"))
-        yield failed_msg
+        yield failed_msg.copy_with_error("test-step", ValueError(f"Error {i}"))
 
 
 class TestAggregateExecutor:

@@ -100,8 +100,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
 
             # Mark all messages with the error and yield them
             for message in batch:
-                message.set_error(self.step.id, e)
-                yield message
+                yield message.copy_with_error(self.step.id, e)
 
     async def _upsert_to_vector_store(
         self, batch: list[FlowMessage]
@@ -220,13 +219,13 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             doc_id = item["index"]["_id"]
             message = message_by_id[doc_id]
             if "error" in item.get("index", {}):
-                message.set_error(
+                yield message.copy_with_error(
                     self.step.id,
                     Exception(item["index"]["error"]),
                 )
             else:
                 num_inserted += 1
-            yield message
+                yield message
         await self.stream_emitter.status(
             f"Upserted {num_inserted} items to index {self.step.index.name}, {len(batch) - num_inserted} errors occurred."
         )

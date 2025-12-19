@@ -32,7 +32,6 @@ from qtype.dsl.model import (  # noqa: F401
     DecoderFormat,
     ListType,
     PrimitiveTypeEnum,
-    StepCardinality,
     ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
@@ -95,10 +94,6 @@ class Step(CachedStepMixin, BaseModel):
 
     id: str = Field(..., description="Unique ID of this component.")
     type: str = Field(..., description="Type of the step component.")
-    cardinality: StepCardinality = Field(
-        StepCardinality.one,
-        description="Does this step emit 1 (one) or 0...N (many) instances of the outputs?",
-    )
     inputs: list[Variable] = Field(
         default_factory=list,
         description="References to the variables required by this step.",
@@ -457,10 +452,28 @@ class Aggregate(Step):
     """
 
     type: Literal["Aggregate"] = Field("Aggregate")
-    cardinality: Literal[StepCardinality.one] = Field(StepCardinality.one)
     outputs: list[Variable] = Field(
         default_factory=list,
         description="References to the variables for the output. There should be one and only one output with type AggregateStats",
+    )
+
+
+class Collect(Step, BatchableStepMixin):
+    """A step that collects all inputs and creates a single list to return."""
+
+    type: Literal["Collect"] = Field("Collect")
+    batch_config: BatchConfig = Field(
+        default_factory=partial(BatchConfig, batch_size=9223372036854775807),
+        description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
+    )
+
+
+class Construct(Step):
+    """A step that converts variables into an instance of a Custom or Domain Type"""
+
+    type: Literal["Construct"] = Field("Construct")
+    field_mapping: dict[str, str] = Field(
+        ..., description="Mapping of type inputs to variable names, if needed."
     )
 
 
@@ -490,10 +503,6 @@ class DocumentEmbedder(Step, ConcurrentStepMixin):
     """Embeds document chunks using a specified embedding model."""
 
     type: Literal["DocumentEmbedder"] = Field("DocumentEmbedder")
-    cardinality: Literal[StepCardinality.many] = Field(
-        StepCardinality.many,
-        description="Consumes one chunk and emits one embedded chunk.",
-    )
     model: EmbeddingModel = Field(
         ..., description="Embedding model to use for vectorization."
     )
@@ -503,10 +512,6 @@ class DocumentSplitter(Step, ConcurrentStepMixin):
     """Configuration for chunking/splitting documents into embeddable nodes/chunks."""
 
     type: Literal["DocumentSplitter"] = Field("DocumentSplitter")
-    cardinality: Literal[StepCardinality.many] = Field(
-        StepCardinality.many,
-        description="Consumes one document and emits 0...N nodes/chunks.",
-    )
     splitter_name: str = Field(
         "SentenceSplitter",
         description="Name of the LlamaIndex TextSplitter class.",
@@ -530,6 +535,12 @@ class Echo(Step):
     """
 
     type: Literal["Echo"] = Field("Echo")
+
+
+class Explode(Step):
+    """A step that takes a list input and produces multiple outputs, one per item in the list."""
+
+    type: Literal["Explode"] = Field("Explode")
 
 
 class FieldExtractor(Step):
@@ -657,10 +668,6 @@ class Source(Step):
     """Base class for data sources"""
 
     id: str = Field(..., description="Unique ID of the data source.")
-    cardinality: Literal[StepCardinality.many] = Field(
-        StepCardinality.many,
-        description="Sources always emit 0...N instances of the outputs.",
-    )
 
 
 class Writer(Step, BatchableStepMixin):

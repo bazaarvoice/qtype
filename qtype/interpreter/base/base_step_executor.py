@@ -230,21 +230,12 @@ class StepExecutor(ABC):
                     prepared_messages, process_item, task_limit=num_workers
                 )
 
-                # Combine all streams
-                async def emit_failed_messages() -> AsyncIterator[FlowMessage]:
-                    for msg in failed_messages:
-                        yield msg
-
-                all_results = stream.concat(
-                    stream.iterate([result_stream, emit_failed_messages()])
-                )
-
                 # Track message counts for telemetry
                 message_count = 0
                 error_count = 0
 
                 # Stream results and track progress
-                async with all_results.stream() as streamer:
+                async with result_stream.stream() as streamer:
                     result: FlowMessage
                     async for result in streamer:
                         message_count += 1
@@ -254,6 +245,15 @@ class StepExecutor(ABC):
                             result, self.context.on_progress
                         )
                         yield result
+
+                # Emit failed messages after processing completes
+                for msg in failed_messages:
+                    message_count += 1
+                    error_count += 1
+                    self.progress.update_for_message(
+                        msg, self.context.on_progress
+                    )
+                    yield msg
 
                 # Finalize and track those messages too
                 async for msg in self.finalize():

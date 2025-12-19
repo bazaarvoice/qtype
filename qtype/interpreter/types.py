@@ -292,6 +292,10 @@ class FlowMessage(BaseModel):
     This object is the primary data structure passed between StepExecutors.
     """
 
+    model_config = ConfigDict(
+        frozen=True
+    )  # Enforces immutability at the model level
+
     session: Session
     variables: Dict[str, Any] = Field(
         default_factory=dict,
@@ -303,21 +307,25 @@ class FlowMessage(BaseModel):
         """Checks if this state has encountered an error."""
         return self.error is not None
 
-    def set_error(self, step_id: str, exc: Exception):
-        """Marks this state as failed, capturing error details."""
-        if not self.is_failed():  # Only capture the first error
-            self.error = StepError(
-                step_id=step_id,
-                error_message=str(exc),
-                exception_type=type(exc).__name__,
-            )
+    def copy_with_error(self, step_id: str, exc: Exception) -> "FlowMessage":
+        """Returns a copy of this state marked as failed."""
+        return self.model_copy(
+            update={
+                "error": StepError(
+                    step_id=step_id,
+                    error_message=str(exc),
+                    exception_type=type(exc).__name__,
+                )
+            }
+        )
 
     # It's useful to have copy-on-write style helpers
     def copy_with_variables(
         self, new_variables: dict[str, Any]
     ) -> "FlowMessage":
-        new_state = self.model_copy(deep=True)
-        new_state.variables.update(new_variables)
+        new_vars = self.variables.copy()
+        new_vars.update(new_variables)
+        new_state = self.model_copy(update={"variables": new_vars})
         return new_state
 
 

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pytest
 
-from qtype.dsl.model import StepCardinality
 from qtype.interpreter.stream.chat.converter import StreamEventConverter
 from qtype.interpreter.stream.chat.vercel import (
     ErrorChunk,
@@ -40,7 +39,7 @@ from qtype.semantic.model import Step
 @pytest.fixture
 def mock_step():
     """Create a mock step for testing."""
-    return Step(id="test-step", type="test", cardinality=StepCardinality.one)
+    return Step(id="test-step", type="test")
 
 
 @pytest.fixture

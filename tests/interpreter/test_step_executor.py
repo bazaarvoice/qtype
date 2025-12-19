@@ -8,7 +8,7 @@ from typing import AsyncIterator
 import pytest
 from opentelemetry import trace
 
-from qtype.base.types import ConcurrencyConfig, StepCardinality
+from qtype.base.types import ConcurrencyConfig
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.base.secrets import NoOpSecretManager
@@ -77,8 +77,9 @@ class FailingMockExecutor(StepExecutor):
     ) -> AsyncIterator[FlowMessage]:
         for value in message.variables.values():
             if value in self.fail_on_values:
-                message.set_error(self.step.id, ValueError(f"Failed: {value}"))
-                yield message
+                yield message.copy_with_error(
+                    self.step.id, ValueError(f"Failed: {value}")
+                )
                 return
         yield message
 
@@ -128,7 +129,6 @@ def simple_step():
     return SimpleStep(
         id="test-step",
         type="SimpleStep",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[],
     )
@@ -140,7 +140,6 @@ def concurrent_step():
     return ConcurrentStep(
         id="concurrent-step",
         type="ConcurrentStep",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[],
         concurrency_config=ConcurrencyConfig(num_workers=2),
@@ -270,13 +269,17 @@ class TestStepExecutor:
             failed_msg1 = FlowMessage(
                 session=session, variables={"input": "msg3"}
             )
-            failed_msg1.set_error(simple_step.id, ValueError("Pre-failed"))
+            failed_msg1 = failed_msg1.copy_with_error(
+                simple_step.id, ValueError("Pre-failed")
+            )
             yield failed_msg1
             # Pre-failed
             failed_msg2 = FlowMessage(
                 session=session, variables={"input": "msg4"}
             )
-            failed_msg2.set_error(simple_step.id, ValueError("Pre-failed"))
+            failed_msg2 = failed_msg2.copy_with_error(
+                simple_step.id, ValueError("Pre-failed")
+            )
             yield failed_msg2
 
         results = [r async for r in executor.execute(mixed_message_stream())]
@@ -415,7 +418,6 @@ class TestStepExecutor:
         concurrent_step = ConcurrentStep(
             id="perf-test-step",
             type="ConcurrentStep",
-            cardinality=StepCardinality.one,
             inputs=[],
             outputs=[],
             concurrency_config=ConcurrencyConfig(num_workers=10),

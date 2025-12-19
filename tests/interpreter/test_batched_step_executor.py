@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from qtype.base.types import BatchConfig, ConcurrencyConfig, StepCardinality
+from qtype.base.types import BatchConfig, ConcurrencyConfig
 from qtype.interpreter.base.batch_step_executor import BatchedStepExecutor
 from qtype.interpreter.types import FlowMessage, Session
 from qtype.semantic.model import Step
@@ -54,7 +54,6 @@ def batchable_step():
     return BatchableStep(
         id="batch-step",
         type="BatchableStep",
-        cardinality=StepCardinality.one,
         inputs=[],
         outputs=[],
         batch_config=BatchConfig(batch_size=3),
@@ -97,7 +96,6 @@ class TestBatchedStepExecutor:
         step = BatchableStep(
             id="batch-step",
             type="BatchableStep",
-            cardinality=StepCardinality.one,
             inputs=[],
             outputs=[],
             batch_config=BatchConfig(batch_size=2),
@@ -128,7 +126,6 @@ class TestBatchedStepExecutor:
         step = Step(
             id="no-batch-config",
             type="SimpleStep",
-            cardinality=StepCardinality.one,
             inputs=[],
             outputs=[],
         )
@@ -155,7 +152,6 @@ class TestBatchedStepExecutor:
         step = ConcurrentBatchableStep(
             id="concurrent-batch-step",
             type="ConcurrentBatchableStep",
-            cardinality=StepCardinality.one,
             inputs=[],
             outputs=[],
             batch_config=BatchConfig(batch_size=2),

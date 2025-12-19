@@ -54,21 +54,13 @@ class PrimitiveTypeEnum(str, Enum):
     citation_url = "citation_url"
     date = "date"
     datetime = "datetime"
-    int = "int"
     file = "file"
     float = "float"
     image = "image"
+    int = "int"
     text = "text"
     time = "time"
     video = "video"
-    thinking = "thinking"
-
-
-class StepCardinality(str, Enum):
-    """Does this step emit 1 (one) or 0...N (many) items?"""
-
-    one = "one"
-    many = "many"
 
 
 ReferenceT = TypeVar("ReferenceT")

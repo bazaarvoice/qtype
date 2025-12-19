@@ -46,8 +46,7 @@ class ErroringExecutor(StepExecutor):
     async def process_message(
         self, message: FlowMessage
     ) -> AsyncIterator[FlowMessage]:
-        message.set_error(self.step.id, Exception("error"))
-        yield message
+        yield message.copy_with_error(self.step.id, Exception("error"))
 
 
 async def test_cache_on_error():
