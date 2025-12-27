@@ -144,6 +144,11 @@ def _create_tool_from_function(
         for p in func_info["parameters"]
     }
 
+    # # quick hack
+    # for k, v in inputs.items():
+    #     if inspect.isclass(v.type) and issubclass(v.type, BaseModel):
+    #         v.type = str(v.type.__name__)
+
     # Create output parameter based on return type
     tool_id = func_info["module"] + "." + func_name
 
@@ -152,6 +157,7 @@ def _create_tool_from_function(
     )
 
     outputs = {"result": ToolParameter(type=output_type, optional=False)}
+    # outputs['result'].type =
 
     return PythonFunctionTool(
         id=tool_id,
@@ -264,6 +270,15 @@ def _map_python_type_to_variable_type(
     elif python_type in get_args(VariableType):
         # If it's a domain type, return its name
         return python_type  # type: ignore[no-any-return]
+    elif any(
+        [
+            (python_type is get_args(t)[0])
+            for t in get_args(VariableType)
+            if get_origin(t) is type
+        ]
+    ):
+        # It's the domain type, but the actual class (the user imported it)
+        return python_type.__name__
     elif inspect.isclass(python_type) and issubclass(python_type, BaseModel):
         # If it's a Pydantic model, create or retrieve its CustomType definition
         return _pydantic_to_custom_types(python_type, custom_types)

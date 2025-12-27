@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     RootModel,
     ValidationInfo,
+    model_serializer,
     model_validator,
 )
 
@@ -27,11 +28,15 @@ from qtype.base.types import (
 )
 from qtype.base.ui_shapes import UI_INPUT_TO_TYPE, UIType
 from qtype.dsl.domain_types import (
+    AggregateStats,
     ChatContent,
     ChatMessage,
     Embedding,
+    MessageRole,
     RAGChunk,
     RAGDocument,
+    RAGSearchResult,
+    SearchResult,
 )
 
 DOMAIN_CLASSES = {
@@ -269,6 +274,21 @@ class ToolParameter(BaseModel):
         """Resolve string-based type references using the shared validator."""
         return _resolve_type_field_validator(data, info)
 
+    @staticmethod
+    def _serialize_type(value):
+        if isinstance(value, type):
+            return value.__name__
+        elif hasattr(value, "__name__"):
+            return value.__name__
+        return value
+
+    @model_serializer
+    def _model_serializer(self):
+        # Use the default serialization, but ensure 'type' is a string
+        data = self.model_dump()
+        data["type"] = self._serialize_type(data.get("type"))
+        return data
+
 
 class ListType(BaseModel):
     """Represents a list type with a specific element type."""
@@ -288,12 +308,16 @@ class ListType(BaseModel):
 
 VariableType = (
     PrimitiveTypeEnum
-    | Type[Embedding]
-    | Type[ChatMessage]
-    | Type[ChatContent]
+    | Type[AggregateStats]
     | Type[BaseModel]
-    | Type[RAGDocument]
+    | Type[ChatContent]
+    | Type[ChatMessage]
+    | Type[Embedding]
+    | Type[MessageRole]
     | Type[RAGChunk]
+    | Type[RAGDocument]
+    | Type[RAGSearchResult]
+    | Type[SearchResult]
     | ListType
 )
 
