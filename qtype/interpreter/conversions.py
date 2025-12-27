@@ -18,7 +18,8 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.memory import Memory as LlamaMemory
 from llama_index.core.schema import Document as LlamaDocument
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from opensearchpy import AsyncOpenSearch, AWSV4SignerAuth
+from opensearchpy import AsyncHttpConnection, AsyncOpenSearch
+from opensearchpy.helpers.asyncsigner import AWSV4SignerAsyncAuth
 
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.domain_types import (
@@ -369,7 +370,7 @@ def to_opensearch_client(
         InterpreterError: If authentication fails or configuration is invalid
     """
     client_kwargs: dict[str, Any] = {
-        "hosts": [index.endpoint],
+        "hosts": index.endpoint,
         **index.args,
     }
 
@@ -390,15 +391,17 @@ def to_opensearch_client(
                         f"Failed to obtain AWS credentials for DocumentIndex '{index.id}'"
                     )
 
-                # Use opensearch-py's built-in AWS auth
-                aws_auth = AWSV4SignerAuth(
+                # Use opensearch-py's async AWS auth
+                aws_auth = AWSV4SignerAsyncAuth(
                     credentials,
                     auth_session.region_name or "us-east-1",  # type: ignore
+                    "aoss",  # service name for OpenSearch Serverless
                 )
 
                 client_kwargs["http_auth"] = aws_auth
                 client_kwargs["use_ssl"] = True
                 client_kwargs["verify_certs"] = True
+                client_kwargs["connection_class"] = AsyncHttpConnection
         else:
             raise InterpreterError(
                 f"Unsupported authentication type for DocumentIndex: {type(index.auth)}"

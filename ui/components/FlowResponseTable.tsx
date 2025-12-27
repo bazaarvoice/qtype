@@ -6,12 +6,18 @@
 
 "use client";
 
-import "react-data-grid/lib/styles.css";
-
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
 import { Download } from "lucide-react";
 import Papa from "papaparse";
 import { useMemo, useState } from "react";
-import { DataGrid, type Column } from "react-data-grid";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -57,8 +63,9 @@ export default function FlowResponseTable({
   outputs,
 }: FlowResponseTableProps) {
   const [searchText, setSearchText] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  const rows = useMemo(() => {
+  const data = useMemo(() => {
     return outputs.map((output) => {
       const outputData =
         output && typeof output === "object"
@@ -68,43 +75,46 @@ export default function FlowResponseTable({
     });
   }, [outputs]);
 
-  const columns = useMemo<Column<Record<string, ResponseData>>[]>(() => {
+  const columns = useMemo<ColumnDef<Record<string, ResponseData>>[]>(() => {
     if (!responseSchema?.properties) return [];
 
     return Object.entries(responseSchema.properties).map(([key, schema]) => {
       const prop = schema as SchemaProperty;
       return {
-        key,
-        name: prop.title || key,
-        sortable: true,
-        resizable: true,
-        renderCell: ({ row }) => {
-          const value = row[key];
+        accessorKey: key,
+        header: prop.title || key,
+        cell: ({ row }) => {
+          const value = row.original[key];
           return formatCellValue(value, prop.qtype_type);
         },
       };
     });
   }, [responseSchema]);
 
-  const filteredRows = useMemo(() => {
-    if (!searchText) return rows;
-
-    return rows.filter((row) =>
-      Object.values(row).some((value) =>
-        String(value).toLowerCase().includes(searchText.toLowerCase()),
-      ),
-    );
-  }, [rows, searchText]);
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      globalFilter: searchText,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setSearchText,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
 
   const handleDownloadCSV = () => {
-    const csvData = filteredRows.map((row) => {
+    const csvData = table.getFilteredRowModel().rows.map((row) => {
       const rowData: Record<string, string> = {};
       columns.forEach((col) => {
-        const propertySchema = responseSchema?.properties?.[
-          col.key as string
-        ] as SchemaProperty | undefined;
-        rowData[col.name as string] = formatCellValue(
-          row[col.key as string],
+        const key = (col as { accessorKey: string }).accessorKey;
+        const propertySchema = responseSchema?.properties?.[key] as
+          | SchemaProperty
+          | undefined;
+        rowData[String(col.header)] = formatCellValue(
+          row.original[key],
           propertySchema?.qtype_type,
         );
       });
@@ -157,17 +167,56 @@ export default function FlowResponseTable({
         </Button>
       </div>
 
-      <div className="rdg-light">
-        <DataGrid
-          columns={columns}
-          rows={filteredRows}
-          className="fill-grid"
-          style={{ height: "400px" }}
-        />
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-auto" style={{ maxHeight: "400px" }}>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-2 text-left font-medium cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-2">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {{
+                          asc: " 🔼",
+                          desc: " 🔽",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-t hover:bg-gray-50 dark:hover:bg-gray-900"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-2">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="text-sm text-muted-foreground">
-        {filteredRows.length} row(s) total
+        {table.getFilteredRowModel().rows.length} row(s) total
       </div>
     </div>
   );
