@@ -9,7 +9,7 @@ interface UseFileAttachmentsResult {
   removeFile: (index: number) => void;
   clearFiles: () => void;
   reset: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 const convertFileToDataUrl = (file: File): Promise<string> => {
