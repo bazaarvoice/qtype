@@ -96,7 +96,10 @@ class DocumentSplitterExecutor(StepExecutor):
                     vector=None,  # Embedding will be added later
                     metadata=merged_metadata,
                 )
-                yield message.copy_with_variables({output_id: chunk})
+                if (
+                    chunk.content and chunk.content.strip()
+                ):  # Only emit non-empty chunks
+                    yield message.copy_with_variables({output_id: chunk})
 
         except Exception as e:
             # Emit error event to stream so frontend can display it
