@@ -285,9 +285,10 @@ class ToolParameter(BaseModel):
     @model_serializer
     def _model_serializer(self):
         # Use the default serialization, but ensure 'type' is a string
-        data = self.model_dump()
-        data["type"] = self._serialize_type(data.get("type"))
-        return data
+        return {
+            "type": self._serialize_type(self.type),
+            "optional": self.optional,
+        }
 
 
 class ListType(BaseModel):
