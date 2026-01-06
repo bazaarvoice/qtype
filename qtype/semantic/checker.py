@@ -704,7 +704,7 @@ def check(model: BaseModel) -> None:
     # Check if this model type has a validator
     model_type = type(model)
     if model_type in _VALIDATORS:
-        _VALIDATORS[model_type](model)
+        _VALIDATORS[model_type](model)  # type: ignore[arg-type]
 
     # Recursively validate all fields
     for field_name, field_value in model:

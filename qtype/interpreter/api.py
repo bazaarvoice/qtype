@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,8 +87,10 @@ class APIExecutor:
         if ui_enabled:
             # Add CORS middleware only for localhost development
             if self.host in ("localhost", "127.0.0.1", "0.0.0.0"):
+                from typing import cast
+
                 app.add_middleware(
-                    CORSMiddleware,
+                    cast(Any, CORSMiddleware),
                     allow_origins=["*"],
                     allow_credentials=True,
                     allow_methods=["*"],

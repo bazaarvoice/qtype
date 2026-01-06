@@ -415,8 +415,11 @@ def _generate_shared_resources(app: Application) -> list[str]:
                 # Handle auth as either AuthorizationProvider object or string ID
                 if isinstance(index.auth, str):
                     auth_id = f"AUTH_{_sanitize_id(index.auth)}"
+                elif hasattr(index.auth, "id"):
+                    auth_id = f"AUTH_{_sanitize_id(str(index.auth.id))}"
                 else:
-                    auth_id = f"AUTH_{_sanitize_id(index.auth.id)}"
+                    # Fallback for unexpected types
+                    auth_id = f"AUTH_{_sanitize_id(str(index.auth))}"
                 lines.append(f"        {index_id} -.->|uses| {auth_id}")
 
         # Memories
@@ -459,7 +462,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
 def _generate_telemetry_nodes(telemetry: TelemetrySink) -> list[str]:
     """Generate nodes for telemetry configuration."""
     # Replace :// with a space to avoid markdown link parsing
-    safe_endpoint = telemetry.endpoint.replace("://", "&colon;//")
+    safe_endpoint = telemetry.endpoint.replace("://", "&colon;//")  # type: ignore[union-attr]
 
     lines = [
         '    subgraph TELEMETRY ["📊 Observability"]',

@@ -331,7 +331,7 @@ def to_embedding_model(
             OpenAIEmbedding,
         )
 
-        api_key = None
+        api_key: str | None = None
         if model.auth:
             with auth(model.auth, secret_manager) as provider:
                 if not isinstance(provider, APIKeyAuthProvider):
@@ -343,7 +343,7 @@ def to_embedding_model(
                 api_key = provider.api_key  # type: ignore[assignment]
 
         openai_embedding: BaseEmbedding = OpenAIEmbedding(
-            api_key=api_key,
+            api_key=api_key,  # type: ignore[arg-type]
             model_name=model.model_id if model.model_id else model.id,
         )
         return openai_embedding
@@ -523,7 +523,11 @@ def from_chat_message(message: LlamaChatMessage) -> ChatMessage:
                 f"Unsupported content block type: {type(block)}"
             )
 
-    return ChatMessage(role=message.role, blocks=blocks)
+    # Convert llama_index MessageRole to our MessageRole
+    from qtype.dsl.domain_types import MessageRole as QTypeMessageRole
+
+    role = QTypeMessageRole(message.role.value)
+    return ChatMessage(role=role, blocks=blocks)
 
 
 def to_text_splitter(splitter: DocumentSplitter) -> Any:

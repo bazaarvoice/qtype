@@ -39,11 +39,11 @@ def _ui_message_to_domain_type(message: UIMessage) -> ChatMessage:
     for part in message.parts:
         if part.type == "text":
             blocks.append(
-                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
+                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)  # type: ignore[attr-defined]
             )
         elif part.type == "reasoning":
             blocks.append(
-                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)
+                ChatContent(type=PrimitiveTypeEnum.text, content=part.text)  # type: ignore[attr-defined]
             )
         elif part.type == "file":
             blocks.append(

@@ -25,11 +25,9 @@ def _get_variable_type(var: DSLVariable) -> tuple[Type, dict[str, Any]]:
         python_type = PRIMITIVE_TO_PYTHON_TYPE.get(var.type, str)
         field_metadata["qtype_type"] = var.type.value
     elif isinstance(var.type, ListType):
-        python_type = list[
-            _get_variable_type(DSLVariable(id="", type=var.type.element_type))[
-                0
-            ]
-        ]
+        element_var = DSLVariable(id="", type=var.type.element_type)
+        element_type, _ = _get_variable_type(element_var)
+        python_type = list[element_type]  # type: ignore[valid-type]
         field_metadata["qtype_type"] = f"list[{var.type.element_type}]"
     elif (
         isinstance(var.type, type)
@@ -82,7 +80,7 @@ def create_output_container_type(flow: Flow) -> Type[BaseModel]:
         Field(description="List of errored execution outputs"),
     )
     fields["outputs"] = (
-        list[output_shape],
+        list[output_shape],  # type: ignore[valid-type]
         Field(description="List of successful execution outputs"),
     )
     return create_model(f"{flow.id}Response", __base__=BaseModel, **fields)  # type: ignore
@@ -162,7 +160,7 @@ def instantiate_variable(variable: DSLVariable, value: Any) -> Any:
 
     # 2. Handle Pydantic Models (Custom/Domain Types)
     if hasattr(target_type, "model_validate"):
-        return target_type.model_validate(value)
+        return target_type.model_validate(value)  # type: ignore[misc]
 
     # 3. Handle Primitives & Complex Python Types (List, Optional, Union)
     try:

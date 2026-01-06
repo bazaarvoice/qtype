@@ -43,7 +43,8 @@ def build_dynamic_types(
             resolved_type = ForwardRef(type_str)
 
         if is_optional:
-            return Union[resolved_type, None], True
+            # Type checker: resolved_type is runtime-constructed type
+            return Union[resolved_type, None], True  # type: ignore[valid-type]
 
         return resolved_type, False
 

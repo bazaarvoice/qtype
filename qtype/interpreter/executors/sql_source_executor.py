@@ -41,7 +41,7 @@ class SQLSourceExecutor(StepExecutor):
         connection_string = self._resolve_secret(self.step.connection)
         connect_args = {}
         if self.step.auth:
-            with auth(self.step.auth) as creds:
+            with auth(self.step.auth, self._secret_manager) as creds:
                 if isinstance(creds, boto3.Session):
                     connect_args["session"] = creds
         engine = create_engine(connection_string, connect_args=connect_args)

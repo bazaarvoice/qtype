@@ -53,7 +53,7 @@ class ConstructExecutor(StepExecutor):
                 }
                 # use the mapping to convert variable names to
                 inputs = {
-                    self.step.field_mapping.get(var_name, var_name): value
+                    self.step.field_mapping.get(var_name, var_name): value  # type: ignore[attr-defined]
                     for var_name, value in input_values.items()
                 }
             else:

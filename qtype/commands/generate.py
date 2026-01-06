@@ -51,7 +51,9 @@ def run_dump_commons_library(args: argparse.Namespace) -> None:
             )
 
             # Convert to YAML and save
-            content = facade.convert_document(model_list)
+            from pydantic_yaml import to_yaml_str
+
+            content = to_yaml_str(model_list)
             output_path = Path(f"{args.prefix}/aws.bedrock.models.qtype.yaml")
             output_path.write_text(content, encoding="utf-8")
             logger.info(f"AWS Bedrock models exported to {output_path}")

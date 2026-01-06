@@ -40,10 +40,10 @@ class FileSourceExecutor(StepExecutor):
         output_columns = {output.id for output in self.step.outputs}
 
         # get the path
-        if isinstance(self.step.path, ConstantPath):
-            file_path = self.step.path
+        if isinstance(self.step.path, ConstantPath):  # type: ignore[attr-defined]
+            file_path = self.step.path  # type: ignore[attr-defined]
         else:
-            file_path = message.variables.get(self.step.path.id)
+            file_path = message.variables.get(self.step.path.id)  # type: ignore[attr-defined]
             if not file_path:
                 raise ValueError(
                     (

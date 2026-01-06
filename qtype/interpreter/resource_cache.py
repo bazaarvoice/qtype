@@ -25,9 +25,11 @@ def cached_resource(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
+        # Use getattr with fallback for callables that aren't functions
+        qualname = getattr(func, "__qualname__", repr(func))
         cache_key = (
             func.__module__,
-            func.__qualname__,
+            qualname,
             args,
             tuple(sorted(kwargs.items())),
         )

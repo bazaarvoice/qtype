@@ -258,10 +258,12 @@ class StreamEventConverter:
         3. ToolInputAvailableChunk - Complete input ready, tool can execute
         """
         # 1. Start tool input streaming
-        yield ToolInputStartChunk(
-            toolCallId=event.tool_call_id,
-            toolName=event.tool_name,
-            providerExecuted=True,  # Tools are executed on the server
+        yield ToolInputStartChunk.model_validate(
+            {
+                "toolCallId": event.tool_call_id,
+                "toolName": event.tool_name,
+                "providerExecuted": True,
+            }
         )
 
         # 2. Stream the input as JSON text delta
@@ -274,11 +276,13 @@ class StreamEventConverter:
         )
 
         # 3. Signal input is complete and ready for execution
-        yield ToolInputAvailableChunk(
-            toolCallId=event.tool_call_id,
-            toolName=event.tool_name,
-            input=event.tool_input,
-            providerExecuted=True,  # Tools are executed on the server
+        yield ToolInputAvailableChunk.model_validate(
+            {
+                "toolCallId": event.tool_call_id,
+                "toolName": event.tool_name,
+                "input": event.tool_input,
+                "providerExecuted": True,
+            }
         )
 
     def _convert_tool_execution_end(
@@ -289,10 +293,12 @@ class StreamEventConverter:
 
         Signals successful tool completion with output.
         """
-        yield ToolOutputAvailableChunk(
-            toolCallId=event.tool_call_id,
-            output=event.tool_output,
-            providerExecuted=True,  # Tools are executed on the server
+        yield ToolOutputAvailableChunk.model_validate(
+            {
+                "toolCallId": event.tool_call_id,
+                "output": event.tool_output,
+                "providerExecuted": True,
+            }
         )
 
     def _convert_tool_execution_error(
@@ -303,10 +309,12 @@ class StreamEventConverter:
 
         Signals tool execution failure with error message.
         """
-        yield ToolOutputErrorChunk(
-            toolCallId=event.tool_call_id,
-            errorText=event.error_message,
-            providerExecuted=True,  # Tools are executed on the server
+        yield ToolOutputErrorChunk.model_validate(
+            {
+                "toolCallId": event.tool_call_id,
+                "errorText": event.error_message,
+                "providerExecuted": True,
+            }
         )
 
     def _convert_error(self, event: ErrorEvent) -> Iterator[UIMessageChunk]:
