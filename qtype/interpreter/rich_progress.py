@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 from collections import deque
-from typing import Deque, Dict
+from typing import Any, Deque, Dict
 
 from rich.console import Console
 from rich.live import Live
@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.progress import (
     Progress,
     ProgressColumn,
+    TaskID,
     TaskProgressColumn,
     TextColumn,
     TimeElapsedColumn,
@@ -140,7 +141,7 @@ class RichProgressCallback(ProgressCallback):
         )
 
         # Map step_id -> Rich task id
-        self.tasks: Dict[str, int] = {}
+        self.tasks: dict[str, TaskID] = {}
         self._started = False
 
         # Pre-create tasks in the desired order if provided
@@ -202,7 +203,9 @@ class RichProgressCallback(ProgressCallback):
             if total_items is not None:
                 update_kwargs["total"] = total_items
 
-            self.progress.update(task_id, **update_kwargs)
+            from typing import cast
+
+            self.progress.update(task_id, **cast(Any, update_kwargs))
 
     def compute_color(self, items_processed: int, items_in_error: int) -> str:
         # Avoid divide-by-zero

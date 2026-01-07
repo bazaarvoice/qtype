@@ -73,7 +73,7 @@ def sort_classes_by_inheritance(
             ):
                 graph.add_edge(base.__name__, class_name)
 
-    sorted_names = list(nx.topological_sort(graph))
+    sorted_names = list(nx.topological_sort(graph))  # type: ignore[arg-type]
 
     # sorted_names = sorted(graph.nodes, key=lambda node: depths[node])
     return [(name, class_dict[name]) for name in sorted_names]
@@ -490,10 +490,10 @@ def generate_semantic_class(class_name: str, cls: type) -> str:
         # Only process fields that are actually defined on this class
         for field_name in cls.__annotations__:
             if (
-                field_name in cls.model_fields
+                field_name in cls.model_fields  # type: ignore[operator]
                 and f"{class_name}.{field_name}" not in FIELDS_TO_IGNORE
             ):
-                field_info = cls.model_fields[field_name]
+                field_info = cls.model_fields[field_name]  # type: ignore[index]
                 field_type = field_info.annotation
                 field_default = field_info.default
                 field_default_factory = field_info.default_factory

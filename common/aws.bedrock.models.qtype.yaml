@@ -1,14 +1,108 @@
+- id: nvidia.nemotron-nano-12b-v2
+  provider: aws-bedrock
 - id: anthropic.claude-sonnet-4-20250514-v1:0
+  provider: aws-bedrock
+- id: anthropic.claude-haiku-4-5-20251001-v1:0
+  provider: aws-bedrock
+- id: openai.gpt-oss-120b-1:0
+  provider: aws-bedrock
+- id: stability.stable-creative-upscale-v1:0
+  provider: aws-bedrock
+- id: qwen.qwen3-next-80b-a3b
+  provider: aws-bedrock
+- id: amazon.nova-2-multimodal-embeddings-v1:0
+  provider: aws-bedrock
+- id: nvidia.nemotron-nano-3-30b
+  provider: aws-bedrock
+- id: minimax.minimax-m2
+  provider: aws-bedrock
+- id: mistral.voxtral-mini-3b-2507
+  provider: aws-bedrock
+- id: amazon.nova-pro-v1:0
+  provider: aws-bedrock
+- id: stability.stable-image-remove-background-v1:0
+  provider: aws-bedrock
+- id: stability.stable-image-control-sketch-v1:0
+  provider: aws-bedrock
+- id: amazon.nova-2-lite-v1:0
+  provider: aws-bedrock
+- id: amazon.nova-2-lite-v1:0:256k
+  provider: aws-bedrock
+- id: stability.stable-conservative-upscale-v1:0
+  provider: aws-bedrock
+- id: google.gemma-3-12b-it
+  provider: aws-bedrock
+- id: stability.stable-image-search-recolor-v1:0
+  provider: aws-bedrock
+- id: moonshot.kimi-k2-thinking
+  provider: aws-bedrock
+- id: mistral.mistral-large-3-675b-instruct
   provider: aws-bedrock
 - id: twelvelabs.pegasus-1-2-v1:0
   provider: aws-bedrock
+- id: amazon.nova-2-sonic-v1:0
+  provider: aws-bedrock
+- id: qwen.qwen3-32b-v1:0
+  provider: aws-bedrock
+- id: mistral.ministral-3-14b-instruct
+  provider: aws-bedrock
+- id: writer.palmyra-x5-v1:0
+  provider: aws-bedrock
+- id: nvidia.nemotron-nano-9b-v2
+  provider: aws-bedrock
+- id: mistral.ministral-3-8b-instruct
+  provider: aws-bedrock
+- id: mistral.voxtral-small-24b-2507
+  provider: aws-bedrock
+- id: openai.gpt-oss-20b-1:0
+  provider: aws-bedrock
+- id: google.gemma-3-4b-it
+  provider: aws-bedrock
+- id: stability.stable-fast-upscale-v1:0
+  provider: aws-bedrock
+- id: stability.stable-image-erase-object-v1:0
+  provider: aws-bedrock
+- id: openai.gpt-oss-safeguard-120b
+  provider: aws-bedrock
+- id: google.gemma-3-27b-it
+  provider: aws-bedrock
+- id: stability.stable-image-control-structure-v1:0
+  provider: aws-bedrock
+- id: twelvelabs.marengo-embed-3-0-v1:0
+  provider: aws-bedrock
+- id: writer.palmyra-x4-v1:0
+  provider: aws-bedrock
+- id: anthropic.claude-sonnet-4-5-20250929-v1:0
+  provider: aws-bedrock
+- id: twelvelabs.marengo-embed-2-7-v1:0
+  provider: aws-bedrock
+- id: qwen.qwen3-vl-235b-a22b
+  provider: aws-bedrock
+- id: stability.stable-outpaint-v1:0
+  provider: aws-bedrock
+- id: stability.stable-image-inpaint-v1:0
+  provider: aws-bedrock
 - id: anthropic.claude-opus-4-1-20250805-v1:0
   provider: aws-bedrock
+- id: stability.stable-image-style-guide-v1:0
+  provider: aws-bedrock
+- id: mistral.magistral-small-2509
+  provider: aws-bedrock
+- id: stability.stable-style-transfer-v1:0
+  provider: aws-bedrock
+- id: cohere.embed-v4:0
+  provider: aws-bedrock
+- id: mistral.ministral-3-3b-instruct
+  provider: aws-bedrock
+- id: anthropic.claude-opus-4-5-20251101-v1:0
+  provider: aws-bedrock
+- id: stability.stable-image-search-replace-v1:0
+  provider: aws-bedrock
+- id: qwen.qwen3-coder-30b-a3b-v1:0
+  provider: aws-bedrock
+- id: openai.gpt-oss-safeguard-20b
+  provider: aws-bedrock
 - id: amazon.titan-tg1-large
-  provider: aws-bedrock
-- id: amazon.titan-image-generator-v1:0
-  provider: aws-bedrock
-- id: amazon.titan-image-generator-v1
   provider: aws-bedrock
 - id: amazon.titan-image-generator-v2:0
   provider: aws-bedrock
@@ -22,13 +116,9 @@
   provider: aws-bedrock
 - id: amazon.nova-premier-v1:0
   provider: aws-bedrock
-- id: amazon.titan-text-premier-v1:0
-  provider: aws-bedrock
 - id: amazon.nova-pro-v1:0:24k
   provider: aws-bedrock
 - id: amazon.nova-pro-v1:0:300k
-  provider: aws-bedrock
-- id: amazon.nova-pro-v1:0
   provider: aws-bedrock
 - id: amazon.nova-lite-v1:0:24k
   provider: aws-bedrock
@@ -52,10 +142,6 @@
   provider: aws-bedrock
 - id: amazon.titan-embed-g1-text-02
   provider: aws-bedrock
-- id: amazon.titan-text-lite-v1:0:4k
-  provider: aws-bedrock
-- id: amazon.titan-text-lite-v1
-  provider: aws-bedrock
 - id: amazon.titan-text-express-v1:0:8k
   provider: aws-bedrock
 - id: amazon.titan-text-express-v1
@@ -72,19 +158,11 @@
   provider: aws-bedrock
 - id: amazon.titan-embed-image-v1
   provider: aws-bedrock
-- id: stability.stable-diffusion-xl-v1:0
-  provider: aws-bedrock
-- id: stability.stable-diffusion-xl-v1
-  provider: aws-bedrock
-- id: ai21.jamba-instruct-v1:0
-  provider: aws-bedrock
 - id: ai21.jamba-1-5-large-v1:0
   provider: aws-bedrock
 - id: ai21.jamba-1-5-mini-v1:0
   provider: aws-bedrock
 - id: anthropic.claude-instant-v1:2:100k
-  provider: aws-bedrock
-- id: anthropic.claude-instant-v1
   provider: aws-bedrock
 - id: anthropic.claude-v2:0:18k
   provider: aws-bedrock
@@ -93,10 +171,6 @@
 - id: anthropic.claude-v2:1:18k
   provider: aws-bedrock
 - id: anthropic.claude-v2:1:200k
-  provider: aws-bedrock
-- id: anthropic.claude-v2:1
-  provider: aws-bedrock
-- id: anthropic.claude-v2
   provider: aws-bedrock
 - id: anthropic.claude-3-sonnet-20240229-v1:0:28k
   provider: aws-bedrock
@@ -140,6 +214,8 @@
   provider: aws-bedrock
 - id: cohere.embed-multilingual-v3
   provider: aws-bedrock
+- id: cohere.rerank-v3-5:0
+  provider: aws-bedrock
 - id: deepseek.r1-v1:0
   provider: aws-bedrock
 - id: meta.llama3-8b-instruct-v1:0
@@ -173,6 +249,4 @@
 - id: mistral.mistral-small-2402-v1:0
   provider: aws-bedrock
 - id: mistral.pixtral-large-2502-v1:0
-  provider: aws-bedrock
-- id: twelvelabs.marengo-embed-2-7-v1:0
   provider: aws-bedrock

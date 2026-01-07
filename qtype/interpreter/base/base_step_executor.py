@@ -355,7 +355,9 @@ class StepExecutor(ABC):
                 ):
                     serialized = [to_cache_value(m, self.step) for m in buf]
                     self.cache.set(
-                        key, serialized, expire=self.step.cache_config.ttl
+                        key,
+                        serialized,
+                        expire=self.step.cache_config.ttl,  # type: ignore[union-attr]
                     )  # type: ignore
 
     async def _process_message_with_telemetry(

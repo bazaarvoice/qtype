@@ -48,8 +48,8 @@ class FileWriterExecutor(BatchedStepExecutor):
         if len(self.step.outputs):
             output_name = self.step.outputs[0].id
 
-        if isinstance(self.step.path, ConstantPath):
-            file_path = self.step.path.uri
+        if isinstance(self.step.path, ConstantPath):  # type: ignore[attr-defined]
+            file_path = self.step.path.uri  # type: ignore[attr-defined]
             df = self.to_pandas(batch)
             # A fixed path is provided -- just write all of the data
             await self.stream_emitter.status(
@@ -67,12 +67,12 @@ class FileWriterExecutor(BatchedStepExecutor):
 
         else:
             # Group messages by file path (path is a Variable in this branch)
-            if not isinstance(self.step.path, Variable):
+            if not isinstance(self.step.path, Variable):  # type: ignore[attr-defined]
                 raise ValueError(
                     "Expected path to be a Variable in dynamic path case."
                 )
 
-            path_var_id = self.step.path.id
+            path_var_id = self.step.path.id  # type: ignore[attr-defined]
 
             # Sort messages by file path for groupby
             sorted_batch = sorted(

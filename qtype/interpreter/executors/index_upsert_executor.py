@@ -145,7 +145,7 @@ class IndexUpsertExecutor(BatchedStepExecutor):
             nodes.append(node)
 
         # Batch upsert all nodes to the vector store
-        await self._vector_store.async_add(nodes)
+        await self._vector_store.async_add(nodes)  # type: ignore[union-attr]
         num_inserted = len(items)
 
         # Emit status update
