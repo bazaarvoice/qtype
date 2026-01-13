@@ -39,7 +39,6 @@ The base QType package provides core functionality for defining, validating, and
 ### What's included in the base package:
 
 - **Schema validation**: Validate your QType YAML files against the specification
-- **Schema generation**: Generate JSON schemas for your QType specifications  
 - **File conversion**: Convert between different QType formats
 - **Core DSL components**: Define models, prompts, tools, and flows
 - **Basic CLI commands**: `validate`, `generate`, `convert`
@@ -54,7 +53,9 @@ The base QType package provides core functionality for defining, validating, and
 - **Observability**: Integrated telemetry and tracing with OpenTelemetry
 
 ### Additional dependencies:
+
 (These are installed by default with the `interpreter` package)
+
 - `boto3` - AWS SDK for Bedrock and other AWS services
 - `fastapi` - Web framework for serving APIs
 - `uvicorn` - ASGI server for FastAPI

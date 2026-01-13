@@ -1,0 +1,67 @@
+id: read_file_example
+description: Read data from a CSV file
+
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+
+flows:
+  - type: Flow
+    id: process_file_data
+    description: Read and process data from a CSV file
+
+    variables:
+      - id: query
+        type: text
+      - id: topic
+        type: text
+      - id: prompt
+        type: text
+      - id: answer
+        type: text
+
+    outputs:
+      - query
+      - topic
+      - answer
+
+    steps:
+      - id: read_data
+        type: FileSource
+        path: batch_inputs.csv
+        outputs:
+          - query
+          - topic
+
+    inputs:
+      - query
+      - topic
+
+    outputs:
+      - query
+      - topic
+      - answer
+
+    steps:
+      - id: create_prompt
+        type: PromptTemplate
+        template: |
+          Topic: {topic}
+          Question: {query}
+          
+          Provide a concise answer:
+        inputs:
+          - query
+          - topic
+        outputs:
+          - prompt
+
+      - id: generate_answer
+        type: LLMInference
+        model: nova
+        inputs:
+          - prompt
+        outputs:
+          - answer

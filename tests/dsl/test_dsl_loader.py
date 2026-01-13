@@ -54,8 +54,8 @@ flows:
 """
 
     CONFIG_WITH_ENV = """
-host: ${DB_HOST:localhost}
-port: ${DB_PORT:5432}
+host: ${DB_HOST:-localhost}
+port: ${DB_PORT:-5432}
 """
 
     MALFORMED_YAML = """
@@ -683,7 +683,7 @@ app:
 
     def test_load_string_with_env_var_default(self) -> None:
         """Test environment variable with default in string content."""
-        content = "value: ${NONEXISTENT_VAR:default_value}"
+        content = "value: ${NONEXISTENT_VAR:-default_value}"
         result = _load_yaml_from_string(content)
         assert result["value"] == "default_value"
 

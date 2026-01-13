@@ -86,47 +86,53 @@ def _create_custom_type_from_schema(
     schema_name_map: dict[int, str],
 ) -> CustomType:
     """Create a CustomType from an Object schema."""
+    # Use object id instead of hash(str()) to avoid recursion with circular refs
+    schema_id = id(schema)
+
+    # Check if we already have this type (prevents circular reference issues)
+    if schema_id in schema_name_map:
+        type_id = schema_name_map[schema_id]
+        if type_id in existing_custom_types:
+            return existing_custom_types[type_id]
+
     # Generate a unique ID for this schema-based type
-    type_id = None
-
-    schema_hash = hash(str(schema))
-    if schema_hash in schema_name_map:
-        type_id = schema_name_map[schema_hash]
+    if schema.title:
+        # Use title if available, make it lowercase, alphanumeric, snake_case
+        base_id = schema.title.lower().replace(" ", "_").replace("-", "_")
+        # Remove non-alphanumeric characters except underscores
+        type_id = "schema_" + "".join(
+            c for c in base_id if c.isalnum() or c == "_"
+        )
     else:
-        # make a type id manually
-        if schema.title:
-            # Use title if available, make it lowercase, alphanumeric, snake_case
-            base_id = schema.title.lower().replace(" ", "_").replace("-", "_")
-            # Remove non-alphanumeric characters except underscores
-            type_id = "schema_" + "".join(
-                c for c in base_id if c.isalnum() or c == "_"
-            )
-        else:
-            # Fallback to hash if no title
-            type_id = f"schema_{hash(str(schema))}"
+        # Fallback to object id if no title
+        type_id = f"schema_{schema_id}"
 
-    # Check if we already have this type
+    # Check again with the generated type_id
     if type_id in existing_custom_types:
         return existing_custom_types[type_id]
 
-    # Create properties from the schema
-    properties = _schema_to_qtype_properties(
-        schema, existing_custom_types, schema_name_map
-    )
-
-    # Create the custom type
-    custom_type = CustomType(
+    # Create a placeholder to prevent infinite recursion
+    # This will be updated with properties below
+    placeholder = CustomType(
         id=type_id,
         description=schema.description
         or schema.title
         or "Generated from OpenAPI schema",
-        properties=properties,
+        properties={},  # Empty initially
     )
 
-    # Store it in the registry to prevent infinite recursion
-    existing_custom_types[type_id] = custom_type
+    # Store it BEFORE processing properties to break circular references
+    existing_custom_types[type_id] = placeholder
 
-    return custom_type
+    # Now process properties (which may reference back to this type)
+    properties = _schema_to_qtype_properties(
+        schema, existing_custom_types, schema_name_map
+    )
+
+    # Update the placeholder with actual properties
+    placeholder.properties = properties
+
+    return placeholder
 
 
 def _schema_to_qtype_type(
@@ -353,9 +359,6 @@ def to_api_tool(
 def to_authorization_provider(
     api_name: str, scheme_name: str, security: Security
 ) -> AuthProviderType:
-    if security.scheme is None:
-        raise ValueError("Security scheme is missing")
-
     match security.type:
         case SecurityType.API_KEY:
             return APIKeyAuthProvider(
@@ -364,6 +367,8 @@ def to_authorization_provider(
                 host=None,  # Will be set from base URL if available
             )
         case SecurityType.HTTP:
+            if security.scheme is None:
+                raise ValueError("HTTP security scheme is missing")
             if security.scheme == AuthenticationScheme.BEARER:
                 return BearerTokenAuthProvider(
                     id=f"{api_name}_{scheme_name}_{security.bearer_format or 'token'}",
@@ -452,11 +457,10 @@ def tools_from_api(
     existing_custom_types: dict[str, CustomType] = {}
     tools = []
 
-    # Create a mapping from schema hash to their names in the OpenAPI spec
-    # Note: We can't monkey-patch here since the openapi_parser duplicates instances in memory
-    # if they are $ref'd in the content
+    # Create a mapping from schema id to their names in the OpenAPI spec
+    # Use id() instead of hash(str()) to avoid infinite recursion with circular refs
     schema_name_map: dict[int, str] = {
-        hash(str(schema)): name.replace(" ", "-").replace("_", "-")
+        id(schema): name.replace(" ", "-").replace("_", "-")
         for name, schema in specification.schemas.items()
     }
 

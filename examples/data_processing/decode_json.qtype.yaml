@@ -1,0 +1,23 @@
+id: decode_json_example
+description: Decode JSON string into structured data
+
+flows:
+  - id: decode_product
+    description: Parse JSON string into variables
+    inputs: [json_string]
+    outputs: [name, price]
+    
+    variables:
+      - id: json_string
+        type: text
+      - id: name
+        type: text
+      - id: price
+        type: float
+    
+    steps:
+      - type: Decoder
+        id: parse_json
+        format: json
+        inputs: [json_string]
+        outputs: [name, price]

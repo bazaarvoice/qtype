@@ -20,7 +20,7 @@ from typing import (
 
 from pydantic import BaseModel
 from pydantic import ConfigDict as PydanticConfigDict
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 # JSON-serializable value types
 JSONValue = Union[
@@ -72,6 +72,11 @@ class Reference(BaseModel, Generic[ReferenceT]):
     # model_config = PydanticConfigDict(extra="forbid")
 
     ref: str = Field(..., alias="$ref")
+
+    @model_serializer(mode="plain")
+    def serialize_as_string(self) -> str:
+        """Serialize Reference as a plain string (just the ID)."""
+        return self.ref
 
 
 def _contains_reference_and_str(type_hint: Any) -> bool:

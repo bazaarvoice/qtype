@@ -122,8 +122,8 @@ def generate_schema(args: argparse.Namespace) -> None:
 
     schema["$defs"]["qtype_env_var"] = {
         "type": "string",
-        "pattern": "^.*\\$\\{[^}:]+(?::[^}]*)?\\}.*$",
-        "description": "String with environment variable substitution using ${VAR_NAME} or ${VAR_NAME:default} syntax",
+        "pattern": "^.*\\$\\{[^}:]+(?::-[^}]*)?\\}.*$",
+        "description": "String with environment variable substitution using ${VAR_NAME} or ${VAR_NAME:-default} syntax",
     }
 
     output = json.dumps(schema, indent=2)

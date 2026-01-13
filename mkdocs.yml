@@ -40,6 +40,9 @@ theme:
     text: Roboto
     code: Roboto Mono
 
+extra_css:
+  - stylesheets/extra.css
+
 # Repository
 repo_name: bazaarvoice/qtype
 repo_url: https://github.com/bazaarvoice/qtype

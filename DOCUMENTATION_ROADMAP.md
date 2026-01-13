@@ -1,20 +1,18 @@
 
 # Tutorials
 
-- [ ] Your First QType Application (15 min)
-- [ ] Configuration and Authentication (20 min) 
-    All the examples need AWS/OpenAI credentials, but auth is never taught
-    It's implicitly used but never explained
-    A beginner would be stuck at "how do I configure my API key?"
-- [ ] Building a Stateful Chatbot (20 min)
-- [ ] Working with Types and Structured Data (25 min)
-- [ ] Adding Tools to Your Application (25 min)
+- [x] Your First QType Application + auth (15 min)
+- [x] Building a Stateful Chatbot (20 min)
+- [x] Working with Types and Structured Data (25 min)
+- [x] Adding Tools to Your Application (25 min)
 - [ ] Building an AI Agent (30 min)
+- [ ] Organize applications with modular YAML (includes and references)
 
-# Patterns & Examples
+# Example Gallery
 
+Structure:
 ┌─────────────────────────────────┐
-│ Pattern Name: "RAG System"      │
+│ Example Name: "RAG System"      │
 ├─────────────────────────────────┤
 │ • Visual diagram                │
 │ • 2-3 sentence description      │
@@ -26,114 +24,151 @@
 │   → Reference: VectorIndex docs │
 └─────────────────────────────────┘
 
-**Conversational AI**
-- [ ] ⚡ Simple Chatbot
-- [ ] ⚡ Multi-Turn Reasoning Agent
-- [ ] ⚡ Customer Support Bot
-
-**RAG & Document Processing**
-- [ ] ⚡ Complete RAG System (ingestion + chat)
-- [ ] ⚡ Semantic Search Q&A
-- [ ] ⚡ Multi-Modal Document Analysis
+- [x] ⚡ Simple Chatbot
+- [x] ⚡ Dataflow Pipeline for LLM Calls
+- [ ] ⚡ Retrieval Augmented Generation (RAG)
+- [ ] ⚡ Q&A With Semantic Re-Ranking
 - [ ] ⚡ Hybrid Search System
-
-**Data Processing**
-- [ ] ⚡ ETL Pipeline
-- [ ] ⚡ Batch Document Classification
-- [ ] ⚡ Structured Data Extraction
-- [ ] ⚡ CSV Processing at Scale
-
-**Multi-Agent Systems**
 - [ ] ⚡ Research Assistant
 - [ ] ⚡ Collaborative Agents
-
-**Specialized**
 - [ ] ⚡ Evaluation & Judging
-- [ ] ⚡ Content Moderation
 
 # How Tos
 
-**Getting Started**
-- [ ] Configure authentication and API keys
-- [ ] Set up environment variables and secrets
-- [ ] Adjust model parameters (memory, temperature, token, system messages)
+```
+# {Task as Question}
 
-**Configuration & Organization**
-- [ ] Organize applications with modular YAML (includes and references)
-- [ ] Reference entities by ID
-- [ ] Use session inputs for sticky variables
-- [ ] Manage secrets with Secret Manager
+{1-2 sentence overview of the problem / approach}
+
+### QType YAML
+
+\`\`\`yaml
+# Only the relevant YAML snippet, not complete app
+{minimal snippet demonstrating the solution}
+\`\`\`
+
+### Explanation
+
+- **{Schema Object/Type/Parameter}**: {1 line what it does}
+- **{Schema Object/Type/Parameter}**: {1 line what it does}
+- **{Schema Object/Type/Parameter}**: {1 line what it does}
+
+## Complete Example
+
+\`\`\`yaml
+# Optional: include only if a full working example adds value
+# Otherwise, omit this section entirely
+# Use a snippet to include from the examples/ directory
+\`\`\`
+
+## See Also
+
+- [Related How-To](../{Category}/{guide}.md)
+- [Component Reference](../../components/{Component}.md)
+- [Tutorial](../../Tutorials/{tutorial}.md)
+- [Example](../../Gallery/{Category}/{example}.md)
+```
+
+**Language Features**
+- [x] Use Environment Variables
+- [x] Reference Entities by ID
+- [x] Include Raw Text from Other Files
+- [x] Include QType Yaml
+- [ ] Use List Types
+- [ ] Use Session Inputs for Sticky Variables
+
+**Command Line Usage**
+- [x] Pass Inputs On The CLI
+- [x] Load Multiple Inputs from Files
+
+**Data Processing**
+- [x] Read Data from SQL databases
+- [x] Read Data from files
+- [ ] Read Data from Document Sources
+- [x] Write Data to a File
+- [x] Adjust Concurrency
+- [ ] Configure Batch Processing
+- [ ] Invoke Other Flows # Depends on https://github.com/bazaarvoice/qtype/issues/112
+- [x] Cache Step Results
+- [x] Explode Collections for Fan-Out Processing
+- [x] Gather Results into a List
+- [ ] Aggregate results?
+- [ ] Use Echo for Debugging
+- [x] Decode JSON/XML to Structured Data
+
+**Invoke Models**
+- [x] Reuse Prompts with Templates
+- [x] Call Large Language Models
+- [x] Create Embeddings
+- [x] Configure Model Parameters (temperature, max_tokens)
+- [ ] Use Memory for Conversational Context
+- [ ] Switch Between Model Providers
+
+**Authentication**
+- [x] Use API Key Authentication
+- [ ] Use Bearer Token Authentication
+- [ ] Use OAuth2 Authentication
+- [x] Configure AWS Authentication (Access Keys, Profile, Role)
+- [ ] Configure Google Vertex Authentication
+- [ ] Manage Secrets with Secret Manager
 
 **Observability & Debugging**
-- [ ] Validate YAML specifications
-- [ ] Visualize application architecture
-- [ ] Add telemetry (Phoenix, Langfuse, Prometheus)
-
-**Data Sources**
-- [ ] Read from SQL databases
-- [ ] Read from files (CSV, JSON, text)
-- [ ] Load Documents
+- [x] Trace Calls with Open Telemetry
+- [x] Validate Qtype YAML
+- [x] Visualize Application Architecture
 
 **Data & Types**
-- [ ] Work with domain types (ChatMessage, RAGDocument, etc.)
-- [ ] Define custom types
-- [ ] Extract structured data with FieldExtractor
-- [ ] Transform data with Construct
-- [ ] Aggregate data from multiple records
-
-**Document Processing**
-- [ ] Convert documents to text (PDF, DOCX)
-- [ ] Split documents into chunks
-- [ ] Embed document chunks
-- [ ] Configure chunking strategies
-
-**Search & Retrieval**
-- [ ] Add vector search to an application
-- [ ] Perform document search (full-text)
-- [ ] Configure search filters
-- [ ] Rerank search results
-- [ ] Implement hybrid search strategies
-
-**Index Management**
-- [ ] Create and configure vector indexes
-- [ ] Create and configure document indexes
-- [ ] Upsert data into indexes
+- [ ] Use Built-In Types (`text`, `number`, `boolean`, `bytes`)
+- [ ] Use Built-In Domain Types (ChatMessage, RAGDocument, RAGChunk, RAGSearchResult, Embedding, AggregateStats)
+- [ ] Define Custom Types
+- [ ] Extract Structured Data with FieldExtractor (JSONPath)
+- [ ] Transform Data with Construct
+- [ ] Work with List Types
 
 **Tools & Integration**
-- [ ] Create tools from OpenAPI specifications
-- [ ] Create tools from Python modules
-- [ ] Configure tool parameters and outputs
+- [x] Create Tools from OpenAPI Specifications
+- [x] Create Tools from Python Modules
+- [x] Bind Tool Inputs and Outputs
 
-**Flows & Orchestration**
-- [ ] Organize multi-flow applications
-- [ ] Invoke flows from other flows
-- [ ] Share resources across flows
+**Qtype Server**
+- [x] Serve Flows as APIs
+- [x] Serve Flows as UI
+- [x] Use Conversational Interfaces
+- [x] Serve Applications with Auto-Reload
+- [x] Use Variables with UI Hints
 
-**Data Output**
-- [ ] Write results to files
-- [ ] Batch write operations
+**Chat Specific**
+- [ ] Configure Memory Token Limits
+- [ ] Use Conversation History in Prompts
+- [ ] Persist Session Inputs Across Turns
 
-**Performance & Optimization**
-- [ ] Configure concurrency for parallel processing
-- [ ] Enable caching to reduce costs
-- [ ] Batch process large datasets
 
-**Deployment**
-- [ ] Serve applications via HTTP API
-- [ ] Deploy with Docker
+**Retrieval Augmented Generation (RAG)**
+- [ ] Convert Documents to Text (PDF, DOCX)
+- [ ] Split Documents into Chunks (Configure Chunk Size and Overlap)
+- [ ] Embed Document Chunks
+- [ ] Populate a Vector Index
+- [ ] Populate a Document Index
+- [ ] Search a Document Index (Full-Text)
+- [ ] Search a Vector Index (Semantic)
+- [ ] Filter Search Results
+- [ ] Rerank Search Results with Bedrock Reranker
+- [ ] Implement Hybrid Search Strategies
+- [ ] Configure Vector Index Parameters (HNSW)
+- [ ] Upsert Data into Indexes
+
 
 **Extension & Advanced**
-- [ ] Create custom step types
-- [ ] Write QType plugins
+- [ ] Write CLI Plugins
+- [ ] Configure Step Caching with Version/Namespace
 
-# Explanation
+# Concepts
 
 **Mental Model & Philosophy**
-- [ ] ⚡ What is QType? (elevator pitch and purpose)
-- [ ] ⚡ Core mental model: flows, steps, variables, and data flow
-- [ ] ⚡ Design constraints and assumptions
-- [ ] ⚡ What QType is NOT (non-goals and anti-patterns)
-- [ ] ⚡ When to use QType vs alternatives
+- [x] ⚡ What is QType? (elevator pitch and purpose)
+- [x] ⚡ Core mental model: flows, steps, variables, and data flow
+- [x] ⚡ What QType is NOT (non-goals and anti-patterns)
+- [x] ⚡ When to use QType vs alternatives
 
 **Architecture & Design**
 - [ ] QType architecture: DSL → Semantic → Interpreter layers
@@ -166,19 +201,12 @@
 - [ ] Memory management and token limits
 
 **Validation & Rules**
-- [ ] ⚡ Semantic validation rules explained
-- [ ] ⚡ Why each validation rule exists
-- [ ] ⚡ How to satisfy validation requirements
+- [x] ⚡ Semantic validation rules by model entity
 
 **Decision Guides**
 - [ ] Vector search vs Document search vs SQL search (when to use each)
 - [ ] When to use InvokeTool vs Agent
 - [ ] When to use batching vs concurrent execution
-
-**Common Mistakes & Anti-Patterns**
-- [ ] ⚡ Common pitfalls and how to avoid them
-- [ ] ⚡ Anti-patterns and why they fail
-- [ ] ⚡ Debugging common misconceptions
 
 # Reference
 
@@ -187,9 +215,8 @@
 - `qtype validate` - Validate YAML specs
 - `qtype serve` - Serve as HTTP API
 - `qtype visualize` - Generate architecture diagrams
-- `qtype generate schema` - Generate JSON schema
-- `qtype convert api` - Convert OpenAPI to tools
-- `qtype convert module` - Convert Python modules to tools
+- `qtype generate` - Generate JSON schema
+- `qtype convert` - Convert OpenAPI or Python modules to tools
 
 **YAML Specification**
 - [ ] Application structure

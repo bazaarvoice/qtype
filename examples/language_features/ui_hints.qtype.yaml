@@ -1,0 +1,52 @@
+id: ui_hints_example
+description: Demonstrates how to use UI hints to customize input widgets
+
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 500
+
+flows:
+  - type: Flow
+    id: generate_story
+    description: Generate a creative story based on a detailed prompt
+    
+    variables:
+      # The 'ui' field provides hints to the web UI about how to render inputs
+      # Using 'widget: textarea' renders a multi-line text area instead of single-line input
+      - id: story_prompt
+        type: text
+        ui:
+          widget: textarea  # Options: text (default), textarea
+      
+      # Variables without 'ui' hints use default widgets based on their type
+      - id: max_length
+        type: int
+      
+      - id: story
+        type: text
+    
+    inputs:
+      - story_prompt
+      - max_length
+    
+    outputs:
+      - story
+    
+    steps:
+      - id: generate
+        type: LLMInference
+        model: nova
+        inputs: [story_prompt, max_length]
+        system_message: |
+          Write a creative story based on this prompt:
+          
+          {{story_prompt}}
+          
+          Keep the story under {{max_length}} words.
+        outputs:
+          - story

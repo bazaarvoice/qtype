@@ -1,0 +1,25 @@
+id: explode_example
+description: Explode a list into individual items for fan-out processing
+
+flows:
+  - type: Flow
+    id: main
+    description: Takes a list and processes each item individually
+
+    variables:
+      - id: items
+        type: list[text]
+      - id: item
+        type: text
+
+    inputs:
+      - items
+
+    outputs:
+      - item
+
+    steps:
+      - type: Explode
+        id: fan_out
+        inputs: [items]
+        outputs: [item]

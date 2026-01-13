@@ -1,0 +1,63 @@
+id: aws_auth_demo
+description: |
+  Demonstrates different methods of AWS authentication for Bedrock models.
+  Choose the method that best fits your deployment environment.
+
+# Method 1: AWS Profile (recommended for local development)
+# Uses credentials from ~/.aws/credentials
+auths:
+  - type: aws
+    id: aws_profile
+    profile_name: default
+    region: us-east-1
+
+# Method 2: Environment variables (recommended for production)
+# Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION in environment
+# Uncomment to use:
+#  - type: aws
+#    id: aws_env
+#    access_key_id: ${AWS_ACCESS_KEY_ID}
+#    secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+#    region: us-east-1
+
+# Method 3: Role assumption (for cross-account access)
+# Uncomment and configure to use:
+#  - type: aws
+#    id: aws_role
+#    profile_name: base_profile
+#    role_arn: arn:aws:iam::123456789012:role/BedrockAccessRole
+#    role_session_name: qtype-app-session
+#    region: us-east-1
+
+models:
+  - type: Model
+    id: nova_micro
+    provider: aws-bedrock
+    model_id: us.amazon.nova-micro-v1:0
+    auth: aws_profile  # Change to aws_env, aws_keys, or aws_role as needed
+
+flows:
+  - id: simple_completion
+    variables:
+      - id: user_prompt
+        type: text
+      - id: formatted
+        type: text
+      - id: response
+        type: text
+    inputs:
+      - user_prompt
+    outputs:
+      - response
+    steps:
+      - type: PromptTemplate
+        id: format_prompt
+        template: "{user_prompt}"
+        inputs: [user_prompt]
+        outputs: [formatted]
+      
+      - type: LLMInference
+        id: generate
+        model: nova_micro
+        inputs: [formatted]
+        outputs: [response]

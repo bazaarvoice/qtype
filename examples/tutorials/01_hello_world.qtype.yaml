@@ -1,0 +1,48 @@
+id: 01_hello_world
+description: My first QType application
+
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_KEY}
+    host: https://api.openai.com
+
+models:
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+    auth: openai_auth
+    inference_params:
+      temperature: 0.7
+
+flows:
+  - type: Flow
+    id: simple_example
+    variables:
+      - id: question
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: answer
+        type: text
+    inputs:
+      - question
+    outputs:
+      - answer
+    steps:
+      - id: format_prompt
+        type: PromptTemplate
+        template: "You are a helpful assistant. Answer the following question:\n{question}\n"
+        inputs:
+          - question
+        outputs:
+          - formatted_prompt
+
+      - id: llm_step
+        type: LLMInference
+        model: gpt-4
+        inputs:
+          - formatted_prompt
+        outputs:
+          - answer

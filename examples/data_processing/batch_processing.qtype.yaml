@@ -1,0 +1,54 @@
+id: batch_processing_example
+description: Process multiple inputs loaded from a file
+
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+
+flows:
+  - type: Flow
+    id: process_queries
+    description: Process multiple queries in batch
+
+    variables:
+      - id: query
+        type: text
+      - id: topic
+        type: text
+      - id: prompt
+        type: text
+      - id: response
+        type: text
+
+    inputs:
+      - query
+      - topic
+
+    outputs:
+      - query
+      - topic
+      - response
+
+    steps:
+      - id: create_prompt
+        type: PromptTemplate
+        template: |
+          Category: {topic}
+          Question: {query}
+          
+          Provide a brief, helpful answer:
+        inputs:
+          - query
+          - topic
+        outputs:
+          - prompt
+
+      - id: answer_query
+        type: LLMInference
+        model: nova_lite
+        inputs:
+          - prompt
+        outputs:
+          - response

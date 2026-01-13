@@ -1,0 +1,40 @@
+id: simple_chatbot
+description: A friendly chatbot with conversation memory using AWS Bedrock
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+memories:
+  - id: conversation_memory
+    token_limit: 10000
+flows:
+  - type: Flow
+    id: chat_flow
+    interface:
+      type: Conversational
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: assistant_response
+        type: ChatMessage
+    inputs:
+      - user_message
+    outputs:
+      - assistant_response
+    steps:
+      - id: generate_response
+        type: LLMInference
+        model: nova_lite
+        system_message: |
+          You are a friendly and helpful chatbot. You have a warm, conversational 
+          tone and enjoy helping users with their questions. You remember context 
+          from previous messages in the conversation.
+        memory: conversation_memory
+        inputs:
+          - user_message
+        outputs:
+          - assistant_response
