@@ -1,0 +1,89 @@
+# Tutorial 4: Adding Tools to Your Application
+#
+# This tutorial demonstrates how to:
+# 1. Import pre-built tools from the commons library
+# 2. Use InvokeTool to call Python functions
+# 3. Chain multiple tools together with input/output bindings
+#
+# Scenario: Calculate a deadline by adding days to the current time
+#
+# Run with:
+#   uv run qtype run -i '{"days_until_due": 3}' examples/tutorials/04_tools_and_function_calling.qtype.yaml
+
+id: deadline_calculator
+description: |
+  Calculates a deadline by adding days to the current timestamp.
+  Demonstrates tool imports, InvokeTool step, and tool chaining.
+
+# Import pre-built tools from the commons library
+references:
+  - !include https://raw.githubusercontent.com/bazaarvoice/qtype/refs/tags/v0.1.11/common/tools.qtype.yaml
+
+flows:
+  - id: calculate_deadline
+    description: Calculate a formatted deadline from current time plus days
+    inputs:
+      - days_until_due
+    outputs:
+      - deadline_formatted
+
+    variables:
+      # Input
+      - id: days_until_due
+        type: int
+      
+      # Tool outputs
+      - id: current_time
+        type: datetime
+      - id: deadline_time
+        type: datetime
+      - id: format_string
+        type: text
+      - id: deadline_formatted
+        type: text
+
+    steps:
+      # Step 1: Get current timestamp using a tool
+      # This tool takes no inputs and returns the current UTC time
+      - id: get_current_time
+        type: InvokeTool
+        tool: qtype.application.commons.tools.get_current_timestamp
+        input_bindings: {}
+        output_bindings:
+          result: current_time
+        outputs:
+          - current_time
+
+      # Step 2: Create a format string constant
+      - id: create_format_string
+        type: PromptTemplate
+        template: "%B %d, %Y at %I:%M %p UTC"
+        inputs: []
+        outputs:
+          - format_string
+
+      # Step 3: Calculate deadline by adding days to current time
+      # input_bindings maps flow variables to tool parameters
+      - id: add_days
+        type: InvokeTool
+        tool: qtype.application.commons.tools.timedelta
+        input_bindings:
+          timestamp: current_time
+          days: days_until_due
+        output_bindings:
+          result: deadline_time
+        outputs:
+          - deadline_time
+
+      # Step 4: Format deadline for human readability
+      # Shows chaining: output from previous tool becomes input to this one
+      - id: format_deadline
+        type: InvokeTool
+        tool: qtype.application.commons.tools.format_datetime
+        input_bindings:
+          timestamp: deadline_time
+          format_string: format_string
+        output_bindings:
+          result: deadline_formatted
+        outputs:
+          - deadline_formatted

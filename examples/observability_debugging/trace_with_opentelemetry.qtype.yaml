@@ -1,0 +1,40 @@
+id: trace_example
+description: Example of tracing QType application calls with OpenTelemetry to Phoenix
+
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+
+flows:
+  - type: Flow
+    id: classify_text
+    interface:
+      type: Complete
+    variables:
+      - id: text
+        type: text
+      - id: response
+        type: text
+    inputs:
+      - text
+    outputs:
+      - response
+    steps:
+      - id: classify
+        type: LLMInference
+        model: nova
+        system_message: "Classify the following text as positive, negative, or neutral. Respond with only one word."
+        inputs:
+          - text
+        outputs:
+          - response
+
+telemetry:
+  id: phoenix_trace
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces

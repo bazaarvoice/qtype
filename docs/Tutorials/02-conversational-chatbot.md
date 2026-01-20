@@ -1,120 +1,53 @@
 # Build a Conversational Chatbot
 
 **Time:** 20 minutes  
-**Prerequisites:** [Tutorial 1: Build Your First QType Application](01-first-qtype-application.md)  
-**Example:** [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml)
+**Prerequisites:** [Tutorial 1: Your First QType Application](01-first-qtype-application.md)  
+**Example:** [`02_conversational_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/02_conversational_chat.qtype.yaml)
 
-**What you'll learn:** Add memory to your QType application and create a chatbot that remembers previous messages in the conversation.
+**What you'll learn:** 
+
+* Stateful flows with memory
+* Using the web ui
+* Domain types
 
 **What you'll build:** A stateful chatbot that maintains conversation history and provides contextual responses.
 
 ---
 
-## Part 1: Stateless vs. Stateful Applications (3 minutes)
+## Background: A Quick Note on Flows
 
-In [Build Your First QType Application](01-first-qtype-application.md), you built a **stateless** application - it processed each question independently with no memory of previous interactions:
+Flows are effectively data pipelines -- they accept input values and produce output values. 
+The flow will execute for each input it receives.
 
-```
-You: What is 2+2?
-AI: 4.
+Thus, for a conversational AI, each message from the user is one execution of the flow.
 
-You: What about that times 3?
-AI: I don't know what "that" refers to.  ❌
-```
+Flows are inherently _stateless_: no data is stored between executions though they can use tools, apis, or memory to share data.
 
-Today you'll build a **stateful** chatbot that remembers the conversation:
+In this example, we'll use memory to let the flow remember previous chat messages from both the user and the LLM.
 
-```
-You: What is 2+2?
-AI: 4.
-
-You: What about that times 3?  
-AI: 12. I multiplied the previous answer (4) by 3.  ✅
-```
-
-This requires two new concepts: **Memory** and **Conversational Interface**.
-
----
-
-## Flow Interfaces: Complete vs Conversational
-
-QType flows have two interface types that control how they process requests:
-
-### Complete Interface (from previous tutorial)
-
-- **Default behavior** - You don't need to specify it
-- Processes one request → one response
-- No memory between requests
-- Each request is independent
-- Like a REST API call or function call
-
-**Example use cases:**
-
-- Simple Q&A
-- Data transformation
-- Single-step calculations
-
-**In YAML (optional to specify):**
-```yaml
-flows:
-
-- type: Flow
-    id: simple_flow
-    interface:
-      type: Complete  # Optional - this is the default
-```
-
-### Conversational Interface (This Tutorial)
-
-- **Explicit configuration** - You must specify it
-- Maintains conversation history
-- Tracks message roles (user/assistant)
-- Perfect for back-and-forth interaction
-
-**Example use cases:**
-
-- Chatbots
-- Virtual assistants
-- Multi-turn dialogues
-
-**In YAML (required):**
-```yaml
-flows:
-  - type: Flow
-    id: chat_flow
-    interface:
-      type: Conversational  # Required for conversation memory
-```
-
-Let's compare the interfaces:
-
-| Feature | Complete Interface | Conversational Interface |
-
-**Key Rule:** Memory only works with Conversational interface. If your flow uses memory, it must declare `interface.type: Conversational`.
-
----
 
 ## Part 1: Add Memory to Your Application (5 minutes)
 
 ### Create Your Chatbot File
 
-Create a new file called `my_chatbot.qtype.yaml`. Start by copying your application structure from the previous tutorial:
+Create a new file called `02_conversational_chat.qtype.yaml`. Let's use bedrock for this example, but you could also use OpenAI as in the previous tutorial:
 
 ```yaml
-id: my_chatbot
+id: 02_conversational_chat
 description: A conversational chatbot with memory
 
 models:
 
-- type: Model
-    id: gpt-4
-    provider: openai
-    model_id: gpt-4-turbo
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
     inference_params:
       temperature: 0.7
-```
+      max_tokens: 512
 
-**What's different:** We changed the `id` and `description` to reflect that this is a chatbot.
+```
 
 ---
 
@@ -124,26 +57,20 @@ Now add a memory configuration *before* the `flows:` section:
 
 ```yaml
 memories:
-
-- id: chat_memory
-    token_limit: 50000
-    chat_history_token_ratio: 0.7
+  - id: chat_memory
+    token_limit: 10000
 ```
 
 **What this means:**
 
 - `memories:` - Section for memory configurations (new concept!)
 - `id: chat_memory` - A nickname you'll use to reference this memory
-- `token_limit: 50000` - Maximum total tokens (includes conversation + system messages)
-- `chat_history_token_ratio: 0.7` - Reserve 70% of tokens for conversation history
-
-**Why tokens matter:**  
-LLMs have a maximum context window (how much text they can "see" at once). GPT-4-turbo has a 128k token limit, but we're using 50k here for cost efficiency. The `chat_history_token_ratio` ensures the AI always has room to see enough conversation history while leaving space for its response.
+- `token_limit: 10000` - Maximum total tokens to have in the memory
 
 **Check your work:**
 
 1. Save the file
-2. Validate: `qtype validate my_chatbot.qtype.yaml`
+2. Validate: `qtype validate 02_conversational_chat.qtype.yaml`
 3. Should pass ✅ (even though we haven't added flows yet)
 
 ---
@@ -156,33 +83,22 @@ Add this flow definition:
 
 ```yaml
 flows:
-
-- type: Flow
-    id: chat_flow
-    description: Main chat flow with conversation memory
+  - type: Flow
+    id: simple_chat_example
     interface:
       type: Conversational
     variables:
-
-- id: user_message
+      - id: user_message
         type: ChatMessage
       - id: response_message
         type: ChatMessage
     inputs:
-
-- user_message
+      - user_message
     outputs:
-
-- response_message
+      - response_message
 ```
 
 **New concepts explained:**
-
-**`interface.type: Conversational`** - This is the key difference from the previous Complete interface!
-
-- Tells QType this flow maintains conversation state
-- Automatically manages message history
-- Required when using memory in LLMInference steps
 
 **`ChatMessage` type** - A special domain type for chat applications
 
@@ -206,15 +122,21 @@ ChatMessage:
 
 The `blocks` list allows multimodal messages (text + images + files), while `role` indicates who sent the message. QType automatically handles this structure when managing conversation history.
 
+
 **Why two variables?**
 
 - `user_message` - What the user types
 - `response_message` - What the AI responds
 - QType tracks both in memory for context
 
+**`interface.type: Conversational`**
+
+This tells QType that the flow should be served as a conversation. When you type `qtype serve` (covered below) this ensures that the ui shows a chat interface instead of just listing inputs and outputs.
+
+
 **Check your work:**
 
-1. Validate: `qtype validate my_chatbot.qtype.yaml`
+1. Validate: `qtype validate 02_conversational_chat.qtype.yaml`
 2. Should still pass ✅
 
 ---
@@ -225,18 +147,15 @@ Add the LLM inference step that connects to your memory:
 
 ```yaml
     steps:
-
-- type: LLMInference
-        id: chat_step
-        model: gpt-4
+      - id: llm_inference_step
+        type: LLMInference
+        model: nova_lite
+        system_message: "You are a helpful assistant."
         memory: chat_memory
-        system_message: "You are a helpful assistant. Be friendly and conversational."
         inputs:
-
-- user_message
+          - user_message
         outputs:
-
-- response_message
+          - response_message
 ```
 
 **What's new:**
@@ -250,7 +169,7 @@ Add the LLM inference step that connects to your memory:
 
 **Check your work:**
 
-1. Validate: `qtype validate my_chatbot.qtype.yaml`
+1. Validate: `qtype validate 02_conversational_chat.qtype.yaml`
 2. Should pass ✅
 
 ---
@@ -262,22 +181,30 @@ Add the LLM inference step that connects to your memory:
 Create `.env` in the same folder (or update your existing one):
 
 ```
-OPENAI_API_KEY=sk-your-key-here
+AWS_PROFILE=your-aws-profile
 ```
 
-**Already using AWS Bedrock?** Replace the model configuration with:
+**Using OpenAI?** Replace the model configuration with:
 ```yaml
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_KEY}
+    host: https://api.openai.com
 models:
-
-- type: Model
-    id: claude
-    provider: aws-bedrock
-    model_id: amazon.nova-lite-v1:0
+  - type: Model
+    id: gpt-4
+    provider: openai
+    model_id: gpt-4-turbo
+    auth: openai_auth
     inference_params:
       temperature: 0.7
 ```
 
-And update the step to use `model: claude`.
+And:
+
+- update the step to use `model: gtp-4`.
+- update your `.env` file to have `OPENAI_KEY`
 
 ---
 
@@ -286,7 +213,7 @@ And update the step to use `model: claude`.
 Unlike the previous tutorial where you used `qtype run` for one-off questions, conversational applications work better with the web interface:
 
 ```bash
-qtype serve my_chatbot.qtype.yaml
+qtype serve 02_conversational_chat.qtype.yaml
 ```
 
 **What you'll see:**
@@ -297,7 +224,11 @@ INFO:     Uvicorn running on http://127.0.0.1:8000
 
 **Visit:** [http://localhost:8000/ui](http://localhost:8000/ui)
 
-You should see a chat interface with your application name at the top.
+You should see a chat interface with your application name at the top. Give it a chat!
+
+![the ui showing a chat interface](example_chat.png)
+
+
 
 ---
 
@@ -316,14 +247,7 @@ You: What food do I like?
 AI: You mentioned you love pizza!  ✅
 ```
 
-**Experiment:**
-
-1. Refresh the page - memory resets (new session)
-2. Try a multi-step math problem:
-
-- "Remember the number 42"
-   - "Now multiply that by 2"  
-   - Does it remember 42?
+Refreshing the page creates a new session and the memory is removed.
 
 ---
 
@@ -355,22 +279,8 @@ User: Sees response
 2. Sending relevant history with each new question
 3. Managing token limits automatically
 
----
 
-### Why Token Management Matters
-
-Your `chat_history_token_ratio: 0.7` setting means:
-
-- **70% of tokens** → Conversation history (up to 35,000 tokens with our 50k limit)
-- **30% of tokens** → System message + AI response (15,000 tokens)
-
-If the conversation gets too long, QType automatically:
-
-1. Keeps recent messages
-2. Drops older messages
-3. Ensures the AI always has enough tokens to respond
-
-**Try it:** Have a very long conversation (50+ exchanges). Notice how the AI forgets early messages but remembers recent context.
+**The memory is keyed on the user session** -- it's not accessible by other visitors to the page. 
 
 ---
 
@@ -381,20 +291,7 @@ Congratulations! You've mastered:
 ✅ **Memory configuration** - Storing conversation state  
 ✅ **Conversational flows** - Multi-turn interactions  
 ✅ **ChatMessage type** - Domain-specific data types  
-✅ **Token management** - Controlling context window usage  
 ✅ **Web interface** - Using `qtype serve` for chat applications  
-
----
-
-## Compare: Complete vs Conversational Interfaces
-
-| Feature | Complete Interface | Conversational Interface |
-|---------|----------------------|----------------------------|
-| **Interface** | `Complete` (default) | `Conversational` (explicit) |
-| **Memory** | None | `chat_memory` configuration |
-| **Variable Types** | `text` (primitive) | `ChatMessage` (domain type) |
-| **Testing** | `qtype run` (command line) | `qtype serve` (web UI) |
-| **Use Case** | One-off questions | Multi-turn conversations |
 
 ---
 
@@ -402,7 +299,7 @@ Congratulations! You've mastered:
 
 **Reference the complete example:**
 
-- [`hello_world_chat.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world_chat.qtype.yaml) - Full working example
+- [`02_conversational_chat.qtype`](https://github.com/bazaarvoice/qtype/blob/main/examples/02_conversational_chat.qtype) - Full working example
 
 **Learn more:**
 
@@ -424,7 +321,7 @@ A: Yes! You can define multiple memories in the `memories:` section and referenc
 A: No - memory only works with `Conversational` interface. Complete flows are stateless by design. If you need to remember information between requests, you must use the Conversational interface.
 
 **Q: When should I use Complete vs Conversational?**  
-A: Use Complete for independent requests (data transformation, single questions, API-like behavior). Use Conversational when you need context from previous interactions (chatbots, assistants, multi-step conversations).
+A: Use Complete for streaming single responses from an llm. Use Conversational when you need context from previous interactions (chatbots, assistants, multi-step conversations).
 
 **Q: How do I clear memory during a conversation?**  
-A: Currently, you need to start a new session (refresh the page in the UI). Programmatic memory clearing is planned for a future release.
+A: Currently, you need to start a new session (refresh the page in the UI).

@@ -97,4 +97,4 @@ jobs:
           # Test schema generation
           uv run qtype generate schema -o /tmp/test-schema.json
           # Test validation if example exists
-          uv run qtype validate examples/bedrock/hello_world.qtype.yaml
+          uv run qtype validate examples/conversational_ai/simple_chatbot.qtype.yaml

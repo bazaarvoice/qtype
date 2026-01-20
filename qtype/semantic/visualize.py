@@ -47,7 +47,7 @@ def visualize_application(app: Application) -> str:
     """
     lines = [
         "flowchart TD",
-        f'    subgraph APP ["📱 Application: {app.id}"]',
+        f'    subgraph APP ["📱 {app.id}"]',
         "        direction TB",
         "",
     ]
@@ -117,8 +117,8 @@ def _generate_flow_subgraph(
     flow: Flow, flow_id: str
 ) -> tuple[list[str], list[str]]:
     """Generate a flow subgraph with internal nodes and return external connections."""
-    # Add more spacing and line breaks for better SVG rendering
-    description = f"\n{flow.description}" if flow.description else ""
+    # Keep labels concise - no multi-line descriptions in labels
+    flow_label = f"🔄 {flow.id}"
 
     # Choose direction based on flow characteristics:
     # - Flows with interface (e.g., Conversational) use LR (left-right)
@@ -126,7 +126,7 @@ def _generate_flow_subgraph(
     direction = "LR" if flow.interface else "TB"
 
     lines = [
-        f'    subgraph {flow_id} ["🔄 Flow: {flow.id}{description}"]',
+        f'    subgraph {flow_id} ["{flow_label}"]',
         f"        direction {direction}",
     ]
 
@@ -170,12 +170,12 @@ def _generate_step_node(
     if isinstance(step, Flow):
         # Nested flow
         lines.append(
-            f'        {node_id}@{{shape: subproc, label: "📋 Flow: {step.id}"}}'
+            f'        {node_id}@{{shape: subproc, label: "📋 {step.id}"}}'
         )
     elif isinstance(step, Agent):
         # Agent with tools
         lines.append(
-            f'        {node_id}@{{shape: hex, label: "🤖 Agent: {step.id}"}}'
+            f'        {node_id}@{{shape: hex, label: "🤖 {step.id}"}}'
         )
         # Connect to tools
         for tool in step.tools:
@@ -196,7 +196,7 @@ def _generate_step_node(
             )
     elif isinstance(step, PromptTemplate):
         lines.append(
-            f'        {node_id}@{{shape: doc, label: "📄 Template: {step.id}"}}'
+            f'        {node_id}@{{shape: doc, label: "📄 {step.id}"}}'
         )
     elif isinstance(step, Decoder):
         format_label = (
@@ -205,46 +205,44 @@ def _generate_step_node(
             else str(step.format)
         )
         lines.append(
-            f'        {node_id}@{{shape: lean-r, label: "🔍 Decode: {step.id} ({format_label})"}}'
+            f'        {node_id}@{{shape: lean-r, label: "🔍 {step.id} ({format_label})"}}'
         )
     elif isinstance(step, VectorSearch):
         lines.append(
-            f'        {node_id}@{{shape: cyl, label: "🔎 Vector Search: {step.id}"}}'
+            f'        {node_id}@{{shape: cyl, label: "🔎 {step.id}"}}'
         )
         index_id = f"INDEX_{_sanitize_id(step.index.id)}"
         external_connections.append(f"    {node_id} -.-> {index_id}")
     elif isinstance(step, DocumentSearch):
         lines.append(
-            f'        {node_id}@{{shape: cyl, label: "📚 Doc Search: {step.id}"}}'
+            f'        {node_id}@{{shape: cyl, label: "📚 {step.id}"}}'
         )
         index_id = f"INDEX_{_sanitize_id(step.index.id)}"
         external_connections.append(f"    {node_id} -.-> {index_id}")
     elif isinstance(step, Search):
         lines.append(
-            f'        {node_id}@{{shape: cyl, label: "🔍 Search: {step.id}"}}'
+            f'        {node_id}@{{shape: cyl, label: "🔍 {step.id}"}}'
         )
         index_id = f"INDEX_{_sanitize_id(step.index.id)}"
         external_connections.append(f"    {node_id} -.-> {index_id}")
     elif isinstance(step, APITool):
         method_label = step.method.upper()
-        lines.append(
-            f'        {node_id}["⚡ API: {step.id} ({method_label})"]'
-        )
+        lines.append(f'        {node_id}["⚡ {step.id} ({method_label})"]')
         if step.auth:
             auth_id = f"AUTH_{_sanitize_id(step.auth.id)}"
             external_connections.append(f"    {node_id} -.-> {auth_id}")
     elif isinstance(step, PythonFunctionTool):
         lines.append(
-            f'        {node_id}@{{shape: rect, label: "🐍 Python: {step.id} {step.function_name}"}}'
+            f'        {node_id}@{{shape: rect, label: "🐍 {step.id}"}}'
         )
     elif isinstance(step, Tool):
         lines.append(
-            f'        {node_id}@{{shape: rect, label: "🔧 Tool: {step.id}"}}'
+            f'        {node_id}@{{shape: rect, label: "🔧 {step.id}"}}'
         )
     else:
         # Generic step
         lines.append(
-            f'        {node_id}@{{shape: rect, label: "⚙️ Step: {step.id}"}}'
+            f'        {node_id}@{{shape: rect, label: "⚙️ {step.id}"}}'
         )
 
     return lines, external_connections
@@ -276,20 +274,11 @@ def _generate_step_connections(
                 # consumes and produces the same variable)
                 if producer_id == node_id:
                     continue
-                # Get a simple string representation of the variable type
-                var_type = str(input_var.type).split(".")[
-                    -1
-                ]  # Get the last part after dots
-                var_id_and_type = f"{input_var.id}: {var_type}"
-
-                is_list = str(var_type).startswith("list[") and str(
-                    var_type
-                ).endswith("]")
-                if is_list:
-                    var_id_and_type = f'"{var_id_and_type}"'
+                # Use simple variable name only - no type annotations
+                var_label = input_var.id
 
                 lines.append(
-                    f"        {producer_id} -->|{var_id_and_type}| {node_id}"
+                    f"        {producer_id} -->|{var_label}| {node_id}"
                 )
 
         # Then, register this step's outputs for future steps
@@ -374,7 +363,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
             auth_id = f"AUTH_{_sanitize_id(auth.id)}"
             auth_type = auth.type.upper()
             lines.append(
-                f'        {auth_id}@{{shape: hex, label: "🔐 {auth.id}\\n{auth_type}"}}'
+                f'        {auth_id}@{{shape: hex, label: "🔐 {auth.id} ({auth_type})"}}'
             )
 
         # Models
@@ -394,7 +383,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
             index_id = f"INDEX_{_sanitize_id(index.id)}"
             if isinstance(index, VectorIndex):
                 lines.append(
-                    f'        {index_id}@{{shape: cyl, label: "🗂️ Vector: {index.id}"}}'
+                    f'        {index_id}@{{shape: cyl, label: "🗂️ {index.id}"}}'
                 )
                 # Connect to embedding model
                 emb_model_id = f"EMB_{_sanitize_id(index.embedding_model.id)}"
@@ -404,7 +393,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
                 lines.append(f"        {index_id} -.->|embeds| {emb_model_id}")
             elif isinstance(index, DocumentIndex):
                 lines.append(
-                    f'        {index_id}@{{shape: cyl, label: "📚 Docs: {index.id}"}}'
+                    f'        {index_id}@{{shape: cyl, label: "📚 {index.id}"}}'
                 )
             else:
                 lines.append(
@@ -431,7 +420,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
                 else str(memory.token_limit)
             )
             lines.append(
-                f'        {memory_id}@{{shape: win-pane, label: "🧠 {memory.id}\\n{token_limit}T"}}'
+                f'        {memory_id}@{{shape: win-pane, label: "🧠 {memory.id} ({token_limit}T)"}}'
             )
 
         # Tools (if not already covered by flows)
@@ -447,7 +436,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
                     lines.append(f"        {tool_id} -.->|uses| {auth_id}")
             elif isinstance(tool, PythonFunctionTool):
                 lines.append(
-                    f'        {tool_id}@{{shape: rect, label: "🐍 {tool.id}\\n{tool.function_name}"}}'
+                    f'        {tool_id}@{{shape: rect, label: "🐍 {tool.id}"}}'
                 )
             else:
                 lines.append(

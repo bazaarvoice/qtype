@@ -1,0 +1,32 @@
+id: simple_llm_call
+description: Simple example of calling a large language model
+
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 500
+
+flows:
+  - type: Flow
+    id: main
+    variables:
+      - id: text
+        type: text
+      - id: response
+        type: text
+    inputs:
+      - text
+    outputs:
+      - response
+    
+    steps:
+      - type: LLMInference
+        id: assistant
+        model: nova_lite
+        system_message: "You are a helpful assistant"
+        inputs: [text]
+        outputs: [response]

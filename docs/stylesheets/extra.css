@@ -1,0 +1,27 @@
+/* Custom styles for QType documentation */
+
+/* Increase max width of main content area */
+.md-grid {
+  max-width: 75rem;  /* Default is 61rem (976px), this increases to 1280px */
+}
+
+/* Adjust content width for better readability */
+.md-content {
+  max-width: none;
+}
+
+/* Ensure sidebars remain proportional */
+.md-sidebar--primary {
+  left: 0;
+}
+
+.md-sidebar--secondary {
+  right: 0;
+}
+
+/* Make section headers darker gray */
+.md-nav__title,
+.md-nav__item--section > .md-nav__link {
+  color: #424242 !important;
+  font-weight: 600;
+}

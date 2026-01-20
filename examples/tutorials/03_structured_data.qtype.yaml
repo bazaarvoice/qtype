@@ -1,0 +1,130 @@
+# Tutorial 3: Working with Types and Structured Data
+#
+# This tutorial demonstrates how to:
+# 1. Define a CustomType for your domain
+# 2. Extract fields from structured data using JSONPath (FieldExtractor)
+# 3. Parse LLM output into structured format (Decoder)
+# 4. Construct typed objects from extracted data (Construct)
+#
+# Scenario: Analyze a product review to extract structured sentiment
+#
+# Run with:
+#   uv run run -i '{"review_text":"These headphones are amazing! Great sound quality and super comfortable. Battery lasts all day."}' examples/tutorials/03_structured_data.qtype.yaml 
+
+id: review_sentiment_analyzer
+description: |
+  Analyzes a product review to extract structured sentiment insights.
+  Demonstrates custom types and structured data extraction.
+
+# Define a custom type for sentiment analysis
+types:
+  - id: ReviewSentiment
+    description: Structured sentiment analysis of a review
+    properties:
+      sentiment: text
+      confidence: float
+      key_points: list[text]
+      rating: int
+
+models:
+  - type: Model
+    id: analyzer_model
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+
+flows:
+  - id: analyze_review
+    description: Analyzes a single review and extracts structured sentiment
+    inputs:
+      - review_text
+    outputs:
+      - result
+
+    variables:
+      - id: review_text
+        type: text
+      - id: raw_llm_response
+        type: text
+      - id: llm_response
+        type: text
+      - id: sentiment
+        type: text
+      - id: confidence
+        type: float
+      - id: key_points
+        type: list[text]
+      - id: rating
+        type: int
+      - id: result
+        type: ReviewSentiment
+
+    steps:
+      # Step 1: Create analysis prompt
+      - id: analysis_prompt
+        type: PromptTemplate
+        template: |
+          Analyze this product review and extract structured information.
+
+          Review: {{review_text}}
+
+          Respond with ONLY valid JSON, no other text or markdown. Use this exact structure:
+          {{
+            "sentiment": "positive|negative|neutral|mixed",
+            "confidence": 0.95,
+            "key_points": ["point 1", "point 2"],
+            "rating": 4
+          }}
+
+          Where:
+          - sentiment: overall sentiment (positive/negative/neutral/mixed)
+          - confidence: your confidence score (0.0-1.0)
+          - key_points: 2-3 main points from the review
+          - rating: estimated star rating 1-5 based on the tone
+          
+          Return ONLY the JSON object, nothing else.
+        inputs:
+          - review_text
+        outputs:
+          - raw_llm_response
+
+      # Step 2: Run LLM inference
+      - id: analyze
+        type: LLMInference
+        model: analyzer_model
+        inputs:
+          - raw_llm_response
+        outputs:
+          - llm_response
+
+      # Step 3: Parse the JSON response and build the ReviewSentiment object
+      # Decoder converts the JSON string into structured data
+      - id: parse_and_build
+        type: Decoder
+        format: json
+        inputs:
+          - llm_response
+        outputs:
+          - sentiment
+          - confidence
+          - key_points
+          - rating
+
+      # Step 4: Construct a ReviewSentiment object
+      # Construct builds typed objects from the decoded fields
+      - id: build_result
+        type: Construct
+        field_mapping:
+          sentiment: sentiment
+          confidence: confidence
+          key_points: key_points
+          rating: rating
+        inputs:
+          - sentiment
+          - confidence
+          - key_points
+          - rating
+        outputs:
+          - result

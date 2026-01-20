@@ -1,8 +1,8 @@
-# Build Your First QType Application
+# Your First QType Application 
 
 **Time:** 15 minutes  
 **Prerequisites:** None  
-**Example:** [`hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml)
+**Example:** [`01_hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/tutorials/01_hello_world.qtype.yaml)
 
 **What you'll learn:** Build a working AI-powered question-answering application and understand the core concepts of QType.
 
@@ -14,10 +14,10 @@
 
 ### Create the File
 
-Create a new file called `my_first_app.qtype.yaml` and add:
+Create a new file called `01_hello_world.qtype.yaml` and add:
 
 ```yaml
-id: hello_world
+id: 01_hello_world
 description: My first QType application
 ```
 
@@ -26,8 +26,6 @@ description: My first QType application
 - Every QType application starts with an `id` - a unique name for your app
 - The `description` helps you remember what the app does (optional but helpful)
 
-**Check your work:** Your file should have exactly 2 lines. Save it.
-
 ---
 
 ### Add Your AI Model
@@ -35,35 +33,50 @@ description: My first QType application
 Add these lines to your file:
 
 ```yaml
-id: hello_world
-description: My first QType application
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_KEY}
+    host: https://api.openai.com
 
 models:
-
-- type: Model
+  - type: Model
     id: gpt-4
     provider: openai
     model_id: gpt-4-turbo
+    auth: openai_auth
     inference_params:
       temperature: 0.7
+
 ```
 
 **What this means:**
 
+- `auths:` - different authorization credentials you will use for model invocation (if any)
+- `api_key: ${OPENAI_KEY}` - the api key is read from the environment variable `OPENAI_KEY`
 - `models:` - Where you configure which AI to use
-- `type: Model` - Tells QType "this is an AI model"
 - `id: gpt-4` - A nickname you'll use to refer to this model
+- `model_id` - The provider's model id.
 - `provider: openai` - Which AI service to use
 - `temperature: 0.7` - Controls creativity (0 = focused, 1 = creative)
 
 **Check your work:**
 
-1. Make sure the indentation matches exactly (2 spaces for each level)
-2. Save the file
-3. Run: `qtype validate my_first_app.qtype.yaml`
+1. Save the file
+2. Run: `qtype validate 01_hello_world.qtype.yaml`
 4. You should see: `✅ Validation successful`
 
-**Troubleshooting:** If you get an error about indentation, check that you're using spaces (not tabs) and that each nested item is indented by exactly 2 spaces.
+
+**Using AWS Bedrock instead?** Replace the models section with:
+```yaml
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+```
+
+And ensure your AWS credentials are configured (`aws configure`).
 
 ---
 
@@ -75,23 +88,19 @@ A "flow" is where you define what your app actually does. Add this to your file:
 
 ```yaml
 flows:
-
-- type: Flow
+  - type: Flow
     id: simple_example
     variables:
-
-- id: question
+      - id: question
         type: text
       - id: formatted_prompt
         type: text
       - id: answer
         type: text
     inputs:
-
-- question
+      - question
     outputs:
-
-- answer
+      - answer
 ```
 
 **What this means:**
@@ -105,7 +114,7 @@ flows:
 
 **Check your work:**
 
-1. Validate again: `qtype validate my_first_app.qtype.yaml`
+1. Validate again: `qtype validate 01_hello_world.qtype.yaml`
 2. Still should see: `✅ Validation successful`
 
 ---
@@ -116,26 +125,21 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 
 ```yaml
     steps:
-
-- id: format_prompt
+      - id: format_prompt
         type: PromptTemplate
         template: "You are a helpful assistant. Answer the following question:\n{question}\n"
         inputs:
-
-- question
+          - question
         outputs:
+          - formatted_prompt
 
-- formatted_prompt
-      
       - id: llm_step
         type: LLMInference
         model: gpt-4
         inputs:
-
-- formatted_prompt
+          - formatted_prompt
         outputs:
-
-- answer
+          - answer
 ```
 
 **What this means:**
@@ -152,7 +156,7 @@ Now tell QType what to do with the question. Add this inside your flow (after `o
 
 **Check your work:**
 
-1. Validate: `qtype validate my_first_app.qtype.yaml`
+1. Validate: `qtype validate 01_hello_world.qtype.yaml`
 2. Should still pass ✅
 
 ---
@@ -169,18 +173,6 @@ OPENAI_KEY=sk-your-key-here
 
 Replace `sk-your-key-here` with your actual OpenAI API key.
 
-**Using AWS Bedrock instead?** Replace the models section with:
-```yaml
-models:
-
-- type: Model
-    id: nova
-    provider: aws-bedrock
-    model_id: amazon.nova-lite-v1:0
-```
-
-And ensure your AWS credentials are configured (`aws configure`).
-
 ---
 
 ### Test It!
@@ -188,7 +180,7 @@ And ensure your AWS credentials are configured (`aws configure`).
 Run your application:
 
 ```bash
-qtype run -i '{"question":"What is 2+2?"}' my_first_app.qtype.yaml
+qtype run -i '{"question":"What is 2+2?"}' 01_hello_world.qtype.yaml
 ```
 
 **What you should see:**
@@ -210,10 +202,10 @@ qtype run -i '{"question":"What is 2+2?"}' my_first_app.qtype.yaml
 
 ```bash
 # Simple math
-qtype run -i '{"question":"What is the capital of France?"}' my_first_app.qtype.yaml
+qtype run -i '{"question":"What is the capital of France?"}' 01_hello_world.qtype.yaml
 
 # More complex
-qtype run -i '{"question":"Explain photosynthesis in one sentence"}' my_first_app.qtype.yaml
+qtype run -i '{"question":"Explain photosynthesis in one sentence"}' 01_hello_world.qtype.yaml
 ```
 
 ---
@@ -235,7 +227,7 @@ Congratulations! You've learned:
 
 **Reference the complete example:**
 
-- [`hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/hello_world.qtype.yaml) - Full working example
+- [`01_hello_world.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/tutorials/01_hello_world.qtype.yaml) - Full working example
 
 **Learn more:**
 

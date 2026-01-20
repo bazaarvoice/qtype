@@ -1,0 +1,55 @@
+id: collect_example
+description: Aggregate fan-out results preserving only common ancestor variables
+
+flows:
+  - type: Flow
+    id: main
+    description: Process products by category, then collect results
+
+    variables:
+      - id: category
+        type: text
+      - id: region
+        type: text
+      - id: products
+        type: list[text]
+      - id: product
+        type: text
+      - id: processed_product
+        type: text
+      - id: all_processed
+        type: list[text]
+
+    inputs:
+      - category
+      - region
+      - products
+
+    outputs:
+      - all_processed
+
+    steps:
+      # Explode creates multiple messages, each with:
+      # - category (same for all)
+      # - region (same for all)
+      # - product (different for each)
+      - type: Explode
+        id: fan_out
+        inputs: [products]
+        outputs: [product]
+
+      # Each message still has category, region, and its unique product
+      - type: PromptTemplate
+        id: process
+        inputs: [product]
+        outputs: [processed_product]
+        template: "Processed: {product}"
+
+      # Collect aggregates all processed_product values into a list
+      # Only category and region are preserved as "common ancestors"
+      # (same value across all messages)
+      # The unique product variable is NOT preserved (different in each)
+      - type: Collect
+        id: aggregate
+        inputs: [processed_product]
+        outputs: [all_processed]

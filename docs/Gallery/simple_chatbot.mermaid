@@ -1,0 +1,35 @@
+flowchart TD
+    subgraph APP ["📱 simple_chatbot"]
+        direction TB
+
+    subgraph FLOW_0 ["🔄 chat_flow"]
+        direction LR
+        FLOW_0_START@{shape: circle, label: "▶️ Start"}
+        FLOW_0_S0@{shape: rounded, label: "✨ generate_response"}
+        FLOW_0_START -->|user_message| FLOW_0_S0
+    end
+
+    subgraph RESOURCES ["🔧 Shared Resources"]
+        direction LR
+        MODEL_NOVA_LITE@{shape: rounded, label: "✨ nova_lite (aws-bedrock)" }
+        MEM_CONVERSATION_MEMORY@{shape: win-pane, label: "🧠 conversation_memory (10KT)"}
+    end
+
+    end
+
+    FLOW_0_S0 -.->|uses| MODEL_NOVA_LITE
+    FLOW_0_S0 -.->|stores| MEM_CONVERSATION_MEMORY
+
+    %% Styling
+    classDef appBox fill:none,stroke:#495057,stroke-width:3px
+    classDef flowBox fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef llmNode fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef modelNode fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef authNode fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef telemetryNode fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef resourceBox fill:#f5f5f5,stroke:#616161,stroke-width:1px
+
+    class APP appBox
+    class FLOW_0 flowBox
+    class RESOURCES resourceBox
+    class TELEMETRY telemetryNode

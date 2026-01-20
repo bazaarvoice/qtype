@@ -1,0 +1,27 @@
+id: include_raw_example
+description: Demonstrates using include_raw to load prompt templates from external files
+
+flows:
+  - type: Flow
+    id: main
+    variables:
+      - id: theme
+        type: text
+      - id: tone
+        type: text
+      - id: story_prompt
+        type: text
+    inputs:
+      - theme
+      - tone
+    outputs:
+      - story_prompt
+    steps:
+      - id: generate_story
+        type: PromptTemplate
+        template: !include_raw story_prompt.txt
+        inputs:
+          - theme
+          - tone
+        outputs:
+          - story_prompt

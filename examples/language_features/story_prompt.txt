@@ -1,0 +1,6 @@
+You are a creative storyteller. Write a short, engaging story based on the following theme:
+
+Theme: {theme}
+Tone: {tone}
+
+Create a story that is 3-4 paragraphs long. Make it captivating and appropriate for the specified tone.

@@ -1,0 +1,78 @@
+id: cache_step_demo
+description: |
+  Demonstrates step caching to avoid redundant computation.
+  On first run, classifications are cached. On subsequent runs with same inputs,
+  results are retrieved from cache.
+
+auths:
+  - type: aws
+    id: aws_auth
+    region: us-east-1
+
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: us.amazon.nova-micro-v1:0
+    auth: aws_auth
+
+flows:
+  - id: classify_documents
+    variables:
+      - id: file_path
+        type: text
+      - id: document
+        type: text
+      - id: prompt
+        type: text
+      - id: category
+        type: text
+      - id: output_file
+        type: text
+
+    inputs:
+      - file_path
+
+    outputs:
+      - output_file
+
+    steps:
+      - type: FileSource
+        id: load_docs
+        path: file_path
+        outputs: [document]
+
+      - type: PromptTemplate
+        id: create_classification_prompt
+        template: |
+          Classify this document into one of these categories:
+          - Technology
+          - Finance
+          - Healthcare
+          - Education
+          
+          Document: {document}
+          
+          Reply with only the category name.
+        inputs: [document]
+        outputs: [prompt]
+
+      - type: LLMInference
+        id: classify
+        model: nova
+        inputs: [prompt]
+        outputs: [category]
+        # Enable caching with configuration
+        cache_config:
+          namespace: document_classification  # Logical separation for cache
+          version: "1.0"                       # Bump this to invalidate cache
+          on_error: Drop                       # Don't cache errors (default)
+          ttl: 3600                            # Cache for 1 hour (seconds)
+          compress: false                      # Optionally compress cached data
+
+      - type: FileWriter
+        id: write_results
+        path:
+          uri: classification_results.parquet
+        inputs: [document, category]
+        outputs: [output_file]

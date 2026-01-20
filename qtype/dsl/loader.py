@@ -6,7 +6,7 @@ This module provides two explicit functions for loading YAML:
 - load_yaml_string(content, base_path): Load YAML from a string
 
 Both support:
-- Environment variable substitution (${VAR} or ${VAR:default})
+- Environment variable substitution (${VAR} or ${VAR:-default})
 - File inclusion (!include and !include_raw)
 - Multiple URI schemes via fsspec (local, http, s3, etc.)
 
@@ -81,7 +81,7 @@ def _substitute_env_vars(value: str) -> str:
     """
     Substitute environment variables in a string.
 
-    Supports ${VAR_NAME} or ${VAR_NAME:default} syntax.
+    Supports ${VAR_NAME} or ${VAR_NAME:-default} syntax.
 
     Args:
         value: String containing environment variable references
@@ -92,7 +92,7 @@ def _substitute_env_vars(value: str) -> str:
     Raises:
         ValueError: If required environment variable is not found
     """
-    pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
+    pattern = r"\$\{([^}:]+)(?::-([^}]*))?\}"
 
     def replace_env_var(match: re.Match[str]) -> str:
         var_name = match.group(1)
