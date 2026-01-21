@@ -1,0 +1,722 @@
+openapi: 3.0.1
+info:
+  title: Tavily API
+  description: |
+    Tavily API provides powerful web search, content extraction, and crawling capabilities 
+    designed specifically for LLMs and RAG applications. Get real-time, accurate search 
+    results tailored for AI applications.
+  version: 1.0.0
+  contact:
+    name: Tavily AI
+    url: https://tavily.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.tavily.com
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /search:
+    post:
+      summary: Search the web
+      description: |
+        Perform a web search with various filtering and customization options.
+        Returns search results with content, URLs, scores, and optional answers.
+      operationId: search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+            examples:
+              basic_search:
+                summary: Basic search
+                value:
+                  query: "What is artificial intelligence?"
+              advanced_search:
+                summary: Advanced search with filters
+                value:
+                  query: "latest AI developments"
+                  search_depth: "advanced"
+                  topic: "news"
+                  max_results: 10
+                  include_answer: true
+                  include_images: true
+      responses:
+        '200':
+          description: Successful search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              examples:
+                search_result:
+                  summary: Example search result
+                  value:
+                    query: "What is Tavily?"
+                    follow_up_questions: null
+                    answer: "Tavily is a search API designed for LLMs and RAG applications."
+                    images: []
+                    results:
+                      - title: "Tavily"
+                        url: "https://tavily.com"
+                        content: "Connect Your LLM to the Web Empowering your AI applications with real-time, accurate search results tailored for LLMs and RAG."
+                        score: 0.99
+                        raw_content: null
+                    response_time: 1.5
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+  /extract:
+    post:
+      summary: Extract content from URLs
+      description: |
+        Extract and process content from one or more URLs with various formatting options.
+        Returns extracted content in text or markdown format.
+      operationId: extract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractRequest'
+            examples:
+              single_url:
+                summary: Extract from single URL
+                value:
+                  urls: "https://example.com/article"
+                  format: "markdown"
+              multiple_urls:
+                summary: Extract from multiple URLs
+                value:
+                  urls: 
+                    - "https://example.com/article1"
+                    - "https://example.com/article2"
+                  extract_depth: "advanced"
+                  include_images: true
+      responses:
+        '200':
+          description: Successful extraction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+  /crawl:
+    post:
+      summary: Crawl websites
+      description: |
+        Crawl a website starting from a given URL with depth and breadth controls.
+        Extract content from discovered pages with various filtering options.
+      operationId: crawl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrawlRequest'
+            examples:
+              basic_crawl:
+                summary: Basic website crawl
+                value:
+                  url: "https://example.com"
+                  max_depth: 2
+                  max_breadth: 5
+              advanced_crawl:
+                summary: Advanced crawl with filters
+                value:
+                  url: "https://example.com"
+                  max_depth: 3
+                  max_breadth: 10
+                  limit: 50
+                  include_domains: ["example.com"]
+                  exclude_paths: ["/admin", "/private"]
+                  format: "markdown"
+      responses:
+        '200':
+          description: Successful crawl response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+  /map:
+    post:
+      summary: Map website structure
+      description: |
+        Map the structure and links of a website starting from a given URL.
+        Discover the website's architecture and page hierarchy.
+      operationId: map
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapRequest'
+            examples:
+              basic_map:
+                summary: Basic website mapping
+                value:
+                  url: "https://example.com"
+                  max_depth: 2
+              filtered_map:
+                summary: Map with domain filtering
+                value:
+                  url: "https://example.com"
+                  max_depth: 3
+                  select_domains: ["example.com"]
+                  exclude_paths: ["/admin"]
+      responses:
+        '200':
+          description: Successful mapping response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key for authentication. Use your Tavily API key as the bearer token.
+
+  schemas:
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: The search query string
+          example: "artificial intelligence latest developments"
+        search_depth:
+          type: string
+          enum: ["basic", "advanced"]
+          description: Search depth level
+          default: "basic"
+        topic:
+          type: string
+          enum: ["general", "news", "finance"]
+          description: Search topic category
+          default: "general"
+        time_range:
+          type: string
+          enum: ["day", "week", "month", "year"]
+          description: Time range for search results
+        start_date:
+          type: string
+          format: date
+          description: Start date for search results (YYYY-MM-DD)
+        end_date:
+          type: string
+          format: date
+          description: End date for search results (YYYY-MM-DD)
+        days:
+          type: integer
+          minimum: 1
+          description: Number of days back to search
+          example: 7
+        max_results:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum number of search results to return
+          default: 5
+        include_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to include in search
+          example: ["tavily.com", "openai.com"]
+        exclude_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to exclude from search
+          example: ["spam.com", "ads.com"]
+        include_answer:
+          oneOf:
+            - type: boolean
+            - type: string
+              enum: ["basic", "advanced"]
+          description: Whether to include an AI-generated answer
+          default: false
+        include_raw_content:
+          oneOf:
+            - type: boolean
+            - type: string
+              enum: ["markdown", "text"]
+          description: Whether to include raw content
+          default: false
+        include_images:
+          type: boolean
+          description: Whether to include images in results
+          default: false
+        country:
+          type: string
+          description: Country code for localized search
+          example: "US"
+        auto_parameters:
+          type: boolean
+          description: Whether to automatically determine search parameters
+          default: false
+        include_favicon:
+          type: boolean
+          description: Whether to include favicon URLs
+          default: false
+
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The original search query
+        follow_up_questions:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Suggested follow-up questions
+        answer:
+          type: string
+          nullable: true
+          description: AI-generated answer to the query
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageResult'
+          description: Image search results
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+          description: Web search results
+        response_time:
+          type: number
+          description: Response time in seconds
+
+    ExtractRequest:
+      type: object
+      required:
+        - urls
+      properties:
+        urls:
+          type: array
+          items:
+            type: string
+          description: List of URLs to extract content from
+          example: ["https://example.com/article1", "https://example.com/article2"]
+        include_images:
+          type: boolean
+          description: Whether to include images
+          default: false
+        extract_depth:
+          type: string
+          enum: ["basic", "advanced"]
+          description: Extraction depth level
+          default: "basic"
+        format:
+          type: string
+          enum: ["markdown", "text"]
+          description: Output format for extracted content
+          default: "text"
+        include_favicon:
+          type: boolean
+          description: Whether to include favicon URLs
+          default: false
+
+    ExtractResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractResult'
+          description: Successfully extracted content
+        failed_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FailedResult'
+          description: URLs that failed to extract
+
+    CrawlRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Starting URL for the crawl
+          example: "https://example.com"
+        max_depth:
+          type: integer
+          minimum: 1
+          description: Maximum crawl depth
+          default: 3
+        max_breadth:
+          type: integer
+          minimum: 1
+          description: Maximum number of links to follow per page
+          default: 10
+        limit:
+          type: integer
+          minimum: 1
+          description: Maximum number of pages to crawl
+        instructions:
+          type: string
+          description: Instructions for the crawler
+        select_paths:
+          type: array
+          items:
+            type: string
+          description: List of path patterns to include
+        select_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to include
+        exclude_paths:
+          type: array
+          items:
+            type: string
+          description: List of path patterns to exclude
+        exclude_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to exclude
+        allow_external:
+          type: boolean
+          description: Whether to allow crawling external domains
+          default: false
+        include_images:
+          type: boolean
+          description: Whether to include images
+          default: false
+        extract_depth:
+          type: string
+          enum: ["basic", "advanced"]
+          description: Content extraction depth
+          default: "basic"
+        format:
+          type: string
+          enum: ["markdown", "text"]
+          description: Output format for content
+          default: "text"
+        include_favicon:
+          type: boolean
+          description: Whether to include favicon URLs
+          default: false
+
+    CrawlResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrawlResult'
+          description: Crawled pages and their content
+
+    MapRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Starting URL for mapping
+          example: "https://example.com"
+        max_depth:
+          type: integer
+          minimum: 1
+          description: Maximum mapping depth
+          default: 3
+        max_breadth:
+          type: integer
+          minimum: 1
+          description: Maximum number of links to map per page
+          default: 10
+        limit:
+          type: integer
+          minimum: 1
+          description: Maximum number of pages to map
+        instructions:
+          type: string
+          description: Instructions for the mapper
+        select_paths:
+          type: array
+          items:
+            type: string
+          description: List of path patterns to include
+        select_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to include
+        exclude_paths:
+          type: array
+          items:
+            type: string
+          description: List of path patterns to exclude
+        exclude_domains:
+          type: array
+          items:
+            type: string
+          description: List of domains to exclude
+        allow_external:
+          type: boolean
+          description: Whether to allow mapping external domains
+          default: false
+        include_images:
+          type: boolean
+          description: Whether to include images in mapping
+          default: false
+
+    MapResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapResult'
+          description: Mapped website structure
+
+    SearchResult:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the search result
+        url:
+          type: string
+          format: uri
+          description: URL of the search result
+        content:
+          type: string
+          description: Extracted content from the page
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Relevance score for the result
+        raw_content:
+          type: string
+          nullable: true
+          description: Raw content if requested
+        favicon:
+          type: string
+          nullable: true
+          description: Favicon URL if requested
+
+    ExtractResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL that was extracted
+        content:
+          type: string
+          description: Extracted content
+        title:
+          type: string
+          description: Page title
+        favicon:
+          type: string
+          nullable: true
+          description: Favicon URL if requested
+
+    CrawlResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL of the crawled page
+        content:
+          type: string
+          description: Extracted content from the page
+        title:
+          type: string
+          description: Page title
+        links:
+          type: array
+          items:
+            type: string
+          description: Links found on the page
+        favicon:
+          type: string
+          nullable: true
+          description: Favicon URL if requested
+
+    MapResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL of the mapped page
+        title:
+          type: string
+          description: Page title
+        links:
+          type: array
+          items:
+            type: string
+          description: Links found on the page
+        depth:
+          type: integer
+          description: Depth level of this page in the mapping
+
+    ImageResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL of the image
+        alt_text:
+          type: string
+          description: Alt text of the image
+        title:
+          type: string
+          description: Title of the image
+
+    FailedResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL that failed to process
+        error:
+          type: string
+          description: Error message describing the failure
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: object
+          properties:
+            error:
+              type: string
+              description: Error message
+        message:
+          type: string
+          description: Human-readable error message
+
+  responses:
+    BadRequest:
+      description: Bad Request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail:
+              error: "Invalid query parameter"
+            message: "The request contains invalid parameters"
+
+    Unauthorized:
+      description: Unauthorized - Invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail:
+              error: "Invalid API key"
+            message: "Authentication failed"
+
+    Forbidden:
+      description: Forbidden - Access denied or rate limited
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail:
+              error: "Access denied"
+            message: "Insufficient permissions"
+
+    TooManyRequests:
+      description: Too Many Requests - Usage limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail:
+              error: "Usage limit exceeded"
+            message: "API rate limit exceeded"
+
+    Timeout:
+      description: Gateway Timeout - Request timed out
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail:
+              error: "Request timeout"
+            message: "The request took too long to complete"
+
+tags:
+  - name: search
+    description: Web search operations
+  - name: extract
+    description: Content extraction operations  
+  - name: crawl
+    description: Website crawling operations
+  - name: map
+    description: Website mapping operations

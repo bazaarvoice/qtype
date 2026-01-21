@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from qtype.base.exceptions import LoadError, SemanticError, ValidationError
+from qtype.base.exceptions import LoadError, ValidationError
 from qtype.dsl.linker import DuplicateComponentError, ReferenceNotFoundError
 from qtype.dsl.loader import YAMLLoadError
 from qtype.dsl.model import Application as DSLApplication
@@ -60,9 +60,9 @@ def main(args: Any) -> None:
     except ValidationError as e:
         logger.error(f"❌ Validation failed: {e}")
         sys.exit(1)
-    except SemanticError as e:
-        logger.error(f"❌ Semantic validation failed: {e}")
-        sys.exit(1)
+    # except SemanticError as e:
+    #     logger.error(f"❌ Semantic validation failed: {e}")
+    #     sys.exit(1)
 
     # If printing is requested, load and print the document
     if args.print:
