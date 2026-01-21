@@ -439,7 +439,7 @@
     },
     "Aggregate": {
       "additionalProperties": false,
-      "description": "A terminal step that consumes an entire input stream and produces a single\nsummary message with success/error counts.",
+      "description": "A step that, after all messages have been processed,\nreturns a single message containing the counts of successful and failed\nmessages. Other messages are passed through unchanged.",
       "properties": {
         "cache_config": {
           "anyOf": [
@@ -480,7 +480,7 @@
           "type": "array"
         },
         "outputs": {
-          "description": "References to the variables for the output. There should be one and only one output with type AggregateStats",
+          "description": "References to the variables where output is stored.",
           "items": {
             "anyOf": [
               {
