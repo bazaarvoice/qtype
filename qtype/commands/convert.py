@@ -13,7 +13,7 @@ from qtype.dsl.model import Application, Document, ToolList
 logger = logging.getLogger(__name__)
 
 
-def _convert_to_yaml(doc: Application | ToolList) -> str:
+def convert_to_yaml(doc: Application | ToolList) -> str:
     """Convert a document to YAML format."""
     from pydantic_yaml import to_yaml_str
 
@@ -23,9 +23,6 @@ def _convert_to_yaml(doc: Application | ToolList) -> str:
     else:
         wrapped = doc
 
-    import pprint
-
-    pprint.pprint(wrapped)
     # NOTE: We use exclude_none but NOT exclude_unset because discriminator
     # fields like 'type' have default values and must be included in output
     return to_yaml_str(wrapped, exclude_none=True)
@@ -54,7 +51,7 @@ def convert_api(args: argparse.Namespace) -> None:
                 auths=auths,
             )
         # Convert to YAML format
-        content = _convert_to_yaml(doc)
+        content = convert_to_yaml(doc)
 
         # Write to file or stdout
         if args.output:
@@ -96,7 +93,7 @@ def convert_module(args: argparse.Namespace) -> None:
             )
 
         # Convert to YAML format
-        content = _convert_to_yaml(doc)
+        content = convert_to_yaml(doc)
 
         # Write to file or stdout
         if args.output:

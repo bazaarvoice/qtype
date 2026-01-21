@@ -22,6 +22,8 @@ flows:
       - id: answer
         type: text
 
+    inputs: []
+
     outputs:
       - query
       - topic
@@ -30,21 +32,12 @@ flows:
     steps:
       - id: read_data
         type: FileSource
-        path: batch_inputs.csv
+        path:
+          uri: examples/data_processing/batch_inputs.csv
         outputs:
           - query
           - topic
-
-    inputs:
-      - query
-      - topic
-
-    outputs:
-      - query
-      - topic
-      - answer
-
-    steps:
+  
       - id: create_prompt
         type: PromptTemplate
         template: |

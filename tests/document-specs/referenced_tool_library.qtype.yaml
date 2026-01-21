@@ -1,0 +1,19 @@
+id: referenced_tool_library
+description: Tool library with auth reference for linker tests
+
+auths:
+  - type: bearer_token
+    id: lib_bearer
+    token: test-token
+
+tools:
+  - type: APITool
+    id: authed_api
+    name: AuthedAPI
+    description: Example API tool that references an auth provider
+    endpoint: https://example.com
+    method: GET
+    auth: lib_bearer
+    inputs: {}
+    outputs: {}
+    parameters: {}

@@ -253,18 +253,26 @@ def _resolve_rootmodel_references(
         model: RootModel instance to resolve
         lookup_map: Map of component IDs to objects
     """
-    root_list = model.root  # type: ignore
-    if not isinstance(root_list, list):
-        return
+    root_value = model.root  # type: ignore[attr-defined]
 
-    for i, item in enumerate(root_list):
+    def _resolve_root_item(item: Any) -> Any:
         match item:
             case base_types.Reference():
-                root_list[i] = _resolve_reference(
-                    item.ref, type(item), lookup_map
-                )
+                return _resolve_reference(item.ref, type(item), lookup_map)
             case BaseModel():
                 _resolve_all_references(item, lookup_map)
+                return item
+            case _:
+                return item
+
+    # RootModel can wrap either a list (e.g., ToolList) or a single model
+    # (e.g., Document -> Application). We need to traverse both.
+    if isinstance(root_value, list):
+        for i, item in enumerate(root_value):
+            root_value[i] = _resolve_root_item(item)
+        return
+    else:
+        model.root = _resolve_root_item(root_value)  # type: ignore[attr-defined]
 
 
 def _resolve_list_references(

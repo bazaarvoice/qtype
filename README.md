@@ -75,6 +75,23 @@ And go to [http://localhost:8000/ui](http://localhost:8000/ui) to see the user i
 
 See the [full docs](https://bazaarvoice.github.io/qtype/) for more examples and guides.
 
+## ✨ Developing with AI?
+
+Use the QType MCP server to speed yourself up! Just set your assistant to run `qtype mcp`.
+For VSCode, just add the following to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "qtype": {
+      "type": "stdio",
+      "command": "qtype",
+      "cwd": "${workspaceFolder}",
+      "args": ["mcp", "--transport", "stdio"]
+    }
+  }
+}
+```
 
 
 ## 🤝 Contributing

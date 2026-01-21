@@ -1,0 +1,94 @@
+# Research Assistant Example
+#
+# Takes one input (topic), searches the web via Tavily, then synthesizes
+# an answer using an LLM call.
+#
+# Prereqs:
+# - Set `TAVILY-API_BEARER` for Tavily auth (see tavily.qtype.yaml)
+# - Configure AWS credentials if using Bedrock (default model below)
+#
+# Run with:
+#   qtype run \
+#     -i '{"topic":"Latest developments in retrieval augmented generation"}' \
+#     examples/research_assistant/research_assistant.qtype.yaml
+
+id: research_assistant
+description: Web search + synthesis research assistant using Tavily
+
+# Import Tavily tools created from tavily.oas.yaml
+references:
+  - !include ./tavily.qtype.yaml
+
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.3
+      max_tokens: 900
+
+flows:
+  - type: Flow
+    id: research
+    description: Search the web for a topic and synthesize an answer
+    inputs:
+      - topic
+    outputs:
+      - answer
+
+    variables:
+      - id: topic
+        type: text
+
+      # Tavily outputs
+      - id: tavily_results
+        type:
+          element_type: schema_4844016144
+
+      # LLM prompt + response
+      - id: synthesis_prompt
+        type: text
+      - id: answer
+        type: text
+
+    steps:
+      - type: InvokeTool
+        id: search_web
+        tool: search
+        input_bindings:
+          query: topic
+        output_bindings:
+          results: tavily_results
+        outputs:
+          - tavily_results
+
+      - type: PromptTemplate
+        id: build_prompt
+        template: |
+          Research topic: {topic}
+
+          Search results (list of objects with url/content/score):
+          {tavily_results}
+
+          Task:
+          - Write a concise, well-structured answer to the research topic.
+          - If the results contain URLs, include 3-8 bullet citations at the end
+            using the URLs you relied on most.
+          - If information is missing or uncertain, say so explicitly.
+        inputs:
+          - topic
+          - tavily_results
+        outputs:
+          - synthesis_prompt
+
+      - type: LLMInference
+        id: synthesize
+        model: nova_lite
+        system_message: |
+          You are a careful research assistant. Use the provided search results.
+          Prefer accurate summaries over speculation.
+        inputs:
+          - synthesis_prompt
+        outputs:
+          - answer

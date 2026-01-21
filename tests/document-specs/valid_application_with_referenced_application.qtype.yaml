@@ -1,0 +1,7 @@
+id: app_with_references
+description: Application that includes another Application via references
+
+references:
+  - !include ./referenced_tool_library.qtype.yaml
+
+flows: []

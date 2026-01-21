@@ -58,6 +58,10 @@ interpreter = [
     "sqlalchemy>=2.0.42",
     "uvicorn[standard]>=0.35.0",
 ]
+mcp = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.25.0",
+]
 
 [dependency-groups]
 dev = [
@@ -109,8 +113,18 @@ qtype = "qtype.cli:main"
 include = ["qtype*"]
 exclude = ["tests*"]
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.package-data]
 "qtype.interpreter" = ["ui/**/*"]
+qtype = [
+    "../schema/*.json",
+    "../docs/**/*.md",
+    "../docs/**/*.png",
+    "../docs/**/*.mermaid",
+    "../examples/**/*.yaml",
+]
 
 # Tool configurations
 [tool.ruff]
