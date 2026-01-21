@@ -1,0 +1,24 @@
+id: test_cache_filesource
+description: Test app to reproduce cache bug with FileSource
+
+flows:
+  - id: read_file_flow
+    type: Flow
+    variables:
+      - id: file_path
+        type: text
+      - id: data
+        type: text
+    inputs:
+      - file_path
+    outputs:
+      - data
+    steps:
+      - id: read_file
+        type: FileSource
+        path: file_path
+        cache_config:
+          namespace: test_cache
+          version: v1
+        outputs:
+          - data

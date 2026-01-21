@@ -1016,6 +1016,21 @@ class FileSource(Source):
         description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
 
+    @model_validator(mode="after")
+    def infer_inputs_from_path(self) -> "FileSource":
+        """Add path variable to inputs if it's a variable reference."""
+        if isinstance(self.path, str):
+            # Path is a variable ID, add it to inputs
+            path_ref = Reference[Variable].model_validate({"$ref": self.path})
+            if path_ref not in self.inputs and self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [path_ref]
+        elif isinstance(self.path, Reference):
+            # Path is already a Reference, add it to inputs
+            if self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [self.path]
+        # If path is ConstantPath, don't add to inputs
+        return self
+
 
 class Writer(Step, BatchableStepMixin):
     """Base class for things that write data in batches."""
@@ -1035,6 +1050,21 @@ class FileWriter(Writer, BatchableStepMixin):
         default_factory=partial(BatchConfig, batch_size=sys.maxsize),
         description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
     )
+
+    @model_validator(mode="after")
+    def infer_inputs_from_path(self) -> "FileWriter":
+        """Add path variable to inputs if it's a variable reference."""
+        if isinstance(self.path, str):
+            # Path is a variable ID, add it to inputs
+            path_ref = Reference[Variable].model_validate({"$ref": self.path})
+            if path_ref not in self.inputs and self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [path_ref]
+        elif isinstance(self.path, Reference):
+            # Path is already a Reference, add it to inputs
+            if self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [self.path]
+        # If path is ConstantPath, don't add to inputs
+        return self
 
 
 class Aggregate(Step):
