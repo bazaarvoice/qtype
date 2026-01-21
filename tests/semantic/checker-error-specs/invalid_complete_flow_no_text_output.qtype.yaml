@@ -1,0 +1,23 @@
+# Complete Flow must have a final step that supports streaming
+id: test_app
+flows:
+  - type: Flow
+    id: tool_invocation_example
+    interface:
+      type: Complete
+    variables:
+      - id: input_msg
+        type: text
+      - id: result_msg
+        type: text
+    inputs:
+      - input_msg
+    outputs:
+      - result_msg
+    steps:
+      - id: echo_step
+        type: Echo
+        inputs:
+          - input_msg
+        outputs:
+          - result_msg

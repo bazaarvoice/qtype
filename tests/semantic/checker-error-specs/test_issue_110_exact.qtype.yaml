@@ -1,0 +1,40 @@
+id: test_app
+tools:
+  - type: PythonFunctionTool
+    id: my_function_1
+    name: my_function_1
+    description: A simple function
+    module_path: q_example_qtype.tools
+    function_name: my_function_1
+    inputs:
+      msg:
+        type: text
+    outputs:
+      result:
+        type: text
+flows:
+  - type: Flow
+    id: tool_invocation_example
+    interface:
+      type: Complete
+    variables:
+      - id: input_msg
+        type: text
+      - id: tool_result
+        type: text
+    inputs:
+      - input_msg
+    outputs:
+      - tool_result
+    steps:
+      - id: tool_step
+        type: InvokeTool
+        tool: my_function_1
+        inputs:
+          - input_msg
+        outputs:
+          - tool_result
+        input_bindings:
+          msg: input_msg
+        output_bindings:
+          result: tool_result

@@ -50,6 +50,10 @@ class FlowHasNoStepsError(QTypeValidationError):
 # Alias for backward compatibility and semantic clarity
 QTypeSemanticError = SemanticError
 
+# Step types that support text streaming
+# These are the only step types that can produce streaming text output
+STREAMING_STEP_TYPES = (LLMInference, Agent)
+
 
 # ---- Helper Functions for Common Validation Patterns ----
 
@@ -542,6 +546,21 @@ def _validate_flow(flow: Flow) -> None:
                 raise QTypeSemanticError(
                     f"Flow {flow.id} has a Complete interface but {len(text_outputs)} text outputs -- there should be 1."
                 )
+
+            # Ensure the final step supports streaming for Complete interface
+            if flow.steps:
+                final_step = flow.steps[-1]
+                if not isinstance(final_step, STREAMING_STEP_TYPES):
+                    streaming_type_names = ", ".join(
+                        t.__name__ for t in STREAMING_STEP_TYPES
+                    )
+                    raise QTypeSemanticError(
+                        (
+                            f"Flow {flow.id} has a Complete interface which requires streaming output, "
+                            f"but the final step '{final_step.id}' is of type '{final_step.type}' which does not support streaming. "
+                            f"The final step must be one of: {streaming_type_names}."
+                        )
+                    )
 
 
 def _has_secret_reference(obj: Any) -> bool:
