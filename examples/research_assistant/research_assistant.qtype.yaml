@@ -8,7 +8,7 @@
 # - Configure AWS credentials if using Bedrock (default model below)
 #
 # Run with:
-#   uv run qtype run \
+#   qtype run \
 #     -i '{"topic":"Latest developments in retrieval augmented generation"}' \
 #     examples/research_assistant/research_assistant.qtype.yaml
 
@@ -46,9 +46,6 @@ flows:
         type:
           element_type: schema_4844016144
 
-      - id: tavily_answer
-        type: text
-
       # LLM prompt + response
       - id: synthesis_prompt
         type: text
@@ -63,18 +60,13 @@ flows:
           query: topic
         output_bindings:
           results: tavily_results
-          answer: tavily_answer
         outputs:
           - tavily_results
-          - tavily_answer
 
       - type: PromptTemplate
         id: build_prompt
         template: |
           Research topic: {topic}
-
-          Tavily answer (may be empty):
-          {tavily_answer}
 
           Search results (list of objects with url/content/score):
           {tavily_results}
@@ -86,7 +78,6 @@ flows:
           - If information is missing or uncertain, say so explicitly.
         inputs:
           - topic
-          - tavily_answer
           - tavily_results
         outputs:
           - synthesis_prompt
