@@ -11,10 +11,9 @@ class AggregateExecutor(BatchedStepExecutor):
     """
     Executor for the Aggregate step.
 
-    This is a terminal, many-to-one operation that reduces an entire stream
-    to a single summary message containing counts of successful and failed
-    messages. It processes all messages without modification during the
-    processing phase, then emits a single aggregate summary during finalization.
+    A step that, after all messages have been processed,
+    returns a single message containing the counts of successful and failed
+    messages. Other messages are passed through unchanged.
     """
 
     def __init__(

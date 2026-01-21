@@ -447,15 +447,12 @@ class AWSSecretManager(SecretManager):
 
 class Aggregate(Step):
     """
-    A terminal step that consumes an entire input stream and produces a single
-    summary message with success/error counts.
+    A step that, after all messages have been processed,
+    returns a single message containing the counts of successful and failed
+    messages. Other messages are passed through unchanged.
     """
 
     type: Literal["Aggregate"] = Field("Aggregate")
-    outputs: list[Variable] = Field(
-        default_factory=list,
-        description="References to the variables for the output. There should be one and only one output with type AggregateStats",
-    )
 
 
 class Collect(Step, BatchableStepMixin):

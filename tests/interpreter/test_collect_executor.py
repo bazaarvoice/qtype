@@ -17,7 +17,7 @@ async def test_collect_emits_single_list_with_common_ancestors(
     """Test that Collect emits one list and propagates only common ancestors."""
     # Create variables
     input_var = Variable(id="item", type="text", value=None)
-    output_var = Variable(id="items", type="list", value=None)
+    output_var = Variable(id="items", type="list[text]", value=None)
 
     # Create Collect step
     collect_step = Collect(

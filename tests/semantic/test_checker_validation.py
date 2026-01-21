@@ -105,6 +105,10 @@ from qtype.semantic.loader import load
             "invalid_secret_manager_wrong_auth_type.qtype.yaml",
             "AWSSecretManager 'my_secret_manager' requires an AWSAuthProvider",
         ),
+        (
+            "invalid_complete_flow_no_text_output.qtype.yaml",
+            "final step 'echo_step' is of type 'Echo' which does not support streaming",
+        ),
     ],
 )
 def test_checker_validation_errors(yaml_file, expected_error_fragment):

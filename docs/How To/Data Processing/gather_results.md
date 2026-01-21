@@ -22,8 +22,8 @@ steps:
 
 - **Collect**: Gathers all input values from multiple messages into a single list output
 - **Common ancestors**: Only variables that have the exact same value across ALL input messages are preserved in the output message
-- **Fan-out pattern**: Typically used after `Explode` to reverse the fan-out and aggregate results
-- **Single output**: Always produces exactly one output message containing the aggregated list
+- **Fan-out pattern**: Typically used after `Explode` to reverse the fan-out and accumulate results
+- **Single output**: Always produces exactly one output message containing the accumulate list
 
 ### Understanding Common Ancestors
 

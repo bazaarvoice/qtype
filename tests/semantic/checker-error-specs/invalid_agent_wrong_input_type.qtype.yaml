@@ -8,9 +8,9 @@ flows:
   - id: test_flow
     variables:
       - id: input_num
-        type: number
+        type: int
       - id: output_num
-        type: number
+        type: int
     inputs:
       - input_num
     outputs:

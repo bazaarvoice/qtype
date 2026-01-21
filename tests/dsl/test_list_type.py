@@ -14,7 +14,9 @@ def test_list_type_creation():
 def test_list_type_variable():
     """Test creating variables with list types."""
     var = Variable(
-        id="test_urls", type=ListType(element_type=PrimitiveTypeEnum.text)
+        id="test_urls",
+        type=ListType(element_type=PrimitiveTypeEnum.text),
+        ui=None,
     )
     assert var.id == "test_urls"
     assert isinstance(var.type, ListType)
@@ -33,10 +35,13 @@ def test_resolve_variable_type_list():
     assert isinstance(result, ListType)
     assert result.element_type == PrimitiveTypeEnum.int
 
-    # Test custom type in list should work (returns string reference)
-    result = _resolve_variable_type("list[CustomType]", {})
-    assert isinstance(result, ListType)
-    assert result.element_type == "CustomType"
+    # Test that undefined custom type in list raises error
+    try:
+        _resolve_variable_type("list[CustomType]", {})
+        assert False, "Should have raised ValueError for undefined type"
+    except ValueError as e:
+        assert "CustomType" in str(e)
+        assert "Unknown type" in str(e)
 
 
 def test_list_type_yaml_loading():

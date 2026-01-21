@@ -98,6 +98,7 @@ def test_valid_document_types(yaml_file: str) -> None:
             "invalid_variable_list_duplicate_ids.qtype.yaml",
             linker.DuplicateComponentError,
         ),
+        ("invalid_variable_list.qtype.yaml", ValueError),
     ],
 )
 def test_invalid_document_types(

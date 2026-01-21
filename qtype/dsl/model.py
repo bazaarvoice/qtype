@@ -79,6 +79,11 @@ def _resolve_list_type(
             if cls == element_type:
                 return ListType(element_type=name)
         return ListType(element_type=str(element_type))
+    elif isinstance(element_type, type) and issubclass(
+        element_type, BaseModel
+    ):
+        # Custom type class - store its name as string reference
+        return ListType(element_type=element_type.__name__)
     else:
         raise ValueError(
             (
@@ -140,6 +145,8 @@ def _resolve_variable_type(
     Resolve a type to its corresponding representation.
 
     Handles primitive types, list types, domain types, and custom types.
+    Unknown types are returned as strings (forward references) and will be
+    validated later during the linking phase.
 
     Args:
         parsed_type: The type to resolve (can be string or already resolved)
@@ -172,9 +179,18 @@ def _resolve_variable_type(
     if custom is not None:
         return custom
 
-    # If it's not any known type, return it as a string.
-    # This assumes it might be a forward reference to a custom type.
-    return parsed_type
+    # If it's not any known type, raise an error
+    available_types = (
+        f"primitive types ({', '.join([t.value for t in PrimitiveTypeEnum])}), "
+        f"domain types ({', '.join(DOMAIN_CLASSES.keys())})"
+    )
+    if custom_type_registry:
+        available_types += (
+            f", or custom types ({', '.join(custom_type_registry.keys())})"
+        )
+    raise ValueError(
+        f"Unknown type '{parsed_type}'. Must be one of: {available_types}"
+    )
 
 
 def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
@@ -1000,6 +1016,21 @@ class FileSource(Source):
         description="Reference to a variable with an fsspec-compatible URI to read from, or the uri itself.",
     )
 
+    @model_validator(mode="after")
+    def infer_inputs_from_path(self) -> "FileSource":
+        """Add path variable to inputs if it's a variable reference."""
+        if isinstance(self.path, str):
+            # Path is a variable ID, add it to inputs
+            path_ref = Reference[Variable].model_validate({"$ref": self.path})
+            if path_ref not in self.inputs and self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [path_ref]
+        elif isinstance(self.path, Reference):
+            # Path is already a Reference, add it to inputs
+            if self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [self.path]
+        # If path is ConstantPath, don't add to inputs
+        return self
+
 
 class Writer(Step, BatchableStepMixin):
     """Base class for things that write data in batches."""
@@ -1020,21 +1051,30 @@ class FileWriter(Writer, BatchableStepMixin):
         description="Configuration for processing the input stream in batches. If omitted, the step processes items one by one.",
     )
 
+    @model_validator(mode="after")
+    def infer_inputs_from_path(self) -> "FileWriter":
+        """Add path variable to inputs if it's a variable reference."""
+        if isinstance(self.path, str):
+            # Path is a variable ID, add it to inputs
+            path_ref = Reference[Variable].model_validate({"$ref": self.path})
+            if path_ref not in self.inputs and self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [path_ref]
+        elif isinstance(self.path, Reference):
+            # Path is already a Reference, add it to inputs
+            if self.path not in self.inputs:
+                self.inputs = list(self.inputs) + [self.path]
+        # If path is ConstantPath, don't add to inputs
+        return self
+
 
 class Aggregate(Step):
     """
-    A terminal step that consumes an entire input stream and produces a single
-    summary message with success/error counts.
+    A step that, after all messages have been processed,
+    returns a single message containing the counts of successful and failed
+    messages. Other messages are passed through unchanged.
     """
 
     type: Literal["Aggregate"] = "Aggregate"
-
-    # Outputs are now optional. The user can provide 0, 1, 2, or 3 names.
-    # The order will be: success_count, error_count, total_count
-    outputs: list[Reference[Variable] | str] = Field(
-        default_factory=list,
-        description="References to the variables for the output. There should be one and only one output with type AggregateStats",
-    )
 
 
 #
