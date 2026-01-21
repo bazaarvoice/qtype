@@ -1,0 +1,40 @@
+id: valid_list_custom_type
+description: Test that variables can use list[CustomType] when CustomType is defined
+
+types:
+  - id: Product
+    description: A product in an inventory
+    properties:
+      name: text
+      price: float
+      sku: text
+
+flows:
+  - id: process_products
+    description: A flow that processes a list of products
+    variables:
+      - id: product_list
+        type: list[Product]
+      
+      - id: single_product
+        type: Product
+      
+      - id: filtered_products
+        type: list[Product]
+      
+      - id: total_price
+        type: float
+    
+    inputs:
+      - product_list
+    
+    outputs:
+      - filtered_products
+    
+    steps:
+      - id: echo_products
+        type: Echo
+        inputs:
+          - product_list
+        outputs:
+          - filtered_products

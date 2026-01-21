@@ -6,7 +6,7 @@ flows:
       - id: name
         type: text
       - id: result
-        type: integer
+        type: int
     inputs:
       - name
     outputs:

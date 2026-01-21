@@ -79,6 +79,11 @@ def _resolve_list_type(
             if cls == element_type:
                 return ListType(element_type=name)
         return ListType(element_type=str(element_type))
+    elif isinstance(element_type, type) and issubclass(
+        element_type, BaseModel
+    ):
+        # Custom type class - store its name as string reference
+        return ListType(element_type=element_type.__name__)
     else:
         raise ValueError(
             (
@@ -140,6 +145,8 @@ def _resolve_variable_type(
     Resolve a type to its corresponding representation.
 
     Handles primitive types, list types, domain types, and custom types.
+    Unknown types are returned as strings (forward references) and will be
+    validated later during the linking phase.
 
     Args:
         parsed_type: The type to resolve (can be string or already resolved)
@@ -172,9 +179,18 @@ def _resolve_variable_type(
     if custom is not None:
         return custom
 
-    # If it's not any known type, return it as a string.
-    # This assumes it might be a forward reference to a custom type.
-    return parsed_type
+    # If it's not any known type, raise an error
+    available_types = (
+        f"primitive types ({', '.join([t.value for t in PrimitiveTypeEnum])}), "
+        f"domain types ({', '.join(DOMAIN_CLASSES.keys())})"
+    )
+    if custom_type_registry:
+        available_types += (
+            f", or custom types ({', '.join(custom_type_registry.keys())})"
+        )
+    raise ValueError(
+        f"Unknown type '{parsed_type}'. Must be one of: {available_types}"
+    )
 
 
 def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
