@@ -121,15 +121,15 @@ class ReasoningStreamContext:
     """
     Async context manager for reasoning streaming.
 
-    Automatically emits ReasoningStreamStartEvent on entry and
-    ReasoningStreamEndEvent on exit. Provides delta() method for emitting
-    reasoning chunks.
+    Only emits ReasoningStreamStartEvent on the first delta() call, and only
+    emits ReasoningStreamEndEvent if start was sent. This prevents empty
+    reasoning streams when models don't provide reasoning data.
 
     Example:
         ```python
         async with emitter.reasoning_stream("agent-reasoning") as streamer:
             async for chunk in agent.stream_reasoning():
-                await streamer.delta(chunk.text)
+                await streamer.delta(chunk.text)  # Start event on first call
         ```
     """
 
@@ -142,15 +142,10 @@ class ReasoningStreamContext:
         self.step = step
         self.stream_id = stream_id
         self.on_stream_event = on_stream_event
+        self._started = False
 
     async def __aenter__(self) -> ReasoningStreamContext:
-        """Emit ReasoningStreamStartEvent when entering context."""
-        if self.on_stream_event:
-            await self.on_stream_event(
-                ReasoningStreamStartEvent(
-                    step=self.step, stream_id=self.stream_id
-                )
-            )
+        """Enter context without emitting start event."""
         return self
 
     async def __aexit__(
@@ -159,8 +154,8 @@ class ReasoningStreamContext:
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> bool:
-        """Emit ReasoningStreamEndEvent when exiting context."""
-        if self.on_stream_event:
+        """Emit ReasoningStreamEndEvent only if stream was started."""
+        if self._started and self.on_stream_event:
             await self.on_stream_event(
                 ReasoningStreamEndEvent(
                     step=self.step, stream_id=self.stream_id
@@ -172,10 +167,21 @@ class ReasoningStreamContext:
         """
         Emit a reasoning delta chunk.
 
+        Sends ReasoningStreamStartEvent on first call, then delta events.
+
         Args:
             text: The incremental reasoning content to append to the stream
         """
         if self.on_stream_event:
+            # Emit start event on first delta
+            if not self._started:
+                await self.on_stream_event(
+                    ReasoningStreamStartEvent(
+                        step=self.step, stream_id=self.stream_id
+                    )
+                )
+                self._started = True
+
             await self.on_stream_event(
                 ReasoningStreamDeltaEvent(
                     step=self.step,

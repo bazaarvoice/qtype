@@ -160,25 +160,14 @@ class LLMInferenceExecutor(StepExecutor):
         if self.context.on_stream_event:
             # Generate a unique stream ID for this inference
             stream_id = f"llm-{self.step.id}-{id(message)}"
-            async with self.stream_emitter.reasoning_stream(
-                f"llm-{self.step.id}-{id(message)}-reasoning"
-            ) as reasoning:
-                generator = await model.astream_chat(
-                    messages=inputs,
-                    **(
-                        self.step.model.inference_params
-                        if self.step.model.inference_params
-                        else {}
-                    ),
-                )
-                async for complete_response in generator:
-                    reasoning_text = self.__extract_stream_reasoning_(
-                        complete_response
-                    )
-                    if reasoning_text:
-                        await reasoning.delta(reasoning_text)
+            reasoning_stream_id = f"llm-{self.step.id}-{id(message)}-reasoning"
 
-            async with self.stream_emitter.text_stream(stream_id) as streamer:
+            async with (
+                self.stream_emitter.reasoning_stream(
+                    reasoning_stream_id
+                ) as reasoning,
+                self.stream_emitter.text_stream(stream_id) as streamer,
+            ):
                 generator = await model.astream_chat(
                     messages=inputs,
                     **(
@@ -188,9 +177,18 @@ class LLMInferenceExecutor(StepExecutor):
                     ),
                 )
                 async for chat_response in generator:
+                    # Extract and emit reasoning if present
+                    reasoning_text = self.__extract_stream_reasoning_(
+                        chat_response
+                    )
+                    if reasoning_text:
+                        await reasoning.delta(reasoning_text)
+
+                    # Emit text delta
                     chat_text = chat_response.delta
-                    if chat_text.strip() != "":
-                        await streamer.delta(chat_response.delta)
+                    if chat_text is not None and chat_text.strip() != "":
+                        await streamer.delta(chat_text)
+
             # Get the final result
             chat_result = chat_response
         else:
