@@ -31,5 +31,4 @@ steps:
 ## See Also
 
 - [FileSource Reference](../../components/FileSource.md)
-- [Aggregate Reference](../../components/Aggregate.md)
 - [Example: Batch Processing](../../Gallery/Data%20Processing/batch_processing.md)

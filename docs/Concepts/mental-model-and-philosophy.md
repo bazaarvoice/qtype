@@ -128,7 +128,7 @@ Output Variables
 
 **Linear execution:** Steps run sequentially in declaration order. Each step waits for its inputs to be available. Parallelism is supported for multiple inputs.
 
-**1-to-many cardinality:** Some steps (like `Explode`) can produce multiple outputs for one input, creating fan-out patterns. Other steps (like `Collect`) aggregate many inputs into one output. This enables batch processing patterns.
+**1-to-many cardinality:** Some steps (like `Explode`) can produce multiple outputs for one input, creating fan-out patterns. Other steps (like `Collect`) gather many inputs into one collection. This enables batch processing patterns.
 
 ---
 

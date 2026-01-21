@@ -1069,18 +1069,12 @@ class FileWriter(Writer, BatchableStepMixin):
 
 class Aggregate(Step):
     """
-    A terminal step that consumes an entire input stream and produces a single
-    summary message with success/error counts.
+    A step that, after all messages have been processed,
+    returns a single message containing the counts of successful and failed
+    messages. Other messages are passed through unchanged.
     """
 
     type: Literal["Aggregate"] = "Aggregate"
-
-    # Outputs are now optional. The user can provide 0, 1, 2, or 3 names.
-    # The order will be: success_count, error_count, total_count
-    outputs: list[Reference[Variable] | str] = Field(
-        default_factory=list,
-        description="References to the variables for the output. There should be one and only one output with type AggregateStats",
-    )
 
 
 #
