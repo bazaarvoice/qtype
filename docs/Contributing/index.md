@@ -37,7 +37,7 @@ We recommend using `uv` for dependency management as it's faster and more reliab
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install all dependencies, development tools, and qtype in editable mode
-uv sync --extra interpreter
+uv sync --extra interpreter --extra mcp
 ```
 
 This single command installs everything you need, including the `qtype` package in editable mode so changes to the source code are immediately reflected.
