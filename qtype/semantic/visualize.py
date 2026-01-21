@@ -21,6 +21,7 @@ from qtype.semantic.model import (
     DocumentIndex,
     DocumentSearch,
     Flow,
+    InvokeTool,
     LLMInference,
     Memory,
     Model,
@@ -180,7 +181,14 @@ def _generate_step_node(
         # Connect to tools
         for tool in step.tools:
             tool_id = f"TOOL_{_sanitize_id(tool.id)}"
-            external_connections.append(f"    {node_id} -.-> {tool_id}")
+            external_connections.append(f"    {node_id} -.->|uses| {tool_id}")
+    elif isinstance(step, InvokeTool):
+        lines.append(
+            f'        {node_id}@{{shape: rect, label: "⚙️ {step.id}"}}'
+        )
+
+        tool_id = f"TOOL_{_sanitize_id(step.tool.id)}"
+        external_connections.append(f"    {node_id} -.->|uses| {tool_id}")
     elif isinstance(step, LLMInference):
         lines.append(
             f'        {node_id}@{{shape: rounded, label: "✨ {step.id}"}}'
@@ -225,20 +233,6 @@ def _generate_step_node(
         )
         index_id = f"INDEX_{_sanitize_id(step.index.id)}"
         external_connections.append(f"    {node_id} -.-> {index_id}")
-    elif isinstance(step, APITool):
-        method_label = step.method.upper()
-        lines.append(f'        {node_id}["⚡ {step.id} ({method_label})"]')
-        if step.auth:
-            auth_id = f"AUTH_{_sanitize_id(step.auth.id)}"
-            external_connections.append(f"    {node_id} -.-> {auth_id}")
-    elif isinstance(step, PythonFunctionTool):
-        lines.append(
-            f'        {node_id}@{{shape: rect, label: "🐍 {step.id}"}}'
-        )
-    elif isinstance(step, Tool):
-        lines.append(
-            f'        {node_id}@{{shape: rect, label: "🔧 {step.id}"}}'
-        )
     else:
         # Generic step
         lines.append(
@@ -401,14 +395,15 @@ def _generate_shared_resources(app: Application) -> list[str]:
                 )
 
             if index.auth:
-                # Handle auth as either AuthorizationProvider object or string ID
-                if isinstance(index.auth, str):
-                    auth_id = f"AUTH_{_sanitize_id(index.auth)}"
-                elif hasattr(index.auth, "id"):
-                    auth_id = f"AUTH_{_sanitize_id(str(index.auth.id))}"
+                auth_value = index.auth
+                if isinstance(auth_value, str):
+                    auth_ref = auth_value
                 else:
-                    # Fallback for unexpected types
-                    auth_id = f"AUTH_{_sanitize_id(str(index.auth))}"
+                    auth_ref = getattr(auth_value, "id", None)
+                    if auth_ref is None:
+                        auth_ref = str(auth_value)
+
+                auth_id = f"AUTH_{_sanitize_id(str(auth_ref))}"
                 lines.append(f"        {index_id} -.->|uses| {auth_id}")
 
         # Memories

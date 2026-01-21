@@ -149,6 +149,51 @@ qtype serve app.qtype.yaml --reload
 
 ---
 
+### mcp
+
+Start the QType Model Context Protocol (MCP) server for AI agent integration.
+
+```bash
+qtype mcp [options]
+```
+
+#### Options
+
+- **`-t TRANSPORT, --transport TRANSPORT`** - Transport protocol to use: `stdio`, `sse`, or `streamable-http` (default: stdio)
+- **`--host HOST`** - Host to bind to for HTTP/SSE transports (default: 0.0.0.0)
+- **`-p PORT, --port PORT`** - Port to bind to for HTTP/SSE transports (default: 8000)
+
+#### Examples
+
+Start MCP server with stdio transport (default, for local AI agents):
+```bash
+qtype mcp
+```
+
+Start with Server-Sent Events transport:
+```bash
+qtype mcp --transport sse --port 8000
+```
+
+Start with streamable HTTP transport on a specific host and port:
+```bash
+qtype mcp --transport streamable-http --host 127.0.0.1 --port 3000
+```
+
+#### Description
+
+The MCP server exposes QType functionality to AI agents and assistants through the Model Context Protocol. It provides tools for:
+
+- Converting API specifications to QType tools
+- Converting Python modules to QType tools
+- Validating QType YAML specifications
+- Visualizing QType architectures
+- Accessing QType documentation and component schemas
+
+The stdio transport is ideal for local AI agent integration, while SSE and streamable-http transports are suitable for network-based integrations.
+
+---
+
 ### visualize
 
 Generate a visual diagram of your QType application architecture.

@@ -29,7 +29,7 @@ Structure:
 - [ ] ⚡ Retrieval Augmented Generation (RAG)
 - [ ] ⚡ Q&A With Semantic Re-Ranking
 - [ ] ⚡ Hybrid Search System
-- [ ] ⚡ Research Assistant
+- [x] ⚡ Research Assistant
 - [ ] ⚡ Collaborative Agents
 - [ ] ⚡ Evaluation & Judging
 

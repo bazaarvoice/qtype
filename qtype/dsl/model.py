@@ -657,6 +657,26 @@ class InvokeTool(Step, ConcurrentStepMixin):
         description="Mapping from variable references to tool output parameter names.",
     )
 
+    @model_validator(mode="after")
+    def infer_inputs_outputs_from_bindings(self) -> "InvokeTool":
+        def _merge_vars(
+            existing: list[Reference[Variable] | str],
+            bindings: dict[str, str],
+        ) -> list[Reference[Variable] | str]:
+            """Merge existing variables with bindings and deduplicate."""
+            # NOTE: doesn't handle references. You may duplicate inputs here..
+            existing_ids = [item for item in existing if isinstance(item, str)]
+            inferred_ids = list(bindings.values())
+            merged_ids: list[Reference[Variable] | str] = [
+                Reference[Variable].model_validate({"$ref": var_id})
+                for var_id in dict.fromkeys(existing_ids + inferred_ids)
+            ]
+            return merged_ids
+
+        self.inputs = _merge_vars(self.inputs, self.input_bindings)
+        self.outputs = _merge_vars(self.outputs, self.output_bindings)
+        return self
+
 
 class InvokeFlow(Step):
     """Invokes a flow with input and output bindings."""
