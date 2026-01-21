@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel
 
 from qtype.commands.convert import convert_to_yaml
 
@@ -103,6 +104,22 @@ def resolve_snippets(content: str, base_path: Path) -> str:
 # ============================================================================
 # Tool Functions
 # ============================================================================
+
+
+class MermaidDiagramPreviewInput(BaseModel):
+    """Arguments for VS Code's `mermaid-diagram-preview` tool."""
+
+    code: str
+
+
+class MermaidVisualizationResult(BaseModel):
+    """Structured output for Mermaid visualization."""
+
+    mermaid_code: str
+    mermaid_markdown: str
+    suggested_next_tool: str
+    mermaid_diagram_preview_input: MermaidDiagramPreviewInput
+    preview_instructions: str
 
 
 @mcp.tool(
@@ -363,11 +380,22 @@ def list_documentation() -> list[str]:
     return sorted(md_files)
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Validate QType YAML",
+    description=(
+        "Validates QType YAML for syntax and semantic correctness. "
+        "Returns a human-readable status string: either a success message or "
+        "a validation error with details."
+    ),
+)
 async def validate_qtype_yaml(yaml_content: str) -> str:
-    """
-    Validates QType YAML code for syntax and semantic errors.
-    Use this tool immediately after generating any QType code to verify correctness.
+    """Validate QType YAML for syntax and semantic errors.
+
+    Args:
+        yaml_content: The QType YAML content to validate.
+
+    Returns:
+        A human-readable status string.
     """
     from qtype.semantic.loader import load_from_string
 
@@ -384,12 +412,15 @@ async def validate_qtype_yaml(yaml_content: str) -> str:
     title="Visualize QType Architecture",
     description=(
         "Generates a Mermaid flowchart diagram from QType YAML code. "
-        "Returns the Mermaid diagram content along with instructions for preview. "
-        "The diagram visualizes the application architecture, showing flows, "
-        "components, and their connections."
+        "Returns a structured result containing raw Mermaid code plus preview guidance. "
+        "After calling this tool, call the mermaid-diagram-preview tool using the "
+        "returned mermaid_diagram_preview_input."
     ),
+    structured_output=True,
 )
-async def visualize_qtype_architecture(yaml_content: str) -> str:
+async def visualize_qtype_architecture(
+    yaml_content: str,
+) -> MermaidVisualizationResult:
     """Generate Mermaid diagram from QType YAML.
 
     Args:
@@ -397,10 +428,10 @@ async def visualize_qtype_architecture(yaml_content: str) -> str:
             Must be a valid Application definition.
 
     Returns:
-        A formatted response containing:
-        1. Instructions on how to preview the diagram in VS Code
-        2. The raw Mermaid diagram content
-        3. Guidance on using the mermaid-diagram-preview tool
+        A structured result with:
+        - mermaid_code: Raw Mermaid diagram code (no backticks/fences)
+        - suggested_next_tool: "mermaid-diagram-preview"
+        - preview_instructions: How to preview in VS Code
 
     Raises:
         Exception: If YAML is invalid or visualization fails.
@@ -418,19 +449,19 @@ async def visualize_qtype_architecture(yaml_content: str) -> str:
             )
         mermaid_content = visualize_application(document)
 
-        # Return content with preview instructions
-        return f"""✅ Diagram generated successfully!
-
-To preview this diagram in VS Code:
-1. Use the mermaid-diagram-preview tool with the code below
-2. Or save it to a .md file with triple backticks: ```mermaid
-3. Or save it to a .mmd file and use the Mermaid extension
-
-Mermaid Diagram Code:
-```mermaid
-{mermaid_content}
-```
-"""
+        return MermaidVisualizationResult(
+            mermaid_code=mermaid_content,
+            mermaid_markdown=f"```mermaid\n{mermaid_content}\n```\n",
+            suggested_next_tool="mermaid-diagram-preview",
+            mermaid_diagram_preview_input=MermaidDiagramPreviewInput(
+                code=mermaid_content
+            ),
+            preview_instructions=(
+                "Call mermaid-diagram-preview with mermaid_diagram_preview_input. "
+                "Alternatively, save mermaid_code in a .md file fenced with "
+                "```mermaid ...``` and open the Markdown preview."
+            ),
+        )
 
     except Exception as e:
-        raise Exception(f"Visualization failed: {str(e)}")
+        raise RuntimeError(f"Visualization failed: {e}") from e
