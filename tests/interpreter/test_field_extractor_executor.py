@@ -18,12 +18,8 @@ async def test_field_extractor_single_value(
 ):
     """Test extracting a single field from input."""
     # Create a FieldExtractor step
-    input_var = Variable(
-        id="input_data", type=PrimitiveTypeEnum.text, value=None
-    )
-    output_var = Variable(
-        id="output_name", type=PrimitiveTypeEnum.text, value=None
-    )
+    input_var = Variable(id="input_data", type=PrimitiveTypeEnum.text)
+    output_var = Variable(id="output_name", type=PrimitiveTypeEnum.text)
 
     step = FieldExtractor(
         id="extract_name",
@@ -59,10 +55,8 @@ async def test_field_extractor_multiple_values(
 ):
     """Test extracting multiple values (1-to-many)."""
     # Create a FieldExtractor step
-    input_var = Variable(
-        id="input_data", type=PrimitiveTypeEnum.text, value=None
-    )
-    output_var = Variable(id="item", type=PrimitiveTypeEnum.text, value=None)
+    input_var = Variable(id="input_data", type=PrimitiveTypeEnum.text)
+    output_var = Variable(id="item", type=PrimitiveTypeEnum.text)
 
     step = FieldExtractor(
         id="extract_items",
@@ -100,10 +94,8 @@ async def test_field_extractor_with_pydantic_model(
 ):
     """Test extracting from a Pydantic model input."""
     # Create a FieldExtractor step
-    input_var = Variable(id="doc", type=RAGDocument, value=None)
-    output_var = Variable(
-        id="file_name", type=PrimitiveTypeEnum.text, value=None
-    )
+    input_var = Variable(id="doc", type=RAGDocument)
+    output_var = Variable(id="file_name", type=PrimitiveTypeEnum.text)
 
     step = FieldExtractor(
         id="extract_filename",
@@ -146,12 +138,8 @@ async def test_field_extractor_no_match(
 ):
     """Test that an error is raised when JSONPath doesn't match."""
     # Create a FieldExtractor step
-    input_var = Variable(
-        id="input_data", type=PrimitiveTypeEnum.text, value=None
-    )
-    output_var = Variable(
-        id="output_value", type=PrimitiveTypeEnum.text, value=None
-    )
+    input_var = Variable(id="input_data", type=PrimitiveTypeEnum.text)
+    output_var = Variable(id="output_value", type=PrimitiveTypeEnum.text)
 
     step = FieldExtractor(
         id="extract_missing",

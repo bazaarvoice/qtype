@@ -112,9 +112,8 @@ class AgentExecutor(StepExecutor, ToolExecutionMixin, FunctionToolHelper):
         # Convert input variables to chat messages
         inputs = []
         for input_var in self.step.inputs:
-            value = message.variables.get(input_var.id)
-            if value and isinstance(value, ChatMessage):
-                inputs.append(to_chat_message(value))
+            value = message.get_variable(input_var.id)
+            inputs.append(to_chat_message(value))
 
         # Get session ID for memory isolation
         session_id = message.session.session_id

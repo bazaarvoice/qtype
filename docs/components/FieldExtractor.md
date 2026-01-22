@@ -10,6 +10,8 @@ messages (1-to-many cardinality). If it matches a single value, it yields
 one output message. If it matches nothing, it raises an error.
 The extracted data is used to construct the output variable by passing it
 as keyword arguments to the output type's constructor.
+If there is no match and the output variable is optional, it is set to None.
+If there is no match and the output variable is required, an error is raised.
 Example JSONPath expressions:
 - `$.field_name` - Extract a single field
 - `$.items[*]` - Extract all items from a list
@@ -17,4 +19,3 @@ Example JSONPath expressions:
 
 - **type** (`Literal`): (No documentation available.)
 - **json_path** (`str`): JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.
-- **fail_on_missing** (`bool`): Whether to raise an error if the JSONPath matches no data. If False, returns None.

@@ -12,8 +12,8 @@ pytestmark = pytest.mark.asyncio
 async def test_echo_passes_through_variables(executor_context):
     """Test that Echo step passes through all input variables to outputs."""
     # Create variables
-    var1 = Variable(id="test_var1", type="text", value=None)
-    var2 = Variable(id="test_var2", type="int", value=None)
+    var1 = Variable(id="test_var1", type="text")
+    var2 = Variable(id="test_var2", type="int")
 
     # Create Echo step
     echo_step = Echo(
@@ -53,8 +53,8 @@ async def test_echo_passes_through_variables(executor_context):
 async def test_echo_handles_different_order(executor_context):
     """Test that Echo works with inputs and outputs in different order."""
     # Create variables in different order
-    var1 = Variable(id="var_a", type="text", value=None)
-    var2 = Variable(id="var_b", type="int", value=None)
+    var1 = Variable(id="var_a", type="text")
+    var2 = Variable(id="var_b", type="int")
 
     # Create Echo step with different order for outputs
     echo_step = Echo(
@@ -94,8 +94,8 @@ async def test_echo_handles_different_order(executor_context):
 async def test_echo_with_missing_variable(executor_context):
     """Test that Echo handles missing variables gracefully."""
     # Create variables
-    var1 = Variable(id="present_var", type="text", value=None)
-    var2 = Variable(id="missing_var", type="int", value=None)
+    var1 = Variable(id="present_var", type="text")
+    var2 = Variable(id="missing_var", type="int")
 
     # Create Echo step
     echo_step = Echo(

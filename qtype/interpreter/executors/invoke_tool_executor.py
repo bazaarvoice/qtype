@@ -256,19 +256,22 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
                 )
 
             # Get value from message variables
-            value = message.variables.get(step_var_id)
-
-            # Handle missing values
-            if value is None:
-                if not tool_param.optional:
+            # Use default=None for optional params, let get_variable raise for required
+            if tool_param.optional:
+                value = message.get_variable(step_var_id, default=None)
+                if value is None:
+                    # Skip optional parameters that are unset
+                    continue
+            else:
+                try:
+                    value = message.get_variable(step_var_id)
+                except ValueError as e:
                     raise ValueError(
                         (
                             f"Required input '{step_var_id}' for tool "
                             f"parameter '{tool_param_name}' is missing"
                         )
-                    )
-                # Skip optional parameters that are missing
-                continue
+                    ) from e
 
             tool_inputs[tool_param_name] = value
 

@@ -202,6 +202,7 @@ def _pydantic_to_custom_types(
             )
         elif get_origin(field_type) is Union:
             # Assume the union means it's optional
+            # TODO: support proper unions
             field_type = [
                 t for t in get_args(field_type) if t is not type(None)
             ][0]

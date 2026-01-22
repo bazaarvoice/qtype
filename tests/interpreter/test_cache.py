@@ -27,10 +27,10 @@ pytestmark = pytest.mark.asyncio
 class CacheTestStep(Step):
     type: str = "CacheTestStep"
     inputs: list[Variable] = [
-        Variable(id="input", type=PrimitiveTypeEnum.text, value=None)
+        Variable(id="input", type=PrimitiveTypeEnum.text)
     ]
     outputs: list[Variable] = [
-        Variable(id="result", type=PrimitiveTypeEnum.text, value=None)
+        Variable(id="result", type=PrimitiveTypeEnum.text)
     ]
 
 

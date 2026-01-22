@@ -51,9 +51,7 @@ class PromptTemplateExecutor(StepExecutor):
             input_map = {}
             for var in self.step.inputs:
                 if var.id in format_args:
-                    value = message.variables.get(var.id)
-                    if value is not None:
-                        input_map[var.id] = value
+                    input_map[var.id] = message.get_variable(var.id)
 
             missing = format_args - input_map.keys()
             if missing:

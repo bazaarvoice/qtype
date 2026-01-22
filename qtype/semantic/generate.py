@@ -158,10 +158,8 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
         f.write(
             dedent('''
             class Variable(DSLVariable, BaseModel):
-                """Semantic version of DSL Variable with ID references resolved."""
-                value: Any | None = Field(None, description="The value of the variable")
-                def is_set(self) -> bool:
-                    return self.value is not None
+                """Semantic version of DSL Variable."""
+                pass
 
         ''').lstrip()
         )
