@@ -291,6 +291,10 @@ def _resolve_list_references(
                 field_value[i] = _resolve_reference(
                     item.ref, type(item), lookup_map
                 )
+            case str():
+                # Resolve string IDs to their objects (e.g., variable IDs to Variables)
+                if item in lookup_map:
+                    field_value[i] = lookup_map[item]
             case BaseModel():
                 _resolve_all_references(item, lookup_map)
 
@@ -309,6 +313,10 @@ def _resolve_dict_references(
         match v:
             case base_types.Reference():
                 field_value[k] = _resolve_reference(v.ref, type(v), lookup_map)
+            case str():
+                # Resolve string IDs to their objects (e.g., variable IDs to Variables)
+                if v in lookup_map:
+                    field_value[k] = lookup_map[v]
             case BaseModel():
                 _resolve_all_references(v, lookup_map)
 

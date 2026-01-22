@@ -35,7 +35,7 @@ async def test_construct_primitive_type(executor_context):
         type="Construct",
         inputs=[input_var],
         outputs=[output_var],
-        field_mapping={},
+        field_bindings={},
     )
 
     # Create executor
@@ -76,7 +76,7 @@ async def test_construct_list_type(executor_context):
         type="Construct",
         inputs=[input_var],
         outputs=[output_var],
-        field_mapping={},
+        field_bindings={},
     )
 
     # Create executor
@@ -103,21 +103,21 @@ async def test_construct_list_type(executor_context):
 async def test_construct_domain_type(executor_context):
     """Test constructing a domain type (RAGChunk)."""
     # Create variables
-    chunk_id_var = Variable(id="chunk_id", type=PrimitiveTypeEnum.text)
+    chunk_id_var = Variable(id="chunk", type=PrimitiveTypeEnum.text)
     doc_id_var = Variable(id="doc_id", type=PrimitiveTypeEnum.text)
     content_var = Variable(id="content", type=PrimitiveTypeEnum.text)
     output_var = Variable(id="rag_chunk", type=RAGChunk)
 
-    # Create Construct step with field mapping
+    # Create Construct step with field bindings
     construct_step = Construct(
         id="construct_rag_chunk",
         type="Construct",
         inputs=[chunk_id_var, doc_id_var, content_var],
         outputs=[output_var],
-        field_mapping={
-            "chunk_id": "chunk_id",
-            "doc_id": "document_id",
-            "content": "content",
+        field_bindings={
+            "chunk_id": chunk_id_var,
+            "document_id": doc_id_var,
+            "content": content_var,
         },
     )
 
@@ -129,7 +129,7 @@ async def test_construct_domain_type(executor_context):
     message = FlowMessage(
         session=session,
         variables={
-            "chunk_id": "chunk-123",
+            "chunk": "chunk-123",
             "doc_id": "doc-456",
             "content": "Sample chunk content",
         },
@@ -142,6 +142,7 @@ async def test_construct_domain_type(executor_context):
 
     # Verify
     assert len(results) == 1
+    assert results[0].error is None
     rag_chunk = results[0].variables["rag_chunk"]
     assert isinstance(rag_chunk, RAGChunk)
     assert rag_chunk.chunk_id == "chunk-123"
@@ -156,15 +157,15 @@ async def test_construct_custom_type(executor_context):
     score_var = Variable(id="score", type=PrimitiveTypeEnum.float)
     output_var = Variable(id="custom_obj", type=CustomTypeForTest)
 
-    # Create Construct step with field mapping
+    # Create Construct step with field bindings
     construct_step = Construct(
         id="construct_custom",
         type="Construct",
         inputs=[name_var, score_var],
         outputs=[output_var],
-        field_mapping={
-            "name": "name",
-            "score": "score",
+        field_bindings={
+            "name": name_var,
+            "score": score_var,
         },
     )
 

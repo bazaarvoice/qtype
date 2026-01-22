@@ -71,6 +71,13 @@ def to_semantic_ir(
         # If the object is already in the symbol table, return it.
         return symbol_table[obj_id]
 
+    if isinstance(dslobj, dict):
+        # If the object is a dict, recursively resolve each value
+        return {
+            key: to_semantic_ir(value, symbol_table)
+            for key, value in dslobj.items()
+        }
+
     if isinstance(dslobj, list):
         # If the object is a list, we will resolve each item in the list.
         return [to_semantic_ir(item, symbol_table) for item in dslobj]  # type: ignore

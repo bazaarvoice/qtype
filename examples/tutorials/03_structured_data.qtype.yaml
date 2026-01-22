@@ -116,7 +116,7 @@ flows:
       # Construct builds typed objects from the decoded fields
       - id: build_result
         type: Construct
-        field_mapping:
+        field_bindings:
           sentiment: sentiment
           confidence: confidence
           key_points: key_points

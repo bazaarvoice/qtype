@@ -4,3 +4,4 @@ Schema for a variable that can serve as input, output, or parameter within the D
 
 - **id** (`str`): Unique ID of the variable. Referenced in prompts or steps.
 - **type** (`VariableType | str`): Type of data expected or produced. Either a CustomType or domain specific type.
+- **ui** (`TextInputUI | FileUploadUI | None`): Hints for the UI if needed.

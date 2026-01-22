@@ -469,8 +469,9 @@ class Construct(Step):
     """A step that converts variables into an instance of a Custom or Domain Type"""
 
     type: Literal["Construct"] = Field("Construct")
-    field_mapping: dict[str, str] = Field(
-        ..., description="Mapping of type inputs to variable names, if needed."
+    field_bindings: dict[str, Variable] = Field(
+        ...,
+        description="Mapping from type field names to flow variable names.",
     )
 
 
@@ -587,13 +588,13 @@ class InvokeFlow(Step):
 
     type: Literal["InvokeFlow"] = Field("InvokeFlow")
     flow: Flow = Field(..., description="Flow to invoke.")
-    input_bindings: dict[Variable, str] = Field(
+    input_bindings: dict[str, Variable] = Field(
         ...,
-        description="Mapping from variable references to flow input variable IDs.",
+        description="Mapping from flow input variable IDs to step variable names.",
     )
-    output_bindings: dict[Variable, str] = Field(
+    output_bindings: dict[str, Variable] = Field(
         ...,
-        description="Mapping from variable references to flow output variable IDs.",
+        description="Mapping from flow output variable IDs to step variable names.",
     )
 
 
@@ -602,13 +603,13 @@ class InvokeTool(Step, ConcurrentStepMixin):
 
     type: Literal["InvokeTool"] = Field("InvokeTool")
     tool: Tool = Field(..., description="Tool to invoke.")
-    input_bindings: dict[str, str] = Field(
+    input_bindings: dict[str, Variable] = Field(
         ...,
-        description="Mapping from variable references to tool input parameter names.",
+        description="Mapping from tool parameter names to flow variable names.",
     )
-    output_bindings: dict[str, str] = Field(
+    output_bindings: dict[str, Variable] = Field(
         ...,
-        description="Mapping from variable references to tool output parameter names.",
+        description="Mapping from tool output names to flow variable names.",
     )
 
 
