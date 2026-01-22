@@ -1,0 +1,98 @@
+id: text_analysis_pipeline
+description: Demonstrates invoking reusable flows for text analysis
+
+models:
+  - type: Model
+    id: nova_lite
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+
+flows:
+  # Reusable flow for text summarization
+  - type: Flow
+    id: summarize_text
+    description: Summarizes input text
+    variables:
+      - id: input_text
+        type: text
+      - id: output_summary
+        type: text
+    inputs:
+      - input_text
+    outputs:
+      - output_summary
+    steps:
+      - type: LLMInference
+        id: summarize_step
+        model: nova_lite
+        system_message: "You provide concise summaries."
+        inputs: [input_text]
+        outputs: [output_summary]
+
+  # Reusable flow for sentiment analysis
+  - type: Flow
+    id: analyze_sentiment
+    description: Analyzes sentiment of text
+    variables:
+      - id: input_for_sentiment
+        type: text
+      - id: output_sentiment
+        type: text
+    inputs:
+      - input_for_sentiment
+    outputs:
+      - output_sentiment
+    steps:
+      - type: LLMInference
+        id: sentiment_step
+        model: nova_lite
+        system_message: "Analyze sentiment. Respond with only: positive, negative, or neutral."
+        inputs: [input_for_sentiment]
+        outputs: [output_sentiment]
+
+  # Main processing flow
+  - type: Flow
+    id: main
+    description: Orchestrates text analysis using multiple flows
+    variables:
+      - id: article_text
+        type: text
+      - id: summary
+        type: text
+      - id: sentiment
+        type: text
+      - id: report
+        type: text
+    inputs:
+      - article_text
+    outputs:
+      - report
+    steps:
+      # Invoke summarization flow
+      - type: InvokeFlow
+        id: get_summary
+        flow: summarize_text
+        input_bindings:
+          input_text: article_text
+        output_bindings:
+          output_summary: summary
+
+      # Invoke sentiment analysis flow
+      - type: InvokeFlow
+        id: get_sentiment
+        flow: analyze_sentiment
+        input_bindings:
+          input_for_sentiment: article_text
+        output_bindings:
+          output_sentiment: sentiment
+
+      # Combine results into a report
+      - type: PromptTemplate
+        id: create_report
+        template: |
+          Analysis Report
+          ---------------
+          Sentiment: {sentiment}
+          Summary: {summary}
+        inputs: [summary, sentiment]
+        outputs: [report]

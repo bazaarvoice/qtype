@@ -88,7 +88,7 @@ Structure:
 - [x] Write Data to a File
 - [x] Adjust Concurrency
 - [ ] Configure Batch Processing
-- [ ] Invoke Other Flows # Depends on https://github.com/bazaarvoice/qtype/issues/112
+- [x] Invoke Other Flows
 - [x] Cache Step Results
 - [x] Explode Collections for Fan-Out Processing
 - [x] Gather Results into a List
