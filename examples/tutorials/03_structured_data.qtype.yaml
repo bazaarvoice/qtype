@@ -9,7 +9,7 @@
 # Scenario: Analyze a product review to extract structured sentiment
 #
 # Run with:
-#   uv run run -i '{"review_text":"These headphones are amazing! Great sound quality and super comfortable. Battery lasts all day."}' examples/tutorials/03_structured_data.qtype.yaml 
+#   qtype run -i '{"review_text":"These headphones are amazing! Great sound quality and super comfortable. Battery lasts all day."}' examples/tutorials/03_structured_data.qtype.yaml 
 
 id: review_sentiment_analyzer
 description: |
@@ -116,7 +116,7 @@ flows:
       # Construct builds typed objects from the decoded fields
       - id: build_result
         type: Construct
-        field_mapping:
+        field_bindings:
           sentiment: sentiment
           confidence: confidence
           key_points: key_points

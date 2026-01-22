@@ -264,7 +264,7 @@ Final step - convert individual fields into your custom type:
       - id: build_result
         type: Construct
         output_type: ReviewSentiment
-        field_mapping:
+        field_bindings:
           sentiment: sentiment
           confidence: confidence
           key_points: key_points
@@ -282,15 +282,15 @@ Final step - convert individual fields into your custom type:
 
 **`output_type: ReviewSentiment`** - Specifies which custom type to build
 
-**`field_mapping:`** - Maps input variables to type properties:
+**`field_bindings:`** - Maps type field names to input variables:
 ```yaml
-field_mapping:
+field_bindings:
   <property_name>: <variable_name>
 ```
 
 In this case, names match (`sentiment: sentiment`), but you could use different names:
 ```yaml
-field_mapping:
+field_bindings:
   sentiment: analyzed_sentiment  # Maps analyzed_sentiment variable to sentiment property
 ```
 
@@ -432,7 +432,7 @@ Congratulations! You've mastered:
 ✅ **List types** - Working with `list[text]` and other collections  
 ✅ **Decoder step** - Parsing JSON into individual typed fields  
 ✅ **Construct step** - Building validated custom type instances  
-✅ **Field mapping** - Connecting variables to type properties  
+✅ **Field Bindings** - Connecting variables to type properties  
 ✅ **Type safety** - Catching errors early with validation  
 
 ---

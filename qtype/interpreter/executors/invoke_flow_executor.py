@@ -34,7 +34,7 @@ class InvokeFlowExecutor(StepExecutor):
         initial = message.copy_with_variables(
             {
                 id: message.variables.get(var.id)
-                for var, id in self.step.input_bindings.items()
+                for id, var in self.step.input_bindings.items()
             }
         )
         # Pass through context (already available as self.context)
@@ -46,6 +46,6 @@ class InvokeFlowExecutor(StepExecutor):
             yield msg.copy_with_variables(
                 {
                     var.id: msg.variables.get(id)
-                    for var, id in self.step.output_bindings.items()
+                    for id, var in self.step.output_bindings.items()
                 }
             )

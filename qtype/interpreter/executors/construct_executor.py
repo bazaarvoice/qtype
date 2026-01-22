@@ -46,15 +46,10 @@ class ConstructExecutor(StepExecutor):
                 inputs = message.variables[self.step.inputs[0].id]
             elif hasattr(output_var.type, "model_validate"):
                 # This is a custom type (Pydantic model)
-                # So input should be a dict
-                input_values = {
-                    input_var.id: message.variables[input_var.id]
-                    for input_var in self.step.inputs
-                }
-                # use the mapping to convert variable names to
+                # field_bindings maps type field names to Variables
                 inputs = {
-                    self.step.field_mapping.get(var_name, var_name): value  # type: ignore[attr-defined]
-                    for var_name, value in input_values.items()
+                    field_name: message.variables[var.id]
+                    for field_name, var in self.step.field_bindings.items()
                 }
             else:
                 raise ValueError(
