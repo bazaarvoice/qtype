@@ -21,6 +21,7 @@ from qtype.semantic.model import (
     DocumentIndex,
     DocumentSearch,
     Flow,
+    InvokeFlow,
     InvokeTool,
     LLMInference,
     Memory,
@@ -168,10 +169,14 @@ def _generate_step_node(
     lines = []
     external_connections = []
 
-    if isinstance(step, Flow):
-        # Nested flow
+    if isinstance(step, InvokeFlow):
         lines.append(
-            f'        {node_id}@{{shape: subproc, label: "📋 {step.id}"}}'
+            f'        {node_id}@{{shape: sub-r, label: "🔄 {step.id}"}}'
+        )
+        # Connect to the invoked flow
+        invoked_flow_id = f"FLOW_{_sanitize_id(step.flow.id)}"
+        external_connections.append(
+            f"    {node_id} -.->|invokes| {invoked_flow_id}"
         )
     elif isinstance(step, Agent):
         # Agent with tools

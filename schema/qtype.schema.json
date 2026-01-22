@@ -1084,18 +1084,25 @@
           "title": "Outputs",
           "type": "array"
         },
-        "field_mapping": {
+        "field_bindings": {
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
-          "description": "Mapping of type inputs to variable names, if needed.",
-          "title": "Field Mapping",
+          "description": "Mapping from type field names to flow variable names.",
+          "title": "Field Bindings",
           "type": "object"
         }
       },
       "required": [
         "id",
-        "field_mapping"
+        "field_bindings"
       ],
       "title": "Construct",
       "type": "object"
@@ -2678,23 +2685,31 @@
         },
         "input_bindings": {
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
-          "description": "Mapping from variable references to flow input variable IDs.",
-          "propertyNames": {
-            "$ref": "#/$defs/Reference_Variable_"
-          },
+          "description": "Mapping from flow input variable IDs to step variable names.",
           "title": "Input Bindings",
           "type": "object"
         },
         "output_bindings": {
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
-          "description": "Mapping from variable references to flow output variable IDs.",
-          "propertyNames": {
-            "$ref": "#/$defs/Reference_Variable_"
-          },
+          "description": "Mapping from flow output variable IDs to step variable names.",
           "title": "Output Bindings",
           "type": "object"
         }
@@ -2783,17 +2798,31 @@
         },
         "input_bindings": {
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
-          "description": "Mapping from variable references to tool input parameter names.",
+          "description": "Mapping from tool parameter names to flow variable names.",
           "title": "Input Bindings",
           "type": "object"
         },
         "output_bindings": {
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reference_Variable_"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
-          "description": "Mapping from variable references to tool output parameter names.",
+          "description": "Mapping from tool output names to flow variable names.",
           "title": "Output Bindings",
           "type": "object"
         }

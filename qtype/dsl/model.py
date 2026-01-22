@@ -219,6 +219,33 @@ def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
     return data
 
 
+def _merge_vars_from_bindings(
+    existing: list[Reference[Variable] | str],
+    bindings: dict[str, Reference[Variable] | str],
+) -> list[Reference[Variable] | str]:
+    """Merge existing variables with bindings and deduplicate by variable ID.
+
+    Args:
+        existing: Existing list of variable references or IDs
+        bindings: Dict mapping parameter names to variable references or IDs
+
+    Returns:
+        Merged list with duplicates removed, preserving original form
+    """
+
+    def get_id(item):
+        return item.ref if isinstance(item, Reference) else item
+
+    seen = set()
+    result = []
+    for item in list(existing) + list(bindings.values()):
+        var_id = get_id(item)
+        if var_id not in seen:
+            seen.add(var_id)
+            result.append(item)
+    return result
+
+
 class Variable(StrictBaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
@@ -434,10 +461,18 @@ class Construct(Step):
     """A step that converts variables into an instance of a Custom or Domain Type"""
 
     type: Literal["Construct"] = "Construct"
-    field_mapping: dict[str, str] = Field(
+    field_bindings: dict[str, Reference[Variable] | str] = Field(
         ...,
-        description="Mapping of type inputs to variable names, if needed.",
+        description="Mapping from type field names to flow variable names.",
     )
+
+    @model_validator(mode="after")
+    def infer_inputs_from_bindings(self) -> "Construct":
+        """Infer inputs from field bindings."""
+        self.inputs = _merge_vars_from_bindings(
+            self.inputs, self.field_bindings
+        )
+        return self
 
 
 class PromptTemplate(Step):
@@ -664,33 +699,23 @@ class InvokeTool(Step, ConcurrentStepMixin):
         ...,
         description="Tool to invoke.",
     )
-    input_bindings: dict[str, str] = Field(
+    input_bindings: dict[str, Reference[Variable] | str] = Field(
         ...,
-        description="Mapping from variable references to tool input parameter names.",
+        description="Mapping from tool parameter names to flow variable names.",
     )
-    output_bindings: dict[str, str] = Field(
+    output_bindings: dict[str, Reference[Variable] | str] = Field(
         ...,
-        description="Mapping from variable references to tool output parameter names.",
+        description="Mapping from tool output names to flow variable names.",
     )
 
     @model_validator(mode="after")
     def infer_inputs_outputs_from_bindings(self) -> "InvokeTool":
-        def _merge_vars(
-            existing: list[Reference[Variable] | str],
-            bindings: dict[str, str],
-        ) -> list[Reference[Variable] | str]:
-            """Merge existing variables with bindings and deduplicate."""
-            # NOTE: doesn't handle references. You may duplicate inputs here..
-            existing_ids = [item for item in existing if isinstance(item, str)]
-            inferred_ids = list(bindings.values())
-            merged_ids: list[Reference[Variable] | str] = [
-                Reference[Variable].model_validate({"$ref": var_id})
-                for var_id in dict.fromkeys(existing_ids + inferred_ids)
-            ]
-            return merged_ids
-
-        self.inputs = _merge_vars(self.inputs, self.input_bindings)
-        self.outputs = _merge_vars(self.outputs, self.output_bindings)
+        self.inputs = _merge_vars_from_bindings(
+            self.inputs, self.input_bindings
+        )
+        self.outputs = _merge_vars_from_bindings(
+            self.outputs, self.output_bindings
+        )
         return self
 
 
@@ -703,14 +728,24 @@ class InvokeFlow(Step):
         ...,
         description="Flow to invoke.",
     )
-    input_bindings: dict[Reference[Variable], str] = Field(
+    input_bindings: dict[str, Reference[Variable] | str] = Field(
         ...,
-        description="Mapping from variable references to flow input variable IDs.",
+        description="Mapping from flow input variable IDs to step variable names.",
     )
-    output_bindings: dict[Reference[Variable], str] = Field(
+    output_bindings: dict[str, Reference[Variable] | str] = Field(
         ...,
-        description="Mapping from variable references to flow output variable IDs.",
+        description="Mapping from flow output variable IDs to step variable names.",
     )
+
+    @model_validator(mode="after")
+    def infer_inputs_outputs_from_bindings(self) -> "InvokeFlow":
+        self.inputs = _merge_vars_from_bindings(
+            self.inputs, self.input_bindings
+        )
+        self.outputs = _merge_vars_from_bindings(
+            self.outputs, self.output_bindings
+        )
+        return self
 
 
 #
