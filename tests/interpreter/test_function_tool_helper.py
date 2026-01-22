@@ -58,34 +58,33 @@ async def test_create_python_function_tool_and_call():
 def test_qtype_type_to_python_type_list():
     """Test that list types are correctly converted to typed lists."""
     from qtype.base.types import PrimitiveTypeEnum
-    from qtype.dsl.model import ListType, ToolParameter
+    from qtype.dsl.model import ListType, Variable
 
     # Test list[text] -> list[str]
-    text_list_param = ToolParameter(
+    text_list_var = Variable(
+        id="test_param",
         type=ListType(element_type=PrimitiveTypeEnum.text),
         optional=False,
     )
-    python_type = FunctionToolHelper._qtype_type_to_python_type(
-        text_list_param
-    )
+    python_type = FunctionToolHelper._qtype_type_to_python_type(text_list_var)
     assert python_type == list[str]
 
     # Test list[int] -> list[int]
-    int_list_param = ToolParameter(
+    int_list_var = Variable(
+        id="test_param",
         type=ListType(element_type=PrimitiveTypeEnum.int),
         optional=False,
     )
-    python_type = FunctionToolHelper._qtype_type_to_python_type(int_list_param)
+    python_type = FunctionToolHelper._qtype_type_to_python_type(int_list_var)
     assert python_type == list[int]
 
     # Test list[boolean] -> list[bool]
-    bool_list_param = ToolParameter(
+    bool_list_var = Variable(
+        id="test_param",
         type=ListType(element_type=PrimitiveTypeEnum.boolean),
         optional=False,
     )
-    python_type = FunctionToolHelper._qtype_type_to_python_type(
-        bool_list_param
-    )
+    python_type = FunctionToolHelper._qtype_type_to_python_type(bool_list_var)
     assert python_type == list[bool]
 
 
@@ -115,11 +114,18 @@ async def test_create_python_function_tool_with_custom_type():
     )
 
     # Verify the output type is the custom TimeDifferenceResultType
-    assert "result" in time_diff_tool.outputs
-    output_param = time_diff_tool.outputs["result"]
+    result_output = next(
+        (
+            v
+            for v in time_diff_tool.outputs
+            if v.id == "calculate_time_difference_result"
+        ),
+        None,
+    )
+    assert result_output is not None
     # The type should be resolved to a BaseModel subclass
-    assert isinstance(output_param.type, type)
-    assert issubclass(output_param.type, BaseModel)
+    assert isinstance(result_output.type, type)
+    assert issubclass(result_output.type, BaseModel)
 
     # Create the helper and generate the FunctionTool
     helper = ToolHelper()

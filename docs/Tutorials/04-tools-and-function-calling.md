@@ -74,7 +74,7 @@ Add a `references:` section before `flows:`:
 ```yaml
 # Import pre-built tools from the commons library
 references:
-  - !include https://raw.githubusercontent.com/bazaarvoice/qtype/refs/tags/v0.1.11/common/tools.qtype.yaml
+  - !include ../../common/tools.qtype.yaml
 ```
 
 **What this means:**
@@ -258,13 +258,12 @@ In this case:
 The `timedelta` tool definition (from commons library) looks like:
 ```yaml
 inputs:
-  timestamp:
+  - id: timestamp
     type: datetime
-  days:
-    type: int
-  hours:
-    type: int
-    optional: true
+  - id: days
+    type: int?
+  - id: hours
+    type: int?
   # ... more optional parameters
 ```
 

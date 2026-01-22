@@ -3,8 +3,8 @@
   name: Tool1
   description: Test tool
   endpoint: https://api.test.com
-  inputs: {}
-  outputs: {}
+  inputs: []
+  outputs: []
 
 - id: tool1
   type: PythonFunctionTool
@@ -12,5 +12,5 @@
   description: Another test tool
   function_name: test_func
   module_path: test.module
-  inputs: {}
-  outputs: {}
+  inputs: []
+  outputs: []

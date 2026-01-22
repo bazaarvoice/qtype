@@ -115,22 +115,32 @@ def test_tools_from_module_success(temp_module):
     assert add_tool.description == "Add two numbers."
     assert add_tool.inputs is not None
     assert len(add_tool.inputs) == 2
-    assert "a" in add_tool.inputs
-    assert "b" in add_tool.inputs
-    assert add_tool.inputs["a"].type == PrimitiveTypeEnum.int
-    assert add_tool.inputs["b"].type == PrimitiveTypeEnum.int
-    assert not add_tool.inputs["a"].optional
-    assert not add_tool.inputs["b"].optional
+
+    # Find variables by id in the list
+    add_a = next((v for v in add_tool.inputs if v.id == "a"), None)
+    add_b = next((v for v in add_tool.inputs if v.id == "b"), None)
+    assert add_a is not None
+    assert add_b is not None
+    assert add_a.type == PrimitiveTypeEnum.int
+    assert add_b.type == PrimitiveTypeEnum.int
+    assert not add_a.optional
+    assert not add_b.optional
 
     greet_tool = next(t for t in tools if t.name == "greet")
     assert greet_tool.inputs is not None
     assert len(greet_tool.inputs) == 2
-    assert "name" in greet_tool.inputs
-    assert "greeting" in greet_tool.inputs
-    assert greet_tool.inputs["name"].type == PrimitiveTypeEnum.text
-    assert greet_tool.inputs["greeting"].type == PrimitiveTypeEnum.text
-    assert not greet_tool.inputs["name"].optional
-    assert greet_tool.inputs["greeting"].optional
+
+    # Find variables by id in the list
+    greet_name = next((v for v in greet_tool.inputs if v.id == "name"), None)
+    greet_greeting = next(
+        (v for v in greet_tool.inputs if v.id == "greeting"), None
+    )
+    assert greet_name is not None
+    assert greet_greeting is not None
+    assert greet_name.type == PrimitiveTypeEnum.text
+    assert greet_greeting.type == PrimitiveTypeEnum.text
+    assert not greet_name.optional
+    assert greet_greeting.optional
 
 
 def test_tools_from_module_errors():
@@ -195,10 +205,11 @@ def test_get_module_functions_no_return_annotation():
 def test_create_tool_from_function(mock_func_info, docstring, expected):
     """Test tool creation from function metadata."""
     mock_func_info["docstring"] = docstring
-    custom_types = {}
+    custom_type_registry = {}
+    custom_type_models = {}
 
     tool = _create_tool_from_function(
-        "test_func", mock_func_info, custom_types
+        "test_func", mock_func_info, custom_type_registry, custom_type_models
     )
 
     assert isinstance(tool, PythonFunctionTool)
@@ -206,9 +217,12 @@ def test_create_tool_from_function(mock_func_info, docstring, expected):
     assert tool.description == expected
     assert tool.inputs is not None
     assert len(tool.inputs) == 1
-    assert "x" in tool.inputs
-    assert tool.inputs["x"].type == PrimitiveTypeEnum.text
-    assert not tool.inputs["x"].optional
+
+    # Find variable by id in the list
+    input_x = next((v for v in tool.inputs if v.id == "x"), None)
+    assert input_x is not None
+    assert input_x.type == PrimitiveTypeEnum.text
+    assert not input_x.optional
 
 
 def test_create_tool_no_parameters():
@@ -222,12 +236,17 @@ def test_create_tool_no_parameters():
         "module": "test_module",
     }
 
-    tool = _create_tool_from_function("no_params", func_info, {})
-    assert tool.inputs == {}
+    tool = _create_tool_from_function("no_params", func_info, {}, {})
+    assert tool.inputs == []
     assert len(tool.outputs) > 0
-    assert "result" in tool.outputs
-    assert tool.outputs["result"].type == PrimitiveTypeEnum.text
-    assert not tool.outputs["result"].optional
+
+    # Find result variable in outputs list
+    result_output = next(
+        (v for v in tool.outputs if v.id == "no_params_result"), None
+    )
+    assert result_output is not None
+    assert result_output.type == PrimitiveTypeEnum.text
+    assert not result_output.optional
 
 
 @pytest.mark.parametrize(
@@ -240,13 +259,17 @@ def test_create_tool_no_parameters():
 )
 def test_pydantic_to_custom_types(model_cls, expected_props):
     """Test Pydantic model conversion to custom types."""
-    custom_types = {}
-    result = _pydantic_to_custom_types(model_cls, custom_types)
+    custom_type_registry = {}
+    custom_type_models = {}
+    result = _pydantic_to_custom_types(
+        model_cls, custom_type_registry, custom_type_models
+    )
 
     assert result == model_cls.__name__
-    assert model_cls.__name__ in custom_types
+    assert model_cls.__name__ in custom_type_registry
+    assert model_cls.__name__ in custom_type_models
 
-    custom_type = custom_types[model_cls.__name__]
+    custom_type = custom_type_models[model_cls.__name__]
     assert custom_type.properties == expected_props
 
 
@@ -257,11 +280,15 @@ def test_pydantic_already_processed():
     from qtype.dsl.model import CustomType
 
     mock_custom_type = cast(CustomType, Mock())
-    custom_types = {"SampleModel": mock_custom_type}
-    result = _pydantic_to_custom_types(SampleModel, custom_types)
+    custom_type_registry = {"SampleModel": Mock()}
+    custom_type_models = {"SampleModel": mock_custom_type}
+    result = _pydantic_to_custom_types(
+        SampleModel, custom_type_registry, custom_type_models
+    )
 
     assert result == "SampleModel"
-    assert len(custom_types) == 1
+    assert len(custom_type_registry) == 1
+    assert len(custom_type_models) == 1
 
 
 def test_pydantic_no_annotation():
@@ -271,7 +298,7 @@ def test_pydantic_no_annotation():
     mock_model.model_fields = {"bad_field": Mock(annotation=None)}
 
     with pytest.raises(TypeError, match="must have a type hint"):
-        _pydantic_to_custom_types(mock_model, {})  # type: ignore
+        _pydantic_to_custom_types(mock_model, {}, {})  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -284,23 +311,27 @@ def test_pydantic_no_annotation():
 )
 def test_map_python_type_to_variable_type_primitives(python_type, expected):
     """Test mapping primitive types."""
-    result = _map_python_type_to_variable_type(python_type, {})
+    result = _map_python_type_to_variable_type(python_type, {}, {})
     assert result == expected
 
 
 def test_map_python_type_pydantic_model():
     """Test mapping Pydantic model."""
-    custom_types = {}
-    result = _map_python_type_to_variable_type(SampleModel, custom_types)
+    custom_type_registry = {}
+    custom_type_models = {}
+    result = _map_python_type_to_variable_type(
+        SampleModel, custom_type_registry, custom_type_models
+    )
 
     assert result == "SampleModel"
-    assert "SampleModel" in custom_types
+    assert "SampleModel" in custom_type_registry
+    assert "SampleModel" in custom_type_models
 
 
 def test_map_python_type_unsupported():
     """Test error for unsupported type."""
     with pytest.raises(ValueError, match="Unsupported Python type"):
-        _map_python_type_to_variable_type(dict, {})
+        _map_python_type_to_variable_type(dict, {}, {})
 
 
 @pytest.mark.parametrize(
@@ -313,5 +344,5 @@ def test_map_python_type_unsupported():
 )
 def test_map_python_type_to_type_str(python_type, expected):
     """Test type to string mapping."""
-    result = _map_python_type_to_type_str(python_type, {})
+    result = _map_python_type_to_type_str(python_type, {}, {})
     assert result == expected

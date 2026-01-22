@@ -295,7 +295,9 @@ class Variable(StrictBaseModel):
         ),
     )
 
-    ui: UIType | None = Field(None, description="Hints for the UI if needed.")
+    ui: UIType | None = Field(
+        default=None, description="Hints for the UI if needed."
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -349,37 +351,6 @@ class CustomType(StrictBaseModel):
     id: str
     description: str | None = None
     properties: dict[str, str]
-
-
-class ToolParameter(BaseModel):
-    """Defines a tool input or output parameter with type and optional flag."""
-
-    type: VariableType | str
-    optional: bool = Field(
-        default=False, description="Whether this parameter is optional"
-    )
-
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
-        """Resolve string-based type references using the shared validator."""
-        return _resolve_type_field_validator(data, info)
-
-    @staticmethod
-    def _serialize_type(value):
-        if isinstance(value, type):
-            return value.__name__
-        elif hasattr(value, "__name__"):
-            return value.__name__
-        return value
-
-    @model_serializer
-    def _model_serializer(self):
-        # Use the default serialization, but ensure 'type' is a string
-        return {
-            "type": self._serialize_type(self.type),
-            "optional": self.optional,
-        }
 
 
 class ListType(BaseModel):
@@ -544,12 +515,12 @@ class Tool(StrictBaseModel, ABC):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    inputs: list[Variable] = Field(
+        default_factory=list,
         description="Input parameters required by this tool.",
     )
-    outputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    outputs: list[Variable] = Field(
+        default_factory=list,
         description="Output parameters produced by this tool.",
     )
 
@@ -584,9 +555,9 @@ class APITool(Tool):
         default_factory=dict,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: dict[str, ToolParameter] = Field(
-        default_factory=dict,
-        description="Output parameters produced by this tool.",
+    parameters: list[Variable] = Field(
+        default_factory=list,
+        description="Path and query parameters for the API call.",
     )
 
 

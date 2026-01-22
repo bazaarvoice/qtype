@@ -247,9 +247,12 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
         """
         tool_inputs = {}
 
-        for tool_param_name, step_var_id in self.step.input_bindings.items():
+        for tool_param_name, step_variable in self.step.input_bindings.items():
             # Get tool parameter definition
-            tool_param = self.step.tool.inputs.get(tool_param_name)
+            tool_param = next(
+                (p for p in self.step.tool.inputs if p.id == tool_param_name),
+                None,
+            )
             if not tool_param:
                 raise ValueError(
                     f"Tool parameter '{tool_param_name}' not defined in tool"
@@ -258,20 +261,12 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
             # Get value from message variables
             # Use default=None for optional params, let get_variable raise for required
             if tool_param.optional:
-                value = message.get_variable(step_var_id, default=None)
+                value = message.get_variable(step_variable.id, default=None)
                 if value is None:
                     # Skip optional parameters that are unset
                     continue
             else:
-                try:
-                    value = message.get_variable(step_var_id)
-                except ValueError as e:
-                    raise ValueError(
-                        (
-                            f"Required input '{step_var_id}' for tool "
-                            f"parameter '{tool_param_name}' is missing"
-                        )
-                    ) from e
+                value = message.get_variable(step_variable.id)
 
             tool_inputs[tool_param_name] = value
 
@@ -291,9 +286,12 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
         """
         output_vars = {}
 
-        for tool_param_name, step_var_id in self.step.output_bindings.items():
+        for tool_param_name, step_var in self.step.output_bindings.items():
             # Get tool parameter definition
-            tool_param = self.step.tool.outputs.get(tool_param_name)
+            tool_param = next(
+                (p for p in self.step.tool.outputs if p.id == tool_param_name),
+                None,
+            )
             if not tool_param:
                 raise ValueError(
                     f"Tool parameter '{tool_param_name}' not defined in tool"
@@ -314,7 +312,7 @@ class InvokeToolExecutor(StepExecutor, ToolExecutionMixin):
                 value = result
 
             if value is not None:
-                output_vars[step_var_id] = value
+                output_vars[step_var.id] = value
 
         return output_vars
 

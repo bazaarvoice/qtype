@@ -32,7 +32,6 @@ from qtype.dsl.model import (  # noqa: F401
     DecoderFormat,
     ListType,
     PrimitiveTypeEnum,
-    ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
@@ -63,12 +62,12 @@ class Tool(ImmutableModel):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    inputs: list[Variable] = Field(
+        default_factory=list,
         description="Input parameters required by this tool.",
     )
-    outputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    outputs: list[Variable] = Field(
+        default_factory=list,
         description="Output parameters produced by this tool.",
     )
 
@@ -418,9 +417,9 @@ class APITool(Tool):
         default_factory=dict,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: dict[str, ToolParameter] = Field(
-        default_factory=dict,
-        description="Output parameters produced by this tool.",
+    parameters: list[Variable] = Field(
+        default_factory=list,
+        description="Path and query parameters for the API call.",
     )
 
 

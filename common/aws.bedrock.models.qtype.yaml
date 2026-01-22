@@ -142,10 +142,6 @@
   provider: aws-bedrock
 - id: amazon.titan-embed-g1-text-02
   provider: aws-bedrock
-- id: amazon.titan-text-express-v1:0:8k
-  provider: aws-bedrock
-- id: amazon.titan-text-express-v1
-  provider: aws-bedrock
 - id: amazon.titan-embed-text-v1:2:8k
   provider: aws-bedrock
 - id: amazon.titan-embed-text-v1

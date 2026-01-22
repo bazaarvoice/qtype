@@ -54,14 +54,14 @@ def test_list_type_yaml_loading():
   endpoint: https://api.example.com/test
   method: POST
   inputs:
-    urls:
+    - id: urls
       type: list[text]
       optional: false
-    query:
+    - id: query
       type: text
       optional: false
   outputs:
-    result:
+    - id: result
       type: text
       optional: false
 """
@@ -77,7 +77,8 @@ def test_list_type_yaml_loading():
     assert len(document.root) == 1
     tool = document.root[0]
 
-    urls_param = tool.inputs["urls"]
+    urls_param = next((v for v in tool.inputs if v.id == "urls"), None)
+    assert urls_param is not None
     assert isinstance(urls_param.type, ListType)
     assert urls_param.type.element_type == PrimitiveTypeEnum.text
     assert not urls_param.optional
@@ -91,11 +92,13 @@ def test_list_type_with_python_functions():
     from qtype.dsl.model import ListType
 
     # Test list[str] -> ListType
-    result = _map_python_type_to_variable_type(list[str], {})
+    result = _map_python_type_to_variable_type(list[str], {}, {})
     assert isinstance(result, ListType)
     assert result.element_type == PrimitiveTypeEnum.text
 
     # Test list[int] -> ListType
-    result = _map_python_type_to_variable_type(list[int], {})
+    result = _map_python_type_to_variable_type(list[int], {}, {})
+    assert isinstance(result, ListType)
+    assert result.element_type == PrimitiveTypeEnum.int
     assert isinstance(result, ListType)
     assert result.element_type == PrimitiveTypeEnum.int
