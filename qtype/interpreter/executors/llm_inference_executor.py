@@ -109,7 +109,7 @@ class LLMInferenceExecutor(StepExecutor):
         # Convert input variables to chat messages
         inputs = []
         for input_var in self.step.inputs:
-            value = message.variables.get(input_var.id)
+            value = message.get_variable(input_var.id)
             # Convert any value type to ChatMessage, then to LlamaChatMessage
             chat_msg = variable_to_chat_message(value, input_var)
             inputs.append(to_chat_message(chat_msg))

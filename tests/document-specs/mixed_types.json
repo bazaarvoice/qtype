@@ -1,0 +1,17 @@
+[
+  {
+    "person": {"name": "Alice Johnson", "age": 30, "email": "alice@example.com"},
+    "result": {"content": "Found information about Python", "doc_id": "doc-123", "score": 0.95},
+    "rank": 1
+  },
+  {
+    "person": {"name": "Bob Smith", "age": 25, "email": "bob@example.com"},
+    "result": {"content": "Information about testing frameworks", "doc_id": "doc-456", "score": 0.87},
+    "rank": 2
+  },
+  {
+    "person": {"name": "Carol Davis", "age": 35, "email": "carol@example.com"},
+    "result": {"content": "Documentation on async programming", "doc_id": "doc-789", "score": 0.72},
+    "rank": 3
+  }
+]

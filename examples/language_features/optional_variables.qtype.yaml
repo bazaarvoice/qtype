@@ -1,0 +1,32 @@
+id: optional_variables_demo
+description: Demonstrates optional variables that can handle missing data gracefully
+
+flows:
+  - id: extract_optional_field
+    variables:
+      - id: user_profile
+        type: text
+      - id: email
+        type: text?
+
+    inputs:
+      - user_profile
+    outputs:
+      - email
+
+    steps:
+      # Try to extract email - may not exist, will return None if missing
+      - type: FieldExtractor
+        id: extract_email
+        inputs:
+          - user_profile
+        outputs:
+          - email
+        json_path: $.email
+
+      - type: Echo
+        id: show_result
+        inputs:
+          - email
+        outputs:
+          - email

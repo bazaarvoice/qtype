@@ -49,9 +49,7 @@ class DocToTextConverterExecutor(StepExecutor):
 
         try:
             # Get the input document
-            if input_id not in message.variables:
-                raise ValueError(f"Input variable '{input_id}' is missing")
-            doc = message.variables.get(input_id)
+            doc = message.get_variable(input_id)
             if not isinstance(doc, RAGDocument):
                 raise ValueError(
                     f"Input variable '{input_id}' must be a RAGDocument"

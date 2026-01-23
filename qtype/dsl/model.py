@@ -197,8 +197,8 @@ def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
     """
     Shared validator for resolving 'type' fields in models.
 
-    This validator resolves string-based type references using the custom
-    type registry from the validation context.
+    This validator handles optional '?' syntax and resolves string-based
+    type references using the custom type registry from the validation context.
 
     Args:
         data: The data dict being validated
@@ -212,6 +212,13 @@ def _resolve_type_field_validator(data: Any, info: ValidationInfo) -> Any:
         and "type" in data
         and isinstance(data["type"], str)
     ):
+        # Handle '?' suffix for optional types BEFORE type resolution
+        type_value = data["type"]
+        if type_value.endswith("?"):
+            # Strip '?' and mark as optional
+            data["type"] = type_value[:-1]
+            data["optional"] = True
+
         # Get the registry of custom types from the validation context.
         custom_types = (info.context or {}).get("custom_types", {})
         resolved = _resolve_variable_type(data["type"], custom_types)
@@ -246,6 +253,27 @@ def _merge_vars_from_bindings(
     return result
 
 
+def _type_to_string(type_value: Any) -> str:
+    """Convert a type value to its string representation.
+
+    Args:
+        type_value: The type value to convert
+
+    Returns:
+        String representation of the type
+    """
+    if isinstance(type_value, str):
+        return type_value
+    elif isinstance(type_value, PrimitiveTypeEnum):
+        return type_value.value
+    elif isinstance(type_value, ListType):
+        return str(type_value)
+    elif isinstance(type_value, type):
+        return type_value.__name__
+    else:
+        return str(type_value)
+
+
 class Variable(StrictBaseModel):
     """Schema for a variable that can serve as input, output, or parameter within the DSL."""
 
@@ -259,14 +287,36 @@ class Variable(StrictBaseModel):
             "Type of data expected or produced. Either a CustomType or domain specific type."
         ),
     )
+    optional: bool = Field(
+        default=False,
+        description=(
+            "Whether this variable can be unset or None. "
+            "Use '?' suffix in type string as shorthand (e.g., 'text?')."
+        ),
+    )
 
-    ui: UIType | None = Field(None, description="Hints for the UI if needed.")
+    ui: UIType | None = Field(
+        default=None, description="Hints for the UI if needed."
+    )
 
     @model_validator(mode="before")
     @classmethod
     def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
-        """Resolve string-based type references using the shared validator."""
+        """Resolve string-based type references and handle optional '?' syntax."""
         return _resolve_type_field_validator(data, info)
+
+    @model_serializer
+    def serialize_model(self):
+        """Serialize with '?' suffix for optional types."""
+        result: dict[str, Any] = {"id": self.id}
+
+        type_str = _type_to_string(self.type)
+        result["type"] = f"{type_str}?" if self.optional else type_str
+
+        if self.ui is not None:
+            result["ui"] = self.ui.model_dump()
+
+        return result
 
     @model_validator(mode="after")
     def validate_ui_type(self) -> Variable:
@@ -301,37 +351,6 @@ class CustomType(StrictBaseModel):
     id: str
     description: str | None = None
     properties: dict[str, str]
-
-
-class ToolParameter(BaseModel):
-    """Defines a tool input or output parameter with type and optional flag."""
-
-    type: VariableType | str
-    optional: bool = Field(
-        default=False, description="Whether this parameter is optional"
-    )
-
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_type(cls, data: Any, info: ValidationInfo) -> Any:
-        """Resolve string-based type references using the shared validator."""
-        return _resolve_type_field_validator(data, info)
-
-    @staticmethod
-    def _serialize_type(value):
-        if isinstance(value, type):
-            return value.__name__
-        elif hasattr(value, "__name__"):
-            return value.__name__
-        return value
-
-    @model_serializer
-    def _model_serializer(self):
-        # Use the default serialization, but ensure 'type' is a string
-        return {
-            "type": self._serialize_type(self.type),
-            "optional": self.optional,
-        }
 
 
 class ListType(BaseModel):
@@ -496,12 +515,12 @@ class Tool(StrictBaseModel, ABC):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    inputs: list[Variable] = Field(
+        default_factory=list,
         description="Input parameters required by this tool.",
     )
-    outputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    outputs: list[Variable] = Field(
+        default_factory=list,
         description="Output parameters produced by this tool.",
     )
 
@@ -536,9 +555,9 @@ class APITool(Tool):
         default_factory=dict,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: dict[str, ToolParameter] = Field(
-        default_factory=dict,
-        description="Output parameters produced by this tool.",
+    parameters: list[Variable] = Field(
+        default_factory=list,
+        description="Path and query parameters for the API call.",
     )
 
 
@@ -673,6 +692,9 @@ class FieldExtractor(Step):
     The extracted data is used to construct the output variable by passing it
     as keyword arguments to the output type's constructor.
 
+    If there is no match and the output variable is optional, it is set to None.
+    If there is no match and the output variable is required, an error is raised.
+
     Example JSONPath expressions:
     - `$.field_name` - Extract a single field
     - `$.items[*]` - Extract all items from a list
@@ -683,10 +705,6 @@ class FieldExtractor(Step):
     json_path: str = Field(
         ...,
         description="JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
-    )
-    fail_on_missing: bool = Field(
-        default=True,
-        description="Whether to raise an error if the JSONPath matches no data. If False, returns None.",
     )
 
 

@@ -16,8 +16,8 @@ async def test_explode_emits_n_messages_with_matching_references(
 ):
     """Test that Explode emits N messages with matching references."""
     # Create variables
-    input_var = Variable(id="items", type="list[text]", value=None)
-    output_var = Variable(id="item", type="text", value=None)
+    input_var = Variable(id="items", type="list[text]")
+    output_var = Variable(id="item", type="text")
 
     # Create Explode step
     explode_step = Explode(

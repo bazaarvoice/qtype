@@ -32,19 +32,15 @@ from qtype.dsl.model import (  # noqa: F401
     DecoderFormat,
     ListType,
     PrimitiveTypeEnum,
-    ToolParameter,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
 
 
 class Variable(DSLVariable, BaseModel):
-    """Semantic version of DSL Variable with ID references resolved."""
+    """Semantic version of DSL Variable."""
 
-    value: Any | None = Field(None, description="The value of the variable")
-
-    def is_set(self) -> bool:
-        return self.value is not None
+    pass
 
 
 class AuthorizationProvider(ImmutableModel):
@@ -66,12 +62,12 @@ class Tool(ImmutableModel):
     description: str = Field(
         ..., description="Description of what the tool does."
     )
-    inputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    inputs: list[Variable] = Field(
+        default_factory=list,
         description="Input parameters required by this tool.",
     )
-    outputs: dict[str, ToolParameter] = Field(
-        default_factory=dict,
+    outputs: list[Variable] = Field(
+        default_factory=list,
         description="Output parameters produced by this tool.",
     )
 
@@ -421,9 +417,9 @@ class APITool(Tool):
         default_factory=dict,
         description="Optional HTTP headers to include in the request.",
     )
-    parameters: dict[str, ToolParameter] = Field(
-        default_factory=dict,
-        description="Output parameters produced by this tool.",
+    parameters: list[Variable] = Field(
+        default_factory=list,
+        description="Path and query parameters for the API call.",
     )
 
 
@@ -556,6 +552,9 @@ class FieldExtractor(Step):
     The extracted data is used to construct the output variable by passing it
     as keyword arguments to the output type's constructor.
 
+    If there is no match and the output variable is optional, it is set to None.
+    If there is no match and the output variable is required, an error is raised.
+
     Example JSONPath expressions:
     - `$.field_name` - Extract a single field
     - `$.items[*]` - Extract all items from a list
@@ -566,10 +565,6 @@ class FieldExtractor(Step):
     json_path: str = Field(
         ...,
         description="JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
-    )
-    fail_on_missing: bool = Field(
-        True,
-        description="Whether to raise an error if the JSONPath matches no data. If False, returns None.",
     )
 
 

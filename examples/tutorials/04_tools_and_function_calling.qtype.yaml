@@ -8,7 +8,7 @@
 # Scenario: Calculate a deadline by adding days to the current time
 #
 # Run with:
-#   uv run qtype run -i '{"days_until_due": 3}' examples/tutorials/04_tools_and_function_calling.qtype.yaml
+#   qtype run -i '{"days_until_due": 3}' examples/tutorials/04_tools_and_function_calling.qtype.yaml
 
 id: deadline_calculator
 description: |
@@ -17,7 +17,7 @@ description: |
 
 # Import pre-built tools from the commons library
 references:
-  - !include https://raw.githubusercontent.com/bazaarvoice/qtype/refs/tags/v0.1.11/common/tools.qtype.yaml
+  - !include ../../common/tools.qtype.yaml
 
 flows:
   - id: calculate_deadline
@@ -50,7 +50,7 @@ flows:
         tool: qtype.application.commons.tools.get_current_timestamp
         input_bindings: {}
         output_bindings:
-          result: current_time
+          get_current_timestamp_result: current_time
         outputs:
           - current_time
 
@@ -71,7 +71,7 @@ flows:
           timestamp: current_time
           days: days_until_due
         output_bindings:
-          result: deadline_time
+          timedelta_result: deadline_time
         outputs:
           - deadline_time
 
@@ -84,6 +84,6 @@ flows:
           timestamp: deadline_time
           format_string: format_string
         output_bindings:
-          result: deadline_formatted
+          format_datetime_result: deadline_formatted
         outputs:
           - deadline_formatted

@@ -68,20 +68,20 @@
           "type": "string"
         },
         "inputs": {
-          "additionalProperties": {
-            "$ref": "#/$defs/ToolParameter"
-          },
           "description": "Input parameters required by this tool.",
+          "items": {
+            "$ref": "#/$defs/Variable"
+          },
           "title": "Inputs",
-          "type": "object"
+          "type": "array"
         },
         "outputs": {
-          "additionalProperties": {
-            "$ref": "#/$defs/ToolParameter"
-          },
           "description": "Output parameters produced by this tool.",
+          "items": {
+            "$ref": "#/$defs/Variable"
+          },
           "title": "Outputs",
-          "type": "object"
+          "type": "array"
         },
         "type": {
           "const": "APITool",
@@ -125,12 +125,12 @@
           "type": "object"
         },
         "parameters": {
-          "additionalProperties": {
-            "$ref": "#/$defs/ToolParameter"
+          "description": "Path and query parameters for the API call.",
+          "items": {
+            "$ref": "#/$defs/Variable"
           },
-          "description": "Output parameters produced by this tool.",
           "title": "Parameters",
-          "type": "object"
+          "type": "array"
         }
       },
       "required": [
@@ -1969,7 +1969,7 @@
     },
     "FieldExtractor": {
       "additionalProperties": false,
-      "description": "Extracts specific fields from input data using JSONPath expressions.\n\nThis step uses JSONPath syntax to extract data from structured inputs\n(Pydantic models, dicts, lists). The input is first converted to a dict\nusing model_dump() if it's a Pydantic model, then the JSONPath expression\nis evaluated.\n\nIf the JSONPath matches multiple values, the step yields multiple output\nmessages (1-to-many cardinality). If it matches a single value, it yields\none output message. If it matches nothing, it raises an error.\n\nThe extracted data is used to construct the output variable by passing it\nas keyword arguments to the output type's constructor.\n\nExample JSONPath expressions:\n- `$.field_name` - Extract a single field\n- `$.items[*]` - Extract all items from a list\n- `$.items[?(@.price > 10)]` - Filter items by condition",
+      "description": "Extracts specific fields from input data using JSONPath expressions.\n\nThis step uses JSONPath syntax to extract data from structured inputs\n(Pydantic models, dicts, lists). The input is first converted to a dict\nusing model_dump() if it's a Pydantic model, then the JSONPath expression\nis evaluated.\n\nIf the JSONPath matches multiple values, the step yields multiple output\nmessages (1-to-many cardinality). If it matches a single value, it yields\none output message. If it matches nothing, it raises an error.\n\nThe extracted data is used to construct the output variable by passing it\nas keyword arguments to the output type's constructor.\n\nIf there is no match and the output variable is optional, it is set to None.\nIf there is no match and the output variable is required, an error is raised.\n\nExample JSONPath expressions:\n- `$.field_name` - Extract a single field\n- `$.items[*]` - Extract all items from a list\n- `$.items[?(@.price > 10)]` - Filter items by condition",
       "properties": {
         "cache_config": {
           "anyOf": [
@@ -2028,12 +2028,6 @@
           "description": "JSONPath expression to extract data from the input. Uses jsonpath-ng syntax.",
           "title": "Json Path",
           "type": "string"
-        },
-        "fail_on_missing": {
-          "default": true,
-          "description": "Whether to raise an error if the JSONPath matches no data. If False, returns None.",
-          "title": "Fail On Missing",
-          "type": "boolean"
         }
       },
       "required": [
@@ -3259,20 +3253,20 @@
           "type": "string"
         },
         "inputs": {
-          "additionalProperties": {
-            "$ref": "#/$defs/ToolParameter"
-          },
           "description": "Input parameters required by this tool.",
+          "items": {
+            "$ref": "#/$defs/Variable"
+          },
           "title": "Inputs",
-          "type": "object"
+          "type": "array"
         },
         "outputs": {
-          "additionalProperties": {
-            "$ref": "#/$defs/ToolParameter"
-          },
           "description": "Output parameters produced by this tool.",
+          "items": {
+            "$ref": "#/$defs/Variable"
+          },
           "title": "Outputs",
-          "type": "object"
+          "type": "array"
         },
         "type": {
           "const": "PythonFunctionTool",
@@ -3687,37 +3681,6 @@
       "title": "ToolList",
       "type": "array"
     },
-    "ToolParameter": {
-      "description": "Defines a tool input or output parameter with type and optional flag.",
-      "properties": {
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PrimitiveTypeEnum"
-            },
-            {},
-            {
-              "$ref": "#/$defs/ListType"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "title": "Type"
-        },
-        "optional": {
-          "default": false,
-          "description": "Whether this parameter is optional",
-          "title": "Optional",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "title": "ToolParameter",
-      "type": "object"
-    },
     "TypeList": {
       "description": "Schema for a standalone list of type definitions.",
       "items": {
@@ -3750,6 +3713,12 @@
           ],
           "description": "Type of data expected or produced. Either a CustomType or domain specific type.",
           "title": "Type"
+        },
+        "optional": {
+          "default": false,
+          "description": "Whether this variable can be unset or None. Use '?' suffix in type string as shorthand (e.g., 'text?').",
+          "title": "Optional",
+          "type": "boolean"
         },
         "ui": {
           "anyOf": [

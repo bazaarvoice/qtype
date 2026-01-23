@@ -7,4 +7,4 @@ Tool that invokes an API endpoint.
 - **method** (`str`): HTTP method to use (GET, POST, PUT, DELETE, etc.).
 - **auth** (`Reference[AuthProviderType] | str | None`): Optional AuthorizationProvider for API authentication.
 - **headers** (`dict[str, str]`): Optional HTTP headers to include in the request.
-- **parameters** (`dict[str, ToolParameter]`): Output parameters produced by this tool.
+- **parameters** (`list[Variable]`): Path and query parameters for the API call.

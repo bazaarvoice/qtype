@@ -26,7 +26,7 @@ from qtype.dsl.model import (
     BearerTokenAuthProvider,
     CustomType,
     OAuth2AuthProvider,
-    ToolParameter,
+    Variable,
     VariableType,
 )
 
@@ -202,9 +202,9 @@ def create_tool_parameters_from_body(
     existing_custom_types: dict[str, CustomType],
     schema_name_map: dict[int, str],
     default_param_name: str,
-) -> dict[str, ToolParameter]:
+) -> list[Variable]:
     """
-    Convert an OpenAPI Response or RequestBody to a dictionary of ToolParameters.
+    Convert an OpenAPI Response or RequestBody to a list of Variables.
 
     If the body has only one content type with an Object schema, flatten its properties
     to individual parameters. Otherwise, create a single parameter with the body type.
@@ -216,18 +216,18 @@ def create_tool_parameters_from_body(
         default_param_name: Name to use for non-flattened parameter
 
     Returns:
-        Dictionary of parameter name to ToolParameter objects
+        List of Variable objects
     """
     # Check if we have content to analyze
     if not hasattr(oas, "content") or not oas.content:
-        return {}
+        return []
 
     content = oas.content[0]
     input_type = to_variable_type(
         content, existing_custom_types, schema_name_map
     )
 
-    # Convert CustomType to string ID for ToolParameter
+    # Convert CustomType to string ID for Variable
     input_type_value = (
         input_type.id if isinstance(input_type, CustomType) else input_type
     )
@@ -240,7 +240,7 @@ def create_tool_parameters_from_body(
         custom_type = existing_custom_types[input_type.id]
 
         # Flatten the custom type properties to individual parameters
-        flattened_parameters = {}
+        flattened_parameters = []
         for prop_name, prop_type_str in custom_type.properties.items():
             # Check if the property is optional (has '?' suffix)
             is_optional = prop_type_str.endswith("?")
@@ -248,8 +248,10 @@ def create_tool_parameters_from_body(
                 prop_type_str.rstrip("?") if is_optional else prop_type_str
             )
 
-            flattened_parameters[prop_name] = ToolParameter(
-                type=clean_type, optional=is_optional
+            flattened_parameters.append(
+                Variable.model_construct(
+                    id=prop_name, type=clean_type, optional=is_optional
+                )
             )
 
         # remove the type from existing_custom_types to avoid confusion
@@ -258,11 +260,11 @@ def create_tool_parameters_from_body(
         return flattened_parameters
 
     # If not flattening, create a single parameter (e.g., for simple types or arrays)
-    return {
-        default_param_name: ToolParameter(
-            type=input_type_value, optional=False
+    return [
+        Variable.model_construct(
+            id=default_param_name, type=input_type_value, optional=False
         )
-    }
+    ]
 
 
 def to_api_tool(
@@ -297,7 +299,7 @@ def to_api_tool(
     ).replace("\n", " ")
 
     # Process inputs from request body and parameters
-    inputs = {}
+    inputs = []
     if operation.request_body and operation.request_body.content:
         # Create input parameters from request body using the new function
         input_params = create_tool_parameters_from_body(
@@ -306,27 +308,31 @@ def to_api_tool(
             schema_name_map,
             default_param_name="request",
         )
-        inputs.update(input_params)
+        inputs.extend(input_params)
 
     # Add path and query parameters as inputs
-    parameters = {}
+    parameters = []
     for param in operation.parameters:
         if param.schema:
             param_type = _schema_to_qtype_type(
                 param.schema, existing_custom_types, schema_name_map
             )
-            # Convert to appropriate type for ToolParameter
+            # Convert to appropriate type for Variable
             param_type_value = (
                 param_type.id
                 if isinstance(param_type, CustomType)
                 else param_type
             )
-            parameters[param.name] = ToolParameter(
-                type=param_type_value, optional=not param.required
+            parameters.append(
+                Variable.model_construct(
+                    id=param.name,
+                    type=param_type_value,
+                    optional=not param.required,
+                )
             )
 
     # Process outputs from responses
-    outputs = {}
+    outputs = []
     # Find the success response (200-299 status codes) or default response
     success_response = next(
         (r for r in operation.responses if r.code and 200 <= r.code < 300),
@@ -339,9 +345,9 @@ def to_api_tool(
             success_response,
             existing_custom_types,
             schema_name_map,
-            default_param_name="response",
+            default_param_name=f"{tool_id}_response",
         )
-        outputs.update(output_params)
+        outputs.extend(output_params)
 
     return APITool(
         id=tool_id,

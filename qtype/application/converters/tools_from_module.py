@@ -10,7 +10,7 @@ from qtype.dsl.model import (
     CustomType,
     ListType,
     PythonFunctionTool,
-    ToolParameter,
+    Variable,
     VariableType,
 )
 
@@ -43,14 +43,19 @@ def tools_from_module(
                 f"No public functions found in module '{module_path}'"
             )
 
-        custom_types: dict[str, CustomType] = {}
+        # Registry of actual Pydantic classes for validation
+        custom_type_registry: dict[str, Type[BaseModel]] = {}
+        # CustomType instances for YAML output
+        custom_type_models: dict[str, CustomType] = {}
 
         # Create Tool instances from functions
         tools = [
-            _create_tool_from_function(func_name, func_info, custom_types)
+            _create_tool_from_function(
+                func_name, func_info, custom_type_registry, custom_type_models
+            )
             for func_name, func_info in functions.items()
         ]
-        return (tools, list(custom_types.values()))
+        return (tools, list(custom_type_models.values()))
     except ImportError as e:
         raise ImportError(f"Cannot import module '{module_path}': {e}") from e
 
@@ -116,7 +121,8 @@ def _get_module_functions(
 def _create_tool_from_function(
     func_name: str,
     func_info: dict[str, Any],
-    custom_types: dict[str, CustomType],
+    custom_type_registry: dict[str, Type[BaseModel]],
+    custom_type_models: dict[str, CustomType],
 ) -> PythonFunctionTool:
     """
     Convert function metadata into a Tool instance.
@@ -135,29 +141,38 @@ def _create_tool_from_function(
         else f"Function {func_name}"
     )
 
-    # Create input parameters from function parameters
-    inputs = {
-        p["name"]: ToolParameter(
-            type=_map_python_type_to_variable_type(p["type"], custom_types),
-            optional=p["default"] != inspect.Parameter.empty,
+    # Create input parameters as list of Variables
+    inputs = [
+        Variable.model_validate(
+            {
+                "id": p["name"],
+                "type": _map_python_type_to_variable_type(
+                    p["type"], custom_type_registry, custom_type_models
+                ),
+                "optional": p["default"] != inspect.Parameter.empty,
+            },
+            context={"custom_types": custom_type_registry},
         )
         for p in func_info["parameters"]
-    }
-
-    # # quick hack
-    # for k, v in inputs.items():
-    #     if inspect.isclass(v.type) and issubclass(v.type, BaseModel):
-    #         v.type = str(v.type.__name__)
+    ]
 
     # Create output parameter based on return type
     tool_id = func_info["module"] + "." + func_name
 
     output_type = _map_python_type_to_variable_type(
-        func_info["return_type"], custom_types
+        func_info["return_type"], custom_type_registry, custom_type_models
     )
 
-    outputs = {"result": ToolParameter(type=output_type, optional=False)}
-    # outputs['result'].type =
+    outputs = [
+        Variable.model_validate(
+            {
+                "id": f"{func_name}_result",
+                "type": output_type,
+                "optional": False,
+            },
+            context={"custom_types": custom_type_registry},
+        )
+    ]
 
     return PythonFunctionTool(
         id=tool_id,
@@ -172,7 +187,8 @@ def _create_tool_from_function(
 
 def _pydantic_to_custom_types(
     model_cls: Type[BaseModel],
-    custom_types: dict[str, CustomType],
+    custom_type_registry: dict[str, Type[BaseModel]],
+    custom_type_models: dict[str, CustomType],
 ) -> str:
     """
     Converts a Pydantic BaseModel class into a QType CustomType.
@@ -184,14 +200,19 @@ def _pydantic_to_custom_types(
 
     Args:
         model_cls: The Pydantic model class to convert.
+        custom_type_registry: Registry of actual Pydantic classes for validation
+        custom_type_models: Dictionary of CustomType models for YAML output
 
     Returns:
-        A dictionary mapping field names to their corresponding CustomType definitions.
+        The model name as a string type reference
     """
     properties = {}
     model_name = model_cls.__name__
-    if model_name in custom_types:
+    if model_name in custom_type_registry:
         return model_name  # Already processed
+
+    # Register the actual class for validation
+    custom_type_registry[model_name] = model_cls
 
     for field_name, field_info in model_cls.model_fields.items():
         # Use the annotation (the type hint) for the field
@@ -202,22 +223,27 @@ def _pydantic_to_custom_types(
             )
         elif get_origin(field_type) is Union:
             # Assume the union means it's optional
+            # TODO: support proper unions
             field_type = [
                 t for t in get_args(field_type) if t is not type(None)
             ][0]
-            rv = _map_python_type_to_type_str(field_type, custom_types)
+            rv = _map_python_type_to_type_str(
+                field_type, custom_type_registry, custom_type_models
+            )
             properties[field_name] = f"{rv}?"
         elif get_origin(field_type) is list:
             inner_type = get_args(field_type)[0]
-            rv = _map_python_type_to_type_str(inner_type, custom_types)
+            rv = _map_python_type_to_type_str(
+                inner_type, custom_type_registry, custom_type_models
+            )
             properties[field_name] = f"list[{rv}]"
         else:
             properties[field_name] = _map_python_type_to_type_str(
-                field_type, custom_types
+                field_type, custom_type_registry, custom_type_models
             )
 
-    # Add the custom type to the list
-    custom_types[model_name] = CustomType(
+    # Add the CustomType model for YAML output
+    custom_type_models[model_name] = CustomType(
         id=model_name,
         properties=properties,
         description=model_cls.__doc__ or f"Custom type for {model_name}",
@@ -227,7 +253,8 @@ def _pydantic_to_custom_types(
 
 def _map_python_type_to_variable_type(
     python_type: Any,
-    custom_types: dict[str, CustomType],
+    custom_type_registry: dict[str, Type[BaseModel]],
+    custom_type_models: dict[str, CustomType],
 ) -> str | VariableType:
     """
     Map Python type annotations to QType VariableType.
@@ -248,7 +275,9 @@ def _map_python_type_to_variable_type(
             element_type_annotation = args[0]
             # Recursively map the element type
             element_type = _map_python_type_to_variable_type(
-                element_type_annotation, custom_types
+                element_type_annotation,
+                custom_type_registry,
+                custom_type_models,
             )
             # Support lists of both primitive types and custom types
             if isinstance(element_type, PrimitiveTypeEnum):
@@ -281,7 +310,9 @@ def _map_python_type_to_variable_type(
         return python_type.__name__
     elif inspect.isclass(python_type) and issubclass(python_type, BaseModel):
         # If it's a Pydantic model, create or retrieve its CustomType definition
-        return _pydantic_to_custom_types(python_type, custom_types)
+        return _pydantic_to_custom_types(
+            python_type, custom_type_registry, custom_type_models
+        )
     raise ValueError(
         f"Unsupported Python type '{python_type}' for VariableType mapping"
     )
@@ -289,9 +320,12 @@ def _map_python_type_to_variable_type(
 
 def _map_python_type_to_type_str(
     python_type: Any,
-    custom_types: dict[str, CustomType],
+    custom_type_registry: dict[str, Type[BaseModel]],
+    custom_type_models: dict[str, CustomType],
 ) -> str:
-    var_type = _map_python_type_to_variable_type(python_type, custom_types)
+    var_type = _map_python_type_to_variable_type(
+        python_type, custom_type_registry, custom_type_models
+    )
     if isinstance(var_type, PrimitiveTypeEnum):
         return var_type.value
     elif inspect.isclass(python_type):

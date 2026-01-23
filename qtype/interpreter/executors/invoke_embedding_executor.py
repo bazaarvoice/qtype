@@ -52,10 +52,7 @@ class InvokeEmbeddingExecutor(StepExecutor):
 
         try:
             # Get the input value
-            input_value = message.variables.get(input_id)
-
-            if input_value is None:
-                raise ValueError(f"Input variable '{input_id}' is missing")
+            input_value = message.get_variable(input_id)
 
             def _call(input_value=input_value):
                 # Generate embedding based on input type

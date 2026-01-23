@@ -62,9 +62,7 @@ async def test_construct_primitive_type(executor_context):
 async def test_construct_list_type(executor_context):
     """Test constructing a list type."""
     # Create variables
-    input_var = Variable(
-        id="items_input", type=PrimitiveTypeEnum.text, value=None
-    )
+    input_var = Variable(id="items_input", type=PrimitiveTypeEnum.text)
     output_var = Variable(
         id="items_list",
         type=ListType(element_type=PrimitiveTypeEnum.int),

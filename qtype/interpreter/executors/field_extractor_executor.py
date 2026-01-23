@@ -111,15 +111,11 @@ class FieldExtractorExecutor(StepExecutor):
             Multiple messages may be yielded if JSONPath matches multiple values.
         """
         input_id = self.step.inputs[0].id
-        output_id = self.step.outputs[0].id
+        output_var = self.step.outputs[0]
 
         try:
             # Get the input value
-            input_value = message.variables.get(input_id)
-            if input_value is None:
-                raise ValueError(
-                    f"Input variable '{input_id}' is not set or is None"
-                )
+            input_value = message.get_variable(input_id)
 
             await self.stream_emitter.status(
                 f"Extracting fields using JSONPath: {self.step.json_path}"
@@ -132,17 +128,20 @@ class FieldExtractorExecutor(StepExecutor):
             matches = self.jsonpath_expr.find(input_dict)
 
             if not matches:
-                if self.step.fail_on_missing:
+                if output_var.optional:
+                    # Yield message with None output
+                    await self.stream_emitter.status(
+                        "JSONPath matched 0 value(s)"
+                    )
+                    yield message.copy_with_variables({output_var.id: None})
+                    return
+                else:
                     raise ValueError(
                         (
                             f"JSONPath expression '{self.step.json_path}' "
                             f"did not match any data in input"
                         )
                     )
-                else:
-                    # Yield message with None output
-                    yield message.copy_with_variables({output_id: None})
-                    return
 
             await self.stream_emitter.status(
                 f"JSONPath matched {len(matches)} value(s)"
@@ -156,7 +155,9 @@ class FieldExtractorExecutor(StepExecutor):
                 output_value = self._construct_output(extracted_data)
 
                 # Yield message with the constructed output
-                yield message.copy_with_variables({output_id: output_value})
+                yield message.copy_with_variables(
+                    {output_var.id: output_value}
+                )
 
         except Exception as e:
             # Emit error event to stream so frontend can display it

@@ -14,7 +14,7 @@ from pydantic import create_model
 from qtype.base.types import PrimitiveTypeEnum
 from qtype.dsl.model import ListType
 from qtype.dsl.types import PRIMITIVE_TO_PYTHON_TYPE
-from qtype.semantic.model import APITool, PythonFunctionTool, ToolParameter
+from qtype.semantic.model import APITool, PythonFunctionTool, Variable
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +29,9 @@ class FunctionToolHelper:
 
     @staticmethod
     def _qtype_type_to_python_type(
-        param: ToolParameter,
+        param: Variable,
     ) -> type:
-        """Convert QType ToolParameter type to Python type for Pydantic.
+        """Convert QType Variable type to Python type for Pydantic.
 
         The param.type has already been resolved during semantic model
         creation, so we just need to convert it to the appropriate Python
@@ -42,7 +42,7 @@ class FunctionToolHelper:
         - Unknown → str
 
         Args:
-            param: The QType ToolParameter to convert.
+            param: The QType Variable to convert.
 
         Returns:
             Python type suitable for Pydantic field annotation.
@@ -55,7 +55,8 @@ class FunctionToolHelper:
         if isinstance(param.type, ListType):
             # Create a mock parameter with the element type to recursively
             # resolve it
-            element_param = ToolParameter(
+            element_param = Variable(
+                id="temp",
                 type=param.type.element_type,
                 optional=False,
             )
@@ -74,13 +75,13 @@ class FunctionToolHelper:
     @staticmethod
     def _create_fn_schema(
         tool_name: str,
-        inputs: dict[str, ToolParameter],
+        inputs: list[Variable],
     ) -> type[BaseModel] | None:
         """Create a Pydantic model from QType tool input parameters.
 
         Args:
             tool_name: Name of the tool (used for model name).
-            inputs: Dictionary of input parameter names to ToolParameter.
+            inputs: List of input Variables.
 
         Returns:
             Pydantic BaseModel class representing the tool's input schema.
@@ -91,17 +92,17 @@ class FunctionToolHelper:
         # Each field is a tuple of (type_annotation, field_info)
         field_definitions: dict[str, Any] = {}
 
-        for param_name, param in inputs.items():
+        for param in inputs:
             python_type = FunctionToolHelper._qtype_type_to_python_type(param)
 
             # Create field with optional annotation
             if param.optional:
-                field_definitions[param_name] = (
+                field_definitions[param.id] = (
                     python_type | None,  # type: ignore[valid-type]
                     PydanticField(default=None),
                 )
             else:
-                field_definitions[param_name] = (
+                field_definitions[param.id] = (
                     python_type,
                     PydanticField(...),
                 )

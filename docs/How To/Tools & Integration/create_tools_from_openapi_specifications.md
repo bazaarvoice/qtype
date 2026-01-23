@@ -31,20 +31,17 @@ tools:
     method: GET
     endpoint: /api/v3/pet/{petId}
     auth: swagger-petstore---openapi-30_api_key_api_key
-    parameters:
-      petId:
+    inputs:
+      - id: petId
         type: int
-        optional: false
     outputs:
-      id:
-        type: int
-        optional: true
-      name:
+      - id: id
+        type: int?
+      - id: name
         type: text
-        optional: false
-      status:
-        type: text
-        optional: true
+      - id: status
+        type: text?
+    parameters: []
 ```
 
 ### Explanation

@@ -5,11 +5,11 @@
   endpoint: https://api.weather.com/v1/current
   method: GET
   inputs:
-    location:
+    - id: location
       type: text
       optional: false
   outputs:
-    temperature:
+    - id: temperature
       type: float
       optional: false
 
@@ -20,13 +20,13 @@
   function_name: calculate_sum
   module_path: my_tools.math_utils
   inputs:
-    a:
+    - id: a
       type: int
       optional: false
-    b:
+    - id: b
       type: int
       optional: false
   outputs:
-    result:
+    - id: result
       type: int
       optional: false

@@ -25,7 +25,7 @@ def aggregate_step():
         id="aggregate-step",
         type="Aggregate",
         inputs=[],
-        outputs=[Variable(id="stats", type="AggregateStats", value=None)],
+        outputs=[Variable(id="stats", type="AggregateStats")],
     )
 
 

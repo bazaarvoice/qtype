@@ -1,10 +1,37 @@
 from typing import Any, Dict, Literal, Optional, Protocol, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_serializer
 
 from qtype.base.types import StrictBaseModel
 from qtype.dsl.domain_types import ChatMessage
 from qtype.semantic.model import Step
+
+
+class _UnsetType:
+    """Sentinel representing an unset variable.
+
+    Distinguishes between:
+    - Variable never mentioned (not in dict)
+    - Variable explicitly unset (UNSET value in dict)
+    - Variable set to None (None value in dict)
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+    def __bool__(self) -> bool:
+        return False
+
+
+UNSET = _UnsetType()
+
 
 # Stream Event Types (Discriminated Union)
 # These events are emitted by executors during flow execution
@@ -293,8 +320,9 @@ class FlowMessage(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True
-    )  # Enforces immutability at the model level
+        frozen=True,
+        arbitrary_types_allowed=True,  # Allow UNSET sentinel
+    )
 
     session: Session
     variables: Dict[str, Any] = Field(
@@ -306,6 +334,49 @@ class FlowMessage(BaseModel):
     def is_failed(self) -> bool:
         """Checks if this state has encountered an error."""
         return self.error is not None
+
+    def is_set(self, var_id: str) -> bool:
+        """Check if a variable is set (not UNSET, may be None)."""
+        value = self.variables.get(var_id, UNSET)
+        return value is not UNSET
+
+    def get_variable(self, var_id: str, *, default: Any = UNSET) -> Any:
+        """Get variable value, raising if unset and no default provided.
+
+        Args:
+            var_id: Variable identifier
+            default: Value to return if variable is unset. If not provided,
+                    raises ValueError on unset variables.
+
+        Returns:
+            Variable value (may be None if explicitly set to None)
+
+        Raises:
+            ValueError: If variable is unset and no default provided
+
+        Examples:
+            # Required variable - throws if unset
+            value = message.get_variable("user_input")
+
+            # Optional variable - returns None if unset
+            value = message.get_variable("optional_field", default=None)
+
+            # Optional with custom default
+            value = message.get_variable("count", default=0)
+        """
+        value = self.variables.get(var_id, UNSET)
+
+        if value is UNSET:
+            if default is UNSET:
+                raise ValueError(
+                    (
+                        f"Required variable '{var_id}' is not set. "
+                        f"Available variables: {list(self.variables.keys())}"
+                    )
+                )
+            return default
+
+        return value
 
     def copy_with_error(self, step_id: str, exc: Exception) -> "FlowMessage":
         """Returns a copy of this state marked as failed."""
@@ -319,14 +390,28 @@ class FlowMessage(BaseModel):
             }
         )
 
-    # It's useful to have copy-on-write style helpers
     def copy_with_variables(
         self, new_variables: dict[str, Any]
     ) -> "FlowMessage":
+        """Create a new FlowMessage with updated variables.
+
+        Note: Can set variables to UNSET to explicitly mark them as unset.
+        """
         new_vars = self.variables.copy()
         new_vars.update(new_variables)
         new_state = self.model_copy(update={"variables": new_vars})
         return new_state
+
+    @model_serializer
+    def serialize_model(self):
+        """Custom serialization that excludes UNSET variables."""
+        return {
+            "session": self.session,
+            "variables": {
+                k: v for k, v in self.variables.items() if v is not UNSET
+            },
+            "error": self.error,
+        }
 
 
 class InterpreterError(Exception):

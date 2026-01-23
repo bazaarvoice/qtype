@@ -478,4 +478,4 @@ A: Not directly. Decoder maps JSON fields to individual outputs. If you need the
 A: Use **Decoder** when you have a JSON/XML string to parse. Use **FieldExtractor** when you already have structured data and need to extract specific fields using JSONPath (covered in advanced tutorials).
 
 **Q: Can I make properties optional?**  
-A: Currently all properties are required. For optional fields, you can define them in your flow logic but not include them in the Construct step.
+A: Yes! Mark variables as optional using the `?` suffix (e.g., `type: text?`). Optional variables can be unset, `None`, or have a value. This is useful when extracting fields that may not always be present. See [Use Optional Variables](../How%20To/Language%20Features/use_optional_variables.md).

@@ -4,7 +4,7 @@ from qtype.dsl.model import ListType
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.types import FlowMessage
-from qtype.interpreter.typing import instantiate_variable
+from qtype.interpreter.typing import convert_dict_to_typed_variables
 from qtype.semantic.model import Construct
 
 
@@ -43,21 +43,26 @@ class ConstructExecutor(StepExecutor):
                 isinstance(output_var.type, ListType)
                 or len(self.step.inputs) == 1
             ):
-                inputs = message.variables[self.step.inputs[0].id]
+                # Single input: pass value directly
+                data = {
+                    output_var.id: message.variables[self.step.inputs[0].id]
+                }
             elif hasattr(output_var.type, "model_validate"):
                 # This is a custom type (Pydantic model)
                 # field_bindings maps type field names to Variables
-                inputs = {
-                    field_name: message.variables[var.id]
-                    for field_name, var in self.step.field_bindings.items()
+                data = {
+                    output_var.id: {
+                        field_name: message.variables[var.id]
+                        for field_name, var in self.step.field_bindings.items()
+                    }
                 }
             else:
                 raise ValueError(
                     "Construct step must have either a single input or output of a custom type."
                 )
-            constructed_value = instantiate_variable(output_var, inputs)
-            yield message.copy_with_variables(
-                {output_var.id: constructed_value}
-            )
+
+            # Use convert_dict_to_typed_variables to validate and convert
+            result = convert_dict_to_typed_variables(data, self.step.outputs)
+            yield message.copy_with_variables(result)
         except Exception as e:
             yield message.copy_with_error(self.step.id, e)

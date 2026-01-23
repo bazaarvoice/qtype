@@ -2,7 +2,8 @@ auths:
 - id: tavily-api_bearerauth_token
   token: ${TAVILY-API_BEARER}
   type: bearer_token
-description: Tools created from API specification tavily.oas.yaml
+description: Tools created from API specification 
+  examples/research_assistant/tavily.oas.yaml
 flows: []
 id: tavily-api
 indexes: []
@@ -17,81 +18,54 @@ tools:
   headers: {}
   id: search
   inputs:
-    auto_parameters:
-      optional: true
-      type: boolean
-    country:
-      optional: true
-      type: text
-    days:
-      optional: true
-      type: int
-    end_date:
-      optional: true
-      type: text
-    exclude_domains:
-      optional: true
-      type:
-        element_type: text
-    include_answer:
-      optional: true
-      type: text
-    include_domains:
-      optional: true
-      type:
-        element_type: text
-    include_favicon:
-      optional: true
-      type: boolean
-    include_images:
-      optional: true
-      type: boolean
-    include_raw_content:
-      optional: true
-      type: text
-    max_results:
-      optional: true
-      type: int
-    query:
-      optional: false
-      type: text
-    search_depth:
-      optional: true
-      type: text
-    start_date:
-      optional: true
-      type: text
-    time_range:
-      optional: true
-      type: text
-    topic:
-      optional: true
-      type: text
+  - id: query
+    type: text
+  - id: search_depth
+    type: text?
+  - id: topic
+    type: text?
+  - id: time_range
+    type: text?
+  - id: start_date
+    type: text?
+  - id: end_date
+    type: text?
+  - id: days
+    type: int?
+  - id: max_results
+    type: int?
+  - id: include_domains
+    type: list[text]?
+  - id: exclude_domains
+    type: list[text]?
+  - id: include_answer
+    type: text?
+  - id: include_raw_content
+    type: text?
+  - id: include_images
+    type: boolean?
+  - id: country
+    type: text?
+  - id: auto_parameters
+    type: boolean?
+  - id: include_favicon
+    type: boolean?
   method: POST
   name: Search the web
   outputs:
-    answer:
-      optional: true
-      type: text
-    follow_up_questions:
-      optional: true
-      type:
-        element_type: text
-    images:
-      optional: true
-      type:
-        element_type: schema_4844015520
-    query:
-      optional: true
-      type: text
-    response_time:
-      optional: true
-      type: float
-    results:
-      optional: true
-      type:
-        element_type: schema_4844016144
-  parameters: {}
+  - id: query
+    type: text?
+  - id: follow_up_questions
+    type: list[text]?
+  - id: answer
+    type: text?
+  - id: images
+    type: list[schema_4849029360]?
+  - id: results
+    type: list[schema_4849029792]?
+  - id: response_time
+    type: float?
+  parameters: []
   type: APITool
 - auth: tavily-api_bearerauth_token
   description: 'Extract and process content from one or more URLs with various formatting
@@ -100,34 +74,24 @@ tools:
   headers: {}
   id: extract
   inputs:
-    extract_depth:
-      optional: true
-      type: text
-    format:
-      optional: true
-      type: text
-    include_favicon:
-      optional: true
-      type: boolean
-    include_images:
-      optional: true
-      type: boolean
-    urls:
-      optional: false
-      type:
-        element_type: text
+  - id: urls
+    type: list[text]
+  - id: include_images
+    type: boolean?
+  - id: extract_depth
+    type: text?
+  - id: format
+    type: text?
+  - id: include_favicon
+    type: boolean?
   method: POST
   name: Extract content from URLs
   outputs:
-    failed_results:
-      optional: true
-      type:
-        element_type: schema_4844027472
-    results:
-      optional: true
-      type:
-        element_type: schema_4844024880
-  parameters: {}
+  - id: results
+    type: list[schema_4849038576]?
+  - id: failed_results
+    type: list[schema_4849041168]?
+  parameters: []
   type: APITool
 - auth: tavily-api_bearerauth_token
   description: 'Crawl a website starting from a given URL with depth and breadth controls.
@@ -136,60 +100,40 @@ tools:
   headers: {}
   id: crawl
   inputs:
-    allow_external:
-      optional: true
-      type: boolean
-    exclude_domains:
-      optional: true
-      type:
-        element_type: text
-    exclude_paths:
-      optional: true
-      type:
-        element_type: text
-    extract_depth:
-      optional: true
-      type: text
-    format:
-      optional: true
-      type: text
-    include_favicon:
-      optional: true
-      type: boolean
-    include_images:
-      optional: true
-      type: boolean
-    instructions:
-      optional: true
-      type: text
-    limit:
-      optional: true
-      type: int
-    max_breadth:
-      optional: true
-      type: int
-    max_depth:
-      optional: true
-      type: int
-    select_domains:
-      optional: true
-      type:
-        element_type: text
-    select_paths:
-      optional: true
-      type:
-        element_type: text
-    url:
-      optional: false
-      type: text
+  - id: url
+    type: text
+  - id: max_depth
+    type: int?
+  - id: max_breadth
+    type: int?
+  - id: limit
+    type: int?
+  - id: instructions
+    type: text?
+  - id: select_paths
+    type: list[text]?
+  - id: select_domains
+    type: list[text]?
+  - id: exclude_paths
+    type: list[text]?
+  - id: exclude_domains
+    type: list[text]?
+  - id: allow_external
+    type: boolean?
+  - id: include_images
+    type: boolean?
+  - id: extract_depth
+    type: text?
+  - id: format
+    type: text?
+  - id: include_favicon
+    type: boolean?
   method: POST
   name: Crawl websites
   outputs:
-    results:
-      optional: true
-      type:
-        element_type: schema_4844408352
-  parameters: {}
+  - id: results
+    type: list[schema_4849520304]?
+  parameters: []
   type: APITool
 - auth: tavily-api_bearerauth_token
   description: "Map the structure and links of a website starting from a given URL.
@@ -198,61 +142,44 @@ tools:
   headers: {}
   id: map
   inputs:
-    allow_external:
-      optional: true
-      type: boolean
-    exclude_domains:
-      optional: true
-      type:
-        element_type: text
-    exclude_paths:
-      optional: true
-      type:
-        element_type: text
-    include_images:
-      optional: true
-      type: boolean
-    instructions:
-      optional: true
-      type: text
-    limit:
-      optional: true
-      type: int
-    max_breadth:
-      optional: true
-      type: int
-    max_depth:
-      optional: true
-      type: int
-    select_domains:
-      optional: true
-      type:
-        element_type: text
-    select_paths:
-      optional: true
-      type:
-        element_type: text
-    url:
-      optional: false
-      type: text
+  - id: url
+    type: text
+  - id: max_depth
+    type: int?
+  - id: max_breadth
+    type: int?
+  - id: limit
+    type: int?
+  - id: instructions
+    type: text?
+  - id: select_paths
+    type: list[text]?
+  - id: select_domains
+    type: list[text]?
+  - id: exclude_paths
+    type: list[text]?
+  - id: exclude_domains
+    type: list[text]?
+  - id: allow_external
+    type: boolean?
+  - id: include_images
+    type: boolean?
   method: POST
   name: Map website structure
   outputs:
-    results:
-      optional: true
-      type:
-        element_type: schema_4844415936
-  parameters: {}
+  - id: results
+    type: list[schema_4849527888]?
+  parameters: []
   type: APITool
 types:
 - description: Generated from OpenAPI schema
-  id: schema_4844015520
+  id: schema_4849029360
   properties:
     alt_text: text?
     title: text?
     url: text?
 - description: Generated from OpenAPI schema
-  id: schema_4844016144
+  id: schema_4849029792
   properties:
     content: text?
     favicon: text?
@@ -261,19 +188,19 @@ types:
     title: text?
     url: text?
 - description: Generated from OpenAPI schema
-  id: schema_4844024880
+  id: schema_4849038576
   properties:
     content: text?
     favicon: text?
     title: text?
     url: text?
 - description: Generated from OpenAPI schema
-  id: schema_4844027472
+  id: schema_4849041168
   properties:
     error: text?
     url: text?
 - description: Generated from OpenAPI schema
-  id: schema_4844408352
+  id: schema_4849520304
   properties:
     content: text?
     favicon: text?
@@ -281,7 +208,7 @@ types:
     title: text?
     url: text?
 - description: Generated from OpenAPI schema
-  id: schema_4844415936
+  id: schema_4849527888
   properties:
     depth: int?
     links: list[text]?

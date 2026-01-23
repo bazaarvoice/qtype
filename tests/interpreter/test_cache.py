@@ -27,10 +27,10 @@ pytestmark = pytest.mark.asyncio
 class CacheTestStep(Step):
     type: str = "CacheTestStep"
     inputs: list[Variable] = [
-        Variable(id="input", type=PrimitiveTypeEnum.text, value=None)
+        Variable(id="input", type=PrimitiveTypeEnum.text)
     ]
     outputs: list[Variable] = [
-        Variable(id="result", type=PrimitiveTypeEnum.text, value=None)
+        Variable(id="result", type=PrimitiveTypeEnum.text)
     ]
 
 
@@ -137,7 +137,7 @@ async def test_cache_includes_referenced_variables_outside_inputs():
     # First execution with file1
     input_df1 = pd.DataFrame([{"file_path": file1_path}])
     messages1 = dataframe_to_flow_messages(
-        input_df1, Session(session_id="test")
+        input_df1, flow.inputs, session=Session(session_id="test")
     )
     results1 = await run_flow(flow, messages1, context=context)
     result_df1 = flow_messages_to_dataframe(results1, flow)
@@ -146,7 +146,7 @@ async def test_cache_includes_referenced_variables_outside_inputs():
     # Second execution with file2 should NOT use cached result from file1
     input_df2 = pd.DataFrame([{"file_path": file2_path}])
     messages2 = dataframe_to_flow_messages(
-        input_df2, Session(session_id="test")
+        input_df2, flow.inputs, session=Session(session_id="test")
     )
     results2 = await run_flow(flow, messages2, context=context)
     result_df2 = flow_messages_to_dataframe(results2, flow)

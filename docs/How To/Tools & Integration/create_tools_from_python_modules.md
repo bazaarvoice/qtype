@@ -42,16 +42,13 @@ tools:
     module_path: myapp.utils
     name: calculate_age
     inputs:
-      birth_date:
+      - id: birth_date
         type: datetime
-        optional: false
-      reference_date:
+      - id: reference_date
         type: datetime
-        optional: false
     outputs:
-      result:
+      - id: calculate_age_result
         type: int
-        optional: false
 ```
 
 ### Explanation

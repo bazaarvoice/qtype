@@ -11,124 +11,102 @@ tools:
   function_name: base64_decode
   id: qtype.application.commons.tools.base64_decode
   inputs:
-    data:
-      optional: false
-      type: text
+  - id: data
+    type: text
   module_path: qtype.application.commons.tools
   name: base64_decode
   outputs:
-    result:
-      optional: false
-      type: file
+  - id: base64_decode_result
+    type: file
   type: PythonFunctionTool
 - description: Encode bytes to a Base64 string.
   function_name: base64_encode
   id: qtype.application.commons.tools.base64_encode
   inputs:
-    data:
-      optional: false
-      type: file
+  - id: data
+    type: file
   module_path: qtype.application.commons.tools
   name: base64_encode
   outputs:
-    result:
-      optional: false
-      type: text
+  - id: base64_encode_result
+    type: text
   type: PythonFunctionTool
 - description: Calculate the difference between two timestamps.
   function_name: calculate_time_difference
   id: qtype.application.commons.tools.calculate_time_difference
   inputs:
-    end_time:
-      optional: false
-      type: datetime
-    start_time:
-      optional: false
-      type: datetime
+  - id: start_time
+    type: datetime
+  - id: end_time
+    type: datetime
   module_path: qtype.application.commons.tools
   name: calculate_time_difference
   outputs:
-    result:
-      optional: false
-      type: TimeDifferenceResultType
+  - id: calculate_time_difference_result
+    type: TimeDifferenceResultType
   type: PythonFunctionTool
 - description: Format a timestamp using a custom format string that can be 
     passed to strftime.
   function_name: format_datetime
   id: qtype.application.commons.tools.format_datetime
   inputs:
-    format_string:
-      optional: false
-      type: text
-    timestamp:
-      optional: false
-      type: datetime
+  - id: timestamp
+    type: datetime
+  - id: format_string
+    type: text
   module_path: qtype.application.commons.tools
   name: format_datetime
   outputs:
-    result:
-      optional: false
-      type: text
+  - id: format_datetime_result
+    type: text
   type: PythonFunctionTool
 - description: Get the current UTC timestamp.
   function_name: get_current_timestamp
   id: qtype.application.commons.tools.get_current_timestamp
-  inputs: {}
+  inputs: []
   module_path: qtype.application.commons.tools
   name: get_current_timestamp
   outputs:
-    result:
-      optional: false
-      type: datetime
+  - id: get_current_timestamp_result
+    type: datetime
   type: PythonFunctionTool
 - description: Parse a human-readable duration string into seconds.
   function_name: parse_duration_string
   id: qtype.application.commons.tools.parse_duration_string
   inputs:
-    duration:
-      optional: false
-      type: text
+  - id: duration
+    type: text
   module_path: qtype.application.commons.tools
   name: parse_duration_string
   outputs:
-    result:
-      optional: false
-      type: int
+  - id: parse_duration_string_result
+    type: int
   type: PythonFunctionTool
 - description: Add a specified amount of time from a given timestamp.
   function_name: timedelta
   id: qtype.application.commons.tools.timedelta
   inputs:
-    days:
-      optional: true
-      type: int
-    hours:
-      optional: true
-      type: int
-    microseconds:
-      optional: true
-      type: int
-    milliseconds:
-      optional: true
-      type: int
-    minutes:
-      optional: true
-      type: int
-    seconds:
-      optional: true
-      type: int
-    timestamp:
-      optional: false
-      type: datetime
-    weeks:
-      optional: true
-      type: int
+  - id: timestamp
+    type: datetime
+  - id: days
+    type: int?
+  - id: seconds
+    type: int?
+  - id: microseconds
+    type: int?
+  - id: milliseconds
+    type: int?
+  - id: minutes
+    type: int?
+  - id: hours
+    type: int?
+  - id: weeks
+    type: int?
   module_path: qtype.application.commons.tools
   name: timedelta
   outputs:
-    result:
-      optional: false
-      type: datetime
+  - id: timedelta_result
+    type: datetime
   type: PythonFunctionTool
 types:
 - description: Custom type for TimeDifferenceResultType
