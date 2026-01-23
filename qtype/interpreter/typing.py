@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Type, get_origin
+from typing import Any, Type
 
-from pydantic import BaseModel, Field, TypeAdapter, create_model
+from pydantic import BaseModel, Field, create_model
 
 from qtype.dsl.model import ListType, PrimitiveTypeEnum
 from qtype.dsl.model import Variable as DSLVariable
@@ -138,37 +138,36 @@ def flow_results_to_output_container(
     return output_container(outputs=outputs, errors=errors)
 
 
-def instantiate_variable(variable: DSLVariable, value: Any) -> Any:
+def convert_dict_to_typed_variables(
+    data: dict[str, Any], variables: list[Variable]
+) -> dict[str, Any]:
     """
-    Unified contract to ensure data matches its QType definition.
-    Handles CustomTypes, DomainTypes, and Primitives.
+    Convert a dictionary of raw values to properly typed variables.
+
+    Uses Pydantic model validation to convert all values at once based on
+    Variable type declarations. This is more efficient than converting each
+    field individually.
+
+    Args:
+        data: Dictionary with raw values (e.g., from DataFrame row)
+        variables: List of Variable definitions with type information
+
+    Returns:
+        Dictionary with values converted to their declared types
+
+    Raises:
+        ValidationError: If values cannot be converted to declared types
     """
-    target_type, _ = _get_variable_type(variable)
+    # Create a Pydantic model from the variable definitions
+    model_class = create_model(
+        "TypedVariables",
+        __base__=BaseModel,
+        **_fields_from_variables(variables),
+    )
 
-    # 1. Handle the 'Parameterized Generic' Check (The isinstance fix)
-    # We check if target_type is a generic (like list[T]) vs a simple class.
-    origin = get_origin(target_type)
+    # Validate and convert the data using Pydantic
+    validated = model_class.model_validate(data)
 
-    if origin is None:
-        # It's a simple type (int, RAGChunk, etc.)
-        if isinstance(value, target_type):
-            return value
-    else:
-        # It's a generic (list[str], etc.).
-        # We skip the identity check and let TypeAdapter handle it.
-        pass
-
-    # 2. Handle Pydantic Models (Custom/Domain Types)
-    if hasattr(target_type, "model_validate"):
-        return target_type.model_validate(value)  # type: ignore[misc]
-
-    # 3. Handle Primitives & Complex Python Types (List, Optional, Union)
-    try:
-        # TypeAdapter is the "V2 way" to validate things that aren't
-        # full Pydantic models (like List[int] or Optional[str])
-        return TypeAdapter(target_type).validate_python(value)
-    except Exception:
-        # Fallback to your original manual cast if TypeAdapter is overkill
-        if isinstance(target_type, type):
-            return target_type(value)
-        raise ValueError(f"Unsupported target type: {target_type}")
+    # Return as dict but preserve actual typed instances (not serialized)
+    # Use __dict__ to get the actual field values without serialization
+    return dict(validated)

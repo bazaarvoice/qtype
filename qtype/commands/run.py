@@ -11,11 +11,10 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 from pydantic.warnings import UnsupportedFieldAttributeWarning
 
-from qtype.application.facade import QTypeFacade
 from qtype.base.exceptions import InterpreterError, LoadError, ValidationError
+from qtype.interpreter.converters import read_dataframe_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -29,49 +28,123 @@ for name in ["httpx", "urllib3", "qdrant_client", "opensearch"]:
     logging.getLogger(name).setLevel(logging.WARNING)
 
 
-def read_data_from_file(file_path: str) -> pd.DataFrame:
-    """
-    Reads a file into a pandas DataFrame based on its MIME type.
-    """
-    from pathlib import Path
+def register_telemetry(spec) -> None:
+    """Register telemetry if enabled in the spec."""
+    from qtype.interpreter.telemetry import register
+    from qtype.semantic.model import Application as SemanticApplication
 
-    import magic
+    if isinstance(spec, SemanticApplication) and spec.telemetry:
+        logger.info(
+            f"Telemetry enabled with endpoint: {spec.telemetry.endpoint}"
+        )
+        secret_mgr = create_secret_manager_for_spec(spec)
+        register(spec.telemetry, secret_mgr, spec.id)
 
-    mime_type = magic.Magic(mime=True).from_file(file_path)
 
-    if mime_type == "text/csv":
-        # TODO: Restore na values and convert to optional once we support them https://github.com/bazaarvoice/qtype/issues/101
-        df = pd.read_csv(file_path)
-        return df.fillna("")
-    elif mime_type == "text/plain":
-        # For text/plain, use file extension to determine format
-        file_ext = Path(file_path).suffix.lower()
-        if file_ext == ".csv":
-            # TODO: Restore na values and convert to optional once we support them https://github.com/bazaarvoice/qtype/issues/101
-            df = pd.read_csv(file_path)
-            return df.fillna("")
-        elif file_ext == ".json":
-            return pd.read_json(file_path)
-        else:
-            raise ValueError(
-                (
-                    f"Unsupported text/plain file extension: {file_ext}. "
-                    "Supported extensions: .csv, .json"
-                )
-            )
-    elif mime_type == "application/json":
-        return pd.read_json(file_path)
-    elif mime_type in [
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-excel",
-    ]:
-        return pd.read_excel(file_path)
-    elif mime_type in ["application/vnd.parquet", "application/octet-stream"]:
-        return pd.read_parquet(file_path)
+def create_secret_manager_for_spec(spec):
+    """Create a secret manager based on the specification."""
+    from qtype.interpreter.base.secrets import create_secret_manager
+    from qtype.semantic.model import Application as SemanticApplication
+
+    if isinstance(spec, SemanticApplication):
+        return create_secret_manager(spec.secret_manager)
     else:
         raise ValueError(
-            f"Unsupported MIME type for file {file_path}: {mime_type}"
+            "Can't create secret manager for non-Application spec"
         )
+
+
+async def execute_workflow(
+    path: Path,
+    inputs: dict | Any,
+    flow_name: str | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Execute a complete workflow from document to results.
+
+    Args:
+        path: Path to the QType specification file
+        inputs: Dictionary of input values or DataFrame for batch
+        flow_name: Optional name of flow to execute
+        **kwargs: Additional dependencies for execution
+
+    Returns:
+        DataFrame with results (one row per input)
+    """
+    import pandas as pd
+    from opentelemetry import trace
+
+    from qtype.interpreter.base.executor_context import ExecutorContext
+    from qtype.interpreter.converters import (
+        dataframe_to_flow_messages,
+        flow_messages_to_dataframe,
+    )
+    from qtype.interpreter.flow import run_flow
+    from qtype.interpreter.types import Session
+    from qtype.semantic.loader import load
+    from qtype.semantic.model import Application as SemanticApplication
+
+    # Load the semantic application
+    semantic_model, type_registry = load(path)
+    assert isinstance(semantic_model, SemanticApplication)
+    register_telemetry(semantic_model)
+
+    # Find the flow to execute
+    if flow_name:
+        target_flow = None
+        for flow in semantic_model.flows:
+            if flow.id == flow_name:
+                target_flow = flow
+                break
+        if target_flow is None:
+            raise ValueError(f"Flow '{flow_name}' not found")
+    else:
+        if semantic_model.flows:
+            target_flow = semantic_model.flows[0]
+        else:
+            raise ValueError("No flows found in application")
+
+    logger.info(f"Executing flow {target_flow.id} from {path}")
+
+    # Convert inputs to DataFrame (normalize single dict to 1-row DataFrame)
+    if isinstance(inputs, dict):
+        input_df = pd.DataFrame([inputs])
+    elif isinstance(inputs, pd.DataFrame):
+        input_df = inputs
+    else:
+        raise ValueError(
+            f"Inputs must be dict or DataFrame, got {type(inputs)}"
+        )
+
+    # Create session
+    session = Session(
+        session_id=kwargs.pop("session_id", "default"),
+        conversation_history=kwargs.pop("conversation_history", []),
+    )
+
+    # Convert DataFrame to FlowMessages with type conversion
+    initial_messages_list = dataframe_to_flow_messages(
+        input_df, target_flow.inputs, session=session
+    )
+
+    # Execute the flow
+    secret_manager = create_secret_manager_for_spec(semantic_model)
+
+    context = ExecutorContext(
+        secret_manager=secret_manager,
+        tracer=trace.get_tracer(__name__),
+    )
+    results = await run_flow(
+        target_flow,
+        initial_messages_list,
+        context=context,
+        **kwargs,
+    )
+
+    # Convert results back to DataFrame
+    results_df = flow_messages_to_dataframe(results, target_flow)
+
+    return results_df
 
 
 def run_flow(args: Any) -> None:
@@ -82,7 +155,6 @@ def run_flow(args: Any) -> None:
     """
     import asyncio
 
-    facade = QTypeFacade()
     spec_path = Path(args.spec)
 
     try:
@@ -90,7 +162,7 @@ def run_flow(args: Any) -> None:
 
         if args.input_file:
             logger.info(f"Loading input data from file: {args.input_file}")
-            input: Any = read_data_from_file(args.input_file)
+            input: Any = read_dataframe_from_file(args.input_file)
         else:
             # Parse input JSON
             try:
@@ -99,9 +171,9 @@ def run_flow(args: Any) -> None:
                 logger.error(f"❌ Invalid JSON input: {e}")
                 return
 
-        # Execute the workflow using the facade (now async, returns DataFrame)
+        # Execute the workflow using the standalone function
         result_df = asyncio.run(
-            facade.execute_workflow(
+            execute_workflow(
                 spec_path,
                 flow_name=args.flow,
                 inputs=input,

@@ -9,8 +9,8 @@ The architecture establishes clear layers with controlled dependencies:
 │                     CLI Commands                            │ 
 │                 (validate, run, etc.)                       │
 ├─────────────────────────────────────────────────────────────┤
-│                  Application Facade                         │
-│               (QTypeFacade + Services)                      │
+│                      Application                            │
+│                       (Services)                            │
 ├─────────────────────────────────────────────────────────────┤
 │                    Interpreter                              │
 │                 (execution engine)                          │

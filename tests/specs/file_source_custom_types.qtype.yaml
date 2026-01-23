@@ -1,0 +1,32 @@
+id: test-file-source-custom-types
+description: Test FileSource with Custom Types
+types:
+  - id: Person
+    properties:
+      name: text
+      age: int
+      email: text
+flows:
+  - type: Flow
+    id: read_persons
+    inputs: []
+    variables:
+      - id: person
+        type: Person
+      - id: result
+        type: SearchResult
+      - id: rank
+        type: int
+    outputs:
+      - person
+      - result
+      - rank
+    steps:
+      - id: source
+        type: FileSource
+        path: 
+          uri: tests/document-specs/mixed_types.json
+        outputs:
+          - person
+          - result
+          - rank

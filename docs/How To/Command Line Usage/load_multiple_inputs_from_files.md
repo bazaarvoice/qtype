@@ -10,8 +10,8 @@ qtype run app.qtype.yaml --input-file inputs.csv
 
 ### Supported File Formats
 
-- **CSV**: Columns map to input variable names
-- **JSON**: Array of objects or records format
+- **CSV**: Columns map to input variable names (best for primitive types)
+- **JSON**: Array of objects or records format (best for nested/complex types)
 - **Parquet**: Efficient columnar format for large datasets
 - **Excel**: `.xlsx` or `.xls` files
 
@@ -19,10 +19,25 @@ qtype run app.qtype.yaml --input-file inputs.csv
 
 When you provide `--input-file`, QType:
 1. Reads the file into a pandas DataFrame
-2. Each row becomes one execution of the flow
-3. Column names must match flow input variable IDs
-4. Processes rows with configured concurrency
-5. Returns results as a DataFrame (can be saved with `--output`)
+2. Automatically converts data to match input variable types
+3. Each row becomes one execution of the flow
+4. Column names must match flow input variable IDs
+5. Processes rows with configured concurrency
+6. Returns results as a DataFrame (can be saved with `--output`)
+
+### Type Conversion
+
+QType automatically converts file data to match your flow's input types:
+
+- **Primitive types** (`int`, `float`, `bool`, `text`): Converted from file values
+- **Custom types**: Validated and instantiated from dict/object columns (use JSON format)
+- **Domain types**: Built-in types like `ChatMessage` or `SearchResult` (use JSON format)
+
+**Format Selection Guide:**
+
+- Use **CSV** for simple data with primitive types (strings, numbers, booleans)
+- Use **JSON** for complex data with custom types, nested objects, or domain types
+- Use **Parquet** for large datasets with mixed types and efficient storage
 
 ## Complete Example
 

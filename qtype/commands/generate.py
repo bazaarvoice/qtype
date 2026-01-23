@@ -2,23 +2,47 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from qtype.dsl.model import Document
 
 logger = logging.getLogger(__name__)
 
 
+def generate_aws_bedrock_models() -> list[dict[str, Any]]:
+    """Generate AWS Bedrock model definitions.
+
+    Returns:
+        List of model definitions for AWS Bedrock models.
+
+    Raises:
+        ImportError: If boto3 is not installed.
+        Exception: If AWS API call fails.
+    """
+    import boto3  # type: ignore[import-untyped]
+
+    logger.info("Discovering AWS Bedrock models...")
+    client = boto3.client("bedrock")
+    models = client.list_foundation_models()
+
+    model_definitions = []
+    for model_summary in models.get("modelSummaries", []):
+        model_definitions.append(
+            {
+                "id": model_summary["modelId"],
+                "provider": "aws-bedrock",
+            }
+        )
+
+    logger.info(f"Discovered {len(model_definitions)} AWS Bedrock models")
+    return model_definitions
+
+
 def run_dump_commons_library(args: argparse.Namespace) -> None:
     """Generate commons library tools and AWS Bedrock models."""
-    import logging
     from pathlib import Path
 
-    from qtype.application.facade import QTypeFacade
     from qtype.dsl.model import Model, ModelList
-
-    logger = logging.getLogger(__name__)
-    facade = QTypeFacade()
 
     try:
         # Generate common tools using convert module functionality
@@ -38,7 +62,7 @@ def run_dump_commons_library(args: argparse.Namespace) -> None:
         # Generate AWS Bedrock models
         logger.info("Generating AWS Bedrock models...")
         try:
-            model_definitions = facade.generate_aws_bedrock_models()
+            model_definitions = generate_aws_bedrock_models()
 
             model_list = ModelList(
                 root=[

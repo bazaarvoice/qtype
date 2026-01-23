@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import AsyncIterator
-
-import fsspec
-import pandas as pd
 
 from qtype.interpreter.base.base_step_executor import StepExecutor
 from qtype.interpreter.base.executor_context import ExecutorContext
+from qtype.interpreter.converters import (
+    dataframe_to_flow_messages,
+    read_dataframe_from_file,
+)
 from qtype.interpreter.types import FlowMessage
 from qtype.semantic.model import ConstantPath, FileSource
 
@@ -37,8 +37,6 @@ class FileSourceExecutor(StepExecutor):
         Yields:
             FlowMessages with the results of processing.
         """
-        output_columns = {output.id for output in self.step.outputs}
-
         # get the path
         if isinstance(self.step.path, ConstantPath):  # type: ignore[attr-defined]
             file_path = self.step.path  # type: ignore[attr-defined]
@@ -55,30 +53,16 @@ class FileSourceExecutor(StepExecutor):
                 f"Reading file from path: {file_path}"
             )
 
-        # Determine file format from extension
+        # Get file path as string
         file_path_str = (
             file_path.uri if isinstance(file_path, ConstantPath) else file_path
         )
-        extension = Path(file_path_str).suffix.lower()
 
-        # Use fsspec to open the file and read with pandas
-        with fsspec.open(file_path_str, "rb") as file_handle:
-            if extension == ".csv":
-                df = pd.read_csv(file_handle)  # type: ignore[arg-type]
-            elif extension == ".parquet":
-                df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
-            elif extension == ".json":
-                df = pd.read_json(file_handle)  # type: ignore[arg-type]
-            elif extension == ".jsonl":
-                df = pd.read_json(
-                    file_handle,
-                    lines=True,  # type: ignore[arg-type]
-                )
-            else:
-                # Default to parquet if no extension or unknown
-                df = pd.read_parquet(file_handle)  # type: ignore[arg-type]
+        # Read file into DataFrame using helper function
+        df = read_dataframe_from_file(file_path_str)
 
-        # confirm the outputs exist in the dataframe
+        # Validate that expected output columns are present
+        output_columns = {output.id for output in self.step.outputs}
         columns = set(df.columns)
         missing_columns = output_columns - columns
         if missing_columns:
@@ -90,12 +74,15 @@ class FileSourceExecutor(StepExecutor):
                 )
             )
 
-        for row in df.to_dict(orient="records"):
-            # Filter to only the expected output columns if they exist
-            row = {
-                str(k): v for k, v in row.items() if str(k) in output_columns
-            }
-            yield message.copy_with_variables(new_variables=row)
+        # Convert DataFrame to FlowMessages with type conversion
+        flow_messages = dataframe_to_flow_messages(
+            df, self.step.outputs, session=message.session
+        )
+
+        # Yield each message
+        for flow_message in flow_messages:
+            yield flow_message
+
         await self.stream_emitter.status(
             f"Emitted {len(df)} rows from: {file_path_str}"
         )
