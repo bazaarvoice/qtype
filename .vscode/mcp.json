@@ -18,6 +18,12 @@
         "ghcr.io/microsoft/mcp-dotnet-samples/awesome-copilot:latest"
       ]
     },
+    "qtype-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "cwd": "${workspaceFolder}",
+      "args": ["run", "qtype", "mcp", "--transport", "stdio"]
+    }
     // "qtype": {
     //   "type": "stdio",
     //   "command": "${workspaceFolder}/.venv/bin/python",

@@ -41,7 +41,7 @@ Add the QType MCP server to your workspace's `.vscode/mcp.json`:
 ```json
 {
   "servers": {
-    "qtype": {
+    "qtype-mcp": {
       "type": "stdio",
       "command": "qtype",
       "cwd": "${workspaceFolder}",
@@ -54,6 +54,7 @@ Add the QType MCP server to your workspace's `.vscode/mcp.json`:
 
 ## See Also
 
+- [Use QType Agent Skills](use_agent_skills.md)
 - [MCP Server Implementation](../../components/MCP.md)
 - [GitHub Copilot Documentation](https://code.visualstudio.com/docs/copilot/copilot-chat)
 - [Model Context Protocol](https://modelcontextprotocol.io/)

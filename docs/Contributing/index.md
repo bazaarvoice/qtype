@@ -57,6 +57,14 @@ After installation, you should be able to run the `qtype` command from anywhere:
 qtype --help
 ```
 
+## Running the MCP In Dev Mode
+
+To start it in `dev` mode with the inspector:
+```
+mcp dev qtype/mcp/server.py:mcp
+```
+
+
 ## Running Tests
 
 The project uses pytest for testing with coverage measurement:
@@ -160,7 +168,6 @@ pre-commit install
 ```
 
 Settings are in `.pre-commit-config.yaml`:
-
 
 ##  Project Structure
 
