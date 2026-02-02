@@ -31,5 +31,6 @@ qtype validate path/to/app.qtype.yaml --print
 
 ## See Also
 
-- [Application Reference](../../components/Application.md)
-- [Semantic Validation Rules](../../Concepts/semantic_validation_rules.md)
+- [CLI Reference](../../Reference/cli.md)
+- [Semantic Validation Rules](../../Reference/semantic-validation-rules.md)
+- [Visualize Application Architecture](visualize_application_architecture.md)

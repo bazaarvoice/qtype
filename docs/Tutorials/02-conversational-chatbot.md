@@ -303,9 +303,9 @@ Congratulations! You've mastered:
 
 **Learn more:**
 
-- [Memory Concept](../Concepts/Core/memory.md) - Advanced memory strategies
-- [ChatMessage Reference](../How-To%20Guides/Data%20Types/domain-types.md) - Full type specification
-- [Flow Interfaces](../Concepts/Core/flow.md) - Complete vs Conversational
+- [Tutorial: Structured Data](03-structured-data.md)
+- [ChatMessage Reference](../components/ChatMessage.md)
+- [Use Conversational Interfaces](../How%20To/Qtype%20Server/use_conversational_interfaces.md)
 
 ---
 

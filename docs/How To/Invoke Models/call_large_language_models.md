@@ -48,4 +48,4 @@ qtype run simple_llm_call.qtype.yaml --input '{"text": "What is the capital of F
 
 - [LLMInference Reference](../../components/LLMInference.md)
 - [Model Reference](../../components/Model.md)
-- [Tutorial: Build a Conversational Interface](../../Tutorials/conversational_interface.md)
+- [Tutorial: Conversational Chatbot](../../Tutorials/02-conversational-chatbot.md)

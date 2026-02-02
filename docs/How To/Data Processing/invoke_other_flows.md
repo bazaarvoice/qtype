@@ -68,4 +68,4 @@ qtype run examples/data_processing/invoke_other_flows.qtype.yaml \
 
 - [InvokeFlow Reference](../../components/InvokeFlow.md)
 - [Flow Reference](../../components/Flow.md)
-- [Example: Data Processing Pipeline](../../Gallery/Data%20Processing/dataflow_pipeline.md)
+- [Use Agent Skills](../Language%20Features/use_agent_skills.md)

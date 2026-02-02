@@ -37,6 +37,5 @@ The UI automatically generates:
 ## See Also
 
 - [Serve Flows as APIs](serve_flows_as_apis.md)
-- [Flow Reference](../../components/Flow.md)
-- [FlowInterface Reference](../../components/FlowInterface.md)
-- [Tutorial: Build a Conversational Chatbot](../../Tutorials/02-conversational-chatbot.md)
+- [Use Conversational Interfaces](use_conversational_interfaces.md)
+- [Tutorial: Conversational Chatbot](../../Tutorials/02-conversational-chatbot.md)

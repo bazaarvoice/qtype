@@ -92,7 +92,6 @@ When running with the topic "Latest developments in retrieval augmented generati
 
 ## Learn More
 
-- How-To: [Create Tools from OpenAPI Specifications](../How%20To/Tools%20%26%20Integration/create_tools_from_openapi_specifications.md)
-- How-To: [Bind Tool Inputs and Outputs](../How%20To/Tools%20%26%20Integration/bind_tool_inputs_and_outputs.md)
-- How-To: [Include QType YAML](../How%20To/Language%20Features/include_qtype_yaml.md)
-- How-To: [Call Large Language Models](../How%20To/Invoke%20Models/call_large_language_models.md)
+- [Create Tools from OpenAPI Specifications](../How%20To/Tools%20%26%20Integration/create_tools_from_openapi_specifications.md)
+- [Bind Tool Inputs and Outputs](../How%20To/Tools%20%26%20Integration/bind_tool_inputs_and_outputs.md)
+- [Call Large Language Models](../How%20To/Invoke%20Models/call_large_language_models.md)

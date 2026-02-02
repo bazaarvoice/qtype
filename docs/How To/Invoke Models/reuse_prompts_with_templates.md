@@ -34,6 +34,5 @@ steps:
 ## See Also
 
 - [PromptTemplate Reference](../../components/PromptTemplate.md)
-- [How-To: Include Raw Text from Other Files](../../How%20To/Language%20Features/include_raw_text.md)
-- [How-To: Invoke LLMs with System Messages](invoke_llms_with_system_messages.md)
-- [Tutorial: Your First QType Application](../../Tutorials/your_first_qtype_application.md)
+- [Include Raw Text from Other Files](../Language%20Features/include_raw_text_from_other_files.md)
+- [Call Large Language Models](call_large_language_models.md)

@@ -1,0 +1,56 @@
+id: athena-query-example
+description: Query AWS Athena database and process results
+
+auths:
+  - type: aws
+    id: aws_auth
+    region: us-east-1
+    profile_name: default
+
+flows:
+  - type: Flow
+    id: query-athena
+
+    variables:
+      - id: min_sales
+        type: int
+      - id: product_id
+        type: text
+      - id: product_name
+        type: text
+      - id: total_sales
+        type: int
+      - id: region
+        type: text
+
+    inputs:
+      - min_sales
+
+    outputs:
+      - product_id
+      - product_name
+      - total_sales
+      - region
+
+    steps:
+      - type: SQLSource
+        id: load_sales
+        connection: "awsathena+rest://:@athena.us-east-1.amazonaws.com:443/sales_db?s3_staging_dir=s3://my-results-bucket/athena-results/&work_group=primary&catalog_name=some_catalog""
+        auth: aws_auth
+        query: |
+          SELECT
+            product_id,
+            product_name,
+            total_sales,
+            region
+          FROM product_sales
+          WHERE total_sales >= :min_sales
+          ORDER BY total_sales DESC
+          LIMIT 100
+        inputs:
+          - min_sales
+        outputs:
+          - product_id
+          - product_name
+          - total_sales
+          - region

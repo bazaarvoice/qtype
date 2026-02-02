@@ -63,6 +63,6 @@ all_processed: ['Processed: Phone', 'Processed: Laptop', 'Processed: Tablet']
 
 ## See Also
 
-- [Explode Collections for Fan-Out Processing](explode_collections.md)
+- [Explode Collections](explode_collections.md)
 - [Collect Reference](../../components/Collect.md)
-- [Explode Reference](../../components/Explode.md)
+- [Aggregate Reference](../../components/Aggregate.md)

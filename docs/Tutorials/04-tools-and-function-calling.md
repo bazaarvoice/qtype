@@ -444,20 +444,14 @@ Congratulations! You've mastered:
 
 **Reference the complete example:**
 
-- [`04_tools_and_function_calling.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/tutorials/04_tools_and_function_calling.qtype.yaml) - Full working example
-- [Commons Library](https://github.com/bazaarvoice/qtype/blob/main/common/tools.qtype.yaml) - Browse all available tools
-- [Commons Library Source](https://github.com/bazaarvoice/qtype/blob/v0.1.11/qtype/application/commons/tools.py) - Browse the source of tools.
-<!-- 
+- [`04_tools_and_function_calling.qtype.yaml`](https://github.com/bazaarvoice/qtype/blob/main/examples/tutorials/04_tools_and_function_calling.qtype.yaml)
+- [Commons Library Tools](https://github.com/bazaarvoice/qtype/blob/main/common/tools.qtype.yaml)
+
 **Learn more:**
 
-- [PythonFunctionTool Reference](../components/PythonFunctionTool.md) - Complete specification
-- [APITool Reference](../components/APITool.md) - External service integration
-- [InvokeTool Step](../components/InvokeTool.md) - Advanced binding patterns
-- [Generate Tools](../How-To%20Guides/Tools/generate-tools.md) - Create your own tools -->
-
-<!-- **Next tutorial:**
-
-- Tutorial 5: Building an AI Agent - Use tools with autonomous LLM decision-making -->
+- [Create Tools from Python Modules](../How%20To/Tools%20%26%20Integration/create_tools_from_python_modules.md)
+- [Create Tools from OpenAPI Specifications](../How%20To/Tools%20%26%20Integration/create_tools_from_openapi_specifications.md)
+- [Bind Tool Inputs and Outputs](../How%20To/Tools%20%26%20Integration/bind_tool_inputs_and_outputs.md)
 
 ---
 

@@ -46,4 +46,4 @@ Then open `http://localhost:6006` in your browser to see the traced execution.
 
 - [Application Reference](../../components/Application.md)
 - [Validate QType YAML](validate_qtype_yaml.md)
-- [Visualize Application Architecture](visualize_application_architecture.md)
+- [CLI Reference](../../Reference/cli.md)

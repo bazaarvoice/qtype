@@ -21,4 +21,4 @@ Parse string data in JSON or XML format into structured outputs. This is particu
 
 - [Decoder Reference](../../components/Decoder.md)
 - [CustomType Reference](../../components/CustomType.md)
-- [Tutorial: Working with Types and Structured Data](../../Tutorials/structured_data.md)
+- [Tutorial: Structured Data](../../Tutorials/03-structured-data.md)

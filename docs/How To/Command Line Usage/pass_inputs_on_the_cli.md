@@ -47,6 +47,6 @@ flows:
 
 ## See Also
 
-- [Load Multiple Inputs from Files](load_inputs_from_files.md)
-- [Use Session Inputs for Sticky Variables](../Language%20Features/use_session_inputs.md)
-- [Example: LLM Processing Pipelines](../../Gallery/dataflow_pipelines.md)
+- [Load Multiple Inputs from Files](load_multiple_inputs_from_files.md)
+- [CLI Reference](../../Reference/cli.md)
+- [Gallery: Dataflow Pipelines](../../Gallery/dataflow_pipelines.md)

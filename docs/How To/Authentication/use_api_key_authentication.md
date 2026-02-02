@@ -36,5 +36,5 @@ models:
 
 - [APIKeyAuthProvider Reference](../../components/APIKeyAuthProvider.md)
 - [Use Environment Variables](../Language%20Features/use_environment_variables.md)
-- [Model Reference](../../components/Model.md)
-- [Tutorial: Your First QType Application](../../Tutorials/your_first_qtype_application.md)
+- [Configure AWS Authentication](configure_aws_authentication.md)
+- [Tutorial: Your First QType Application](../../Tutorials/01-first-qtype-application.md)

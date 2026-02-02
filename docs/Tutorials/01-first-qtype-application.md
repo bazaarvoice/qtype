@@ -231,8 +231,9 @@ Congratulations! You've learned:
 
 **Learn more:**
 
-- [Application Concept](../Concepts/Core/application.md) - Full specification
-- [All Step Types](../Concepts/Steps/index.md) - What else can you build?
+- [Tutorial: Conversational Chatbot](02-conversational-chatbot.md)
+- [Tutorial: Structured Data](03-structured-data.md)
+- [Call Large Language Models](../How%20To/Invoke%20Models/call_large_language_models.md)
 
 ---
 

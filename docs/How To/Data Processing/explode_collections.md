@@ -35,6 +35,6 @@ qtype run examples/data_processing/explode_items.qtype.yaml \
 
 ## See Also
 
-- [Aggregate Data using Collect](./aggregate_data.md)
+- [Gather Results into a List](gather_results.md)
 - [Explode Reference](../../components/Explode.md)
-- [Adjust Concurrency](./adjust_concurrency.md)
+- [Adjust Concurrency](adjust_concurrency.md)
