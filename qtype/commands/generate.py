@@ -104,6 +104,51 @@ def run_generate_documentation(args: argparse.Namespace) -> None:
     generate_documentation(Path(args.output))
 
 
+def _copy_resource_file(resource, rel_path: Path, output_file: Path) -> None:
+    """Copy a file from a resource directory to an output location."""
+    content = resource.get_file(str(rel_path))
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(content, encoding="utf-8")
+
+
+def run_generate_skill(args: argparse.Namespace) -> None:
+    """Generate a Claude skill with QType documentation and examples.
+
+    Args:
+        args: Command-line arguments with 'output' path.
+    """
+    from qtype.mcp.server import _docs_resource, _examples_resource
+
+    output_path = Path(args.output) / "qtype-architect"
+
+    # Copy skill documentation files
+    skills_path = _docs_resource.get_path() / "skills" / "architect"
+    skill_count = 0
+    for skill_file in skills_path.rglob("*.*"):
+        rel_path = skill_file.relative_to(_docs_resource.get_path())
+        _copy_resource_file(
+            _docs_resource,
+            rel_path,
+            output_path / rel_path.relative_to("skills/architect"),
+        )
+        skill_count += 1
+
+    # Copy all example files
+    example_count = 0
+    for yaml_file in _examples_resource.get_path().rglob("*.yaml"):
+        rel_path = yaml_file.relative_to(_examples_resource.get_path())
+        if "legacy" not in rel_path.parts:
+            _copy_resource_file(
+                _examples_resource, rel_path, output_path / "assets" / rel_path
+            )
+            example_count += 1
+
+    logger.info(
+        f"Skill generated at {output_path}: "
+        f"{skill_count} docs, {example_count} examples"
+    )
+
+
 def generate_schema(args: argparse.Namespace) -> None:
     """Generate and output the JSON schema for Document.
 
@@ -207,6 +252,20 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         help="Output directory for the DSL documentation (default: docs/components/)",
     )
     dsl_parser.set_defaults(func=run_generate_documentation)
+
+    # Parser for generating Agent skills
+    skill_parser = generate_subparsers.add_parser(
+        "skills",
+        help="Generates Agent skills with QType documentation and examples.",
+    )
+    skill_parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=".claude/skills",
+        help="Output directory for the skills (default: .claude/skills)",
+    )
+    skill_parser.set_defaults(func=run_generate_skill)
 
     # Parser for generating the semantic model
     # only add this if networkx and ruff are installed

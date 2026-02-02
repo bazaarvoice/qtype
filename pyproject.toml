@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "qtype"
 version = "0.1.0"
@@ -16,7 +20,7 @@ dependencies = [
     "pip-system-certs>=5.2",
     "openapi3-parser>=1.1.21",
     "pydantic-yaml>=1.6.0",
-    "google-cloud-aiplatform>=1.120.0",
+    "google-cloud-aiplatform>=1.120.0"
 ]
 license = "APACHE-2.0"
 license-files = ["LICEN[CS]E*"]
@@ -59,8 +63,10 @@ interpreter = [
     "uvicorn[standard]>=0.35.0",
 ]
 mcp = [
+    "cachetools>=6.2.1",
     "httpx>=0.28.1",
     "mcp[cli]>=1.25.0",
+    "tantivy>=0.25.1",
 ]
 
 [dependency-groups]
@@ -109,22 +115,13 @@ compile-bytecode = true
 [project.scripts]
 qtype = "qtype.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["qtype*"]
-exclude = ["tests*"]
+[tool.hatch.build.targets.wheel]
+packages = ["qtype"]
 
-[tool.setuptools]
-include-package-data = false
-
-[tool.setuptools.package-data]
-"qtype.interpreter" = ["ui/**/*"]
-qtype = [
-    "../schema/*.json",
-    "../docs/**/*.md",
-    "../docs/**/*.png",
-    "../docs/**/*.mermaid",
-    "../examples/**/*.yaml",
-]
+[tool.hatch.build.targets.wheel.force-include]
+"docs" = "qtype/docs"
+"examples" = "qtype/examples"
+"schema" = "qtype/schema"
 
 # Tool configurations
 [tool.ruff]

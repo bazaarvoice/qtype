@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+import tempfile
 from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
+import tantivy
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
@@ -20,26 +22,128 @@ SNIPPET_REGEX = re.compile(r'--8<--\s+"([^"]+)"')
 
 
 # ============================================================================
-# Helper Functions
+# Resource Abstraction Layer
 # ============================================================================
 
 
-def _get_docs_path() -> Path:
-    """Get the path to the documentation directory.
+class ResourceDirectory:
+    """Abstraction for accessing resource directories (docs, examples, etc.)."""
 
-    Returns:
-        Path to the docs directory, trying installed package first,
-        then falling back to development path.
-    """
-    try:
-        # Try to get from installed package
-        docs_root = files("qtype") / "docs"
-        # Check if it exists by trying to iterate
-        list(docs_root.iterdir())
-        return Path(str(docs_root))
-    except (FileNotFoundError, AttributeError, TypeError):
-        # Fall back to development path
-        return Path(__file__).parent.parent.parent / "docs"
+    def __init__(
+        self, name: str, file_extension: str, resolve_snippets: bool = False
+    ):
+        """Initialize a resource directory.
+
+        Args:
+            name: Directory name (e.g., "docs", "examples")
+            file_extension: File extension to search for (e.g., ".md", ".yaml")
+            resolve_snippets: Whether to resolve MkDocs snippets in file content
+        """
+        self.name = name
+        self.file_extension = file_extension
+        self.resolve_snippets = resolve_snippets
+        self._path_cache: Path | None = None
+
+    def get_path(self) -> Path:
+        """Get the path to this resource directory.
+
+        Returns:
+            Path to the resource directory, trying installed package first,
+            then falling back to development path.
+        """
+        if self._path_cache is not None:
+            return self._path_cache
+
+        try:
+            # Try to get from installed package
+            resource_root = files("qtype") / self.name
+            # Check if it exists by trying to iterate
+            list(resource_root.iterdir())
+            self._path_cache = Path(str(resource_root))
+        except (FileNotFoundError, AttributeError, TypeError):
+            # Fall back to development path
+            self._path_cache = Path(__file__).parent.parent.parent / self.name
+
+        return self._path_cache
+
+    def get_file(self, file_path: str) -> str:
+        """Get the content of a specific file.
+
+        Args:
+            file_path: Relative path to the file from the resource root.
+
+        Returns:
+            The full content of the file.
+
+        Raises:
+            FileNotFoundError: If the specified file doesn't exist.
+            ValueError: If the path tries to access files outside the directory.
+        """
+        resource_path = self.get_path()
+
+        # Resolve the requested file path
+        requested_file = (resource_path / file_path).resolve()
+
+        # Security check: ensure the resolved path is within resource directory
+        try:
+            requested_file.relative_to(resource_path.resolve())
+        except ValueError:
+            raise ValueError(
+                f"Invalid path: '{file_path}' is outside {self.name} directory"
+            )
+
+        if not requested_file.exists():
+            raise FileNotFoundError(
+                f"{self.name.capitalize()} file not found: '{file_path}'. "
+                f"Use list_{self.name} to see available files."
+            )
+
+        if not requested_file.is_file():
+            raise ValueError(f"Path is not a file: '{file_path}'")
+
+        content = requested_file.read_text(encoding="utf-8")
+
+        # Apply snippet resolution if enabled
+        if self.resolve_snippets:
+            content = _resolve_snippets(content, requested_file)
+
+        return content
+
+    def list_files(self) -> list[str]:
+        """List all files in this resource directory.
+
+        Returns:
+            Sorted list of relative paths to all files with the configured extension.
+
+        Raises:
+            FileNotFoundError: If the resource directory doesn't exist.
+        """
+        resource_path = self.get_path()
+
+        if not resource_path.exists():
+            raise FileNotFoundError(
+                f"{self.name.capitalize()} directory not found: {resource_path}"
+            )
+
+        # Find all files with the configured extension
+        pattern = f"*{self.file_extension}"
+        files_list = []
+        for file in resource_path.rglob(pattern):
+            # Get relative path from resource root
+            rel_path = file.relative_to(resource_path)
+            files_list.append(str(rel_path))
+
+        return sorted(files_list)
+
+
+# Initialize resource directories
+_docs_resource = ResourceDirectory("docs", ".md", resolve_snippets=True)
+_examples_resource = ResourceDirectory("examples", ".yaml")
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
 
 
 @lru_cache(maxsize=1)
@@ -55,7 +159,7 @@ def _load_schema() -> dict[str, Any]:
     """
     # Try to load from installed package data first
     try:
-        schema_file = files("qtype") / "qtype.schema.json"
+        schema_file = files("qtype") / "schema" / "qtype.schema.json"
         schema_text = schema_file.read_text(encoding="utf-8")
         return json.loads(schema_text)
     except (FileNotFoundError, AttributeError):
@@ -67,7 +171,7 @@ def _load_schema() -> dict[str, Any]:
             return json.load(f)
 
 
-def resolve_snippets(content: str, base_path: Path) -> str:
+def _resolve_snippets(content: str, base_path: Path) -> str:
     """
     Recursively finds and replaces MkDocs snippets in markdown content.
     Mimics the behavior of pymdownx.snippets.
@@ -76,7 +180,7 @@ def resolve_snippets(content: str, base_path: Path) -> str:
         content: The markdown content to process
         base_path: Path to the file being processed (used to resolve relative paths)
     """
-    docs_root = _get_docs_path()
+    docs_root = _docs_resource.get_path()
     project_root = docs_root.parent
 
     def replace_match(match):
@@ -92,13 +196,91 @@ def resolve_snippets(content: str, base_path: Path) -> str:
         for candidate in candidates:
             if candidate.exists() and candidate.is_file():
                 # Recursively resolve snippets inside the included file
-                return resolve_snippets(
+                return _resolve_snippets(
                     candidate.read_text(encoding="utf-8"), candidate
                 )
 
         return f"> [!WARNING] Could not resolve snippet: {snippet_path}"
 
     return SNIPPET_REGEX.sub(replace_match, content)
+
+
+@lru_cache(maxsize=1)
+def _build_search_index() -> tantivy.Index:
+    """Build and cache a Tantivy search index for docs and examples.
+
+    Returns:
+        A Tantivy Index containing all documentation markdown files
+        and example YAML files.
+
+    Raises:
+        Exception: If index building fails.
+    """
+    docs_path = _docs_resource.get_path()
+    examples_path = _examples_resource.get_path()
+
+    # Create schema with fields for title, path, and content
+    schema_builder = tantivy.SchemaBuilder()
+    schema_builder.add_text_field("title", stored=True)
+    schema_builder.add_text_field("path", stored=True)
+    schema_builder.add_text_field("content", stored=True)
+    schema_builder.add_text_field("type", stored=True)
+    schema = schema_builder.build()
+
+    # Create index in temporary directory
+    index = tantivy.Index(schema, path=tempfile.mkdtemp())
+    writer = index.writer()
+
+    # Helper to index files
+    def index_files(
+        root_path: Path,
+        pattern: str,
+        type_label: str,
+        path_prefix: str,
+        process_content=None,
+        extract_title=None,
+    ):
+        for file_path in root_path.rglob(pattern):
+            content = file_path.read_text(encoding="utf-8")
+            if process_content:
+                content = process_content(content, file_path)
+
+            rel_path = str(file_path.relative_to(root_path))
+            title = (
+                extract_title(content, file_path)
+                if extract_title
+                else file_path.stem
+            )
+
+            writer.add_document(
+                tantivy.Document(
+                    title=title,
+                    path=f"{path_prefix}/{rel_path}",
+                    content=content,
+                    type=type_label,
+                )
+            )
+
+    # Extract title from markdown first heading
+    def extract_md_title(content: str, file_path: Path) -> str:
+        for line in content.split("\n"):
+            if line.startswith("# "):
+                return line[2:].strip()
+        return file_path.stem
+
+    # Index documentation and examples
+    index_files(
+        docs_path,
+        "*.md",
+        "documentation",
+        "docs",
+        process_content=_resolve_snippets,
+        extract_title=extract_md_title,
+    )
+    index_files(examples_path, "*.yaml", "example", "examples")
+
+    writer.commit()
+    return index
 
 
 # ============================================================================
@@ -120,6 +302,10 @@ class MermaidVisualizationResult(BaseModel):
     suggested_next_tool: str
     mermaid_diagram_preview_input: MermaidDiagramPreviewInput
     preview_instructions: str
+
+
+# Rebuild model after nested dependency is defined
+MermaidVisualizationResult.model_rebuild()
 
 
 @mcp.tool(
@@ -287,36 +473,13 @@ def get_documentation(file_path: str) -> str:
             Use list_documentation to see all available files.
 
     Returns:
-        The full markdown content of the documentation file.
+        The full markdown content of the documentation file with snippets resolved.
 
     Raises:
         FileNotFoundError: If the specified file doesn't exist.
         ValueError: If the path tries to access files outside the docs directory.
     """
-    docs_path = _get_docs_path()
-
-    # Resolve the requested file path
-    requested_file = (docs_path / file_path).resolve()
-
-    # Security check: ensure the resolved path is within docs directory
-    try:
-        requested_file.relative_to(docs_path.resolve())
-    except ValueError:
-        raise ValueError(
-            f"Invalid path: '{file_path}' is outside documentation directory"
-        )
-
-    if not requested_file.exists():
-        raise FileNotFoundError(
-            f"Documentation file not found: '{file_path}'. "
-            "Use list_documentation to see available files."
-        )
-
-    if not requested_file.is_file():
-        raise ValueError(f"Path is not a file: '{file_path}'")
-
-    content = requested_file.read_text(encoding="utf-8")
-    return resolve_snippets(content, requested_file)
+    return _docs_resource.get_file(file_path)
 
 
 @mcp.tool(
@@ -363,21 +526,113 @@ def list_documentation() -> list[str]:
         Paths are relative to the docs root (e.g., "components/Flow.md",
         "Tutorials/getting_started.md").
     """
-    docs_path = _get_docs_path()
+    return _docs_resource.list_files()
 
-    if not docs_path.exists():
-        raise FileNotFoundError(
-            f"Documentation directory not found: {docs_path}"
+
+@mcp.tool(
+    title="Get QType Example",
+    description=(
+        "Returns the content of a specific example YAML file. "
+        "Use list_examples first to see available files. "
+        "Provide the relative path (e.g., 'conversational_ai/simple_chatbot.qtype.yaml', "
+        "'data_processing/csv_processor.qtype.yaml')."
+    ),
+)
+def get_example(file_path: str) -> str:
+    """Get the content of a specific example file.
+
+    Args:
+        file_path: Relative path to the example file from the examples root.
+            Example: "conversational_ai/simple_chatbot.qtype.yaml",
+            "data_processing/csv_processor.qtype.yaml".
+            Use list_examples to see all available files.
+
+    Returns:
+        The full YAML content of the example file.
+
+    Raises:
+        FileNotFoundError: If the specified file doesn't exist.
+        ValueError: If the path tries to access files outside the examples directory.
+    """
+    return _examples_resource.get_file(file_path)
+
+
+@mcp.tool(
+    title="List QType Examples",
+    description=(
+        "Returns a list of all available example YAML files. "
+        "Use this to discover what examples exist, then retrieve "
+        "specific files with get_example. Examples are organized by category: "
+        "conversational_ai/ (chatbots and agents), data_processing/ (ETL and transformations), "
+        "invoke_models/ (LLM usage), language_features/ (QType syntax examples), etc."
+    ),
+    structured_output=True,
+)
+def list_examples() -> list[str]:
+    """List all available example YAML files.
+
+    Returns:
+        Sorted list of relative paths to all .yaml example files.
+        Paths are relative to the examples root (e.g.,
+        "conversational_ai/simple_chatbot.qtype.yaml",
+        "data_processing/csv_processor.qtype.yaml").
+    """
+    return _examples_resource.list_files()
+
+
+@mcp.tool(
+    title="Search QType Library",
+    description=(
+        "Full-text search across all QType documentation and examples. "
+        "Returns matching documents and example YAML files ranked by relevance. "
+        "Use this to find documentation about specific topics, features, or components, "
+        "or to discover example implementations. Doc paths can be used with get_documentation."
+    ),
+    structured_output=True,
+)
+def search_library(query: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Search library using full-text search.
+
+    Args:
+        query: Search query string. Can include multiple words, phrases,
+            or boolean operators (AND, OR, NOT).
+        limit: Maximum number of results to return (default: 10, max: 50).
+
+    Returns:
+        List of matching items with:
+        - title: Item title
+        - path: Relative path (docs/ or examples/ prefix)
+        - type: Either "documentation" or "example"
+        - score: Relevance score (higher is more relevant)
+
+    Examples:
+        search_library("flow execution")  # Find docs/examples about flows
+        search_library("DocumentSource")  # Find component docs
+        search_library("authentication AND API")  # Boolean search
+    """
+    # Clamp limit to reasonable range
+    limit = max(1, min(limit, 50))
+
+    index = _build_search_index()
+    index.reload()
+    searcher = index.searcher()
+    tantivy_query = index.parse_query(query, ["title", "content"])
+
+    search_results = searcher.search(tantivy_query, limit)
+
+    results = []
+    for score, doc_address in search_results.hits:
+        doc = searcher.doc(doc_address)
+        results.append(
+            {
+                "title": doc["title"][0],
+                "path": doc["path"][0],
+                "type": doc["type"][0],
+                "score": score,
+            }
         )
 
-    # Find all markdown files
-    md_files = []
-    for md_file in docs_path.rglob("*.md"):
-        # Get relative path from docs root
-        rel_path = md_file.relative_to(docs_path)
-        md_files.append(str(rel_path))
-
-    return sorted(md_files)
+    return results
 
 
 @mcp.tool(
