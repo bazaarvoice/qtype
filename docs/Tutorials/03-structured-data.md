@@ -445,10 +445,9 @@ Congratulations! You've mastered:
 
 **Learn more:**
 
-- [CustomType Reference](../components/CustomType.md) - Complete type system
-- [Decoder Step](../Concepts/Steps/decoder.md) - Advanced parsing options
-- [Construct Step](../components/Construct.md) - Field mapping patterns
-- [Type System](../Concepts/Core/types.md) - Primitives, domain types, and custom types
+- [Tutorial: Tools and Function Calling](04-tools-and-function-calling.md)
+- [CustomType Reference](../components/CustomType.md)
+- [Decoder Reference](../components/Decoder.md)
 
 ---
 

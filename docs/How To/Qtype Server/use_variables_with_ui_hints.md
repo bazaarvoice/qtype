@@ -43,5 +43,6 @@ flows:
 
 ## See Also
 
-- [Serve Flows as UI](../../How%20To/Qtype%20Server/serve_flows_as_ui.md)
-- [Flow Reference](../../components/Flow.md)
+- [Serve Flows as UI](serve_flows_as_ui.md)
+- [Variable Reference](../../components/Variable.md)
+- [Use Optional Variables](../Language%20Features/use_optional_variables.md)

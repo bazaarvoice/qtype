@@ -76,5 +76,6 @@ result_file: results.parquet
 
 ## Learn More
 
-- Tutorial: [Your First QType Application](../../Tutorials/01_hello_world.md)
-- Example: [Simple Chatbot](./simple_chatbot.md)
+- [Tutorial: Your First QType Application](../Tutorials/01-first-qtype-application.md)
+- [Read Data from SQL Databases](../How%20To/Data%20Processing/read_sql_databases.md)
+- [Adjust Concurrency](../How%20To/Data%20Processing/adjust_concurrency.md)

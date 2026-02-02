@@ -63,8 +63,8 @@ qtype run app.qtype.yaml --input-file inputs.csv --output results.parquet
 
 #### See Also
 
-- [How To: Pass Inputs On The CLI](../How%20To/Command%20Line%20Usage/pass_inputs_on_the_cli.md)
-- [How To: Load Multiple Inputs from Files](../How%20To/Command%20Line%20Usage/load_multiple_inputs_from_files.md)
+- [Pass Inputs On The CLI](../How%20To/Command%20Line%20Usage/pass_inputs_on_the_cli.md)
+- [Load Multiple Inputs from Files](../How%20To/Command%20Line%20Usage/load_multiple_inputs_from_files.md)
 - [Tutorial: Your First QType Application](../Tutorials/01-first-qtype-application.md)
 
 ---
@@ -99,8 +99,8 @@ qtype validate app.qtype.yaml --print
 
 #### See Also
 
-- [How To: Validate QType YAML](../How%20To/Observability%20&%20Debugging/validate_qtype_yaml.md)
-- [Reference: Semantic Validation Rules](semantic-validation-rules.md)
+- [Validate QType YAML](../How%20To/Observability%20%26%20Debugging/validate_qtype_yaml.md)
+- [Semantic Validation Rules](semantic-validation-rules.md)
 
 ---
 
@@ -141,11 +141,9 @@ qtype serve app.qtype.yaml --reload
 
 #### See Also
 
-- [How To: Serve Flows as APIs](../How%20To/Qtype%20Server/serve_flows_as_apis.md)
-- [How To: Serve Flows as UI](../How%20To/Qtype%20Server/serve_flows_as_ui.md)
-- [How To: Use Conversational Interfaces](../How%20To/Qtype%20Server/use_conversational_interfaces.md)
-- [How To: Serve Applications with Auto-Reload](../How%20To/Qtype%20Server/serve_applications_with_auto_reload.md)
-- [Tutorial: Building a Stateful Chatbot](../Tutorials/02-conversational-chatbot.md)
+- [Serve Flows as APIs](../How%20To/Qtype%20Server/serve_flows_as_apis.md)
+- [Serve Flows as UI](../How%20To/Qtype%20Server/serve_flows_as_ui.md)
+- [Tutorial: Conversational Chatbot](../Tutorials/02-conversational-chatbot.md)
 
 ---
 
@@ -230,7 +228,7 @@ qtype visualize app.qtype.yaml --output architecture.mmd
 
 #### See Also
 
-- [How To: Visualize Application Architecture](../How%20To/Observability%20&%20Debugging/visualize_application_architecture.md)
+- [Visualize Application Architecture](../How%20To/Observability%20%26%20Debugging/visualize_application_architecture.md)
 
 ---
 
@@ -274,8 +272,8 @@ qtype convert module myapp.utils
 
 **See Also:**
 
-- [How To: Create Tools from Python Modules](../How%20To/Tools%20&%20Integration/create_tools_from_python_modules.md)
-- [Tutorial: Adding Tools to Your Application](../Tutorials/04-tools-and-function-calling.md)
+- [Create Tools from Python Modules](../How%20To/Tools%20%26%20Integration/create_tools_from_python_modules.md)
+- [Tutorial: Tools and Function Calling](../Tutorials/04-tools-and-function-calling.md)
 
 ##### convert api
 
@@ -307,8 +305,8 @@ qtype convert api https://petstore3.swagger.io/api/v3/openapi.json --output pets
 
 **See Also:**
 
-- [How To: Create Tools from OpenAPI Specifications](../How%20To/Tools%20&%20Integration/create_tools_from_openapi_specifications.md)
-- [Tutorial: Adding Tools to Your Application](../Tutorials/04-tools-and-function-calling.md)
+- [Create Tools from OpenAPI Specifications](../How%20To/Tools%20%26%20Integration/create_tools_from_openapi_specifications.md)
+- [Tutorial: Tools and Function Calling](../Tutorials/04-tools-and-function-calling.md)
 
 ---
 
@@ -327,7 +325,7 @@ This command is primarily used for QType development and maintenance.
 - **`commons`** - Generates the commons library tools from `tools.py`
 - **`schema`** - Generates the JSON schema for the QType DSL from `model.py`
 - **`dsl-docs`** - Generates markdown documentation for the QType DSL classes from `model.py`
-- **`semantic-model`** - Generates the semantic model from QType DSL (See [Contributing](../Contributing/))
+- **`semantic-model`** - Generates the semantic model from QType DSL (See [Contributing](../Contributing/index.md))
 
 ---
 

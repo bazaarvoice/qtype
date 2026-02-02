@@ -66,6 +66,6 @@ qtype run examples/data_processing/cache_step_results.qtype.yaml  --progress -i 
 
 ## See Also
 
-- [LLMInference Reference](../../components/LLMInference.md)
+- [Step Reference](../../components/Step.md)
 - [Adjust Concurrency](adjust_concurrency.md)
-- [Tutorial: Your First QType Application](../../Tutorials/your_first_qtype_application.md)
+- [Tutorial: Your First QType Application](../../Tutorials/01-first-qtype-application.md)

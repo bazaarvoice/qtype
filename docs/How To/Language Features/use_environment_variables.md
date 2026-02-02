@@ -43,5 +43,6 @@ qtype run app.qtype.yaml
 
 ## See Also
 
+- [Use API Key Authentication](../Authentication/use_api_key_authentication.md)
+- [Configure AWS Authentication](../Authentication/configure_aws_authentication.md)
 - [Tutorial: Your First QType Application](../../Tutorials/01-first-qtype-application.md)
-- [APIKeyAuthProvider Reference](../../components/APIKeyAuthProvider.md)

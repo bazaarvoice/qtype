@@ -80,7 +80,6 @@ See [Tutorial: Adding Tools to Your Application](../../Tutorials/04-tools-and-fu
 
 ## See Also
 
-- [Tutorial: Adding Tools to Your Application](../../Tutorials/04-tools-and-function-calling.md)
-- [How-To: Create Tools from Python Modules](create_tools_from_python_modules.md)
-- [InvokeTool Reference](../../components/InvokeTool.md)
+- [Tutorial: Tools and Function Calling](../../Tutorials/04-tools-and-function-calling.md)
+- [Create Tools from Python Modules](create_tools_from_python_modules.md)
 - [APITool Reference](../../components/APITool.md)

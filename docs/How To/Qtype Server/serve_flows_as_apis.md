@@ -35,6 +35,6 @@ Each flow endpoint accepts JSON input matching the flow's input schema and retur
 
 ## See Also
 
-- [Application Reference](../../components/Application.md)
-- [Flow Reference](../../components/Flow.md)
-- [FlowInterface Reference](../../components/FlowInterface.md)
+- [Serve Flows as UI](serve_flows_as_ui.md)
+- [CLI Reference](../../Reference/cli.md)
+- [Serve with Auto-Reload](../Command%20Line%20Usage/serve_with_auto_reload.md)

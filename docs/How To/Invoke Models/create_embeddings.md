@@ -46,4 +46,4 @@ qtype run examples/invoke_models/create_embeddings.qtype.yaml \
 
 - [InvokeEmbedding Reference](../../components/InvokeEmbedding.md)
 - [EmbeddingModel Reference](../../components/EmbeddingModel.md)
-- [Tutorial: Build a RAG System](../../Tutorials/building_rag_system.md)
+- [Embedding Reference](../../components/Embedding.md)

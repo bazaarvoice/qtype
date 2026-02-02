@@ -46,6 +46,6 @@ flows:
 
 ## See Also
 
+- [Include QType YAML](include_qtype_yaml.md)
 - [Tutorial: Your First QType Application](../../Tutorials/01-first-qtype-application.md)
-- [Model Reference](../../components/Model.md)
-- [APIKeyAuthProvider Reference](../../components/APIKeyAuthProvider.md)
+- [Application Reference](../../components/Application.md)

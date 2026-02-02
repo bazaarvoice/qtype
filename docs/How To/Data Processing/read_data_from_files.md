@@ -57,4 +57,5 @@ JSON preserves nested objects, making it ideal for complex types. CSV stores eve
 ## See Also
 
 - [FileSource Reference](../../components/FileSource.md)
-- [Example: Batch Processing](../../Gallery/Data%20Processing/batch_processing.md)
+- [Load Multiple Inputs from Files](../Command%20Line%20Usage/load_multiple_inputs_from_files.md)
+- [Write Data to File](write_data_to_file.md)

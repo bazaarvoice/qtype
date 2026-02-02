@@ -42,7 +42,6 @@ steps:
 
 ## See Also
 
-- [Tutorial: Adding Tools to Your Application](../../Tutorials/04-tools-and-function-calling.md)
+- [Tutorial: Tools and Function Calling](../../Tutorials/04-tools-and-function-calling.md)
 - [InvokeTool Reference](../../components/InvokeTool.md)
 - [Create Tools from Python Modules](create_tools_from_python_modules.md)
-- [Create Tools from OpenAPI Specifications](create_tools_from_openapi_specifications.md)

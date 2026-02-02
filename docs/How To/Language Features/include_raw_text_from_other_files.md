@@ -44,4 +44,5 @@ qtype run include_raw.qtype.yaml -i '{"theme":"a robot learning to paint","tone"
 ## See Also
 
 - [PromptTemplate Reference](../../components/PromptTemplate.md)
-- [Reference Entities by ID](../../How%20To/Language%20Features/reference_entities_by_id.md)
+- [Include QType YAML](include_qtype_yaml.md)
+- [Reuse Prompts with Templates](../Invoke%20Models/reuse_prompts_with_templates.md)

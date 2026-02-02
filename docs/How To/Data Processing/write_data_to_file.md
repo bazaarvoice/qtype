@@ -36,5 +36,4 @@ See the [LLM Processing Pipelines](../../Gallery/dataflow_pipelines.md) gallery 
 
 - [FileWriter Reference](../../components/FileWriter.md)
 - [Read Data from Files](read_data_from_files.md)
-- [Read SQL Databases](read_sql_databases.md)
-- [LLM Processing Pipelines](../../Gallery/dataflow_pipelines.md)
+- [Gallery: Dataflow Pipelines](../../Gallery/dataflow_pipelines.md)

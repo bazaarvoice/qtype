@@ -42,6 +42,5 @@ steps:
 ## See Also
 
 - [SQLSource Reference](../../components/SQLSource.md)
-- [FileSource Reference](../../components/FileSource.md)
-- [Tutorial: Working with Types and Structured Data](../../Tutorials/working_with_types_and_structured_data.md)
-- [Example: Dataflow Pipeline](../../Gallery/Data%20Processing/dataflow_pipelines.md)
+- [Load Data from Athena](load_data_from_athena.md)
+- [Read Data from Files](read_data_from_files.md)

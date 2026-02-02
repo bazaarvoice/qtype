@@ -57,5 +57,5 @@ npm install -g @mermaid-js/mermaid-cli
 ## See Also
 
 - [Validate QType YAML](validate_qtype_yaml.md)
-- [Application Reference](../../components/Application.md)
+- [CLI Reference](../../Reference/cli.md)
 - [Flow Reference](../../components/Flow.md)

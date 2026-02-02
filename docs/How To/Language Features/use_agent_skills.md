@@ -26,5 +26,4 @@ Expert assistant for designing and building AI applications using QType's declar
 ## See Also
 
 - [Use QType MCP](use_qtype_mcp.md)
-- [QType Architect Skill](../../skills/architect/SKILL.md)
-- [GitHub Copilot Agent Skills](https://code.visualstudio.com/docs/copilot/copilot-extensibility-overview#_agent-skills)
+- [Invoke Other Flows](../Data%20Processing/invoke_other_flows.md)

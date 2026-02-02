@@ -82,6 +82,6 @@ flows:
 
 ## See Also
 
-- [Tutorial: Adding Tools to Your Application](../../Tutorials/04-tools-and-function-calling.md)
-- [InvokeTool Reference](../../components/InvokeTool.md)
+- [Tutorial: Tools and Function Calling](../../Tutorials/04-tools-and-function-calling.md)
+- [Create Tools from OpenAPI Specifications](create_tools_from_openapi_specifications.md)
 - [PythonFunctionTool Reference](../../components/PythonFunctionTool.md)

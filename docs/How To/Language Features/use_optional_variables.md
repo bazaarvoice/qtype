@@ -39,3 +39,4 @@ qtype run examples/language_features/optional_variables.qtype.yaml -i '{"user_pr
 
 - [Variable Reference](../../components/Variable.md)
 - [FieldExtractor Reference](../../components/FieldExtractor.md)
+- [Tutorial: Structured Data](../../Tutorials/03-structured-data.md)

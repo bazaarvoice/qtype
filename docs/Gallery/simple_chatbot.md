@@ -33,4 +33,6 @@ qtype serve examples/conversational_ai/simple_chatbot.qtype.yaml
 
 ## Learn More
 
-- Tutorial: [Building a Stateful Chatbot](../../Tutorials/02_conversational_chat.md)
+- [Tutorial: Conversational Chatbot](../Tutorials/02-conversational-chatbot.md)
+- [Use Conversational Interfaces](../How%20To/Qtype%20Server/use_conversational_interfaces.md)
+- [ChatMessage Reference](../components/ChatMessage.md)

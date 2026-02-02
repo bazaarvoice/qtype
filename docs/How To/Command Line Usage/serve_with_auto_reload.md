@@ -22,5 +22,6 @@ qtype serve --reload -p 8080 examples/tutorials/01_hello_world.qtype.yaml
 
 ## See Also
 
-- [Serve Command Reference](../../Reference/CLI.md#serve)
-- [Tutorial: Hello World](../../Tutorials/01_hello_world.md)
+- [Serve Flows as APIs](../Qtype%20Server/serve_flows_as_apis.md)
+- [Serve Flows as UI](../Qtype%20Server/serve_flows_as_ui.md)
+- [CLI Reference](../../Reference/cli.md)

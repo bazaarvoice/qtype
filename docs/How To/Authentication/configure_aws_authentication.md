@@ -55,6 +55,6 @@ models:
 ## See Also
 
 - [AWSAuthProvider Reference](../../components/AWSAuthProvider.md)
+- [Use API Key Authentication](use_api_key_authentication.md)
+- [Call Large Language Models](../Invoke%20Models/call_large_language_models.md)
 - [Model Reference](../../components/Model.md)
-- [How-To: Use API Key Authentication](use_api_key_authentication.md)
-- [How-To: Manage Secrets with Secret Manager](../Authentication/manage_secrets.md)
