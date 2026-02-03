@@ -2,6 +2,8 @@
 
 Query relational databases and process results row-by-row using the `SQLSource` step, which supports any database accessible via SQLAlchemy connection strings.
 
+**Note:** SQLSource is a source step that generates data from database queries, so flows using it typically require no inputs.
+
 ### QType YAML
 
 ```yaml

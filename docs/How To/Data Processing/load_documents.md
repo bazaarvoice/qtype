@@ -2,6 +2,8 @@
 
 Load documents from files, directories, or external systems using LlamaIndex readers with DocumentSource.
 
+**Note:** DocumentSource is a source step that generates data independently, so flows using it typically require no inputs.
+
 ### QType YAML
 
 ```yaml

@@ -17,7 +17,7 @@ from qtype.interpreter.base import factory
 from qtype.interpreter.base.executor_context import ExecutorContext
 from qtype.interpreter.logging_progress import LoggingProgressCallback
 from qtype.interpreter.rich_progress import RichProgressCallback
-from qtype.interpreter.types import FlowMessage, ProgressCallback
+from qtype.interpreter.types import FlowMessage, ProgressCallback, Session
 from qtype.semantic.model import Flow
 
 logger = logging.getLogger(__name__)
@@ -106,6 +106,16 @@ async def run_flow(
             initial = [initial]
 
         if isinstance(initial, list):
+            # Handle empty list by creating a single empty message
+            if len(initial) == 0:
+                session_id = kwargs.get("session_id", "default")
+                initial = [
+                    FlowMessage(
+                        session=Session(session_id=session_id),
+                        variables={},
+                    )
+                ]
+
             span.set_attribute("flow.input_count", len(initial))
 
             # convert to async iterator
