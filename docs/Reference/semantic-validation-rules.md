@@ -177,8 +177,3 @@ This document lists all semantic validation rules enforced by QType. These rules
 
 - Must have exactly 1 input of type `text`
 - Must have exactly 1 output of type `list[RAGSearchResult]`
-
-## See Also
-
-- [Validate QType YAML](../How%20To/Observability%20%26%20Debugging/validate_qtype_yaml.md)
-- [CLI Reference](cli.md)

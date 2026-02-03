@@ -93,7 +93,3 @@ my-qtype-plugin/
 └── tests/
     └── test_plugin.py
 ```
-
-## See Also
-
-- [CLI Reference](cli.md)
