@@ -10,7 +10,11 @@ from botocore.exceptions import (  # type: ignore[import-untyped]
     NoCredentialsError,
 )
 
-from qtype.interpreter.auth.aws import AWSAuthenticationError, aws
+from qtype.interpreter.auth.aws import (
+    AWSAuthenticationError,
+    AWSCredentials,
+    aws,
+)
 from qtype.semantic.model import AWSAuthProvider
 
 
@@ -89,8 +93,10 @@ class TestAWSContextManager:
     @patch("qtype.interpreter.auth.aws.cache_auth")
     @patch("qtype.interpreter.auth.aws._create_session")
     @patch("qtype.interpreter.auth.aws._is_session_valid")
+    @patch("qtype.interpreter.auth.aws._extract_credentials")
     def test_cache_hit_with_valid_session(
         self,
+        mock_extract,
         mock_is_valid,
         mock_create,
         mock_cache,
@@ -100,14 +106,21 @@ class TestAWSContextManager:
     ):
         """Test that cached valid sessions are returned without recreation."""
         cached_session = MagicMock()
+        expected_creds = AWSCredentials(
+            aws_access_key_id="AKIATEST",
+            aws_secret_access_key="secret",
+            region_name="us-east-1",
+        )
         mock_get_cached.return_value = cached_session
         mock_is_valid.return_value = True
+        mock_extract.return_value = expected_creds
 
-        with aws(aws_provider, secret_manager) as session:
-            assert session is cached_session
+        with aws(aws_provider, secret_manager) as creds:
+            assert creds is expected_creds
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_called_once_with(cached_session)
+        mock_extract.assert_called_once_with(cached_session, aws_provider)
         mock_create.assert_not_called()
         mock_cache.assert_not_called()
 
@@ -115,8 +128,10 @@ class TestAWSContextManager:
     @patch("qtype.interpreter.auth.aws.cache_auth")
     @patch("qtype.interpreter.auth.aws._create_session")
     @patch("qtype.interpreter.auth.aws._is_session_valid")
+    @patch("qtype.interpreter.auth.aws._extract_credentials")
     def test_cache_miss_creates_new_session(
         self,
+        mock_extract,
         mock_is_valid,
         mock_create,
         mock_cache,
@@ -126,23 +141,33 @@ class TestAWSContextManager:
     ):
         """Test that when no cached session exists, a new one is created."""
         new_session = MagicMock()
+        new_session.get_credentials.return_value = MagicMock()
+        expected_creds = AWSCredentials(
+            aws_access_key_id="AKIATEST",
+            aws_secret_access_key="secret",
+            region_name="us-east-1",
+        )
         mock_get_cached.return_value = None
         mock_create.return_value = new_session
+        mock_extract.return_value = expected_creds
 
-        with aws(aws_provider, secret_manager) as session:
-            assert session is new_session
+        with aws(aws_provider, secret_manager) as creds:
+            assert creds is expected_creds
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_not_called()
         mock_create.assert_called_once_with(aws_provider, secret_manager)
         mock_cache.assert_called_once_with(aws_provider, new_session)
+        mock_extract.assert_called_once_with(new_session, aws_provider)
 
     @patch("qtype.interpreter.auth.aws.get_cached_auth")
     @patch("qtype.interpreter.auth.aws.cache_auth")
     @patch("qtype.interpreter.auth.aws._create_session")
     @patch("qtype.interpreter.auth.aws._is_session_valid")
+    @patch("qtype.interpreter.auth.aws._extract_credentials")
     def test_invalid_cached_session_creates_new(
         self,
+        mock_extract,
         mock_is_valid,
         mock_create,
         mock_cache,
@@ -153,17 +178,25 @@ class TestAWSContextManager:
         """Test that invalid cached sessions are replaced with new ones."""
         cached_session = MagicMock()
         new_session = MagicMock()
+        new_session.get_credentials.return_value = MagicMock()
+        expected_creds = AWSCredentials(
+            aws_access_key_id="AKIATEST",
+            aws_secret_access_key="secret",
+            region_name="us-east-1",
+        )
         mock_get_cached.return_value = cached_session
         mock_is_valid.return_value = False
         mock_create.return_value = new_session
+        mock_extract.return_value = expected_creds
 
-        with aws(aws_provider, secret_manager) as session:
-            assert session is new_session
+        with aws(aws_provider, secret_manager) as creds:
+            assert creds is expected_creds
 
         mock_get_cached.assert_called_once_with(aws_provider)
         mock_is_valid.assert_called_once_with(cached_session)
         mock_create.assert_called_once_with(aws_provider, secret_manager)
         mock_cache.assert_called_once_with(aws_provider, new_session)
+        mock_extract.assert_called_once_with(new_session, aws_provider)
 
     @patch("qtype.interpreter.auth.aws._create_session")
     def test_session_without_credentials_raises_error(
@@ -194,6 +227,70 @@ class TestAWSContextManager:
         with pytest.raises(AWSAuthenticationError):
             with aws(aws_provider, secret_manager):
                 pass
+
+
+class TestExtractCredentials:
+    """Test credential extraction from boto3 sessions."""
+
+    def test_extract_credentials_with_static_creds(self, aws_provider):
+        """Test extracting static credentials from a session."""
+        from qtype.interpreter.auth.aws import _extract_credentials
+
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+        mock_credentials = MagicMock()
+        mock_frozen = MagicMock()
+        mock_frozen.access_key = "AKIATEST"
+        mock_frozen.secret_key = "secret-key"
+        mock_frozen.token = None
+        mock_credentials.get_frozen_credentials.return_value = mock_frozen
+        mock_session.get_credentials.return_value = mock_credentials
+
+        result = _extract_credentials(mock_session, aws_provider)
+
+        assert isinstance(result, AWSCredentials)
+        assert result.aws_access_key_id == "AKIATEST"
+        assert result.aws_secret_access_key == "secret-key"
+        assert result.aws_session_token is None
+        assert result.region_name == "us-west-2"
+
+    def test_extract_credentials_with_temporary_creds(self, aws_provider):
+        """Test extracting temporary credentials (with session token)."""
+        from qtype.interpreter.auth.aws import _extract_credentials
+
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_credentials = MagicMock()
+        mock_frozen = MagicMock()
+        mock_frozen.access_key = "ASIATEST"
+        mock_frozen.secret_key = "temp-secret"
+        mock_frozen.token = "session-token"
+        mock_credentials.get_frozen_credentials.return_value = mock_frozen
+        mock_session.get_credentials.return_value = mock_credentials
+
+        result = _extract_credentials(mock_session, aws_provider)
+
+        assert isinstance(result, AWSCredentials)
+        assert result.aws_access_key_id == "ASIATEST"
+        assert result.aws_secret_access_key == "temp-secret"
+        assert result.aws_session_token == "session-token"
+        assert result.region_name == "us-east-1"
+
+    def test_extract_credentials_with_profile(self, profile_provider):
+        """Test extracting credentials when using a profile."""
+        from qtype.interpreter.auth.aws import _extract_credentials
+
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+        mock_session.get_credentials.return_value = None
+
+        result = _extract_credentials(mock_session, profile_provider)
+
+        assert isinstance(result, AWSCredentials)
+        assert result.profile_name == "test-profile"
+        assert result.region_name == "us-west-2"
+        assert result.aws_access_key_id is None
+        assert result.aws_secret_access_key is None
 
 
 class TestSessionValidation:

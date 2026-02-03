@@ -42,8 +42,12 @@ class SQLSourceExecutor(StepExecutor):
         connect_args = {}
         if self.step.auth:
             with auth(self.step.auth, self._secret_manager) as creds:
-                if isinstance(creds, boto3.Session):
-                    connect_args["session"] = creds
+                # For AWS auth, create a boto3 session from credentials
+                from qtype.interpreter.auth.aws import AWSCredentials
+
+                if isinstance(creds, AWSCredentials):
+                    session = boto3.Session(**creds.as_kwargs())
+                    connect_args["session"] = session
         engine = create_engine(connection_string, connect_args=connect_args)
 
         output_columns = {output.id for output in self.step.outputs}

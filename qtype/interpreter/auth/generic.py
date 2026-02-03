@@ -44,9 +44,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Generator
 
-import boto3  # type: ignore[import-untyped]
-
-from qtype.interpreter.auth.aws import aws
+from qtype.interpreter.auth.aws import AWSCredentials, aws
 from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import (
     APIKeyAuthProvider,
@@ -111,13 +109,13 @@ def resolve_provider_secrets(
 def auth(
     auth_provider: AuthorizationProvider,
     secret_manager: SecretManagerBase,
-) -> Generator[boto3.Session | AuthorizationProvider, None, None]:
+) -> Generator[AWSCredentials | AuthorizationProvider, None, None]:
     """
-    Create an appropriate session or provider instance based on the auth provider type.
+    Create appropriate credentials or provider instance based on auth provider type.
 
     This context manager dispatches to the appropriate authentication handler based
     on the type of AuthorizationProvider:
-    - AWSAuthProvider: Returns a configured boto3.Session
+    - AWSAuthProvider: Returns AWSCredentials with resolved credentials
     - APIKeyAuthProvider: Returns the provider instance (contains the API key)
 
     Args:
@@ -125,7 +123,7 @@ def auth(
         secret_manager: Secret manager for resolving SecretReferences
 
     Yields:
-        boto3.Session | APIKeyAuthProvider: The appropriate session or provider instance
+        AWSCredentials | AuthorizationProvider: The appropriate credentials or provider instance
 
     Raises:
         UnsupportedAuthProviderError: When an unsupported provider type is used
@@ -135,7 +133,7 @@ def auth(
         from qtype.semantic.model import AWSAuthProvider, APIKeyAuthProvider
         from qtype.interpreter.auth.generic import auth
 
-        # AWS provider - returns boto3.Session
+        # AWS provider - returns AWSCredentials
         aws_auth = AWSAuthProvider(
             id="my-aws-auth",
             type="aws",
@@ -144,8 +142,9 @@ def auth(
             region="us-east-1"
         )
 
-        with auth(aws_auth) as session:
-            s3_client = session.client("s3")
+        with auth(aws_auth, secret_manager) as creds:
+            import boto3
+            s3_client = boto3.client("s3", **creds.as_kwargs())
 
         # API Key provider - returns the provider itself
         api_auth = APIKeyAuthProvider(
@@ -161,8 +160,8 @@ def auth(
     """
     if isinstance(auth_provider, AWSAuthProvider):
         # Use AWS-specific context manager
-        with aws(auth_provider, secret_manager) as session:
-            yield session
+        with aws(auth_provider, secret_manager) as creds:
+            yield creds
 
     elif isinstance(auth_provider, (APIKeyAuthProvider, OAuth2AuthProvider)):
         # For non-AWS providers, resolve secrets and yield modified copy

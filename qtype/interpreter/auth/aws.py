@@ -8,6 +8,7 @@ AWSAuthProvider configuration from the semantic model.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass
 from typing import Any, Generator
 
 import boto3  # type: ignore[import-untyped]
@@ -25,6 +26,30 @@ class AWSAuthenticationError(Exception):
     """Raised when AWS authentication fails."""
 
     pass
+
+
+@dataclass
+class AWSCredentials:
+    """Resolved AWS credentials for creating boto3/aioboto3 clients.
+
+    This dataclass holds the resolved AWS credentials that can be passed
+    directly to both boto3 and aioboto3 constructors, ensuring async
+    operations work correctly without botocore session issues.
+    """
+
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_session_token: str | None = None
+    region_name: str | None = None
+    profile_name: str | None = None
+
+    def as_kwargs(self) -> dict[str, Any]:
+        """Return non-None credentials as kwargs dict.
+
+        Returns:
+            Dictionary of credential parameters with None values filtered out.
+        """
+        return {k: v for k, v in asdict(self).items() if v is not None}
 
 
 def _is_session_valid(session: boto3.Session) -> bool:
@@ -60,14 +85,18 @@ def _is_session_valid(session: boto3.Session) -> bool:
 def aws(
     aws_provider: AWSAuthProvider,
     secret_manager: SecretManagerBase,
-) -> Generator[boto3.Session, None, None]:
+) -> Generator[AWSCredentials, None, None]:
     """
-    Create a boto3 Session using AWS authentication provider configuration.
+    Resolve AWS credentials from provider configuration.
 
-    This context manager creates a boto3 Session based on the authentication
-    method specified in the AWSAuthProvider. Sessions are cached using an LRU
-    cache to avoid recreating them unnecessarily. The cache size can be configured
-    via the AUTH_CACHE_MAX_SIZE environment variable (default: 128).
+    This context manager resolves AWS credentials based on the authentication
+    method specified in the AWSAuthProvider and returns them as an
+    AWSCredentials dataclass. The credentials can be passed directly to both
+    boto3 and aioboto3 constructors, ensuring async operations work correctly.
+
+    Sessions are cached using an LRU cache to avoid recreating them
+    unnecessarily. The cache size can be configured via the AUTH_CACHE_MAX_SIZE
+    environment variable (default: 128).
 
     It supports:
     - Direct credentials (access key + secret key + optional session token)
@@ -81,13 +110,17 @@ def aws(
     - Invalid or expired sessions are evicted and recreated
 
     Args:
-        aws_provider: AWSAuthProvider instance containing authentication configuration
+        aws_provider: AWSAuthProvider instance containing authentication
+            configuration
+        secret_manager: SecretManagerBase for resolving SecretReferences
 
     Yields:
-        boto3.Session: Configured boto3 session ready for creating AWS service clients
+        AWSCredentials: Resolved credentials ready for creating AWS service
+            clients
 
     Raises:
-        AWSAuthenticationError: When authentication fails or configuration is invalid
+        AWSAuthenticationError: When authentication fails or configuration is
+            invalid
 
     Example:
         ```python
@@ -102,9 +135,13 @@ def aws(
             region="us-east-1"
         )
 
-        with aws(aws_auth) as session:
-            athena_client = session.client("athena")
-            s3_client = session.client("s3")
+        with aws(aws_auth, secret_manager) as creds:
+            # Use with boto3
+            client = boto3.client("s3", **creds.as_kwargs())
+
+            # Or with llama-index Bedrock
+            from llama_index.llms.bedrock_converse import BedrockConverse
+            llm = BedrockConverse(**creds.as_kwargs(), model="...")
         ```
     """
     try:
@@ -112,8 +149,8 @@ def aws(
         cached_session = get_cached_auth(aws_provider)
 
         if cached_session is not None and _is_session_valid(cached_session):
-            # Cache hit with valid session
-            yield cached_session
+            # Cache hit with valid session - extract credentials from it
+            yield _extract_credentials(cached_session, aws_provider)
             return
 
         # Cache miss or invalid session - create new session
@@ -123,13 +160,15 @@ def aws(
         credentials = session.get_credentials()
         if credentials is None:
             raise AWSAuthenticationError(
-                f"Failed to obtain AWS credentials for provider '{aws_provider.id}'"
+                f"Failed to obtain AWS credentials for provider "
+                f"'{aws_provider.id}'"
             )
 
         # Cache the valid session using provider object as key
         cache_auth(aws_provider, session)
 
-        yield session
+        # Extract and yield credentials
+        yield _extract_credentials(session, aws_provider)
 
     except (ClientError, NoCredentialsError) as e:
         raise AWSAuthenticationError(
@@ -137,8 +176,46 @@ def aws(
         ) from e
     except Exception as e:
         raise AWSAuthenticationError(
-            f"Unexpected error during AWS authentication for provider '{aws_provider.id}': {e}"
+            f"Unexpected error during AWS authentication for provider "
+            f"'{aws_provider.id}': {e}"
         ) from e
+
+
+def _extract_credentials(
+    session: boto3.Session, aws_provider: AWSAuthProvider
+) -> AWSCredentials:
+    """
+    Extract credentials from a boto3 Session.
+
+    This function extracts the actual credential values from a boto3.Session,
+    including temporary credentials from role assumption. This allows the
+    credentials to be passed directly to boto3/aioboto3 constructors.
+
+    Args:
+        session: The boto3 session to extract credentials from
+        aws_provider: AWSAuthProvider for region/profile information
+
+    Returns:
+        AWSCredentials with the extracted credential values
+    """
+    credentials = session.get_credentials()
+
+    if credentials is None:
+        # No explicit credentials - use profile or environment
+        return AWSCredentials(
+            profile_name=aws_provider.profile_name,
+            region_name=session.region_name or aws_provider.region,
+        )
+
+    # Extract frozen credentials (works for both static and temporary)
+    frozen = credentials.get_frozen_credentials()
+
+    return AWSCredentials(
+        aws_access_key_id=frozen.access_key,
+        aws_secret_access_key=frozen.secret_key,
+        aws_session_token=frozen.token,
+        region_name=session.region_name or aws_provider.region,
+    )
 
 
 def _create_session(

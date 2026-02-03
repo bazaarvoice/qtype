@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import AsyncIterator
 
@@ -56,10 +55,10 @@ class BedrockRerankerExecutor(StepExecutor):
                 )
                 return
 
-            # Get session for region info
+            # Get region from auth or default session
             if self.step.auth is not None:
-                with aws(self.step.auth, self.context.secret_manager) as s:
-                    region_name = s.region_name
+                with aws(self.step.auth, self.context.secret_manager) as creds:
+                    region_name = creds.region_name
             else:
                 import boto3
 
@@ -120,31 +119,21 @@ class BedrockRerankerExecutor(StepExecutor):
                 },
             }
 
-            def _call_bedrock_rerank():
-                """Create client and call rerank in executor thread."""
-                if self.step.auth is not None:
-                    with aws(self.step.auth, self.context.secret_manager) as s:
-                        client = s.client("bedrock-agent-runtime")
-                        return client.rerank(
-                            queries=queries,
-                            sources=documents,
-                            rerankingConfiguration=reranking_configuration,
-                        )
-                else:
-                    import boto3
+            # Create async bedrock client and call rerank
+            import aioboto3
 
-                    session = boto3.Session()
-                    client = session.client("bedrock-agent-runtime")
-                    return client.rerank(
-                        queries=queries,
-                        sources=documents,
-                        rerankingConfiguration=reranking_configuration,
-                    )
+            creds_kwargs = {}
+            if self.step.auth is not None:
+                with aws(self.step.auth, self.context.secret_manager) as creds:
+                    creds_kwargs = creds.as_kwargs()
 
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(
-                self.context.thread_pool, _call_bedrock_rerank
-            )
+            session = aioboto3.Session(**creds_kwargs)
+            async with session.client("bedrock-agent-runtime") as client:
+                response = await client.rerank(
+                    queries=queries,
+                    sources=documents,
+                    rerankingConfiguration=reranking_configuration,
+                )
 
             results = []
             for d in response["results"]:
