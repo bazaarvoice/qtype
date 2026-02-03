@@ -305,7 +305,7 @@ Should pass ✅
 ### Run the Application
 
 ```bash
-qtype run -i '{"days_until_due": 3}' 04_tools_and_function_calling.qtype.yaml
+qtype run -i '{"days_until_due": 3}' --show-output 04_tools_and_function_calling.qtype.yaml
 ```
 
 **Expected output:**

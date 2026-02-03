@@ -180,7 +180,7 @@ Replace `sk-your-key-here` with your actual OpenAI API key.
 Run your application:
 
 ```bash
-qtype run -i '{"question":"What is 2+2?"}' 01_hello_world.qtype.yaml
+qtype run -i '{"question":"What is 2+2?"}' --show-output 01_hello_world.qtype.yaml
 ```
 
 **What you should see:**

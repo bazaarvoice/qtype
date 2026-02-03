@@ -38,6 +38,7 @@ qtype run [options] spec
 - **`-I INPUT_FILE, --input-file INPUT_FILE`** - Path to a file (e.g., CSV, JSON, Parquet) with input data for batch processing
 - **`-o OUTPUT, --output OUTPUT`** - Path to save output data. If input is a DataFrame, output will be saved as parquet. If single result, saved as JSON
 - **`--progress`** - Show progress bars during flow execution
+- **`--show-output`** - Display full output data in console (default: summary only)
 
 #### Examples
 
