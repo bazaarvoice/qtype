@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import types
 from typing import Any, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel
@@ -268,6 +269,30 @@ def _map_python_type_to_variable_type(
 
     # Check for generic types like list[str], list[int], etc.
     origin = get_origin(python_type)
+
+    # Handle Union types (including Optional which is Union[T, None])
+    # In Python 3.10+, Type | None creates a types.UnionType
+    is_union = origin is Union or isinstance(python_type, types.UnionType)
+
+    if is_union:
+        args = get_args(python_type)
+        # Filter out None to find the actual type
+        non_none_types = [t for t in args if t is not type(None)]
+
+        if len(non_none_types) == 1:
+            # This is an Optional type (Union[T, None] or T | None)
+            # Recursively map the non-None type
+            return _map_python_type_to_variable_type(
+                non_none_types[0],
+                custom_type_registry,
+                custom_type_models,
+            )
+        else:
+            # Multiple non-None types in union - not currently supported
+            raise ValueError(
+                f"Union types with multiple non-None types are not supported: {python_type}"
+            )
+
     if origin is list:
         # Handle list[T] annotations
         args = get_args(python_type)
