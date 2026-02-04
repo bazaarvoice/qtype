@@ -1,0 +1,40 @@
+# InvokeTool must have output_bindings that match the tool's output parameter names
+id: test_app
+
+tools:
+  - type: PythonFunctionTool
+    id: test_tool
+    name: test_function
+    function_name: test_function
+    module_path: some.module
+    description: Test tool
+    inputs:
+      - id: input_param
+        type: text
+    outputs:
+      - id: test_function_result
+        type: text
+
+flows:
+  - id: test_flow
+    variables:
+      - id: input_var
+        type: text
+      - id: output_var
+        type: text
+    inputs:
+      - input_var
+    outputs:
+      - output_var
+    steps:
+      - id: invoke_step
+        type: InvokeTool
+        tool: test_tool
+        inputs:
+          - input_var
+        outputs:
+          - output_var
+        input_bindings:
+          input_param: input_var
+        output_bindings:
+          result: output_var  # Wrong! Should be 'test_function_result'

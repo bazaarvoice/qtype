@@ -24,6 +24,8 @@ from qtype.semantic.model import (
     FieldExtractor,
     Flow,
     IndexUpsert,
+    InvokeFlow,
+    InvokeTool,
     ListType,
     LLMInference,
     PromptTemplate,
@@ -681,6 +683,101 @@ def _validate_bedrock_reranker(reranker: BedrockReranker) -> None:
         )
 
 
+def _validate_bindings(
+    step_id: str,
+    step_type: str,
+    component_id: str,
+    component_type: str,
+    input_bindings: dict[str, Any],
+    output_bindings: dict[str, Any],
+    valid_input_ids: set[str],
+    valid_output_ids: set[str],
+) -> None:
+    """Validate input and output bindings match component parameters.
+
+    Args:
+        step_id: ID of the step being validated
+        step_type: Type of the step (e.g., 'InvokeTool', 'InvokeFlow')
+        component_id: ID of the component being invoked
+        component_type: Type of component (e.g., 'tool', 'flow')
+        input_bindings: The input_bindings dict to validate
+        output_bindings: The output_bindings dict to validate
+        valid_input_ids: Set of valid input parameter IDs
+        valid_output_ids: Set of valid output parameter IDs
+
+    Raises:
+        QTypeSemanticError: If any binding keys don't match valid IDs
+    """  # Check input_bindings
+    for binding_key in input_bindings.keys():
+        if binding_key not in valid_input_ids:
+            raise QTypeSemanticError(
+                (
+                    f"{step_type} step '{step_id}' has input_binding "
+                    f"'{binding_key}' which does not match any {component_type} "
+                    f"parameter. {component_type.capitalize()} '{component_id}' has input "
+                    f"parameters: {sorted(valid_input_ids)}. {component_type.capitalize()} "
+                    f"parameter '{binding_key}' not defined in {component_type}."
+                )
+            )
+
+    # Check output_bindings
+    for binding_key in output_bindings.keys():
+        if binding_key not in valid_output_ids:
+            raise QTypeSemanticError(
+                (
+                    f"{step_type} step '{step_id}' has output_binding "
+                    f"'{binding_key}' which does not match any {component_type} "
+                    f"parameter. {component_type.capitalize()} '{component_id}' has output "
+                    f"parameters: {sorted(valid_output_ids)}. {component_type.capitalize()} "
+                    f"parameter '{binding_key}' not defined in {component_type}."
+                )
+            )
+
+
+def _validate_invoke_tool(step: InvokeTool) -> None:
+    """Validate InvokeTool has bindings that match the tool's parameters.
+
+    Validates:
+    - All input_bindings keys must match tool input parameter IDs
+    - All output_bindings keys must match tool output parameter IDs
+    """
+    tool_input_ids = {inp.id for inp in step.tool.inputs}
+    tool_output_ids = {out.id for out in step.tool.outputs}
+
+    _validate_bindings(
+        step_id=step.id,
+        step_type="InvokeTool",
+        component_id=step.tool.id,
+        component_type="tool",
+        input_bindings=step.input_bindings,
+        output_bindings=step.output_bindings,
+        valid_input_ids=tool_input_ids,
+        valid_output_ids=tool_output_ids,
+    )
+
+
+def _validate_invoke_flow(step: InvokeFlow) -> None:
+    """Validate InvokeFlow has bindings that match the flow's parameters.
+
+    Validates:
+    - All input_bindings keys must match flow input variable IDs
+    - All output_bindings keys must match flow output variable IDs
+    """
+    flow_input_ids = {inp.id for inp in step.flow.inputs}
+    flow_output_ids = {out.id for out in step.flow.outputs}
+
+    _validate_bindings(
+        step_id=step.id,
+        step_type="InvokeFlow",
+        component_id=step.flow.id,
+        component_type="flow",
+        input_bindings=step.input_bindings,
+        output_bindings=step.output_bindings,
+        valid_input_ids=flow_input_ids,
+        valid_output_ids=flow_output_ids,
+    )
+
+
 # Mapping of types to their validation functions
 _VALIDATORS = {
     Agent: _validate_agent,
@@ -700,6 +797,8 @@ _VALIDATORS = {
     FieldExtractor: _validate_field_extractor,
     Flow: _validate_flow,
     IndexUpsert: _validate_index_upsert,
+    InvokeFlow: _validate_invoke_flow,
+    InvokeTool: _validate_invoke_tool,
     LLMInference: _validate_llm_inference,
     PromptTemplate: _validate_prompt_template,
     SQLSource: _validate_sql_source,

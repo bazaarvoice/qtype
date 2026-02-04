@@ -1,0 +1,50 @@
+# InvokeFlow must have output_bindings that match the flow's output variable IDs
+id: test_app
+
+models:
+  - id: test_model
+    type: Model
+    provider: openai
+
+flows:
+  - id: inner_flow
+    variables:
+      - id: inner_input
+        type: text
+      - id: inner_output
+        type: text
+    inputs:
+      - inner_input
+    outputs:
+      - inner_output
+    steps:
+      - id: llm_step
+        type: LLMInference
+        model: test_model
+        inputs:
+          - inner_input
+        outputs:
+          - inner_output
+
+  - id: outer_flow
+    variables:
+      - id: outer_input
+        type: text
+      - id: outer_output
+        type: text
+    inputs:
+      - outer_input
+    outputs:
+      - outer_output
+    steps:
+      - id: invoke_step
+        type: InvokeFlow
+        flow: inner_flow
+        inputs:
+          - outer_input
+        outputs:
+          - outer_output
+        input_bindings:
+          inner_input: outer_input
+        output_bindings:
+          wrong_output: outer_output  # Wrong! Should be 'inner_output'

@@ -109,6 +109,22 @@ from qtype.semantic.loader import load
             "invalid_complete_flow_no_text_output.qtype.yaml",
             "final step 'echo_step' is of type 'Echo' which does not support streaming",
         ),
+        (
+            "invalid_invoke_tool_wrong_input_binding.qtype.yaml",
+            "Tool parameter 'wrong_param' not defined in tool",
+        ),
+        (
+            "invalid_invoke_tool_wrong_output_binding.qtype.yaml",
+            "Tool parameter 'result' not defined in tool",
+        ),
+        (
+            "invalid_invoke_flow_wrong_input_binding.qtype.yaml",
+            "Flow parameter 'wrong_param' not defined in flow",
+        ),
+        (
+            "invalid_invoke_flow_wrong_output_binding.qtype.yaml",
+            "Flow parameter 'wrong_output' not defined in flow",
+        ),
     ],
 )
 def test_checker_validation_errors(yaml_file, expected_error_fragment):
