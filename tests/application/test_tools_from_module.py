@@ -21,6 +21,7 @@ from qtype.application.converters.tools_from_module import (
     tools_from_module,
 )
 from qtype.base.types import PrimitiveTypeEnum
+from qtype.dsl.domain_types import SearchResult
 from qtype.dsl.model import PythonFunctionTool
 
 
@@ -346,3 +347,57 @@ def test_map_python_type_to_type_str(python_type, expected):
     """Test type to string mapping."""
     result = _map_python_type_to_type_str(python_type, {}, {})
     assert result == expected
+
+
+def test_tools_from_module_with_optional_domain_type(temp_module):
+    """Test function with optional domain type parameter (Union[Type, None])."""
+    module_name = temp_module(
+        """
+        from qtype.dsl.domain_types import SearchResult
+
+        def process_result(result: SearchResult | None = None) -> str:
+            '''Process a search result.'''
+            if result is None:
+                return "No result"
+            return str(result.doc_id)
+        """,
+        "optional_domain_module",
+    )
+
+    tools, custom_types = tools_from_module(module_name)
+
+    assert len(tools) == 1
+    tool = tools[0]
+    assert tool.name == "process_result"
+    assert tool.inputs is not None
+    assert len(tool.inputs) == 1
+
+    # Check that the parameter is properly typed as optional SearchResult
+    result_param = next((v for v in tool.inputs if v.id == "result"), None)
+    assert result_param is not None
+    assert result_param.type == SearchResult
+    assert result_param.optional
+
+
+def test_map_python_type_to_variable_type_union_with_none():
+    """Test mapping Union type with None to optional variable type."""
+    from typing import Union
+
+    # Test with domain type
+    result = _map_python_type_to_variable_type(
+        Union[SearchResult, None], {}, {}
+    )
+    assert result == "SearchResult"
+
+    # Test with primitive type
+    result = _map_python_type_to_variable_type(Union[str, None], {}, {})
+    assert result == PrimitiveTypeEnum.text
+
+    # Test with Pydantic model
+    custom_type_registry = {}
+    custom_type_models = {}
+    result = _map_python_type_to_variable_type(
+        Union[SampleModel, None], custom_type_registry, custom_type_models
+    )
+    assert result == "SampleModel"
+    assert "SampleModel" in custom_type_registry
