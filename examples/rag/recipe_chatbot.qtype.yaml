@@ -1,0 +1,216 @@
+id: recipe_rag_chatbot
+description: |
+  RAG chatbot for the Chowdown recipe collection from GitHub.
+  
+  This application provides two flows:
+  
+  1. recipe_chat: Conversational chatbot that answers questions about recipes
+     - Uses RAG to find relevant recipes based on user questions
+     - Maintains conversation history with memory
+     - Provides cooking advice, recipe recommendations, and ingredient information
+  
+  2. recipe_ingestion: Ingests recipe markdown files into vector database
+     - Clones/fetches recipes from GitHub (clarklab/chowdown)
+     - Splits recipe documents into searchable chunks
+     - Generates embeddings using AWS Bedrock Titan
+     - Stores in Qdrant vector database for fast similarity search
+  
+  Prerequisites:
+  - AWS credentials configured (AWS_PROFILE environment variable)
+  - Qdrant running locally on port 6333 (or update args for Qdrant Cloud)
+  - Clone the recipe repo: git clone https://github.com/clarklab/chowdown.git
+  
+  To ingest recipes:
+    qtype run recipe_chatbot.qtype.yaml --flow recipe_ingestion
+  
+  To start chatbot:
+    qtype serve recipe_chatbot.qtype.yaml --flow recipe_chat
+
+# AWS Authentication for Bedrock
+auths:
+  - type: aws
+    id: aws_auth
+    profile_name: ${AWS_PROFILE}
+
+# Models
+models:
+  # Embedding model for vectorizing recipes and queries
+  - type: EmbeddingModel
+    id: titan_embed
+    provider: aws-bedrock
+    model_id: amazon.titan-embed-text-v2:0
+    dimensions: 1024
+    auth: aws_auth
+  
+  # Chat model for conversational responses
+  - type: Model
+    id: claude_sonnet
+    provider: aws-bedrock
+    model_id: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 4096
+    auth: aws_auth
+
+# Vector index for recipe embeddings
+indexes:
+  - type: VectorIndex
+    module: llama_index.vector_stores.qdrant.QdrantVectorStore
+    id: recipe_index
+    name: chowdown_recipes
+    embedding_model: titan_embed
+    args:
+      collection_name: chowdown_recipes
+      url: http://localhost:6333
+      api_key: ""  # Empty for local Qdrant
+
+# Memory for maintaining conversation context
+memories:
+  - id: recipe_chat_memory
+    token_limit: 10000
+    chat_history_token_ratio: 0.7
+
+# Flows
+flows:
+  # Conversational chatbot flow
+  - type: Flow
+    id: recipe_chat
+    description: Chat with the recipe collection using RAG
+    
+    interface:
+      type: Conversational
+    
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: user_question
+        type: text
+      - id: search_results
+        type: list[RAGSearchResult]
+      - id: context_prompt
+        type: text
+      - id: assistant_response
+        type: ChatMessage
+    
+    inputs:
+      - user_message
+    
+    outputs:
+      - assistant_response
+    
+    steps:
+      # Extract text from user's chat message
+      - id: extract_question
+        type: FieldExtractor
+        json_path: "$.blocks[?(@.type == 'text')].content"
+        inputs:
+          - user_message
+        outputs:
+          - user_question
+      
+      # Search recipe vector index for relevant recipes
+      - id: search_recipes
+        type: VectorSearch
+        index: recipe_index
+        default_top_k: 5
+        inputs:
+          - user_question
+        outputs:
+          - search_results
+      
+      # Build prompt with recipe context
+      - id: build_context_prompt
+        type: PromptTemplate
+        template: |
+          You are a helpful cooking assistant with access to a collection of recipes from Chowdown.
+          
+          Here are the most relevant recipes based on the user's question:
+          
+          {search_results}
+          
+          User question: {user_question}
+          
+          Please provide a helpful answer based on the recipes above. If you're suggesting a recipe, 
+          include key ingredients and brief cooking instructions. If the recipes don't contain 
+          relevant information, politely say so and offer general cooking advice if appropriate.
+        inputs:
+          - search_results
+          - user_question
+        outputs:
+          - context_prompt
+      
+      # Generate conversational response using LLM with memory
+      - id: generate_response
+        type: LLMInference
+        model: claude_sonnet
+        memory: recipe_chat_memory
+        system_message: |
+          You are a friendly and knowledgeable cooking assistant. You help users find recipes, 
+          answer questions about ingredients, suggest substitutions, and provide cooking tips.
+          Base your answers on the provided recipe context, but feel free to add general 
+          cooking knowledge when helpful. Be conversational and enthusiastic about food!
+        inputs:
+          - context_prompt
+        outputs:
+          - assistant_response
+
+  # Recipe ingestion flow
+  - type: Flow
+    id: recipe_ingestion
+    description: Load recipes from local GitHub clone, chunk, embed, and index
+    
+    variables:
+      - id: recipe_document
+        type: RAGDocument
+      - id: recipe_chunk
+        type: RAGChunk
+      - id: embedded_chunk
+        type: RAGChunk
+    
+    outputs:
+      - embedded_chunk
+    
+    steps:
+      # Load recipe markdown files from local clone
+      - id: load_recipes
+        type: DocumentSource
+        reader_module: llama_index.core.SimpleDirectoryReader
+        args:
+          input_dir: "./chowdown/_recipes"
+          recursive: false
+          required_exts: [".md"]
+        outputs:
+          - recipe_document
+      
+      # Split recipes into chunks for better retrieval
+      - id: split_recipes
+        type: DocumentSplitter
+        splitter_name: "SentenceSplitter"
+        chunk_size: 512
+        chunk_overlap: 50
+        inputs:
+          - recipe_document
+        outputs:
+          - recipe_chunk
+      
+      # Generate embeddings for each chunk
+      - id: embed_chunks
+        type: DocumentEmbedder
+        model: titan_embed
+        concurrency_config:
+          num_workers: 5
+        inputs:
+          - recipe_chunk
+        outputs:
+          - embedded_chunk
+      
+      # Store embedded chunks in Qdrant
+      - id: index_recipes
+        type: IndexUpsert
+        index: recipe_index
+        batch_config:
+          batch_size: 25
+        inputs:
+          - embedded_chunk
+        outputs:
+          - embedded_chunk

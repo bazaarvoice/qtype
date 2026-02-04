@@ -10,6 +10,7 @@ authors = [{ name="Lou Kratz", email="lou.kratz+qtype@bazaarvoice.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "cachetools>=6.2.1",
     "jsonschema>=4.24.0",
     "pydantic>=2.12.4",
     "pyyaml>=6.0.2",
@@ -63,7 +64,6 @@ interpreter = [
     "uvicorn[standard]>=0.35.0",
 ]
 mcp = [
-    "cachetools>=6.2.1",
     "httpx>=0.28.1",
     "mcp[cli]>=1.25.0",
     "tantivy>=0.25.1",

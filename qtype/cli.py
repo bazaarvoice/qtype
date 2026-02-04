@@ -7,9 +7,9 @@ import importlib
 import logging
 from pathlib import Path
 
-from qtype.base.logging import get_logger
+from qtype.base.logging import configure_logging
 
-logger = get_logger("application.facade")
+logger = logging.getLogger(__name__)
 
 try:
     from importlib.metadata import entry_points
@@ -59,9 +59,8 @@ def _discover_local_commands(subparsers: argparse._SubParsersAction) -> None:
                     f"Built-in command module {module_name} does not have a 'parser' function"
                 )
         except Exception as e:
-            logging.error(
-                f"Failed to load built-in command module {module_name}: {e}",
-                exc_info=True,
+            logging.debug(
+                f"Failed to load built-in command module {module_name}: {e} -- you may need the mcp or interpreter extras."
             )
 
 
@@ -133,10 +132,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Set logging level based on user input
-    logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format="%(asctime)s - %(levelname)s: %(message)s",
-    )
+    configure_logging(level=args.log_level)
 
     # Dispatch to the selected subcommand
     args.func(args)

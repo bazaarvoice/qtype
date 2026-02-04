@@ -117,7 +117,10 @@ def run_generate_skill(args: argparse.Namespace) -> None:
     Args:
         args: Command-line arguments with 'output' path.
     """
-    from qtype.mcp.server import _docs_resource, _examples_resource
+    from qtype.base.resources import get_docs_resource, get_examples_resource
+
+    _docs_resource = get_docs_resource()
+    _examples_resource = get_examples_resource()
 
     output_path = Path(args.output) / "qtype-architect"
 
@@ -156,6 +159,7 @@ def generate_schema(args: argparse.Namespace) -> None:
         args (argparse.Namespace): Command-line arguments with an optional
             'output' attribute specifying the output file path.
     """
+    logger.info("Generating QType DSL JSON schema...")
     schema = Document.model_json_schema()
 
     # Add the $schema property to indicate JSON Schema version
@@ -235,6 +239,7 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         "-o",
         "--output",
         type=str,
+        default=None,
         help="Output file for the schema (default: stdout)",
     )
     schema_parser.set_defaults(func=generate_schema)

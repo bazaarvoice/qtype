@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from qtype.dsl.model import Index
 from qtype.semantic.model import (
     Agent,
     APITool,
@@ -21,6 +20,8 @@ from qtype.semantic.model import (
     DocumentIndex,
     DocumentSearch,
     Flow,
+    Index,
+    IndexUpsert,
     InvokeFlow,
     InvokeTool,
     LLMInference,
@@ -238,6 +239,12 @@ def _generate_step_node(
         )
         index_id = f"INDEX_{_sanitize_id(step.index.id)}"
         external_connections.append(f"    {node_id} -.-> {index_id}")
+    elif isinstance(step, IndexUpsert):
+        lines.append(
+            f'        {node_id}@{{shape: rect, label: "💾 {step.id}"}}'
+        )
+        index_id = f"INDEX_{_sanitize_id(step.index.id)}"
+        external_connections.append(f"    {node_id} -.->|writes| {index_id}")
     else:
         # Generic step
         lines.append(
@@ -382,7 +389,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
             index_id = f"INDEX_{_sanitize_id(index.id)}"
             if isinstance(index, VectorIndex):
                 lines.append(
-                    f'        {index_id}@{{shape: cyl, label: "🗂️ {index.id}"}}'
+                    f'        {index_id}@{{shape: cyl, label: "�️ {index.id}"}}'
                 )
                 # Connect to embedding model
                 emb_model_id = f"EMB_{_sanitize_id(index.embedding_model.id)}"
@@ -396,7 +403,7 @@ def _generate_shared_resources(app: Application) -> list[str]:
                 )
             else:
                 lines.append(
-                    f'        {index_id}@{{shape: cyl, label: "🗂️ {index.id}"}}'
+                    f'        {index_id}@{{shape: cyl, label: "�️ {index.id}"}}'
                 )
 
             if index.auth:

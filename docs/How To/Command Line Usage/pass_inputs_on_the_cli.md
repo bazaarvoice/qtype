@@ -2,6 +2,8 @@
 
 Provide input values to your QType flows directly from the command line using JSON-formatted input data, enabling dynamic parameterization of applications without modifying YAML files.
 
+**Note:** Inputs are optional. Flows with source steps (like `DocumentSource` or `SQLSource`) can run without any inputs, as these steps generate their own data.
+
 ### CLI Usage
 
 ```bash
@@ -20,10 +22,11 @@ qtype run -f analyze_data -i '{"threshold":0.85}' app.qtype.yaml
 
 ### Explanation
 
-- **`-i`, `--input`**: Accepts a JSON blob containing key-value pairs where keys match variable names declared in your flow's `inputs` field
+- **`-i`, `--input`**: Accepts a JSON blob containing key-value pairs where keys match variable names declared in your flow's `inputs` field (optional - omit for flows with source steps)
 - **JSON format**: Must be valid JSON with double quotes for strings, properly escaped special characters
 - **Flow inputs**: The variables must match those declared in the flow's `inputs` list or the application's `inputs` list
 - **`-f`, `--flow`**: Specifies which flow to run when your application contains multiple flows (defaults to first flow if omitted)
+- **Source steps**: Flows containing source steps like `DocumentSource`, `SQLSource`, or `FileSource` can run without inputs, as these steps generate data independently
 
 ## Complete Example
 

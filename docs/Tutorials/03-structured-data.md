@@ -316,7 +316,7 @@ Should pass ✅
 ### Run It!
 
 ```bash
-qtype run -i '{"review_text":"These headphones are amazing! Great sound quality and super comfortable. Battery lasts all day."}' 03_structured_data.qtype.yaml
+qtype run -i '{"review_text":"These headphones are amazing! Great sound quality and super comfortable. Battery lasts all day."}' --show-output 03_structured_data.qtype.yaml
 ```
 
 **Expected output:**

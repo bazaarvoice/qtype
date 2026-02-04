@@ -185,7 +185,7 @@ def run_flow(args: Any) -> None:
 
         # Display results
         if len(result_df) > 0:
-            logger.info(f"Processed {len(result_df)} em")
+            logger.info(f"Processed {len(result_df)} rows")
 
             # Remove 'row' and 'error' columns for display if all errors are None
             display_df = result_df.copy()
@@ -197,15 +197,37 @@ def run_flow(args: Any) -> None:
             if "row" in display_df.columns:
                 display_df = display_df.drop(columns=["row"])
 
-            if len(display_df) > 1:
-                logger.info(f"\nResults:\n{display_df[0:10].to_string()}\n...")
-            else:
-                # Print the first row with column_name: value one per line
-                fmt_str = []
-                for col, val in display_df.iloc[0].items():
-                    fmt_str.append(f"{col}: {val}")
-                fmt_str = "\n".join(fmt_str)
-                logger.info(f"\nResults:\n{fmt_str}")
+            # Show summary for console display
+            logger.info(
+                f"\nResults summary: {len(display_df)} rows, "
+                f"{len(display_df.columns)} columns: {list(display_df.columns)}"
+            )
+
+            # Optionally show full output
+            if args.show_output:
+                # Truncate long strings for display
+                max_col_width = 100
+                for col in display_df.columns:
+                    display_df[col] = display_df[col].apply(
+                        lambda x: (
+                            f"{str(x)[:max_col_width]}..."
+                            if isinstance(x, str)
+                            and len(str(x)) > max_col_width
+                            else x
+                        )
+                    )
+
+                if len(display_df) > 1:
+                    logger.info(
+                        f"\nResults:\n{display_df[0:10].to_string()}\n..."
+                    )
+                else:
+                    # Print the first row with column_name: value one per line
+                    fmt_str = []
+                    for col, val in display_df.iloc[0].items():
+                        fmt_str.append(f"{col}: {val}")
+                    fmt_str = "\n".join(fmt_str)
+                    logger.info(f"\nResults:\n{fmt_str}")
 
             # Save the output
             if args.output:
@@ -266,6 +288,11 @@ def parser(subparsers: argparse._SubParsersAction) -> None:
         "--progress",
         action="store_true",
         help="Show progress bars during flow execution.",
+    )
+    cmd_parser.add_argument(
+        "--show-output",
+        action="store_true",
+        help="Display full output data in console (default: summary only).",
     )
 
     cmd_parser.add_argument(

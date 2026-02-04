@@ -64,11 +64,24 @@ Example output:
 
 You'll notice that the output shows 1 message for `write_results` and 10 for the others. That is because it is reporting the number of messages _emitted_ from each step, and `write_results` is a sink that collects all messages.
 
-The final message of the output will be the result file where the data are written:
+By default, QType shows a summary of the results. The final message will show:
 
 ```
 2026-01-16 11:23:35,151 - INFO: ✅ Flow execution completed successfully
-2026-01-16 11:23:35,151 - INFO: Processed 1 em
+2026-01-16 11:23:35,151 - INFO: Processed 1 rows
+2026-01-16 11:23:35,152 - INFO: 
+Results summary: 1 rows, 1 columns: ['result_file']
+```
+
+To see the full output data, add the `--show-output` flag:
+
+```bash
+qtype run -i '{"output_path":"results.parquet"}' --progress --show-output examples/data_processing/dataflow_pipelines.qtype.yaml
+```
+
+This will display:
+
+```
 2026-01-16 11:23:35,152 - INFO: 
 Results:
 result_file: results.parquet

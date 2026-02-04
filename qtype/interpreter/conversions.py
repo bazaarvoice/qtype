@@ -194,16 +194,15 @@ def to_llm(
 
         from qtype.semantic.model import AWSAuthProvider
 
+        creds_kwargs = {}
         if model.auth:
             # Type hint for mypy - we know it's AWSAuthProvider for aws-bedrock
             assert isinstance(model.auth, AWSAuthProvider)
-            with aws(model.auth, secret_manager) as session:
-                session = session._session
-        else:
-            session = None
+            with aws(model.auth, secret_manager) as creds:
+                creds_kwargs = creds.as_kwargs()
 
         brv: BaseLLM = BedrockConverse(
-            botocore_session=session,
+            **creds_kwargs,
             model=model.model_id if model.model_id else model.id,
             system_prompt=system_prompt,
             **(model.inference_params if model.inference_params else {}),
@@ -314,14 +313,14 @@ def to_embedding_model(
             BedrockEmbedding,
         )
 
-        session = None
+        creds_kwargs = {}
         if model.auth is not None:
             assert isinstance(model.auth, AWSAuthProvider)
-            with aws(model.auth, secret_manager) as session:
-                session = session._session
+            with aws(model.auth, secret_manager) as creds:
+                creds_kwargs = creds.as_kwargs()
 
         bedrock_embedding: BaseEmbedding = BedrockEmbedding(
-            botocore_session=session,
+            **creds_kwargs,
             model_name=model.model_id if model.model_id else model.id,
             max_retries=100,
         )
@@ -382,10 +381,12 @@ def to_opensearch_client(
         elif hasattr(index.auth, "type") and index.auth.type == "aws":
             # Use AWS authentication with boto3 session
             # Get AWS credentials from auth provider using context manager
-            with auth(index.auth, secret_manager) as auth_session:
-                # Type checker doesn't know this is a boto3.Session
-                # but runtime validation ensures it for AWS auth
-                credentials = auth_session.get_credentials()  # type: ignore
+            with auth(index.auth, secret_manager) as creds:
+                # Create a boto3 session from credentials to get boto3.Credentials
+                import boto3
+
+                session = boto3.Session(**creds.as_kwargs())
+                credentials = session.get_credentials()
                 if credentials is None:
                     raise InterpreterError(
                         f"Failed to obtain AWS credentials for DocumentIndex '{index.id}'"
@@ -394,7 +395,7 @@ def to_opensearch_client(
                 # Use opensearch-py's async AWS auth
                 aws_auth = AWSV4SignerAsyncAuth(
                     credentials,
-                    auth_session.region_name or "us-east-1",  # type: ignore
+                    creds.region_name or "us-east-1",
                     "aoss",  # service name for OpenSearch Serverless
                 )
 

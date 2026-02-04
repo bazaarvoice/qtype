@@ -1,0 +1,31 @@
+# Load all markdown files from docs directory using DocumentSource
+#
+# This example demonstrates using DocumentSource with SimpleDirectoryReader
+# to load documents from a local directory with file filtering.
+
+id: load_documents_example
+description: Load markdown files from docs directory
+
+flows:
+  - type: Flow
+    id: load_md_files
+    description: Load all markdown files from docs directory
+
+    variables:
+      - id: document
+        type: RAGDocument
+
+    inputs: []
+    outputs:
+      - document
+
+    steps:
+      - type: DocumentSource
+        id: md_docs
+        reader_module: llama_index.core.SimpleDirectoryReader
+        args:
+          input_dir: docs
+          required_exts: [".md"]
+          recursive: true
+        outputs:
+          - document

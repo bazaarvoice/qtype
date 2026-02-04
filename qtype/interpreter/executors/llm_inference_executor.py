@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncIterator
 
 from llama_cloud import MessageRole as LlamaMessageRole
@@ -85,6 +86,7 @@ class LLMInferenceExecutor(StepExecutor):
 
         except Exception as e:
             # Emit error event to stream so frontend can display it
+            logging.error(f"LLM Inference search failed: {e}", exc_info=True)
             await self.stream_emitter.error(str(e))
             yield message.copy_with_error(self.step.id, e)
 

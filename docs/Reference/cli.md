@@ -34,14 +34,15 @@ qtype run [options] spec
 #### Options
 
 - **`-f FLOW, --flow FLOW`** - The name of the flow to run. If not specified, runs the first flow found
-- **`-i INPUT, --input INPUT`** - JSON blob of input values for the flow (default: `{}`)
+- **`-i INPUT, --input INPUT`** - JSON blob of input values for the flow (optional - omit for flows with source steps that generate their own data)
 - **`-I INPUT_FILE, --input-file INPUT_FILE`** - Path to a file (e.g., CSV, JSON, Parquet) with input data for batch processing
 - **`-o OUTPUT, --output OUTPUT`** - Path to save output data. If input is a DataFrame, output will be saved as parquet. If single result, saved as JSON
 - **`--progress`** - Show progress bars during flow execution
+- **`--show-output`** - Display full output data in console (default: summary only)
 
 #### Examples
 
-Run a simple application:
+Run a simple application with no inputs (e.g., flows with source steps):
 ```bash
 qtype run app.qtype.yaml
 ```

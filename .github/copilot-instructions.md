@@ -58,7 +58,7 @@ The architecture establishes clear layers with controlled dependencies:
     
  All Python code generated for this repository *must* pass the following tools:
     
-    ## mypy compliance:
+    ## ty compliance:
     - Use proper type annotations for all function parameters, return values, and class attributes
     - Import types from `typing` module when needed (List, Dict, Optional, Union, etc.)
     - Use `from __future__ import annotations` for forward references when needed

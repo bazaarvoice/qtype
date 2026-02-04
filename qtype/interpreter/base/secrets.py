@@ -255,10 +255,12 @@ class AWSSecretManager(SecretManagerBase):
             json.JSONDecodeError: If secret is not valid JSON when key
                 is specified
         """
+        import boto3
+
         from qtype.interpreter.auth.aws import aws
 
-        with aws(self.config.auth) as session:  # type: ignore
-            client = session.client("secretsmanager")
+        with aws(self.config.auth) as creds:  # type: ignore
+            client = boto3.client("secretsmanager", **creds.as_kwargs())
             response = client.get_secret_value(SecretId=secret_ref.secret_name)
 
             if "SecretString" not in response:

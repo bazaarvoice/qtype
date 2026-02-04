@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from .exceptions import QTypeError, ValidationError
-from .logging import get_logger
+from .resources import (
+    ResourceDirectory,
+    get_docs_resource,
+    get_examples_resource,
+)
 from .types import JSONValue
 
 __all__ = [
     "QTypeError",
     "ValidationError",
-    "get_logger",
     "JSONValue",
+    "ResourceDirectory",
+    "get_docs_resource",
+    "get_examples_resource",
 ]

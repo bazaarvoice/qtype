@@ -59,7 +59,7 @@ qtype validate examples/research_assistant/research_assistant.qtype.yaml
 
 # Run directly
 qtype run -i '{"topic":"Latest developments in retrieval augmented generation"}' \
-  examples/research_assistant/research_assistant.qtype.yaml
+  --show-output examples/research_assistant/research_assistant.qtype.yaml
 ```
 
 ### Example Output

@@ -126,7 +126,7 @@ def read_dataframe_from_file(
     with fsspec.open(file_path, "rb") as file_handle:
         # Read based on MIME type
         if mime_type == "text/csv" or mime_type == "text/plain":
-            df = pd.read_csv(file_handle)  # type: ignore[arg-type]
+            df = pd.read_csv(file_handle, keep_default_na=False)  # type: ignore[arg-type]
         elif mime_type in ["application/json", "application/jsonlines"]:
             # Check if it's JSONL by extension
             if Path(file_path).suffix.lower() == ".jsonl":
