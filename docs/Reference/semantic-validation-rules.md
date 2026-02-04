@@ -153,6 +153,20 @@ This document lists all semantic validation rules enforced by QType. These rules
 
 ---
 
+## InvokeFlow
+
+- All `input_bindings` keys must match flow input variable IDs
+- All `output_bindings` keys must match flow output variable IDs
+
+---
+
+## InvokeTool
+
+- All `input_bindings` keys must match tool input parameter IDs
+- All `output_bindings` keys must match tool output parameter IDs
+
+---
+
 ## LLMInference
 
 - Must have exactly 1 output
