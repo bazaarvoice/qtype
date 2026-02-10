@@ -34,6 +34,13 @@ The QType MCP server provides these capabilities to AI assistants:
 - **visualize_qtype_architecture**: Generate Mermaid diagrams from QType apps
 
 
+## Claude Code Configuration
+
+```bash
+claude mcp add qtype -- qtype mcp --transport stdio"
+```
+
+
 ## VS Code Configuration
 
 Add the QType MCP server to your workspace's `.vscode/mcp.json`:

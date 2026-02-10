@@ -78,6 +78,7 @@ See the [full docs](https://bazaarvoice.github.io/qtype/) for more examples and 
 ## ✨ Developing with AI?
 
 Use the QType MCP server to speed yourself up! Just set your assistant to run `qtype mcp`.
+
 For VSCode, just add the following to `.vscode/mcp.json`:
 
 ```json
@@ -91,6 +92,11 @@ For VSCode, just add the following to `.vscode/mcp.json`:
     }
   }
 }
+```
+
+For Claude Code:
+```
+claude mcp add qtype -- qtype mcp --transport stdio"
 ```
 
 

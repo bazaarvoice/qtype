@@ -204,6 +204,63 @@ References are resolved at different stages:
 - **Semantic**: All references resolved to actual objects
 - **Execution**: Executors work with resolved objects only
 
+## Critical Constraints
+
+### Semantic Model Generation
+
+⚠️ **NEVER manually edit `qtype/semantic/model.py`**
+
+The semantic model is **auto-generated** from DSL models using:
+```bash
+uv run qtype generate semantic-model
+```
+
+**Why this matters:**
+- `semantic/model.py` must stay in sync with `dsl/model.py`
+- Manual edits will break `test_generate_semantic_model_matches_existing`
+- Changes to semantic models should be made in DSL first, then regenerated
+
+**If you need to add new semantic models:**
+1. Add the model to `qtype/dsl/model.py` first
+2. Run `uv run qtype generate semantic-model` to regenerate
+3. Verify with `uv run pytest tests/semantic/test_semantic_generator.py`
+
+**Exception:** Simple immutable wrappers and helper classes can be added manually, but discriminated union types and core models MUST be auto-generated.
+
+### Span Injection and Tracing
+
+When adding tracing/observability features:
+
+**Prefer abstraction over direct modification:**
+- Add span creation and metadata injection at the appropriate abstraction level
+- For output-level spans, consider using the base executor pattern rather than modifying `flow.py` directly
+- Think about where the feature belongs architecturally, not just what file is easiest to modify
+
+**Best practices:**
+- Create child spans for logical units of work
+- Inject metadata (span_id, trace_id) into FlowMessage.metadata
+- Set span attributes that are useful for debugging
+- Handle cases where telemetry is not configured
+
+### Testing Requirements
+
+When implementing new features:
+
+**Always run the full test suite before considering a feature "done":**
+```bash
+uv run pytest  # Run ALL tests, not just the ones you created
+```
+
+**Pay special attention to:**
+- Integration tests that verify end-to-end behavior
+- Tests that validate architectural patterns, not just functionality
+
+**Test coverage should include:**
+- Unit tests for new models and functions
+- Integration tests for cross-layer functionality
+- Negative tests for error conditions
+- Mock-based tests for external integrations (Phoenix, LLM APIs, etc.)
+
 ## Python Code Guidelines
 
 All Python code in this repository must follow strict guidelines defined in `.github/copilot-instructions.md`:
