@@ -35,6 +35,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from opentelemetry import trace
+
 from qtype.interpreter.types import (
     ErrorEvent,
     ReasoningStreamDeltaEvent,
@@ -52,6 +54,24 @@ from qtype.interpreter.types import (
     ToolExecutionStartEvent,
 )
 from qtype.semantic.model import Step
+
+
+def get_current_telemetry_metadata() -> dict[str, Any]:
+    """
+    Get current OpenTelemetry span context as metadata dict.
+
+    Returns:
+        Dictionary with span_id and trace_id if span is recording,
+        empty dict otherwise
+    """
+    span = trace.get_current_span()
+    if span and span.is_recording():
+        ctx = span.get_span_context()
+        return {
+            "span_id": format(ctx.span_id, "016x"),
+            "trace_id": format(ctx.trace_id, "032x"),
+        }
+    return {}
 
 
 class TextStreamContext:
@@ -83,7 +103,11 @@ class TextStreamContext:
         """Emit TextStreamStartEvent when entering context."""
         if self.on_stream_event:
             await self.on_stream_event(
-                TextStreamStartEvent(step=self.step, stream_id=self.stream_id)
+                TextStreamStartEvent(
+                    step=self.step,
+                    stream_id=self.stream_id,
+                    metadata=get_current_telemetry_metadata(),
+                )
             )
         return self
 
@@ -96,7 +120,11 @@ class TextStreamContext:
         """Emit TextStreamEndEvent when exiting context."""
         if self.on_stream_event:
             await self.on_stream_event(
-                TextStreamEndEvent(step=self.step, stream_id=self.stream_id)
+                TextStreamEndEvent(
+                    step=self.step,
+                    stream_id=self.stream_id,
+                    metadata=get_current_telemetry_metadata(),
+                )
             )
         return False
 
@@ -113,6 +141,7 @@ class TextStreamContext:
                     step=self.step,
                     stream_id=self.stream_id,
                     delta=text,
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
 
@@ -158,7 +187,9 @@ class ReasoningStreamContext:
         if self._started and self.on_stream_event:
             await self.on_stream_event(
                 ReasoningStreamEndEvent(
-                    step=self.step, stream_id=self.stream_id
+                    step=self.step,
+                    stream_id=self.stream_id,
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
         return False
@@ -173,11 +204,15 @@ class ReasoningStreamContext:
             text: The incremental reasoning content to append to the stream
         """
         if self.on_stream_event:
+            metadata = get_current_telemetry_metadata()
+
             # Emit start event on first delta
             if not self._started:
                 await self.on_stream_event(
                     ReasoningStreamStartEvent(
-                        step=self.step, stream_id=self.stream_id
+                        step=self.step,
+                        stream_id=self.stream_id,
+                        metadata=metadata,
                     )
                 )
                 self._started = True
@@ -187,6 +222,7 @@ class ReasoningStreamContext:
                     step=self.step,
                     stream_id=self.stream_id,
                     delta=text,
+                    metadata=metadata,
                 )
             )
 
@@ -218,7 +254,11 @@ class StepBoundaryContext:
     async def __aenter__(self) -> StepBoundaryContext:
         """Emit StepStartEvent when entering context."""
         if self.on_stream_event:
-            await self.on_stream_event(StepStartEvent(step=self.step))
+            await self.on_stream_event(
+                StepStartEvent(
+                    step=self.step, metadata=get_current_telemetry_metadata()
+                )
+            )
         return self
 
     async def __aexit__(
@@ -229,7 +269,11 @@ class StepBoundaryContext:
     ) -> bool:
         """Emit StepEndEvent when exiting context."""
         if self.on_stream_event:
-            await self.on_stream_event(StepEndEvent(step=self.step))
+            await self.on_stream_event(
+                StepEndEvent(
+                    step=self.step, metadata=get_current_telemetry_metadata()
+                )
+            )
         return False
 
 
@@ -277,6 +321,7 @@ class ToolExecutionContext:
                     tool_call_id=self.tool_call_id,
                     tool_name=self.tool_name,
                     tool_input=self.tool_input,
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
         return self
@@ -299,6 +344,7 @@ class ToolExecutionContext:
                     step=self.step,
                     tool_call_id=self.tool_call_id,
                     error_message=str(exc_val),
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
             self._completed = True
@@ -319,6 +365,7 @@ class ToolExecutionContext:
                     step=self.step,
                     tool_call_id=self.tool_call_id,
                     tool_output=output,
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
         self._completed = True
@@ -338,6 +385,7 @@ class ToolExecutionContext:
                     step=self.step,
                     tool_call_id=self.tool_call_id,
                     error_message=error_message,
+                    metadata=get_current_telemetry_metadata(),
                 )
             )
         self._completed = True
@@ -386,6 +434,18 @@ class StreamEmitter:
     ):
         self.step = step
         self.on_stream_event = on_stream_event
+
+    def _get_span_context(self) -> tuple[str | None, str | None]:
+        """
+        Get current OpenTelemetry span context.
+
+        Returns:
+            Tuple of (span_id, trace_id) as hex strings, or (None, None)
+
+        Deprecated: Use get_current_telemetry_metadata() instead.
+        """
+        metadata = get_current_telemetry_metadata()
+        return metadata.get("span_id"), metadata.get("trace_id")
 
     def text_stream(self, stream_id: str) -> TextStreamContext:
         """
@@ -459,7 +519,11 @@ class StreamEmitter:
         """
         if self.on_stream_event:
             await self.on_stream_event(
-                StatusEvent(step=self.step, message=message)
+                StatusEvent(
+                    step=self.step,
+                    message=message,
+                    metadata=get_current_telemetry_metadata(),
+                )
             )
 
     async def error(self, error_message: str) -> None:
@@ -471,5 +535,9 @@ class StreamEmitter:
         """
         if self.on_stream_event:
             await self.on_stream_event(
-                ErrorEvent(step=self.step, error_message=error_message)
+                ErrorEvent(
+                    step=self.step,
+                    error_message=error_message,
+                    metadata=get_current_telemetry_metadata(),
+                )
             )

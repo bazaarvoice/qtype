@@ -60,10 +60,19 @@ def _fields_from_variables(variables: list[Variable]) -> dict:
 
 
 def create_output_shape(flow: Flow) -> Type[BaseModel]:
+    fields = _fields_from_variables(flow.outputs)
+    # Add metadata field for telemetry (span_id, trace_id)
+    fields["metadata"] = (
+        dict[str, Any] | None,
+        Field(
+            default=None,
+            description="Telemetry metadata including span_id and trace_id",
+        ),
+    )
     return create_model(
         f"{flow.id}Result",
         __base__=BaseModel,
-        **_fields_from_variables(flow.outputs),
+        **fields,
     )  # type: ignore
 
 
@@ -133,7 +142,11 @@ def flow_results_to_output_container(
             errors.append(m.error.model_dump())
         else:
             output_instance = output_shape(**m.variables)
-            outputs.append(output_instance.model_dump())
+            output_dict = output_instance.model_dump()
+            # Include metadata (span_id, trace_id) if present
+            if m.metadata:
+                output_dict["metadata"] = m.metadata
+            outputs.append(output_dict)
 
     return output_container(outputs=outputs, errors=errors)
 

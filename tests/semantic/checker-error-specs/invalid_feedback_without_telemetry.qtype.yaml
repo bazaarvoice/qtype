@@ -1,0 +1,27 @@
+id: test_feedback_without_telemetry
+description: Test that feedback requires telemetry to be configured
+
+flows:
+  - id: chat
+    description: Flow with feedback but no telemetry (should fail validation)
+    interface:
+      type: Conversational
+    feedback:
+      type: thumbs
+      explanation: false
+    variables:
+      - id: msg
+        type: ChatMessage
+    steps:
+      - type: Echo
+        id: echo
+        inputs:
+          - msg
+        outputs:
+          - msg
+    inputs:
+      - msg
+    outputs:
+      - msg
+
+# Note: No telemetry configured - this should cause validation error

@@ -106,6 +106,10 @@ from qtype.semantic.loader import load
             "AWSSecretManager 'my_secret_manager' requires an AWSAuthProvider",
         ),
         (
+            "invalid_feedback_without_telemetry.qtype.yaml",
+            "has flows with feedback configured but no telemetry sink defined",
+        ),
+        (
             "invalid_complete_flow_no_text_output.qtype.yaml",
             "final step 'echo_step' is of type 'Echo' which does not support streaming",
         ),

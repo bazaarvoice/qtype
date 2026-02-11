@@ -930,6 +930,44 @@
       "title": "CacheConfig",
       "type": "object"
     },
+    "CategoryFeedback": {
+      "additionalProperties": false,
+      "description": "Categorical feedback with predefined tags.",
+      "properties": {
+        "type": {
+          "const": "category",
+          "default": "category",
+          "title": "Type",
+          "type": "string"
+        },
+        "explanation": {
+          "default": false,
+          "description": "Whether to enable optional text explanation field.",
+          "title": "Explanation",
+          "type": "boolean"
+        },
+        "categories": {
+          "description": "List of category labels users can select from.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Categories",
+          "type": "array"
+        },
+        "allow_multiple": {
+          "default": true,
+          "description": "Whether users can select multiple categories.",
+          "title": "Allow Multiple",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "categories"
+      ],
+      "title": "CategoryFeedback",
+      "type": "object"
+    },
     "Collect": {
       "additionalProperties": false,
       "description": "A step that collects all inputs and creates a single list to return.",
@@ -2370,6 +2408,37 @@
           ],
           "default": null
         },
+        "feedback": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "category": "#/$defs/CategoryFeedback",
+                  "rating": "#/$defs/RatingFeedback",
+                  "thumbs": "#/$defs/ThumbsFeedback"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/ThumbsFeedback"
+                },
+                {
+                  "$ref": "#/$defs/RatingFeedback"
+                },
+                {
+                  "$ref": "#/$defs/CategoryFeedback"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional feedback configuration for collecting user ratings on flow outputs.",
+          "title": "Feedback"
+        },
         "variables": {
           "description": "List of variables available at the application scope.",
           "items": {
@@ -3295,6 +3364,32 @@
       "title": "PythonFunctionTool",
       "type": "object"
     },
+    "RatingFeedback": {
+      "additionalProperties": false,
+      "description": "Numerical rating feedback (1-5 or 1-10 scale).",
+      "properties": {
+        "type": {
+          "const": "rating",
+          "default": "rating",
+          "title": "Type",
+          "type": "string"
+        },
+        "explanation": {
+          "default": false,
+          "description": "Whether to enable optional text explanation field.",
+          "title": "Explanation",
+          "type": "boolean"
+        },
+        "scale": {
+          "default": 5,
+          "description": "Maximum value for rating scale.",
+          "title": "Scale",
+          "type": "integer"
+        }
+      },
+      "title": "RatingFeedback",
+      "type": "object"
+    },
     "Reference_AWSAuthProvider_": {
       "properties": {
         "$ref": {
@@ -3658,6 +3753,26 @@
       ],
       "title": "TextWidget",
       "type": "string"
+    },
+    "ThumbsFeedback": {
+      "additionalProperties": false,
+      "description": "Binary thumbs up/down feedback.",
+      "properties": {
+        "type": {
+          "const": "thumbs",
+          "default": "thumbs",
+          "title": "Type",
+          "type": "string"
+        },
+        "explanation": {
+          "default": false,
+          "description": "Whether to enable optional text explanation field.",
+          "title": "Explanation",
+          "type": "boolean"
+        }
+      },
+      "title": "ThumbsFeedback",
+      "type": "object"
     },
     "ToolList": {
       "description": "Schema for a standalone list of tools.",

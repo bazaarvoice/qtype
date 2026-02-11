@@ -158,6 +158,15 @@ class AuthorizationProviderList(BaseModel):
     root: list[AuthorizationProvider] = Field(...)
 
 
+class Feedback(BaseModel):
+    """Base class for user feedback configurations on flow outputs."""
+
+    type: str = Field(..., description="Type of feedback widget to display.")
+    explanation: bool = Field(
+        False, description="Whether to enable optional text explanation field."
+    )
+
+
 class ConstantPath(BaseModel):
     """Semantic version of ConstantPath."""
 
@@ -216,6 +225,12 @@ class Flow(BaseModel):
         description="List of steps or references to steps",
     )
     interface: FlowInterface | None = Field(None)
+    feedback: ThumbsFeedback | RatingFeedback | CategoryFeedback | None = (
+        Field(
+            None,
+            description="Optional feedback configuration for collecting user ratings on flow outputs.",
+        )
+    )
     variables: list[Variable] = Field(
         default_factory=list,
         description="List of variables available at the application scope.",
@@ -667,6 +682,31 @@ class Writer(Step, BatchableStepMixin):
     """Base class for things that write data in batches."""
 
     id: str = Field(..., description="Unique ID of the data writer.")
+
+
+class CategoryFeedback(Feedback):
+    """Categorical feedback with predefined tags."""
+
+    type: Literal["category"] = Field("category")
+    categories: list[str] = Field(
+        ..., description="List of category labels users can select from."
+    )
+    allow_multiple: bool = Field(
+        True, description="Whether users can select multiple categories."
+    )
+
+
+class RatingFeedback(Feedback):
+    """Numerical rating feedback (1-5 or 1-10 scale)."""
+
+    type: Literal["rating"] = Field("rating")
+    scale: int = Field(5, description="Maximum value for rating scale.")
+
+
+class ThumbsFeedback(Feedback):
+    """Binary thumbs up/down feedback."""
+
+    type: Literal["thumbs"] = Field("thumbs")
 
 
 class DocumentIndex(Index):

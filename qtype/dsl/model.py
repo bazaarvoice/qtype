@@ -600,6 +600,57 @@ class Agent(LLMInference):
     )
 
 
+class Feedback(StrictBaseModel):
+    """Base class for user feedback configurations on flow outputs."""
+
+    type: str = Field(..., description="Type of feedback widget to display.")
+    explanation: bool = Field(
+        default=False,
+        description="Whether to enable optional text explanation field.",
+    )
+
+
+class ThumbsFeedback(Feedback):
+    """Binary thumbs up/down feedback."""
+
+    type: Literal["thumbs"] = "thumbs"
+
+
+class RatingFeedback(Feedback):
+    """Numerical rating feedback (1-5 or 1-10 scale)."""
+
+    type: Literal["rating"] = "rating"
+    scale: int = Field(
+        default=5, description="Maximum value for rating scale."
+    )
+
+
+class CategoryFeedback(Feedback):
+    """Categorical feedback with predefined tags."""
+
+    type: Literal["category"] = "category"
+    categories: list[str] = Field(
+        ...,
+        description="List of category labels users can select from.",
+        min_length=1,
+    )
+    allow_multiple: bool = Field(
+        default=True,
+        description="Whether users can select multiple categories.",
+    )
+
+
+# Create a union type for all feedback types (defined here before Flow)
+FeedbackType = Annotated[
+    Union[
+        ThumbsFeedback,
+        RatingFeedback,
+        CategoryFeedback,
+    ],
+    Field(discriminator="type"),
+]
+
+
 class Flow(StrictBaseModel):
     """Defines a flow of steps that can be executed in sequence or parallel.
     If input or output variables are not specified, they are inferred from
@@ -616,6 +667,10 @@ class Flow(StrictBaseModel):
     )
 
     interface: FlowInterface | None = Field(default=None)
+    feedback: FeedbackType | None = Field(
+        default=None,
+        description="Optional feedback configuration for collecting user ratings on flow outputs.",
+    )
     variables: list[Variable] = Field(
         default_factory=list,
         description="List of variables available at the application scope.",

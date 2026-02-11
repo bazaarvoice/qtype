@@ -1,0 +1,42 @@
+id: simple_thumbs_chatbot
+description: A minimal chatbot example with thumbs up/down feedback
+
+flows:
+  - id: simple_chat
+    description: Simple conversational chatbot with feedback collection
+    variables:
+      - id: user_message
+        type: ChatMessage
+      - id: assistant_response
+        type: ChatMessage
+    interface:
+      type: Conversational
+    feedback:
+      type: thumbs
+      explanation: false
+    steps:
+      - type: LLMInference
+        id: chat_llm
+        model: nova
+        inputs:
+          - user_message
+        outputs:
+          - assistant_response
+    inputs:
+      - user_message
+    outputs:
+      - assistant_response
+
+models:
+  - id: nova
+    type: Model
+    provider: aws-bedrock
+    model_id: us.amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.9
+      max_tokens: 300
+      
+telemetry:
+  id: chatbot_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces

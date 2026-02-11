@@ -152,7 +152,10 @@ export class ApiClient {
   /**
    * POST request helper
    */
-  private async post<T>(endpoint: string, data?: FlowInputValues): Promise<T> {
+  private async post<T>(
+    endpoint: string,
+    data?: FlowInputValues | Record<string, unknown>,
+  ): Promise<T> {
     const response = await this.fetchWithTimeout(this.getUrl(endpoint), {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
@@ -217,6 +220,20 @@ export class ApiClient {
    */
   setBaseUrl(baseUrl: string): void {
     this.config.baseUrl = baseUrl;
+  }
+
+  /**
+   * Submit user feedback on a flow output
+   */
+  async submitFeedback(feedback: {
+    span_id: string;
+    trace_id: string;
+    feedback:
+      | { type: "thumbs"; value: boolean; explanation?: string }
+      | { type: "rating"; score: number; explanation?: string }
+      | { type: "category"; categories: string[]; explanation?: string };
+  }): Promise<{ status: string; message: string }> {
+    return this.post("/feedback", feedback);
   }
 }
 

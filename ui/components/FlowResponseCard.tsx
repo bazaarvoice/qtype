@@ -6,6 +6,7 @@
 
 "use client";
 
+import { FeedbackButton } from "@/components/feedback";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 import { MarkdownContainer } from "./MarkdownContainer";
@@ -21,6 +22,7 @@ import {
 } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
+import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface ResponsePropertyProps {
   name: string;
@@ -129,11 +131,15 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
 interface FlowResponseCardProps {
   responseSchema?: SchemaProperty | null;
   responseData?: ResponseData;
+  feedbackConfig?: FeedbackConfig | null;
+  telemetryEnabled?: boolean;
 }
 
 export default function FlowResponseCard({
   responseSchema,
   responseData,
+  feedbackConfig,
+  telemetryEnabled = false,
 }: FlowResponseCardProps) {
   if (!responseData) {
     return (
@@ -158,11 +164,36 @@ export default function FlowResponseCard({
       ? (responseData as Record<string, ResponseData>).outputs || responseData
       : responseData || {};
 
+  // Extract metadata (span_id, trace_id) from response
+  const metadata =
+    responseData && typeof responseData === "object"
+      ? (responseData as Record<string, unknown>).metadata
+      : null;
+
+  const spanId =
+    metadata && typeof metadata === "object"
+      ? (metadata as Record<string, unknown>).span_id
+      : null;
+
+  const traceId =
+    metadata && typeof metadata === "object"
+      ? (metadata as Record<string, unknown>).trace_id
+      : null;
+
+  const showFeedback =
+    feedbackConfig &&
+    telemetryEnabled &&
+    spanId &&
+    traceId &&
+    typeof spanId === "string" &&
+    typeof traceId === "string";
+
   return (
     <div className="space-y-4">
       {responseSchema.properties &&
-        Object.entries(responseSchema.properties).map(
-          ([propertyName, propertySchema]) => {
+        Object.entries(responseSchema.properties)
+          .filter(([propertyName]) => propertyName !== "metadata")
+          .map(([propertyName, propertySchema]) => {
             const value = (outputsData as Record<string, ResponseData>)[
               propertyName
             ];
@@ -179,8 +210,18 @@ export default function FlowResponseCard({
                 value={value}
               />
             );
-          },
-        )}
+          })}
+
+      {showFeedback && (
+        <div className="pt-4 border-t">
+          <FeedbackButton
+            feedbackConfig={feedbackConfig}
+            spanId={spanId}
+            traceId={traceId}
+            telemetryEnabled={telemetryEnabled}
+          />
+        </div>
+      )}
     </div>
   );
 }

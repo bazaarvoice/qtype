@@ -19,14 +19,18 @@ import { Download } from "lucide-react";
 import Papa from "papaparse";
 import { useMemo, useState } from "react";
 
+import { FeedbackButton } from "@/components/feedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 import type { SchemaProperty, ResponseData } from "@/types";
+import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface FlowResponseTableProps {
   responseSchema?: SchemaProperty | null;
   outputs: ResponseData[];
+  feedbackConfig?: FeedbackConfig | null;
+  telemetryEnabled?: boolean;
 }
 
 function formatCellValue(value: ResponseData, qtypeType?: string): string {
@@ -61,6 +65,8 @@ function formatCellValue(value: ResponseData, qtypeType?: string): string {
 export default function FlowResponseTable({
   responseSchema,
   outputs,
+  feedbackConfig,
+  telemetryEnabled = false,
 }: FlowResponseTableProps) {
   const [searchText, setSearchText] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -78,18 +84,50 @@ export default function FlowResponseTable({
   const columns = useMemo<ColumnDef<Record<string, ResponseData>>[]>(() => {
     if (!responseSchema?.properties) return [];
 
-    return Object.entries(responseSchema.properties).map(([key, schema]) => {
-      const prop = schema as SchemaProperty;
-      return {
-        accessorKey: key,
-        header: prop.title || key,
+    const dataColumns = Object.entries(responseSchema.properties)
+      .filter(([key]) => key !== "metadata")
+      .map(([key, schema]) => {
+        const prop = schema as SchemaProperty;
+        return {
+          accessorKey: key,
+          header: prop.title || key,
+          cell: ({ row }) => {
+            const value = row.original[key];
+            return formatCellValue(value, prop.qtype_type);
+          },
+        };
+      });
+
+    // Add feedback column if enabled
+    if (feedbackConfig && telemetryEnabled) {
+      dataColumns.push({
+        id: "feedback",
+        header: "Feedback",
         cell: ({ row }) => {
-          const value = row.original[key];
-          return formatCellValue(value, prop.qtype_type);
+          const metadata = row.original.metadata as
+            | Record<string, unknown>
+            | undefined;
+          const spanId = metadata?.span_id as string | undefined;
+          const traceId = metadata?.trace_id as string | undefined;
+
+          if (!spanId || !traceId) {
+            return null;
+          }
+
+          return (
+            <FeedbackButton
+              feedbackConfig={feedbackConfig}
+              spanId={spanId}
+              traceId={traceId}
+              telemetryEnabled={telemetryEnabled}
+            />
+          );
         },
-      };
-    });
-  }, [responseSchema]);
+      });
+    }
+
+    return dataColumns;
+  }, [responseSchema, feedbackConfig, telemetryEnabled]);
 
   const table = useReactTable({
     data,
