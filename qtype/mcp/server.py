@@ -83,7 +83,6 @@ def _build_search_index() -> tantivy.Index:
         root_path: Path,
         pattern: str,
         type_label: str,
-        path_prefix: str,
         process_content=None,
         extract_title=None,
     ):
@@ -102,7 +101,7 @@ def _build_search_index() -> tantivy.Index:
             writer.add_document(
                 tantivy.Document(
                     title=title,
-                    path=f"{path_prefix}/{rel_path}",
+                    path=rel_path,
                     content=content,
                     type=type_label,
                 )
@@ -126,11 +125,10 @@ def _build_search_index() -> tantivy.Index:
         docs_path,
         "*.md",
         "documentation",
-        "docs",
         process_content=resolve_for_indexing,
         extract_title=extract_md_title,
     )
-    index_files(examples_path, "*.yaml", "example", "examples")
+    index_files(examples_path, "*.yaml", "example")
 
     writer.commit()
     return index
@@ -439,7 +437,8 @@ def list_examples() -> list[str]:
         "Full-text search across all QType documentation and examples. "
         "Returns matching documents and example YAML files ranked by relevance. "
         "Use this to find documentation about specific topics, features, or components, "
-        "or to discover example implementations. Doc paths can be used with get_documentation."
+        "or to discover example implementations. Returned paths can be used directly "
+        "with get_documentation or get_example."
     ),
     structured_output=True,
 )
@@ -454,7 +453,8 @@ def search_library(query: str, limit: int = 10) -> list[dict[str, Any]]:
     Returns:
         List of matching items with:
         - title: Item title
-        - path: Relative path (docs/ or examples/ prefix)
+        - path: Relative path (can be used directly with get_documentation
+            or get_example)
         - type: Either "documentation" or "example"
         - score: Relevance score (higher is more relevant)
 
