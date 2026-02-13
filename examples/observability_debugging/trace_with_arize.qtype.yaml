@@ -1,0 +1,56 @@
+id: arize_trace_example
+description: Example of tracing QType application calls with OpenTelemetry to Arize Cloud
+
+auths:
+  - id: arize-auth
+    type: api_key
+    api_key: ${ARIZE_API_KEY}
+
+  - id: bedrock-auth
+    type: aws
+    region: us-east-1
+
+models:
+  - type: Model
+    id: nova
+    provider: aws-bedrock
+    model_id: amazon.nova-lite-v1:0
+    auth: bedrock-auth
+    inference_params:
+      temperature: 0.7
+      max_tokens: 512
+
+flows:
+  - type: Flow
+    id: classify_text
+    feedback:
+      type: thumbs
+      explanation: true
+    variables:
+      - id: text
+        type: text
+      - id: response
+        type: text
+    inputs:
+      - text
+    outputs:
+      - response
+    steps:
+      - id: classify
+        type: LLMInference
+        model: nova
+        system_message: "Classify the following text as positive, negative, or neutral. Respond with only one word."
+        inputs:
+          - text
+        outputs:
+          - response
+
+telemetry:
+  id: arize-telemetry
+  provider: Arize
+  endpoint: https://otlp.arize.com/v1/traces
+  auth: arize-auth
+  args:
+    space_id: ${ARIZE_SPACE_ID}
+    project_name: qtype-classify-example
+

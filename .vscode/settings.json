@@ -5,8 +5,10 @@
         }
     ],
     "yaml.schemaStore.enable": false,
-    "yaml.schemas" : {
-        "./schema/qtype.schema.json": ["*.qtype.yaml"]
+    "yaml.schemas": {
+        "./schema/qtype.schema.json": [
+            "*.qtype.yaml"
+        ]
     },
     "python.testing.pytestArgs": [
         "tests"
@@ -19,5 +21,16 @@
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
         }
-    ]
+    ],
+    "chat.promptFilesRecommendations": {
+        "speckit.constitution": true,
+        "speckit.specify": true,
+        "speckit.plan": true,
+        "speckit.tasks": true,
+        "speckit.implement": true
+    },
+    "chat.tools.terminal.autoApprove": {
+        ".specify/scripts/bash/": true,
+        ".specify/scripts/powershell/": true
+    }
 }

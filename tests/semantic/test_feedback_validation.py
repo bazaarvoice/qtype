@@ -114,3 +114,44 @@ flows:
         app, _ = loader.load(str(yaml_file))
         flow = app.flows[0]
         assert flow.feedback is None
+
+    def test_arize_provider_with_feedback_loads_correctly(self, tmp_path):
+        """Test that Arize provider with feedback configuration
+        loads and validates."""
+        yaml_content = """
+id: test_app
+
+auths:
+  - id: arize-auth
+    type: api_key
+    api_key: test-api-key
+
+flows:
+  - id: test_flow
+    feedback:
+      type: thumbs
+      explanation: true
+    steps:
+      - type: Echo
+        id: echo1
+
+telemetry:
+  id: arize-telemetry
+  provider: Arize
+  endpoint: https://otlp.arize.com/v1
+  auth: arize-auth
+  args:
+    space_id: test-space-id
+    project_name: test-project
+"""
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
+
+        app, _ = loader.load(str(yaml_file))
+        assert app.telemetry is not None
+        assert app.telemetry.provider == "Arize"
+        assert app.telemetry.args["space_id"] == "test-space-id"
+        assert app.telemetry.args["project_name"] == "test-project"
+        flow = app.flows[0]
+        assert flow.feedback is not None
+        assert flow.feedback.type == "thumbs"

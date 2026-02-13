@@ -15,7 +15,7 @@ telemetry:
 
 - **telemetry**: Top-level application configuration for observability
 - **id**: Unique identifier for the telemetry sink
-- **provider**: Telemetry backend (`Phoenix` or `Langfuse`)
+- **provider**: Telemetry backend (`Phoenix`, `Arize`, or `Langfuse`)
 - **endpoint**: URL where OpenTelemetry traces are sent
 
 ### Starting Phoenix
@@ -31,16 +31,22 @@ Phoenix will start on `http://localhost:6006` where you can view traces and span
 ## Complete Example
 
 ```yaml
---8<-- "../examples/observability_debugging/trace_with_opentelemetry.qtype.yaml"
+--8<-- "../examples/observability_debugging/trace_with_phoenix.qtype.yaml"
 ```
 
 Run the example:
 
 ```bash
-qtype run examples/observability_debugging/trace_with_opentelemetry.qtype.yaml --text "I love this product!"
+qtype run examples/observability_debugging/trace_with_phoenix.qtype.yaml --text "I love this product!"
 ```
 
 Then open `http://localhost:6006` in your browser to see the traced execution.
+
+## Complete Example for Arize Cloud
+
+```yaml
+--8<-- "../examples/observability_debugging/trace_with_arize.qtype.yaml"
+```
 
 ## See Also
 

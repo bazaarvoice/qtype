@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
 from qtype.interpreter.base.secrets import SecretManagerBase
+from qtype.interpreter.telemetry import _resolve_arize_credentials
 from qtype.semantic.model import TelemetrySink
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,25 @@ class TelemetryProvider(str, Enum):
 
     PHOENIX = "Phoenix"
     LANGFUSE = "Langfuse"
+    ARIZE = "Arize"
+
+
+@dataclass
+class ArizeClientWrapper:
+    """Encapsulates Arize client with resolved authentication and project context.
+
+    This wrapper combines the Arize API client with the space and project
+    identifiers required for feedback submission operations.
+
+    Attributes:
+        client: Authenticated Arize API client instance.
+        space_id: Arize workspace/space identifier.
+        project_name: Project name for organizing telemetry data.
+    """
+
+    client: Any  # ArizeClient type - keep Any to avoid requiring arize at import time
+    space_id: str
+    project_name: str
 
 
 def _format_feedback_label(feedback: FeedbackData) -> str:
@@ -123,6 +144,19 @@ def _create_telemetry_client(
             "Feedback endpoint will not be created."
         )
         return None
+    elif telemetry.provider == TelemetryProvider.ARIZE.value:
+        # Resolve credentials using shared helper
+        space_id, project_name, api_key = _resolve_arize_credentials(
+            telemetry, None, secret_manager
+        )
+
+        from arize import ArizeClient
+
+        return ArizeClientWrapper(
+            client=ArizeClient(api_key=api_key),
+            space_id=space_id,
+            project_name=project_name,
+        )
     else:
         logger.warning(
             f"Feedback endpoint not created: unsupported telemetry "
@@ -200,10 +234,51 @@ def create_feedback_endpoint(
                     "Langfuse feedback not yet implemented"
                 )
 
+            elif telemetry.provider == TelemetryProvider.ARIZE.value:
+                import pandas as pd
+
+                label = _format_feedback_label(request.feedback)
+                explanation = request.feedback.explanation
+
+                # Calculate score based on feedback type
+                score = None
+                if isinstance(request.feedback, ThumbsFeedbackData):
+                    score = 1.0 if request.feedback.value else 0.0
+                elif isinstance(request.feedback, RatingFeedbackData):
+                    score = float(request.feedback.score)
+
+                # Build annotation DataFrame
+                data: dict[str, list[Any]] = {
+                    "context.span_id": [request.span_id],
+                    "annotation.user_feedback.label": [label],
+                    "annotation.user_feedback.updated_by": ["human"],
+                }
+                if score is not None:
+                    data["annotation.user_feedback.score"] = [score]
+                if explanation:
+                    data["annotation.notes"] = [explanation]
+
+                df = pd.DataFrame(data)
+                # Cast since we're in Arize provider branch where client is ArizeClientWrapper
+                arize_wrapper = cast(ArizeClientWrapper, client)
+                arize_wrapper.client.spans.update_annotations(
+                    space_id=arize_wrapper.space_id,
+                    project_name=arize_wrapper.project_name,
+                    dataframe=df,
+                    validate=True,
+                )
+
+                logger.info(
+                    "Feedback submitted to Arize for "
+                    f"span {request.span_id}: "
+                    f"{request.feedback.type} = {label}"
+                )
+
             return FeedbackResponse()
 
         except Exception as e:
             logger.error(f"Failed to submit feedback: {e}", exc_info=True)
+
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to submit feedback.",

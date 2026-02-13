@@ -3689,7 +3689,8 @@
           "default": "Phoenix",
           "enum": [
             "Phoenix",
-            "Langfuse"
+            "Langfuse",
+            "Arize"
           ],
           "title": "Provider",
           "type": "string"

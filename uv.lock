@@ -346,6 +346,51 @@ wheels = [
 ]
 
 [[package]]
+name = "arize"
+version = "8.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "openinference-semantic-conventions" },
+    { name = "opentelemetry-exporter-otlp-proto-common" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc" },
+    { name = "opentelemetry-sdk" },
+    { name = "opentelemetry-semantic-conventions" },
+    { name = "pandas" },
+    { name = "protobuf" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "requests-futures" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+    { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/80/cdc6fce57e4176cdcb101d1814be6598e2e6d5040265319a5946c52515b2/arize-8.2.1.tar.gz", hash = "sha256:ff6794c5732819709617f19cc25cbedce5f2a6901eea14e6f82e1e8a3e692dd5", size = 262597, upload-time = "2026-02-13T19:40:24.325Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/bf/2c314ca44e16aad6debef13cf0bdb27c0ff3253f9f363fdfb535283aa493/arize-8.2.1-py3-none-any.whl", hash = "sha256:2b3132bf95e597f8fa23c8d432506ae043d8d466d84a003ca87ed33a9b009638", size = 425148, upload-time = "2026-02-13T19:40:22.636Z" },
+]
+
+[[package]]
+name = "arize-otel"
+version = "0.11.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "openinference-instrumentation" },
+    { name = "openinference-semantic-conventions" },
+    { name = "opentelemetry-exporter-otlp" },
+    { name = "opentelemetry-proto" },
+    { name = "opentelemetry-sdk" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/43/feecfd74cf03cd9f73bfa43155d8edb4ee38e880e7cd6ecc4277f2f4143c/arize_otel-0.11.0.tar.gz", hash = "sha256:cf0729b7c236c51c11e7054b3f96e7deadf6a813386a35391a670c64a63a09bf", size = 15801, upload-time = "2025-10-30T05:53:07.279Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8b/8f5426c47eee5e4f3acaf8a8037dbe5a8d503c739e9327be8d699e6631a5/arize_otel-0.11.0-py3-none-any.whl", hash = "sha256:48e7e4c5b30d53a89c86085bd00a98077bad766ccde79ca906daa78eb17b93d2", size = 16839, upload-time = "2025-10-30T05:53:05.763Z" },
+]
+
+[[package]]
 name = "arize-phoenix"
 version = "12.35.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5648,6 +5693,8 @@ dependencies = [
 [package.optional-dependencies]
 interpreter = [
     { name = "aiostream" },
+    { name = "arize" },
+    { name = "arize-otel" },
     { name = "arize-phoenix-otel" },
     { name = "boto3" },
     { name = "datasets" },
@@ -5723,6 +5770,8 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "aiostream", marker = "extra == 'interpreter'", specifier = ">=0.7.1" },
+    { name = "arize", marker = "extra == 'interpreter'", specifier = ">=8.0.0" },
+    { name = "arize-otel", marker = "extra == 'interpreter'", specifier = ">=0.11.0" },
     { name = "arize-phoenix-otel", marker = "extra == 'interpreter'", specifier = ">=0.12.1" },
     { name = "boto3", marker = "extra == 'interpreter'", specifier = ">=1.34.0" },
     { name = "cachetools", specifier = ">=6.2.1" },
@@ -5960,6 +6009,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517, upload-time = "2025-08-18T20:46:02.573Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738, upload-time = "2025-08-18T20:46:00.542Z" },
+]
+
+[[package]]
+name = "requests-futures"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/f8/175b823241536ba09da033850d66194c372c65c38804847ac9cef0239542/requests_futures-1.0.2.tar.gz", hash = "sha256:6b7eb57940336e800faebc3dab506360edec9478f7b22dc570858ad3aa7458da", size = 10356, upload-time = "2024-11-15T22:14:51.988Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/23/7c1096731c15c83826cb0dd42078b561a838aed44c36f370aeb815168106/requests_futures-1.0.2-py2.py3-none-any.whl", hash = "sha256:a3534af7c2bf670cd7aa730716e9e7d4386497554f87792be7514063b8912897", size = 7671, upload-time = "2024-11-15T22:14:50.255Z" },
 ]
 
 [[package]]
