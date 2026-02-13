@@ -377,10 +377,21 @@ async def format_stream_events_as_sse(
     # Create converter for stateful event-to-chunk conversion
     converter = StreamEventConverter()
 
+    # Track telemetry metadata from events
+    telemetry_metadata: dict[str, str] = {}
+
     # Process events and convert to chunks
     async for event in event_stream:
         if event is None:
             break  # End of stream
+
+        # Extract telemetry metadata from first event that has it
+        if not telemetry_metadata and event.metadata:
+            if "span_id" in event.metadata and "trace_id" in event.metadata:
+                telemetry_metadata = {
+                    "span_id": event.metadata["span_id"],
+                    "trace_id": event.metadata["trace_id"],
+                }
 
         # Convert event to chunks and yield as SSE
         for chunk in converter.convert(event):
@@ -390,8 +401,15 @@ async def format_stream_events_as_sse(
                 f"\n\n"
             )
 
-    # End message stream with optional metadata
-    finish_chunk = FinishChunk(messageMetadata=output_metadata)  # type: ignore[arg-type]
+    # Merge telemetry metadata with output_metadata for FinishChunk
+    final_metadata = {**telemetry_metadata}
+    if output_metadata:
+        final_metadata.update(output_metadata)
+
+    # End message stream with metadata (includes telemetry)
+    finish_chunk = FinishChunk(
+        messageMetadata=final_metadata if final_metadata else None
+    )
     yield (
         f"data: "
         f"{finish_chunk.model_dump_json(by_alias=True, exclude_none=True)}"

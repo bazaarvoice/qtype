@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from contextlib import nullcontext
 from typing import Any, AsyncIterator
 
 from aiostream import stream
@@ -9,7 +10,7 @@ from openinference.semconv.trace import (
     OpenInferenceSpanKindValues,
     SpanAttributes,
 )
-from opentelemetry import context, trace
+from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.executor_context import ExecutorContext
@@ -176,7 +177,10 @@ class StepExecutor(ABC):
             Processed messages, with failed messages emitted first
         """
         # Start a span for tracking
-        # Note: We manually manage the span lifecycle to allow yielding
+        # Note: We do NOT attach this span to context here to avoid
+        # making upstream steps children of this step when we consume
+        # the input stream. Instead, _process_message_with_telemetry
+        # will attach it when calling process_message().
         span = self._tracer.start_span(
             f"step.{self.step.id}",
             attributes={
@@ -186,10 +190,8 @@ class StepExecutor(ABC):
             },
         )
 
-        # Make this span the active context so child spans will nest under it
-        # Only attach if span is recording (i.e., real tracer is configured)
-        ctx = trace.set_span_in_context(span)
-        token = context.attach(ctx) if span.is_recording() else None
+        # Store span in self so _process_message_with_telemetry can access it
+        self._current_step_span = span
 
         # Initialize the cache
         # this is done once per execution so re-runs are fast
@@ -287,10 +289,8 @@ class StepExecutor(ABC):
                 span.set_status(Status(StatusCode.ERROR, f"Step failed: {e}"))
                 raise
             finally:
-                # Detach the context and end the span
-                # Only detach if we successfully attached (span was recording)
-                if token is not None:
-                    context.detach(token)
+                # Clean up step span reference and end the span
+                self._current_step_span = None
                 span.end()
 
     @abstractmethod
@@ -368,51 +368,72 @@ class StepExecutor(ABC):
 
         This method creates a child span for each message processing
         operation, automatically recording errors and success metrics.
-        The child span will automatically be nested under the current
-        active span in the context.
+        The child span will be nested under the step span.
+
+        The step span context is attached here (not in execute()) to
+        ensure step spans are siblings under the flow span, not nested.
         """
-        # Get current context and create child span within it
-        span = self._tracer.start_span(
-            f"step.{self.step.id}.process_message",
-            attributes={
-                "session.id": message.session.session_id,
-            },
-        )
+        # Get step span and use context manager for proper handling
+        step_span = getattr(self, "_current_step_span", None)
+        if not step_span or not step_span.is_recording():
+            step_span = None
 
-        try:
-            output_count = 0
-            error_occurred = False
-
-            async for output_msg in self.process_message(message):
-                output_count += 1
-                if output_msg.is_failed():
-                    error_occurred = True
-                    span.add_event(
-                        "message_failed",
-                        {
-                            "error": str(output_msg.error),
-                        },
-                    )
-                yield output_msg
-
-            # Record processing metrics
-            span.set_attribute("message.outputs", output_count)
-
-            if error_occurred:
-                span.set_status(
-                    Status(StatusCode.ERROR, "Message processing had errors")
-                )
-            else:
-                span.set_status(Status(StatusCode.OK))
-
-        except Exception as e:
-            span.record_exception(e)
-            span.set_status(
-                Status(StatusCode.ERROR, f"Processing failed: {e}")
+        # Use context manager to attach step span
+        with (
+            trace.use_span(step_span, end_on_exit=False)
+            if step_span
+            else nullcontext()
+        ):
+            # Create child span for this specific message processing
+            span = self._tracer.start_span(
+                f"step.{self.step.id}.process_message",
+                attributes={
+                    "session.id": message.session.session_id,
+                },
             )
-            raise
-        finally:
-            span.end()
+
+            try:
+                output_count = 0
+                error_occurred = False
+
+                async for output_msg in self.process_message(message):
+                    output_count += 1
+                    if output_msg.is_failed():
+                        error_occurred = True
+                        span.add_event(
+                            "message_failed",
+                            {
+                                "error": str(output_msg.error),
+                            },
+                        )
+                    # Enrich with process_message span for feedback tracking
+                    span_context = span.get_span_context()
+                    output_msg = output_msg.with_telemetry_metadata(
+                        span_id=format(span_context.span_id, "016x"),
+                        trace_id=format(span_context.trace_id, "032x"),
+                    )
+                    yield output_msg
+
+                # Record processing metrics
+                span.set_attribute("message.outputs", output_count)
+
+                if error_occurred:
+                    span.set_status(
+                        Status(
+                            StatusCode.ERROR, "Message processing had errors"
+                        )
+                    )
+                else:
+                    span.set_status(Status(StatusCode.OK))
+
+            except Exception as e:
+                span.record_exception(e)
+                span.set_status(
+                    Status(StatusCode.ERROR, f"Processing failed: {e}")
+                )
+                raise
+            finally:
+                span.end()
 
     async def finalize(self) -> AsyncIterator[FlowMessage]:
         """

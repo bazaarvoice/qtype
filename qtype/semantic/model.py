@@ -28,10 +28,15 @@ from qtype.base.types import (  # noqa: F401
 )
 from qtype.dsl.model import VariableType  # noqa: F401
 from qtype.dsl.model import (  # noqa: F401
+    CategoryFeedback,
     CustomType,
     DecoderFormat,
+    Feedback,
+    FeedbackType,
     ListType,
     PrimitiveTypeEnum,
+    RatingFeedback,
+    ThumbsFeedback,
 )
 from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
 from qtype.semantic.base_types import ImmutableModel
@@ -216,6 +221,12 @@ class Flow(BaseModel):
         description="List of steps or references to steps",
     )
     interface: FlowInterface | None = Field(None)
+    feedback: ThumbsFeedback | RatingFeedback | CategoryFeedback | None = (
+        Field(
+            None,
+            description="Optional feedback configuration for collecting user ratings on flow outputs.",
+        )
+    )
     variables: list[Variable] = Field(
         default_factory=list,
         description="List of variables available at the application scope.",

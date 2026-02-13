@@ -624,8 +624,24 @@ def _validate_application(application: Application) -> None:
     Raises:
         QTypeSemanticError: If SecretReference is used but
             secret_manager is not configured, or if secret_manager
-            configuration is invalid
+            configuration is invalid, or if feedback is configured
+            without telemetry
     """
+    # Check if feedback is configured without telemetry
+    if application.telemetry is None:
+        flows_with_feedback = [
+            flow.id for flow in application.flows if flow.feedback is not None
+        ]
+        if flows_with_feedback:
+            raise QTypeSemanticError(
+                (
+                    f"Application '{application.id}' has flows with feedback "
+                    f"configured but no telemetry sink defined. "
+                    f"Flows with feedback: {', '.join(flows_with_feedback)}. "
+                    "Please add a telemetry configuration to the application."
+                )
+            )
+
     if application.secret_manager is None:
         # Check if any SecretReference is used in the application
         if _has_secret_reference(application):
@@ -707,30 +723,25 @@ def _validate_bindings(
 
     Raises:
         QTypeSemanticError: If any binding keys don't match valid IDs
-    """  # Check input_bindings
+    """
+    # Check input_bindings
     for binding_key in input_bindings.keys():
         if binding_key not in valid_input_ids:
             raise QTypeSemanticError(
-                (
-                    f"{step_type} step '{step_id}' has input_binding "
-                    f"'{binding_key}' which does not match any {component_type} "
-                    f"parameter. {component_type.capitalize()} '{component_id}' has input "
-                    f"parameters: {sorted(valid_input_ids)}. {component_type.capitalize()} "
-                    f"parameter '{binding_key}' not defined in {component_type}."
-                )
+                f"{step_type} step '{step_id}' has input_binding "
+                f"'{binding_key}' which does not exist. "
+                f"Valid {component_type} '{component_id}' input parameters: "
+                f"{sorted(valid_input_ids)}"
             )
 
     # Check output_bindings
     for binding_key in output_bindings.keys():
         if binding_key not in valid_output_ids:
             raise QTypeSemanticError(
-                (
-                    f"{step_type} step '{step_id}' has output_binding "
-                    f"'{binding_key}' which does not match any {component_type} "
-                    f"parameter. {component_type.capitalize()} '{component_id}' has output "
-                    f"parameters: {sorted(valid_output_ids)}. {component_type.capitalize()} "
-                    f"parameter '{binding_key}' not defined in {component_type}."
-                )
+                f"{step_type} step '{step_id}' has output_binding "
+                f"'{binding_key}' which does not exist. "
+                f"Valid {component_type} '{component_id}' output parameters: "
+                f"{sorted(valid_output_ids)}"
             )
 
 

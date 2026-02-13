@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import FastAPI
+from opentelemetry import trace
+from opentelemetry.trace import NoOpTracerProvider
 from pydantic import BaseModel, Field
 
 from qtype.interpreter.typing import create_input_shape, create_output_shape
@@ -42,6 +44,14 @@ class FlowMetadata(BaseModel):
     )
     output_schema: dict[str, Any] = Field(
         ..., description="JSON schema for output"
+    )
+    feedback: dict[str, Any] | None = Field(
+        default=None,
+        description="Feedback configuration if enabled for this flow",
+    )
+    telemetry_enabled: bool = Field(
+        default=False,
+        description="Whether telemetry is currently configured and recording",
     )
 
 
@@ -101,6 +111,15 @@ def _create_flow_metadata(flow: Flow) -> FlowMetadata:
         f"/flows/{flow.id}/stream" if flow.interface is not None else None
     )
 
+    # Check if telemetry is enabled
+    provider = trace.get_tracer_provider()
+    telemetry_enabled = not isinstance(provider, NoOpTracerProvider)
+
+    # Serialize feedback configuration if present
+    feedback_config = None
+    if flow.feedback:
+        feedback_config = flow.feedback.model_dump()
+
     return FlowMetadata(
         id=flow.id,
         description=flow.description,
@@ -112,4 +131,6 @@ def _create_flow_metadata(flow: Flow) -> FlowMetadata:
         ),
         input_schema=input_model.model_json_schema(),
         output_schema=output_model.model_json_schema(),
+        feedback=feedback_config,
+        telemetry_enabled=telemetry_enabled,
     )

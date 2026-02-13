@@ -199,6 +199,8 @@ function ChatFlow({ flow }: ChatFlowProps) {
                     isStreaming={
                       status === "streaming" && index === messages.length - 1
                     }
+                    feedbackConfig={flow.feedback}
+                    telemetryEnabled={flow.telemetry_enabled}
                   />
                 );
               })

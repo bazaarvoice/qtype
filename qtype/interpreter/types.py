@@ -38,7 +38,23 @@ UNSET = _UnsetType()
 # and can be converted to Vercel UI chunks for frontend display
 
 
-class TextStreamStartEvent(BaseModel):
+class BaseStreamEvent(BaseModel):
+    """
+    Base class for all stream events.
+
+    Provides common metadata field for telemetry and other contextual data.
+    The metadata dict typically contains:
+    - span_id: OpenTelemetry span ID (16 hex chars)
+    - trace_id: OpenTelemetry trace ID (32 hex chars)
+    """
+
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata for telemetry and context tracking",
+    )
+
+
+class TextStreamStartEvent(BaseStreamEvent):
     """Signals the start of incremental text streaming.
 
     Use this when beginning to stream LLM-generated content or other
@@ -55,7 +71,7 @@ class TextStreamStartEvent(BaseModel):
     )
 
 
-class TextStreamDeltaEvent(BaseModel):
+class TextStreamDeltaEvent(BaseStreamEvent):
     """Carries an incremental chunk of text content.
 
     Use this for streaming LLM responses or other incremental text.
@@ -72,7 +88,7 @@ class TextStreamDeltaEvent(BaseModel):
     delta: str = Field(description="Incremental text content to append")
 
 
-class TextStreamEndEvent(BaseModel):
+class TextStreamEndEvent(BaseStreamEvent):
     """Signals the completion of incremental text streaming.
 
     Use this to mark the end of a text stream. After this event,
@@ -88,7 +104,7 @@ class TextStreamEndEvent(BaseModel):
     )
 
 
-class ReasoningStreamStartEvent(BaseModel):
+class ReasoningStreamStartEvent(BaseStreamEvent):
     """Signals the start of incremental reasoning streaming.
 
     Use this when an agent begins outputting reasoning/thinking steps.
@@ -105,7 +121,7 @@ class ReasoningStreamStartEvent(BaseModel):
     )
 
 
-class ReasoningStreamDeltaEvent(BaseModel):
+class ReasoningStreamDeltaEvent(BaseStreamEvent):
     """Carries an incremental chunk of reasoning content.
 
     Use this for streaming agent reasoning/thinking steps.
@@ -122,7 +138,7 @@ class ReasoningStreamDeltaEvent(BaseModel):
     delta: str = Field(description="Incremental reasoning content to append")
 
 
-class ReasoningStreamEndEvent(BaseModel):
+class ReasoningStreamEndEvent(BaseStreamEvent):
     """Signals the completion of incremental reasoning streaming.
 
     Use this to mark the end of a reasoning stream. After this event,
@@ -138,7 +154,7 @@ class ReasoningStreamEndEvent(BaseModel):
     )
 
 
-class StatusEvent(BaseModel):
+class StatusEvent(BaseStreamEvent):
     """Reports a complete status message from a step.
 
     Use this for non-streaming status updates like:
@@ -155,7 +171,7 @@ class StatusEvent(BaseModel):
     message: str = Field(description="Complete status message to display")
 
 
-class StepStartEvent(BaseModel):
+class StepStartEvent(BaseStreamEvent):
     """Marks the beginning of a logical step boundary.
 
     Use this to group related events together visually in the UI.
@@ -168,7 +184,7 @@ class StepStartEvent(BaseModel):
     step: Step
 
 
-class StepEndEvent(BaseModel):
+class StepEndEvent(BaseStreamEvent):
     """Marks the end of a logical step boundary.
 
     Use this to close a step boundary opened by StepStartEvent.
@@ -180,7 +196,7 @@ class StepEndEvent(BaseModel):
     step: Step
 
 
-class ToolExecutionStartEvent(BaseModel):
+class ToolExecutionStartEvent(BaseStreamEvent):
     """Signals the start of tool execution.
 
     Use this when a tool is about to be invoked, either by an LLM
@@ -198,7 +214,7 @@ class ToolExecutionStartEvent(BaseModel):
     )
 
 
-class ToolExecutionEndEvent(BaseModel):
+class ToolExecutionEndEvent(BaseStreamEvent):
     """Signals the completion of tool execution.
 
     Use this when a tool has finished executing successfully.
@@ -214,7 +230,7 @@ class ToolExecutionEndEvent(BaseModel):
     tool_output: Any = Field(description="Output returned by the tool")
 
 
-class ToolExecutionErrorEvent(BaseModel):
+class ToolExecutionErrorEvent(BaseStreamEvent):
     """Signals that tool execution failed.
 
     Use this when a tool encounters an error during execution.
@@ -230,7 +246,7 @@ class ToolExecutionErrorEvent(BaseModel):
     error_message: str = Field(description="Description of the error")
 
 
-class ErrorEvent(BaseModel):
+class ErrorEvent(BaseStreamEvent):
     """Signals a general error occurred during step execution.
 
     Use this for errors that aren't specific to tool execution.
@@ -330,10 +346,33 @@ class FlowMessage(BaseModel):
         description="Mapping of variable IDs to their values.",
     )
     error: Optional[StepError] = None
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata for telemetry, span IDs, and other system-level data.",
+    )
 
     def is_failed(self) -> bool:
         """Checks if this state has encountered an error."""
         return self.error is not None
+
+    def with_telemetry_metadata(
+        self, span_id: str, trace_id: str
+    ) -> "FlowMessage":
+        """Create a copy with telemetry metadata added.
+
+        Args:
+            span_id: OpenTelemetry span ID (16 hex chars)
+            trace_id: OpenTelemetry trace ID (32 hex chars)
+
+        Returns:
+            New FlowMessage with telemetry metadata
+        """
+        updated_metadata = {
+            **self.metadata,
+            "span_id": span_id,
+            "trace_id": trace_id,
+        }
+        return self.model_copy(update={"metadata": updated_metadata})
 
     def is_set(self, var_id: str) -> bool:
         """Check if a variable is set (not UNSET, may be None)."""

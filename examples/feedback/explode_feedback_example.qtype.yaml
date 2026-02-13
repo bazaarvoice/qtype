@@ -1,0 +1,72 @@
+id: explode_feedback_example
+description: Example flow with Explode fan-out and feedback collection
+
+flows:
+  - id: topic_facts_generator
+    description: Generate interesting facts for multiple topics with feedback
+    variables:
+      - id: topics_json
+        type: text
+      - id: topics
+        type: list[text]
+      - id: topic
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: fact
+        type: text
+    feedback:
+      type: thumbs
+      explanation: true
+    steps:
+      - type: Decoder
+        id: decode
+        format: json
+        inputs:
+          - topics_json
+        outputs:
+          - topics
+
+      - type: Explode
+        id: fan_out
+        inputs:
+          - topics
+        outputs:
+          - topic
+
+      - type: PromptTemplate
+        id: prompt
+        template: |
+          Generate one interesting, concise fact about: {topic}
+          
+          Keep it to 1-2 sentences and make it engaging.
+        inputs:
+          - topic
+        outputs:
+          - formatted_prompt
+
+      - type: LLMInference
+        id: llm
+        model: nova
+        inputs:
+          - formatted_prompt
+        outputs:
+          - fact
+    inputs:
+      - topics_json
+    outputs:
+      - fact
+
+models:
+  - id: nova
+    type: Model
+    provider: aws-bedrock
+    model_id: us.amazon.nova-lite-v1:0
+    inference_params:
+      temperature: 0.7
+      max_tokens: 200
+
+telemetry:
+  id: explode_feedback_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces

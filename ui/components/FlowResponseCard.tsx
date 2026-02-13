@@ -6,7 +6,9 @@
 
 "use client";
 
+import { FeedbackButton } from "@/components/feedback";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { getTelemetryIdsFromValue, METADATA_FIELD } from "@/lib/telemetry";
 
 import { MarkdownContainer } from "./MarkdownContainer";
 import {
@@ -21,6 +23,7 @@ import {
 } from "./outputs";
 
 import type { SchemaProperty, ResponseData } from "@/types";
+import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface ResponsePropertyProps {
   name: string;
@@ -129,11 +132,15 @@ function ResponseProperty({ name, property, value }: ResponsePropertyProps) {
 interface FlowResponseCardProps {
   responseSchema?: SchemaProperty | null;
   responseData?: ResponseData;
+  feedbackConfig?: FeedbackConfig | null;
+  telemetryEnabled?: boolean;
 }
 
 export default function FlowResponseCard({
   responseSchema,
   responseData,
+  feedbackConfig,
+  telemetryEnabled = false,
 }: FlowResponseCardProps) {
   if (!responseData) {
     return (
@@ -158,11 +165,14 @@ export default function FlowResponseCard({
       ? (responseData as Record<string, ResponseData>).outputs || responseData
       : responseData || {};
 
+  const telemetryIds = getTelemetryIdsFromValue(responseData);
+
   return (
     <div className="space-y-4">
       {responseSchema.properties &&
-        Object.entries(responseSchema.properties).map(
-          ([propertyName, propertySchema]) => {
+        Object.entries(responseSchema.properties)
+          .filter(([propertyName]) => propertyName !== METADATA_FIELD)
+          .map(([propertyName, propertySchema]) => {
             const value = (outputsData as Record<string, ResponseData>)[
               propertyName
             ];
@@ -179,8 +189,17 @@ export default function FlowResponseCard({
                 value={value}
               />
             );
-          },
-        )}
+          })}
+
+      {feedbackConfig && telemetryEnabled && telemetryIds && (
+        <div className="pt-4 border-t">
+          <FeedbackButton
+            feedbackConfig={feedbackConfig}
+            spanId={telemetryIds.spanId}
+            traceId={telemetryIds.traceId}
+          />
+        </div>
+      )}
     </div>
   );
 }

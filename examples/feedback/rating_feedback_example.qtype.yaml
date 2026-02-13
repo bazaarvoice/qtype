@@ -1,0 +1,56 @@
+id: rating_feedback_example
+description: Example flow with 1-10 rating scale feedback collection
+
+flows:
+  - id: document_summarizer
+    description: Document summarization with quality rating
+    variables:
+      - id: document_text
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: summary
+        type: text
+    feedback:
+      type: rating
+      scale: 10
+      explanation: true
+    steps:
+      - type: PromptTemplate
+        id: prompt
+        template: |
+          Summarize the following document in 2-3 sentences:
+
+          {document_text}
+
+          Summary:
+        inputs:
+          - document_text
+        outputs:
+          - formatted_prompt
+
+      - type: LLMInference
+        id: llm
+        model: nova
+        inputs:
+          - formatted_prompt
+        outputs:
+          - summary
+    inputs:
+      - document_text
+    outputs:
+      - summary
+
+models:
+  - id: nova
+    type: Model
+    provider: aws-bedrock
+    model_id: amazon.nova-pro-v1:0
+    inference_params:
+      temperature: 0.2
+      max_tokens: 1000
+
+telemetry:
+  id: category_feedback_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces

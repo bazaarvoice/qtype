@@ -220,6 +220,8 @@ function RestFlow({ flow }: FlowProps) {
                           <FlowResponseCard
                             responseSchema={flow.output_schema}
                             responseData={output}
+                            feedbackConfig={flow.feedback}
+                            telemetryEnabled={flow.telemetry_enabled}
                           />
                         </div>
                       ))}
@@ -228,6 +230,8 @@ function RestFlow({ flow }: FlowProps) {
                     <FlowResponseTable
                       responseSchema={flow.output_schema}
                       outputs={responseData.outputs}
+                      feedbackConfig={flow.feedback}
+                      telemetryEnabled={flow.telemetry_enabled}
                     />
                   )}
                 </div>

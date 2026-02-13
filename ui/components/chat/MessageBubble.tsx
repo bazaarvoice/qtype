@@ -1,6 +1,8 @@
 import { Bot, User } from "lucide-react";
 
+import { FeedbackButton } from "@/components/feedback";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { getTelemetryIdsFromMetadata } from "@/lib/telemetry";
 
 import { MarkdownContainer } from "../MarkdownContainer";
 import { Thinking } from "../outputs";
@@ -13,10 +15,13 @@ import { FileDisplay } from ".";
 import type { Message } from "./types";
 import type { MessagePartWithText } from "./types/MessagePart";
 import type { FileAttachment } from "@/types";
+import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface MessageBubbleProps {
   message: Message;
   isStreaming?: boolean;
+  feedbackConfig?: FeedbackConfig | null;
+  telemetryEnabled?: boolean;
 }
 
 interface StreamingPart {
@@ -24,7 +29,12 @@ interface StreamingPart {
   [key: string]: unknown;
 }
 
-function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
+function MessageBubble({
+  message,
+  isStreaming = false,
+  feedbackConfig,
+  telemetryEnabled = false,
+}: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   const reasoningContent = getPartContent(
@@ -49,6 +59,15 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     message.metadata,
     isStreaming,
   );
+
+  const telemetryIds = getTelemetryIdsFromMetadata(message.metadata);
+
+  const showFeedback =
+    !isUser &&
+    !isStreaming &&
+    feedbackConfig &&
+    telemetryEnabled &&
+    telemetryIds;
 
   return (
     <div
@@ -97,6 +116,16 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
             size={file.size}
           />
         ))}
+
+        {showFeedback && (
+          <div className="mt-2">
+            <FeedbackButton
+              feedbackConfig={feedbackConfig}
+              spanId={telemetryIds.spanId}
+              traceId={telemetryIds.traceId}
+            />
+          </div>
+        )}
       </div>
 
       {isUser && (

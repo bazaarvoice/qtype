@@ -7,6 +7,7 @@ from typing import AsyncIterator
 
 import pytest
 from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from qtype.base.types import ConcurrencyConfig
 from qtype.interpreter.base.base_step_executor import StepExecutor
@@ -387,6 +388,53 @@ class TestStepExecutor:
         # Verify the finalize message was emitted
         assert results[-1].variables.get("finalized") == "true"
         # Note: Progress count timing depends on stream implementation details
+
+    async def test_span_metadata_enrichment(self, simple_step, session):
+        """Test that span_id and trace_id are added to message metadata."""
+        # Set up a real TracerProvider that records spans
+        tracer_provider = TracerProvider()
+        tracer = tracer_provider.get_tracer(__name__)
+
+        # Create context with recording tracer
+        context = ExecutorContext(
+            secret_manager=NoOpSecretManager(),
+            tracer=tracer,
+        )
+
+        executor = MockExecutor(
+            simple_step,
+            context,
+            suffix="_processed",
+        )
+        results = await collect_stream(executor, ["msg1", "msg2"], session)
+
+        assert len(results) == 2
+
+        # Each message should have span_id and trace_id in metadata
+        for result in results:
+            assert "span_id" in result.metadata
+            assert "trace_id" in result.metadata
+
+            # Verify they are valid hex strings
+            span_id = result.metadata["span_id"]
+            trace_id = result.metadata["trace_id"]
+
+            # span_id should be 16 hex chars (64-bit)
+            assert len(span_id) == 16
+            assert all(c in "0123456789abcdef" for c in span_id)
+
+            # trace_id should be 32 hex chars (128-bit)
+            assert len(trace_id) == 32
+            assert all(c in "0123456789abcdef" for c in trace_id)
+
+        # Each message should have a unique process_message span_id
+        # (this allows per-message feedback instead of per-step)
+        span_ids = [r.metadata["span_id"] for r in results]
+        assert len(set(span_ids)) == len(results)
+
+        # Trace ID should be the same for all messages in the same execution
+        trace_ids = [r.metadata["trace_id"] for r in results]
+        assert len(set(trace_ids)) == 1
 
     async def test_dependencies_injection(self, simple_step, executor_context):
         """Test that dependencies are injected and accessible."""

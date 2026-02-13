@@ -17,6 +17,7 @@ from qtype.interpreter.endpoints import (
     create_rest_endpoint,
     create_streaming_endpoint,
 )
+from qtype.interpreter.feedback_api import create_feedback_endpoint
 from qtype.interpreter.metadata_api import create_metadata_endpoints
 from qtype.semantic.model import Application
 
@@ -109,6 +110,12 @@ class APIExecutor:
 
         # Create metadata endpoints for flow discovery
         create_metadata_endpoints(app, self.definition)
+
+        # Create feedback submission endpoint
+        if self.definition.telemetry:
+            create_feedback_endpoint(
+                app, self.definition.telemetry, secret_manager
+            )
 
         # Create executor context
         context = ExecutorContext(

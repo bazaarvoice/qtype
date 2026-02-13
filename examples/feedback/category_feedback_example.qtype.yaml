@@ -1,0 +1,62 @@
+id: category_feedback_example
+description: Example flow with categorical feedback collection
+
+flows:
+  - id: code_generator
+    description: Code generation with multi-category feedback
+    variables:
+      - id: requirement
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: generated_code
+        type: text
+    feedback:
+      type: category
+      categories:
+        - correct
+        - well_documented
+        - follows_best_practices
+        - efficient
+        - needs_improvement
+      allow_multiple: true
+      explanation: true
+    steps:
+      - type: PromptTemplate
+        id: prompt
+        template: |
+          Generate Python code for the following requirement:
+
+          {requirement}
+
+          Provide clean, well-documented code following Python best practices.
+        inputs:
+          - requirement
+        outputs:
+          - formatted_prompt
+
+      - type: LLMInference
+        id: llm
+        model: nova
+        inputs:
+          - formatted_prompt
+        outputs:
+          - generated_code
+    inputs:
+      - requirement
+    outputs:
+      - generated_code
+
+models:
+  - id: nova
+    type: Model
+    provider: aws-bedrock
+    model_id: amazon.nova-pro-v1:0
+    inference_params:
+      temperature: 0.2
+      max_tokens: 1000
+
+telemetry:
+  id: category_feedback_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces

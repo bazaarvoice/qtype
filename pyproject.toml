@@ -71,7 +71,7 @@ mcp = [
 
 [dependency-groups]
 dev = [
-    "arize-phoenix>=11.2.2",
+    "arize-phoenix>=12.35.0",
     "boto3>=1.34.0",
     "coverage>=7.0.0",
     "ipython>=8.37.0",

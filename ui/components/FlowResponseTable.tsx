@@ -19,14 +19,19 @@ import { Download } from "lucide-react";
 import Papa from "papaparse";
 import { useMemo, useState } from "react";
 
+import { FeedbackButton } from "@/components/feedback";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getTelemetryIdsFromMetadata, METADATA_FIELD } from "@/lib/telemetry";
 
 import type { SchemaProperty, ResponseData } from "@/types";
+import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface FlowResponseTableProps {
   responseSchema?: SchemaProperty | null;
   outputs: ResponseData[];
+  feedbackConfig?: FeedbackConfig | null;
+  telemetryEnabled?: boolean;
 }
 
 function formatCellValue(value: ResponseData, qtypeType?: string): string {
@@ -61,6 +66,8 @@ function formatCellValue(value: ResponseData, qtypeType?: string): string {
 export default function FlowResponseTable({
   responseSchema,
   outputs,
+  feedbackConfig,
+  telemetryEnabled = false,
 }: FlowResponseTableProps) {
   const [searchText, setSearchText] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -78,18 +85,48 @@ export default function FlowResponseTable({
   const columns = useMemo<ColumnDef<Record<string, ResponseData>>[]>(() => {
     if (!responseSchema?.properties) return [];
 
-    return Object.entries(responseSchema.properties).map(([key, schema]) => {
-      const prop = schema as SchemaProperty;
-      return {
-        accessorKey: key,
-        header: prop.title || key,
-        cell: ({ row }) => {
-          const value = row.original[key];
-          return formatCellValue(value, prop.qtype_type);
+    const dataColumns: ColumnDef<Record<string, ResponseData>>[] =
+      Object.entries(responseSchema.properties)
+        .filter(([key]) => key !== METADATA_FIELD)
+        .map(([key, schema]) => {
+          const prop = schema as SchemaProperty;
+          return {
+            accessorKey: key,
+            header: prop.title || key,
+            cell: (ctx) => {
+              const value = ctx.row.original[key];
+              return formatCellValue(value, prop.qtype_type);
+            },
+          };
+        });
+
+    // Add feedback column if enabled
+    if (feedbackConfig && telemetryEnabled) {
+      dataColumns.push({
+        id: "feedback",
+        header: "Feedback",
+        cell: (ctx) => {
+          const telemetryIds = getTelemetryIdsFromMetadata(
+            ctx.row.original[METADATA_FIELD],
+          );
+
+          if (!telemetryIds) {
+            return null;
+          }
+
+          return (
+            <FeedbackButton
+              feedbackConfig={feedbackConfig}
+              spanId={telemetryIds.spanId}
+              traceId={telemetryIds.traceId}
+            />
+          );
         },
-      };
-    });
-  }, [responseSchema]);
+      });
+    }
+
+    return dataColumns;
+  }, [responseSchema, feedbackConfig, telemetryEnabled]);
 
   const table = useReactTable({
     data,
@@ -106,18 +143,23 @@ export default function FlowResponseTable({
   });
 
   const handleDownloadCSV = () => {
+    const exportableProperties = Object.entries(
+      responseSchema?.properties ?? {},
+    )
+      .filter(([key]) => key !== METADATA_FIELD)
+      .map(([key, schema]) => ({
+        key,
+        schema: schema as SchemaProperty,
+      }));
+
     const csvData = table.getFilteredRowModel().rows.map((row) => {
       const rowData: Record<string, string> = {};
-      columns.forEach((col) => {
-        const key = (col as { accessorKey: string }).accessorKey;
-        const propertySchema = responseSchema?.properties?.[key] as
-          | SchemaProperty
-          | undefined;
-        rowData[String(col.header)] = formatCellValue(
-          row.original[key],
-          propertySchema?.qtype_type,
-        );
-      });
+
+      for (const { key, schema } of exportableProperties) {
+        const header = schema.title || key;
+        rowData[header] = formatCellValue(row.original[key], schema.qtype_type);
+      }
+
       return rowData;
     });
 

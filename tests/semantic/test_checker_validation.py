@@ -106,24 +106,28 @@ from qtype.semantic.loader import load
             "AWSSecretManager 'my_secret_manager' requires an AWSAuthProvider",
         ),
         (
+            "invalid_feedback_without_telemetry.qtype.yaml",
+            "has flows with feedback configured but no telemetry sink defined",
+        ),
+        (
             "invalid_complete_flow_no_text_output.qtype.yaml",
             "final step 'echo_step' is of type 'Echo' which does not support streaming",
         ),
         (
             "invalid_invoke_tool_wrong_input_binding.qtype.yaml",
-            "Tool parameter 'wrong_param' not defined in tool",
+            "which does not exist",
         ),
         (
             "invalid_invoke_tool_wrong_output_binding.qtype.yaml",
-            "Tool parameter 'result' not defined in tool",
+            "which does not exist",
         ),
         (
             "invalid_invoke_flow_wrong_input_binding.qtype.yaml",
-            "Flow parameter 'wrong_param' not defined in flow",
+            "which does not exist",
         ),
         (
             "invalid_invoke_flow_wrong_output_binding.qtype.yaml",
-            "Flow parameter 'wrong_output' not defined in flow",
+            "which does not exist",
         ),
     ],
 )
