@@ -3382,7 +3382,9 @@
         },
         "scale": {
           "default": 5,
-          "description": "Maximum value for rating scale.",
+          "description": "Maximum value for rating scale (2-10).",
+          "maximum": 10,
+          "minimum": 2,
           "title": "Scale",
           "type": "integer"
         }
