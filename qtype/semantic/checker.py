@@ -723,30 +723,25 @@ def _validate_bindings(
 
     Raises:
         QTypeSemanticError: If any binding keys don't match valid IDs
-    """  # Check input_bindings
+    """
+    # Check input_bindings
     for binding_key in input_bindings.keys():
         if binding_key not in valid_input_ids:
             raise QTypeSemanticError(
-                (
-                    f"{step_type} step '{step_id}' has input_binding "
-                    f"'{binding_key}' which does not match any {component_type} "
-                    f"parameter. {component_type.capitalize()} '{component_id}' has input "
-                    f"parameters: {sorted(valid_input_ids)}. {component_type.capitalize()} "
-                    f"parameter '{binding_key}' not defined in {component_type}."
-                )
+                f"{step_type} step '{step_id}' has input_binding "
+                f"'{binding_key}' which does not exist. "
+                f"Valid {component_type} '{component_id}' input parameters: "
+                f"{sorted(valid_input_ids)}"
             )
 
     # Check output_bindings
     for binding_key in output_bindings.keys():
         if binding_key not in valid_output_ids:
             raise QTypeSemanticError(
-                (
-                    f"{step_type} step '{step_id}' has output_binding "
-                    f"'{binding_key}' which does not match any {component_type} "
-                    f"parameter. {component_type.capitalize()} '{component_id}' has output "
-                    f"parameters: {sorted(valid_output_ids)}. {component_type.capitalize()} "
-                    f"parameter '{binding_key}' not defined in {component_type}."
-                )
+                f"{step_type} step '{step_id}' has output_binding "
+                f"'{binding_key}' which does not exist. "
+                f"Valid {component_type} '{component_id}' output parameters: "
+                f"{sorted(valid_output_ids)}"
             )
 
 

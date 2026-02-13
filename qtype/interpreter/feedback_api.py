@@ -1,15 +1,24 @@
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any, Literal, Union
+from enum import Enum
+from typing import Annotated, Any, Literal
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
+from qtype.interpreter.base.secrets import SecretManagerBase
 from qtype.semantic.model import TelemetrySink
 
 logger = logging.getLogger(__name__)
+
+
+class TelemetryProvider(str, Enum):
+    """Supported telemetry providers."""
+
+    PHOENIX = "Phoenix"
+    LANGFUSE = "Langfuse"
 
 
 def _format_feedback_label(feedback: FeedbackData) -> str:
@@ -58,7 +67,7 @@ class CategoryFeedbackData(BaseModel):
 
 
 FeedbackData = Annotated[
-    Union[ThumbsFeedbackData, RatingFeedbackData, CategoryFeedbackData],
+    ThumbsFeedbackData | RatingFeedbackData | CategoryFeedbackData,
     Field(discriminator="type"),
 ]
 
@@ -80,24 +89,20 @@ class FeedbackResponse(BaseModel):
     message: str = "Feedback submitted successfully"
 
 
-def create_feedback_endpoint(
-    app: FastAPI, telemetry: TelemetrySink, secret_manager: Any
-) -> None:
+def _create_telemetry_client(
+    telemetry: TelemetrySink, secret_manager: SecretManagerBase
+) -> Any:
     """
-    Register the feedback submission endpoint with the FastAPI application.
-
-    This creates a POST /feedback endpoint that accepts feedback submissions
-    and forwards them to the configured telemetry backend.
+    Create telemetry client based on provider.
 
     Args:
-        app: FastAPI application instance.
         telemetry: Telemetry sink configuration.
         secret_manager: Secret manager for resolving secret references.
-    """
-    # Create client based on provider
-    client = None
 
-    if telemetry.provider == "Phoenix":
+    Returns:
+        Provider-specific client instance, or None if not supported.
+    """
+    if telemetry.provider == TelemetryProvider.PHOENIX.value:
         from phoenix.client import Client
 
         # Resolve endpoint in case it's a secret reference
@@ -111,18 +116,38 @@ def create_feedback_endpoint(
         parsed = urlparse(args["base_url"])
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
-        client = Client(base_url=base_url)
-    elif telemetry.provider == "Langfuse":
+        return Client(base_url=base_url)
+    elif telemetry.provider == TelemetryProvider.LANGFUSE.value:
         logger.warning(
             "Langfuse feedback not yet implemented. "
             "Feedback endpoint will not be created."
         )
-        return
+        return None
     else:
         logger.warning(
             f"Feedback endpoint not created: unsupported telemetry "
             f"provider '{telemetry.provider}'."
         )
+        return None
+
+
+def create_feedback_endpoint(
+    app: FastAPI, telemetry: TelemetrySink, secret_manager: SecretManagerBase
+) -> None:
+    """
+    Register the feedback submission endpoint with the FastAPI application.
+
+    This creates a POST /feedback endpoint that accepts feedback submissions
+    and forwards them to the configured telemetry backend.
+
+    Args:
+        app: FastAPI application instance.
+        telemetry: Telemetry sink configuration.
+        secret_manager: Secret manager for resolving secret references.
+    """
+    # Create client based on provider
+    client = _create_telemetry_client(telemetry, secret_manager)
+    if client is None:
         return
 
     @app.post(
@@ -143,10 +168,10 @@ def create_feedback_endpoint(
         The feedback is recorded as a span annotation in the telemetry backend.
         """
         try:
-            if telemetry.provider == "Phoenix":
+            if telemetry.provider == TelemetryProvider.PHOENIX.value:
                 # Submit to Phoenix using span annotations API
                 label = _format_feedback_label(request.feedback)
-                explanation = getattr(request.feedback, "explanation", None)
+                explanation = request.feedback.explanation
 
                 # Calculate score based on feedback type
                 score = None
@@ -169,7 +194,7 @@ def create_feedback_endpoint(
                     f"{request.feedback.type} = {label}"
                 )
 
-            elif telemetry.provider == "Langfuse":
+            elif telemetry.provider == TelemetryProvider.LANGFUSE.value:
                 # TODO: Implement Langfuse feedback submission
                 raise NotImplementedError(
                     "Langfuse feedback not yet implemented"

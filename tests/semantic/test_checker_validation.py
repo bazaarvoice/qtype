@@ -115,19 +115,19 @@ from qtype.semantic.loader import load
         ),
         (
             "invalid_invoke_tool_wrong_input_binding.qtype.yaml",
-            "Tool parameter 'wrong_param' not defined in tool",
+            "which does not exist",
         ),
         (
             "invalid_invoke_tool_wrong_output_binding.qtype.yaml",
-            "Tool parameter 'result' not defined in tool",
+            "which does not exist",
         ),
         (
             "invalid_invoke_flow_wrong_input_binding.qtype.yaml",
-            "Flow parameter 'wrong_param' not defined in flow",
+            "which does not exist",
         ),
         (
             "invalid_invoke_flow_wrong_output_binding.qtype.yaml",
-            "Flow parameter 'wrong_output' not defined in flow",
+            "which does not exist",
         ),
     ],
 )

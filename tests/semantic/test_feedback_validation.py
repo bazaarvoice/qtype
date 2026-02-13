@@ -20,6 +20,11 @@ flows:
     steps:
       - type: Echo
         id: echo1
+
+telemetry:
+  id: test_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces
 """
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(yaml_content)
@@ -43,6 +48,11 @@ flows:
     steps:
       - type: Echo
         id: echo1
+
+telemetry:
+  id: test_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces
 """
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(yaml_content)
@@ -71,6 +81,11 @@ flows:
     steps:
       - type: Echo
         id: echo1
+
+telemetry:
+  id: test_telemetry
+  provider: Phoenix
+  endpoint: http://localhost:6006/v1/traces
 """
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(yaml_content)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from contextlib import nullcontext
 from typing import Any, AsyncIterator
 
 from aiostream import stream
@@ -9,7 +10,7 @@ from openinference.semconv.trace import (
     OpenInferenceSpanKindValues,
     SpanAttributes,
 )
-from opentelemetry import context, trace
+from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 from qtype.interpreter.base.executor_context import ExecutorContext
@@ -372,15 +373,17 @@ class StepExecutor(ABC):
         The step span context is attached here (not in execute()) to
         ensure step spans are siblings under the flow span, not nested.
         """
-        # Attach step span context so process_message span becomes its child
+        # Get step span and use context manager for proper handling
         step_span = getattr(self, "_current_step_span", None)
-        if step_span and step_span.is_recording():
-            ctx = trace.set_span_in_context(step_span)
-            token = context.attach(ctx)
-        else:
-            token = None
+        if not step_span or not step_span.is_recording():
+            step_span = None
 
-        try:
+        # Use context manager to attach step span
+        with (
+            trace.use_span(step_span, end_on_exit=False)
+            if step_span
+            else nullcontext()
+        ):
             # Create child span for this specific message processing
             span = self._tracer.start_span(
                 f"step.{self.step.id}.process_message",
@@ -405,14 +408,11 @@ class StepExecutor(ABC):
                         )
                     # Enrich with process_message span for feedback tracking
                     span_context = span.get_span_context()
-                    updated_metadata = {
-                        **output_msg.metadata,
-                        "span_id": format(span_context.span_id, "016x"),
-                        "trace_id": format(span_context.trace_id, "032x"),
-                    }
-                    yield output_msg.model_copy(
-                        update={"metadata": updated_metadata}
+                    output_msg = output_msg.with_telemetry_metadata(
+                        span_id=format(span_context.span_id, "016x"),
+                        trace_id=format(span_context.trace_id, "032x"),
                     )
+                    yield output_msg
 
                 # Record processing metrics
                 span.set_attribute("message.outputs", output_count)
@@ -434,10 +434,6 @@ class StepExecutor(ABC):
                 raise
             finally:
                 span.end()
-        finally:
-            # Detach step span context
-            if token is not None:
-                context.detach(token)
 
     async def finalize(self) -> AsyncIterator[FlowMessage]:
         """

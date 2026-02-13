@@ -5,13 +5,14 @@ import sys
 from abc import ABC
 from enum import Enum
 from functools import partial
-from typing import Annotated, Any, Literal, Type, Union
+from typing import Annotated, Any, Literal, Type
 
 from pydantic import (
     BaseModel,
     Field,
     RootModel,
     ValidationInfo,
+    field_validator,
     model_serializer,
     model_validator,
 )
@@ -621,7 +622,10 @@ class RatingFeedback(Feedback):
 
     type: Literal["rating"] = "rating"
     scale: int = Field(
-        default=5, description="Maximum value for rating scale."
+        default=5,
+        ge=2,
+        le=10,
+        description="Maximum value for rating scale (2-10).",
     )
 
 
@@ -639,14 +643,21 @@ class CategoryFeedback(Feedback):
         description="Whether users can select multiple categories.",
     )
 
+    @field_validator("categories")
+    @classmethod
+    def validate_categories_not_empty(cls, v: list[str]) -> list[str]:
+        """Validate that category strings are not empty."""
+        for category in v:
+            if not category.strip():
+                raise ValueError(
+                    "Category labels must not be empty or whitespace-only"
+                )
+        return v
+
 
 # Create a union type for all feedback types (defined here before Flow)
 FeedbackType = Annotated[
-    Union[
-        ThumbsFeedback,
-        RatingFeedback,
-        CategoryFeedback,
-    ],
+    ThumbsFeedback | RatingFeedback | CategoryFeedback,
     Field(discriminator="type"),
 ]
 
@@ -1377,84 +1388,66 @@ class BedrockReranker(Reranker, ConcurrentStepMixin):
 
 # Create a union type for all tool types
 ToolType = Annotated[
-    Union[
-        APITool,
-        PythonFunctionTool,
-    ],
+    APITool | PythonFunctionTool,
     Field(discriminator="type"),
 ]
 
 # Create a union type for all source types
-SourceType = Union[
-    DocumentSource,
-    FileSource,
-    SQLSource,
-]
+SourceType = DocumentSource | FileSource | SQLSource
 
 # Create a union type for all authorization provider types
-AuthProviderType = Union[
-    APIKeyAuthProvider,
-    BearerTokenAuthProvider,
-    AWSAuthProvider,
-    OAuth2AuthProvider,
-    VertexAuthProvider,
-]
+AuthProviderType = (
+    APIKeyAuthProvider
+    | BearerTokenAuthProvider
+    | AWSAuthProvider
+    | OAuth2AuthProvider
+    | VertexAuthProvider
+)
 
 # Create a union type for all secret manager types
 SecretManagerType = Annotated[
-    Union[
-        AWSSecretManager
-        # Add future managers like KubernetesSecretManager here
-    ],
+    AWSSecretManager,  # Add future managers like KubernetesSecretManager here
     Field(discriminator="type"),
 ]
 
 # Create a union type for all step types
 StepType = Annotated[
-    Union[
-        Agent,
-        Aggregate,
-        BedrockReranker,
-        Collect,
-        Construct,
-        Decoder,
-        DocToTextConverter,
-        DocumentEmbedder,
-        DocumentSearch,
-        DocumentSplitter,
-        DocumentSource,
-        Echo,
-        Explode,
-        FieldExtractor,
-        FileSource,
-        FileWriter,
-        IndexUpsert,
-        InvokeEmbedding,
-        InvokeFlow,
-        InvokeTool,
-        LLMInference,
-        PromptTemplate,
-        SQLSource,
-        VectorSearch,
-    ],
+    Agent
+    | Aggregate
+    | BedrockReranker
+    | Collect
+    | Construct
+    | Decoder
+    | DocToTextConverter
+    | DocumentEmbedder
+    | DocumentSearch
+    | DocumentSplitter
+    | DocumentSource
+    | Echo
+    | Explode
+    | FieldExtractor
+    | FileSource
+    | FileWriter
+    | IndexUpsert
+    | InvokeEmbedding
+    | InvokeFlow
+    | InvokeTool
+    | LLMInference
+    | PromptTemplate
+    | SQLSource
+    | VectorSearch,
     Field(discriminator="type"),
 ]
 
 # Create a union type for all index types
 IndexType = Annotated[
-    Union[
-        DocumentIndex,
-        VectorIndex,
-    ],
+    DocumentIndex | VectorIndex,
     Field(discriminator="type"),
 ]
 
 # Create a union type for all model types
 ModelType = Annotated[
-    Union[
-        EmbeddingModel,
-        Model,
-    ],
+    EmbeddingModel | Model,
     Field(discriminator="type"),
 ]
 
@@ -1494,14 +1487,14 @@ class VariableList(RootModel[list[Variable]]):
     root: list[Variable]
 
 
-DocumentType = Union[
-    Application,
-    AuthorizationProviderList,
-    ModelList,
-    ToolList,
-    TypeList,
-    VariableList,
-]
+DocumentType = (
+    Application
+    | AuthorizationProviderList
+    | ModelList
+    | ToolList
+    | TypeList
+    | VariableList
+)
 
 
 class Document(RootModel[DocumentType]):

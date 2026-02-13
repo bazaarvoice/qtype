@@ -31,14 +31,19 @@ def _is_dsl_type(type_obj: Any) -> bool:
 
 FIELDS_TO_IGNORE = {"Application.references"}
 TYPES_TO_IGNORE = {
+    "CategoryFeedback",
     "CustomType",
     "DecoderFormat",
     "Document",
+    "Feedback",
+    "FeedbackType",
     "ListType",
     "PrimitiveTypeEnum",
+    "RatingFeedback",
     "StrictBaseModel",
-    "TypeDefinition",
+    "ThumbsFeedback",
     "ToolParameter",
+    "TypeDefinition",
     "Variable",
 }
 
@@ -141,10 +146,15 @@ def generate_semantic_model(args: argparse.Namespace) -> None:
             # Import enums, mixins, and type aliases
             from qtype.base.types import BatchableStepMixin, BatchConfig, CachedStepMixin, ConcurrencyConfig, ConcurrentStepMixin  # noqa: F401
             from qtype.dsl.model import (  # noqa: F401
+                CategoryFeedback,
                 CustomType,
                 DecoderFormat,
+                Feedback,
+                FeedbackType,
                 ListType,
-                PrimitiveTypeEnum
+                PrimitiveTypeEnum,
+                RatingFeedback,
+                ThumbsFeedback,
             )
             from qtype.dsl.model import Variable as DSLVariable  # noqa: F401
             from qtype.dsl.model import VariableType  # noqa: F401

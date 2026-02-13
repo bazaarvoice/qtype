@@ -346,7 +346,7 @@ class FlowMessage(BaseModel):
         description="Mapping of variable IDs to their values.",
     )
     error: Optional[StepError] = None
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Metadata for telemetry, span IDs, and other system-level data.",
     )
@@ -354,6 +354,25 @@ class FlowMessage(BaseModel):
     def is_failed(self) -> bool:
         """Checks if this state has encountered an error."""
         return self.error is not None
+
+    def with_telemetry_metadata(
+        self, span_id: str, trace_id: str
+    ) -> "FlowMessage":
+        """Create a copy with telemetry metadata added.
+
+        Args:
+            span_id: OpenTelemetry span ID (16 hex chars)
+            trace_id: OpenTelemetry trace ID (32 hex chars)
+
+        Returns:
+            New FlowMessage with telemetry metadata
+        """
+        updated_metadata = {
+            **self.metadata,
+            "span_id": span_id,
+            "trace_id": trace_id,
+        }
+        return self.model_copy(update={"metadata": updated_metadata})
 
     def is_set(self, var_id: str) -> bool:
         """Check if a variable is set (not UNSET, may be None)."""
