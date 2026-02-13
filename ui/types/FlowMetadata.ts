@@ -6,25 +6,28 @@ export interface FlowEndpoints {
   stream?: string | null;
 }
 
-export interface ThumbsFeedback {
+export interface ThumbsFeedbackConfig {
   type: "thumbs";
   explanation: boolean;
 }
 
-export interface RatingFeedback {
+export interface RatingFeedbackConfig {
   type: "rating";
   scale: 5 | 10;
   explanation: boolean;
 }
 
-export interface CategoryFeedback {
+export interface CategoryFeedbackConfig {
   type: "category";
   categories: string[];
   allow_multiple: boolean;
   explanation: boolean;
 }
 
-export type FeedbackConfig = ThumbsFeedback | RatingFeedback | CategoryFeedback;
+export type FeedbackConfig =
+  | ThumbsFeedbackConfig
+  | RatingFeedbackConfig
+  | CategoryFeedbackConfig;
 
 export interface FlowMetadata {
   id: string;

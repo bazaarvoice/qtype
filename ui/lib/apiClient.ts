@@ -8,6 +8,7 @@
 
 import type { FlowMetadata } from "@/types";
 import type { FlowInputValues, ResponseData } from "@/types";
+import type { FeedbackResponse, FeedbackSubmission } from "@/types/Feedback";
 import type { OpenAPIV3_1 } from "openapi-types";
 
 // Use the official OpenAPI spec type
@@ -152,10 +153,10 @@ export class ApiClient {
   /**
    * POST request helper
    */
-  private async post<T>(
+  private async post<TResponse, TBody = FlowInputValues>(
     endpoint: string,
-    data?: FlowInputValues | Record<string, unknown>,
-  ): Promise<T> {
+    data?: TBody,
+  ): Promise<TResponse> {
     const response = await this.fetchWithTimeout(this.getUrl(endpoint), {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
@@ -171,7 +172,7 @@ export class ApiClient {
     path: string,
     inputs?: FlowInputValues,
   ): Promise<T> {
-    return this.post<T>(path, inputs);
+    return this.post<T, FlowInputValues>(path, inputs);
   }
 
   /**
@@ -225,15 +226,13 @@ export class ApiClient {
   /**
    * Submit user feedback on a flow output
    */
-  async submitFeedback(feedback: {
-    span_id: string;
-    trace_id: string;
-    feedback:
-      | { type: "thumbs"; value: boolean; explanation?: string }
-      | { type: "rating"; score: number; explanation?: string }
-      | { type: "category"; categories: string[]; explanation?: string };
-  }): Promise<{ status: string; message: string }> {
-    return this.post("/feedback", feedback);
+  async submitFeedback(
+    submission: FeedbackSubmission,
+  ): Promise<FeedbackResponse> {
+    return this.post<FeedbackResponse, FeedbackSubmission>(
+      "/feedback",
+      submission,
+    );
   }
 }
 

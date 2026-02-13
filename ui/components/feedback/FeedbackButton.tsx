@@ -16,40 +16,32 @@ import { FeedbackExplanationModal } from "./FeedbackExplanationModal";
 import { RatingFeedback } from "./RatingFeedback";
 import { ThumbsFeedback } from "./ThumbsFeedback";
 
+import type { FeedbackData, FeedbackSubmission } from "@/types/Feedback";
 import type { FeedbackConfig } from "@/types/FlowMetadata";
 
 interface FeedbackButtonProps {
   feedbackConfig: FeedbackConfig;
   spanId: string;
   traceId: string;
-  telemetryEnabled: boolean;
 }
 
 export function FeedbackButton({
   feedbackConfig,
   spanId,
   traceId,
-  telemetryEnabled,
 }: FeedbackButtonProps) {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [pendingFeedback, setPendingFeedback] = useState<{
-    type: "thumbs" | "rating" | "category";
-    value?: boolean;
-    score?: number;
-    categories?: string[];
-  } | null>(null);
-
-  if (!telemetryEnabled) {
-    return null; // Don't show feedback if telemetry is not enabled
-  }
+  const [pendingFeedback, setPendingFeedback] = useState<FeedbackData | null>(
+    null,
+  );
 
   if (submitted) {
     return (
-      <div className="flex items-center gap-2 text-sm text-green-600">
-        <Check className="h-4 w-4" />
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Check className="h-4 w-4 text-primary" />
         <span>Feedback submitted</span>
       </div>
     );
@@ -57,7 +49,7 @@ export function FeedbackButton({
 
   if (isSubmitting) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>Submitting...</span>
       </div>
@@ -65,43 +57,24 @@ export function FeedbackButton({
   }
 
   const handleFeedbackSubmit = async (
-    feedback: {
-      type: "thumbs" | "rating" | "category";
-      value?: boolean;
-      score?: number;
-      categories?: string[];
-    },
+    feedback: FeedbackData,
     explanation?: string,
   ) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Construct feedback data based on type
-      let feedbackData:
-        | { type: "thumbs"; value: boolean; explanation?: string }
-        | { type: "rating"; score: number; explanation?: string }
-        | { type: "category"; categories: string[]; explanation?: string };
+      const feedbackWithExplanation: FeedbackData = explanation
+        ? { ...feedback, explanation }
+        : feedback;
 
-      if (feedback.type === "thumbs" && feedback.value !== undefined) {
-        feedbackData = { type: "thumbs", value: feedback.value, explanation };
-      } else if (feedback.type === "rating" && feedback.score !== undefined) {
-        feedbackData = { type: "rating", score: feedback.score, explanation };
-      } else if (feedback.type === "category" && feedback.categories) {
-        feedbackData = {
-          type: "category",
-          categories: feedback.categories,
-          explanation,
-        };
-      } else {
-        throw new Error("Invalid feedback data");
-      }
-
-      await apiClient.submitFeedback({
+      const submission: FeedbackSubmission = {
         span_id: spanId,
         trace_id: traceId,
-        feedback: feedbackData,
-      });
+        feedback: feedbackWithExplanation,
+      };
+
+      await apiClient.submitFeedback(submission);
 
       setSubmitted(true);
       setPendingFeedback(null);
@@ -117,12 +90,7 @@ export function FeedbackButton({
     }
   };
 
-  const handleFeedbackClick = (feedback: {
-    type: "thumbs" | "rating" | "category";
-    value?: boolean;
-    score?: number;
-    categories?: string[];
-  }) => {
+  const handleFeedbackClick = (feedback: FeedbackData) => {
     // If explanation is enabled, show modal first
     if (feedbackConfig.explanation) {
       setPendingFeedback(feedback);
@@ -154,7 +122,7 @@ export function FeedbackButton({
         )}
       </div>
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && <div className="text-sm text-destructive">{error}</div>}
 
       {showExplanation && pendingFeedback && (
         <FeedbackExplanationModal

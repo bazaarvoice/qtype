@@ -2,6 +2,7 @@ import { Bot, User } from "lucide-react";
 
 import { FeedbackButton } from "@/components/feedback";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { getTelemetryIdsFromMetadata } from "@/lib/telemetry";
 
 import { MarkdownContainer } from "../MarkdownContainer";
 import { Thinking } from "../outputs";
@@ -59,17 +60,14 @@ function MessageBubble({
     isStreaming,
   );
 
-  // Extract span_id and trace_id from metadata for feedback
-  const spanId = message.metadata?.span_id as string | undefined;
-  const traceId = message.metadata?.trace_id as string | undefined;
+  const telemetryIds = getTelemetryIdsFromMetadata(message.metadata);
 
   const showFeedback =
     !isUser &&
     !isStreaming &&
     feedbackConfig &&
     telemetryEnabled &&
-    spanId &&
-    traceId;
+    telemetryIds;
 
   return (
     <div
@@ -123,9 +121,8 @@ function MessageBubble({
           <div className="mt-2">
             <FeedbackButton
               feedbackConfig={feedbackConfig}
-              spanId={spanId}
-              traceId={traceId}
-              telemetryEnabled={telemetryEnabled}
+              spanId={telemetryIds.spanId}
+              traceId={telemetryIds.traceId}
             />
           </div>
         )}

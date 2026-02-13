@@ -37,7 +37,9 @@ export function RatingFeedback({ scale, onFeedback }: RatingFeedbackProps) {
           >
             <Star
               className={`h-4 w-4 ${
-                isFilled ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                isFilled
+                  ? "fill-primary text-primary"
+                  : "text-muted-foreground opacity-60"
               }`}
             />
           </Button>

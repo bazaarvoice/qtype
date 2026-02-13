@@ -7,10 +7,11 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FeedbackExplanationModalProps {
   isOpen: boolean;
@@ -25,6 +26,12 @@ export function FeedbackExplanationModal({
 }: FeedbackExplanationModalProps) {
   const [explanation, setExplanation] = useState("");
 
+  useEffect(() => {
+    if (!isOpen) {
+      setExplanation("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = () => {
@@ -36,7 +43,7 @@ export function FeedbackExplanationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20">
       <Card className="w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Add Explanation (Optional)</h3>
@@ -51,11 +58,11 @@ export function FeedbackExplanationModal({
         </div>
 
         <div className="space-y-4">
-          <textarea
+          <Textarea
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
             placeholder="Why did you give this feedback? (optional)"
-            className="w-full min-h-[100px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-h-[100px] resize-none"
             autoFocus
           />
 

@@ -8,6 +8,7 @@
 
 import { FeedbackButton } from "@/components/feedback";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { getTelemetryIdsFromValue, METADATA_FIELD } from "@/lib/telemetry";
 
 import { MarkdownContainer } from "./MarkdownContainer";
 import {
@@ -164,35 +165,13 @@ export default function FlowResponseCard({
       ? (responseData as Record<string, ResponseData>).outputs || responseData
       : responseData || {};
 
-  // Extract metadata (span_id, trace_id) from response
-  const metadata =
-    responseData && typeof responseData === "object"
-      ? (responseData as Record<string, unknown>).metadata
-      : null;
-
-  const spanId =
-    metadata && typeof metadata === "object"
-      ? (metadata as Record<string, unknown>).span_id
-      : null;
-
-  const traceId =
-    metadata && typeof metadata === "object"
-      ? (metadata as Record<string, unknown>).trace_id
-      : null;
-
-  const showFeedback =
-    feedbackConfig &&
-    telemetryEnabled &&
-    spanId &&
-    traceId &&
-    typeof spanId === "string" &&
-    typeof traceId === "string";
+  const telemetryIds = getTelemetryIdsFromValue(responseData);
 
   return (
     <div className="space-y-4">
       {responseSchema.properties &&
         Object.entries(responseSchema.properties)
-          .filter(([propertyName]) => propertyName !== "metadata")
+          .filter(([propertyName]) => propertyName !== METADATA_FIELD)
           .map(([propertyName, propertySchema]) => {
             const value = (outputsData as Record<string, ResponseData>)[
               propertyName
@@ -212,13 +191,12 @@ export default function FlowResponseCard({
             );
           })}
 
-      {showFeedback && (
+      {feedbackConfig && telemetryEnabled && telemetryIds && (
         <div className="pt-4 border-t">
           <FeedbackButton
             feedbackConfig={feedbackConfig}
-            spanId={spanId}
-            traceId={traceId}
-            telemetryEnabled={telemetryEnabled}
+            spanId={telemetryIds.spanId}
+            traceId={telemetryIds.traceId}
           />
         </div>
       )}
