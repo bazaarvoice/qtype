@@ -24,7 +24,8 @@ telemetry:
 
 ### Explanation
 
-- **flows[].feedback**: Enables a feedback widget on the flow’s outputs in the UI.- **flows[].interface.type**: Must be `Conversational` for feedback to work in the streaming UI. For flows without an interface (or with `Complete` interface), use the REST endpoint tab in the UI instead of the streaming tab.
+- **flows[].feedback**: Enables a feedback widget on the flow’s outputs in the UI.
+- **flows[].interface.type**: Must be `Conversational` for feedback to work in the streaming UI. For flows without an interface (or with `Complete` interface), use the REST endpoint tab in the UI instead of the streaming tab.
 - **feedback.type**: Feedback widget type: `thumbs`, `rating`, or `category`.
 - **feedback.explanation**: If `true`, prompts the user for an optional text explanation along with their feedback.
 - **rating.scale**: For `rating` feedback, sets the maximum score (typically `5` or `10`).
