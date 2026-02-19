@@ -110,8 +110,8 @@ Structure:
 - [ ] Use OAuth2 Authentication
 - [x] Configure AWS Authentication (Access Keys, Profile, Role)
 - [ ] Configure Google Vertex Authentication
-- [ ] Manage Secrets with Secret Manager
-- [ ] AWS Secret Manager integration with SecretReference
+- [x] Manage Secrets with Secret Manager
+- [x] AWS Secret Manager integration with SecretReference
 
 **Observability & Debugging**
 - [x] Trace Calls with Open Telemetry

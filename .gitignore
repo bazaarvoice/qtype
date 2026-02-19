@@ -228,4 +228,4 @@ qdrant_storage
 .qtype-cache
 
 # SSL certificates (combined bundle with corporate certs)
-certs/*.pem
+certs
