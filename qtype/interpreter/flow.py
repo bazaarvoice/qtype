@@ -155,7 +155,6 @@ async def run_flow(
         # Override metadata with flow-level span ID for feedback tracking
         # Arize stores the root CHAIN span, not individual step spans
         if span.is_recording():
-
             flow_span_context = span.get_span_context()
             flow_span_id = format_span_id(flow_span_context.span_id)
             flow_trace_id = format_trace_id(flow_span_context.trace_id)

@@ -406,16 +406,12 @@ class StepExecutor(ABC):
                                 "error": str(output_msg.error),
                             },
                         )
-                    from opentelemetry.trace import get_current_span
-
-                    current_span = get_current_span()
-                    current_span_context= current_span.get_span_context()
 
                     # Enrich with process_message span for feedback tracking
                     span_context = span.get_span_context()
                     output_msg = output_msg.with_telemetry_metadata(
-                        span_id=current_span_context.span_id,
-                        trace_id=current_span_context.trace_id,
+                        span_id=span_context.span_id,
+                        trace_id=span_context.trace_id,
                     )
                     yield output_msg
 

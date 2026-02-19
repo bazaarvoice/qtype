@@ -84,7 +84,7 @@ class TestSetupArizeOtel:
             api_key="resolved-key",
             project_name="my-project",
             endpoint="https://otlp.arize.com/v1",
-            transport=Transport.HTTP,
+            transport=Transport.GRPC,
         )
         assert result is mock_tracer
 
@@ -210,6 +210,9 @@ class TestSubmitFeedbackArize:
             project_name="test-project",
         )
         mock_create_client.return_value = wrapper
+        mock_arize_client.spans.update_annotations.return_value = {
+            "records_updated": 1
+        }
 
         from fastapi import FastAPI
 
@@ -241,3 +244,12 @@ class TestSubmitFeedbackArize:
         assert call_kwargs["space_id"] == "test-space"
         assert call_kwargs["project_name"] == "test-project"
         assert call_kwargs["validate"] is True
+
+        # Verify DataFrame structure matches Arize schema
+        df = call_kwargs["dataframe"]
+        assert "context.span_id" in df.columns
+        assert df["context.span_id"].iloc[0] == "span-123"
+        assert df["annotation.user_feedback.label"].iloc[0] == "👍"
+        assert df["annotation.user_feedback.score"].iloc[0] == 1.0
+        # trace_id should NOT be in the DataFrame per Arize schema
+        assert "context.trace_id" not in df.columns

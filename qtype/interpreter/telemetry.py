@@ -142,7 +142,8 @@ def _setup_arize_otel(
 ) -> TracerProvider:
     """Initialize and register Arize Cloud as an OTEL trace exporter.
 
-    Uses the ``arize.otel.register()`` helper with HTTP transport.
+    Uses the ``arize.otel.register()`` helper. Defaults to gRPC transport;
+    override by setting ``transport`` in ``sink.args``.
 
     Args:
         sink: TelemetrySink with Arize endpoint and credentials.
@@ -170,7 +171,6 @@ def _setup_arize_otel(
         msg = f"Arize telemetry sink '{sink.id}' requires an 'endpoint' field."
         raise ValueError(msg)
 
-    # Use HTTP transport (avoids gRPC TLS certificate issues)
     # Import arize here to allow GRPC env var to be set before pyarrow loads
     from arize.otel import register as arize_register
     from arize.otel.otel import Transport
@@ -187,7 +187,7 @@ def _setup_arize_otel(
         api_key=api_key,
         project_name=project_name,
         endpoint=endpoint,
-        transport=transport
+        transport=transport,
     )
 
     return tracer_provider
