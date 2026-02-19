@@ -147,7 +147,7 @@ def _create_telemetry_client(
     elif telemetry.provider == TelemetryProvider.ARIZE.value:
         # Resolve credentials using shared helper
         space_id, project_name, api_key = _resolve_arize_credentials(
-            telemetry, None, secret_manager
+            telemetry, project_id=telemetry.id, secret_manager=secret_manager
         )
 
         from arize import ArizeClient
@@ -214,6 +214,7 @@ def create_feedback_endpoint(
                 elif isinstance(request.feedback, RatingFeedbackData):
                     score = float(request.feedback.score)
 
+                # Span ID is already in hex format from metadata
                 client.spans.add_span_annotation(
                     span_id=request.span_id,
                     annotation_name="user_feedback",
@@ -224,8 +225,8 @@ def create_feedback_endpoint(
                 )
 
                 logger.info(
-                    f"Feedback submitted to Phoenix for span {request.span_id}: "
-                    f"{request.feedback.type} = {label}"
+                    f"Feedback submitted to Phoenix for span "
+                    f"{request.span_id}: {request.feedback.type} = {label}"
                 )
 
             elif telemetry.provider == TelemetryProvider.LANGFUSE.value:
@@ -259,9 +260,10 @@ def create_feedback_endpoint(
                     data["annotation.notes"] = [explanation]
 
                 df = pd.DataFrame(data)
+
                 # Cast since we're in Arize provider branch where client is ArizeClientWrapper
                 arize_wrapper = cast(ArizeClientWrapper, client)
-                arize_wrapper.client.spans.update_annotations(
+                response = arize_wrapper.client.spans.update_annotations(
                     space_id=arize_wrapper.space_id,
                     project_name=arize_wrapper.project_name,
                     dataframe=df,

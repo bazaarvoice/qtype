@@ -12,7 +12,6 @@
             "justMyCode": false,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
-                "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": "${workspaceFolder}/certs/combined-cacerts.pem"
             },
             "envFile": "${workspaceFolder}/.env"
         },

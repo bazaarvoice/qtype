@@ -90,7 +90,7 @@ def _setup_langfuse_otel(
 
 def _resolve_arize_credentials(
     sink: TelemetrySink,
-    project_id: str | None,
+    project_id: str,
     secret_manager: SecretManagerBase,
 ) -> tuple[str, str, str]:
     """Resolve Arize credentials from telemetry sink configuration.
@@ -119,7 +119,8 @@ def _resolve_arize_credentials(
 
     # Cast types since resolve_secrets_in_dict returns str (not SecretReference)
     space_id = cast(str, space_id)
-    project_name = project_id or sink.args.get("project_name", sink.id)
+    # Args project_name takes precedence over project_id parameter
+    project_name = sink.args.get("project_name", project_id)
 
     # Resolve API key from auth provider
     with auth(sink.auth, secret_manager) as provider:
@@ -174,12 +175,19 @@ def _setup_arize_otel(
     from arize.otel import register as arize_register
     from arize.otel.otel import Transport
 
+    if "transport" in sink.args:
+        # convert the string to Transport enum if provided
+        transport_str = sink.args["transport"].upper()
+        transport = Transport[transport_str]
+    else:
+        transport = Transport.GRPC
+
     tracer_provider = arize_register(
         space_id=space_id,
         api_key=api_key,
         project_name=project_name,
         endpoint=endpoint,
-        transport=Transport.HTTP,
+        transport=transport
     )
 
     return tracer_provider
