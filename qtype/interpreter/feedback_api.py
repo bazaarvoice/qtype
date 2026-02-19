@@ -270,6 +270,9 @@ def create_feedback_endpoint(
                     validate=True,
                 )
 
+                if 'records_updated' not in response or int(response['records_updated']) < 1:
+                    raise Exception(f"Arize API did not update any records: {response}")
+
                 logger.info(
                     "Feedback submitted to Arize for "
                     f"span {request.span_id}: "
