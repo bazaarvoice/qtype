@@ -356,7 +356,7 @@ class FlowMessage(BaseModel):
         return self.error is not None
 
     def with_telemetry_metadata(
-        self, span_id: str, trace_id: str
+        self, span_id: int, trace_id: int
     ) -> "FlowMessage":
         """Create a copy with telemetry metadata added.
 
@@ -365,12 +365,14 @@ class FlowMessage(BaseModel):
             trace_id: OpenTelemetry trace ID (32 hex chars)
 
         Returns:
-            New FlowMessage with telemetry metadata
+            New FlowMessage with telemetry metadata (IDs as hex strings)
         """
+        from opentelemetry.trace import format_span_id, format_trace_id
+
         updated_metadata = {
             **self.metadata,
-            "span_id": span_id,
-            "trace_id": trace_id,
+            "span_id": format_span_id(span_id),
+            "trace_id": format_trace_id(trace_id),
         }
         return self.model_copy(update={"metadata": updated_metadata})
 

@@ -297,7 +297,7 @@ class TelemetrySink(BaseModel):
     id: str = Field(
         ..., description="Unique ID of the telemetry sink configuration."
     )
-    provider: Literal["Phoenix", "Langfuse"] = Field("Phoenix")
+    provider: Literal["Phoenix", "Langfuse", "Arize"] = Field("Phoenix")
     auth: AuthorizationProvider | None = Field(
         None,
         description="AuthorizationProvider used to authenticate telemetry data transmission.",

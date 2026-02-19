@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import logging
+from typing import cast
 
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from opentelemetry import trace
@@ -11,8 +13,11 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from qtype.interpreter.auth.generic import auth
 from qtype.interpreter.base.secrets import SecretManagerBase
-from qtype.semantic.model import TelemetrySink
+from qtype.semantic.model import APIKeyAuthProvider, TelemetrySink
+
+logger = logging.getLogger(__name__)
 
 
 def _setup_langfuse_otel(
@@ -83,6 +88,111 @@ def _setup_langfuse_otel(
     return tracer_provider
 
 
+def _resolve_arize_credentials(
+    sink: TelemetrySink,
+    project_id: str,
+    secret_manager: SecretManagerBase,
+) -> tuple[str, str, str]:
+    """Resolve Arize credentials from telemetry sink configuration.
+
+    Args:
+        sink: TelemetrySink with Arize configuration.
+        project_id: Default project identifier if not in args.
+        secret_manager: For resolving secret references.
+
+    Returns:
+        Tuple of (space_id, project_name, api_key).
+
+    Raises:
+        ValueError: If required credentials are missing or invalid.
+    """
+    if not sink.auth:
+        raise ValueError(
+            f"Arize telemetry sink '{sink.id}' requires "
+            "'auth' field with an APIKeyAuthProvider."
+        )
+    space_id = sink.args.get("space_id", None)
+    if not space_id:
+        raise ValueError(
+            f"Arize telemetry sink '{sink.id}' requires 'space_id' in args."
+        )
+
+    # Cast types since resolve_secrets_in_dict returns str (not SecretReference)
+    space_id = cast(str, space_id)
+    # Args project_name takes precedence over project_id parameter
+    project_name = sink.args.get("project_name", project_id)
+
+    # Resolve API key from auth provider
+    with auth(sink.auth, secret_manager) as provider:
+        if not isinstance(provider, APIKeyAuthProvider):
+            raise ValueError(
+                f"Arize telemetry sink '{sink.id}' requires "
+                f"APIKeyAuthProvider, got {type(provider).__name__}"
+            )
+        # Cast since auth() context manager resolves SecretReferences to str
+        api_key = cast(str, provider.api_key)
+
+    return space_id, project_name, api_key
+
+
+def _setup_arize_otel(
+    sink: TelemetrySink,
+    project_id: str,
+    secret_manager: SecretManagerBase,
+) -> TracerProvider:
+    """Initialize and register Arize Cloud as an OTEL trace exporter.
+
+    Uses the ``arize.otel.register()`` helper. Defaults to gRPC transport;
+    override by setting ``transport`` in ``sink.args``.
+
+    Args:
+        sink: TelemetrySink with Arize endpoint and credentials.
+        project_id: Project identifier for grouping traces.
+        secret_manager: For resolving secret references in args.
+
+    Returns:
+        Configured OpenTelemetry TracerProvider.
+
+    Raises:
+        ValueError: If required credentials are missing or invalid.
+    """
+    # Resolve credentials
+    space_id, project_name, api_key = _resolve_arize_credentials(
+        sink, project_id, secret_manager
+    )
+
+    # Resolve endpoint
+    config = {"endpoint": sink.endpoint}
+    resolved = secret_manager.resolve_secrets_in_dict(
+        config, f"telemetry sink '{sink.id}'"
+    )
+    endpoint = resolved.get("endpoint", "")
+    if not endpoint:
+        msg = f"Arize telemetry sink '{sink.id}' requires an 'endpoint' field."
+        raise ValueError(msg)
+
+    # Import arize here to allow GRPC env var to be set before pyarrow loads
+    from arize.otel import register as arize_register
+    from arize.otel.otel import Transport
+
+    if "transport" in sink.args:
+        # convert the string to Transport enum if provided
+        transport_str = sink.args["transport"].upper()
+        transport = Transport[transport_str]
+    else:
+        transport = Transport.GRPC
+
+    tracer_provider = arize_register(
+        space_id=space_id,
+        api_key=api_key,
+        project_name=project_name,
+        endpoint=endpoint,
+        transport=transport,
+    )
+
+    return tracer_provider
+
+
 def register(
     telemetry: TelemetrySink,
     secret_manager: SecretManagerBase,
@@ -108,12 +218,9 @@ def register(
         TracerProvider instance for managing telemetry lifecycle.
 
     Note:
-        Supports Phoenix and Langfuse telemetry providers.
+        Supports Phoenix, Langfuse, and Arize telemetry providers.
         Phoenix is the default.
     """
-
-    # Only llama_index and phoenix are supported for now
-
     project_id = project_id if project_id else telemetry.id
 
     if telemetry.provider == "Phoenix":
@@ -134,6 +241,12 @@ def register(
             project_id=project_id,
             secret_manager=secret_manager,
             context=f"telemetry sink '{telemetry.id}'",
+        )
+    elif telemetry.provider == "Arize":
+        tracer_provider = _setup_arize_otel(
+            sink=telemetry,
+            project_id=project_id,
+            secret_manager=secret_manager,
         )
     else:
         raise ValueError(

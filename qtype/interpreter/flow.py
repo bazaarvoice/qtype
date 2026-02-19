@@ -87,7 +87,11 @@ async def run_flow(
     # Only attach if span is recording (i.e., real tracer is configured)
     ctx = trace.set_span_in_context(span)
     token = otel_context.attach(ctx) if span.is_recording() else None
+    from opentelemetry.trace import format_span_id, format_trace_id
 
+    flow_span_context = span.get_span_context()
+    flow_span_id = format_span_id(flow_span_context.span_id)
+    flow_trace_id = format_trace_id(flow_span_context.trace_id)
     try:
         # 1. Get the execution plan is just the steps in order
         execution_plan = flow.steps
@@ -147,6 +151,28 @@ async def run_flow(
         # Close the progress bars if any
         if progress_callback is not None:
             progress_callback.close()
+
+        # Override metadata with flow-level span ID for feedback tracking
+        # Arize stores the root CHAIN span, not individual step spans
+        if span.is_recording():
+            flow_span_context = span.get_span_context()
+            flow_span_id = format_span_id(flow_span_context.span_id)
+            flow_trace_id = format_trace_id(flow_span_context.trace_id)
+
+            # Update all final messages with flow-level span metadata
+            final_results = [
+                msg.model_copy(
+                    update={
+                        "metadata": {
+                            **msg.metadata,
+                            "span_id": flow_span_id,
+                            "trace_id": flow_trace_id,
+                        }
+                    }
+                )
+                for msg in final_results
+            ]
+
         # Record flow completion metrics
         span.set_attribute("flow.output_count", len(final_results))
         error_count = sum(1 for msg in final_results if msg.is_failed())
@@ -197,4 +223,17 @@ async def run_flow(
         # Only detach if we successfully attached (span was recording)
         if token is not None:
             otel_context.detach(token)
+
+        # Check if we should flush BEFORE ending the span
+        should_flush = span.is_recording()
         span.end()
+
+        # Force flush spans to ensure they're sent to telemetry backend
+        # immediately (critical for feedback submission that needs span IDs)
+        if should_flush:
+            tracer_provider = trace.get_tracer_provider()
+            flush_success = tracer_provider.force_flush(timeout_millis=5000)
+            if not flush_success:
+                logger.warning(
+                    "Telemetry flush timed out or failed after flow execution"
+                )

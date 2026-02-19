@@ -32,7 +32,9 @@ Homepage = "https://github.com/bazaarvoice/qtype"
 [project.optional-dependencies]
 interpreter = [
     "aiostream>=0.7.1",
+    "arize>=8.0.0",
     "arize-phoenix-otel>=0.12.1",
+    "arize-otel>=0.11.0",
     "boto3>=1.34.0",
     "datasets>=4.4.1",
     "diskcache>=5.6.3",
@@ -101,7 +103,6 @@ docs = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.0.0",
 ]
-
 [tool.uv]
 # Install dev dependencies by default when running uv sync
 default-groups = ["dev"]

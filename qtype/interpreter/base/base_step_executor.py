@@ -406,11 +406,12 @@ class StepExecutor(ABC):
                                 "error": str(output_msg.error),
                             },
                         )
+
                     # Enrich with process_message span for feedback tracking
                     span_context = span.get_span_context()
                     output_msg = output_msg.with_telemetry_metadata(
-                        span_id=format(span_context.span_id, "016x"),
-                        trace_id=format(span_context.trace_id, "032x"),
+                        span_id=span_context.span_id,
+                        trace_id=span_context.trace_id,
                     )
                     yield output_msg
 

@@ -2,6 +2,8 @@
 
 Collect user feedback (thumbs, ratings, or categories) directly in the QType UI by adding a `feedback` block to your flow. Feedback submission requires `telemetry` to be enabled so QType can attach the feedback to traces/spans.
 
+> **Note**: Feedback is only supported for **Conversational** interfaces and flows accessed via the **REST endpoint** in the UI. Feedback is not available for **Complete** interfaces.
+
 ### QType YAML
 
 ```yaml
@@ -23,6 +25,7 @@ telemetry:
 ### Explanation
 
 - **flows[].feedback**: Enables a feedback widget on the flow’s outputs in the UI.
+- **flows[].interface.type**: Must be `Conversational` for feedback to work in the streaming UI. For flows without an interface (or with `Complete` interface), use the REST endpoint tab in the UI instead of the streaming tab.
 - **feedback.type**: Feedback widget type: `thumbs`, `rating`, or `category`.
 - **feedback.explanation**: If `true`, prompts the user for an optional text explanation along with their feedback.
 - **rating.scale**: For `rating` feedback, sets the maximum score (typically `5` or `10`).
