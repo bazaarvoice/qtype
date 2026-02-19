@@ -98,6 +98,6 @@ Then open http://localhost:8000 and ask questions like:
 
 ## Learn More
 
-- Tutorial: [Building a Stateful Chatbot](../../Tutorials/building-a-stateful-chatbot.md)
-- How-To: [Use Environment Variables](../../How-To%20Guides/Language%20Features/use-environment-variables.md)
-- How-To: [Configure AWS Authentication](../../How-To%20Guides/Authentication/configure-aws-authentication.md)
+- Tutorial: [Building a Stateful Chatbot](../Tutorials/02-conversational-chatbot.md)
+- How-To: [Use Environment Variables](../How%20To/Language%20Features/use_environment_variables.md)
+- How-To: [Configure AWS Authentication](../How%20To/Authentication/configure_aws_authentication.md)

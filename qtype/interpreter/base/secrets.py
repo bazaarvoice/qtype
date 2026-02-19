@@ -259,7 +259,10 @@ class AWSSecretManager(SecretManagerBase):
 
         from qtype.interpreter.auth.aws import aws
 
-        with aws(self.config.auth) as creds:  # type: ignore
+        # NoOpSecretManager is used here because the AWS credentials that
+        # bootstrap the secret manager cannot themselves contain secret
+        # references (that would be circular).
+        with aws(self.config.auth, NoOpSecretManager()) as creds:
             client = boto3.client("secretsmanager", **creds.as_kwargs())
             response = client.get_secret_value(SecretId=secret_ref.secret_name)
 

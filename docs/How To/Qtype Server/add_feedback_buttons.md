@@ -38,6 +38,6 @@ telemetry:
 - [Serve Flows as UI](serve_flows_as_ui.md)
 - [Use Conversational Interfaces](use_conversational_interfaces.md)
 - [TelemetrySink Reference](../../components/TelemetrySink.md)
-- [Example: Thumbs Feedback](../../../examples/feedback/thumbs_feedback_example.qtype.yaml)
-- [Example: Rating Feedback](../../../examples/feedback/rating_feedback_example.qtype.yaml)
-- [Example: Category Feedback](../../../examples/feedback/category_feedback_example.qtype.yaml)
+- Example: `examples/feedback/thumbs_feedback_example.qtype.yaml`
+- Example: `examples/feedback/rating_feedback_example.qtype.yaml`
+- Example: `examples/feedback/category_feedback_example.qtype.yaml`
