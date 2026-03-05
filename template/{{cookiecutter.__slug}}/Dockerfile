@@ -5,12 +5,12 @@ WORKDIR /app
 # Install uv for fast dependency management
 RUN pip install --no-cache-dir uv
 
-# Copy project definition and Python module first (for layer caching)
+# Copy project definition first and install dependencies (cached layer)
 COPY pyproject.toml .
-COPY {{ cookiecutter.__module }}/ ./{{ cookiecutter.__module }}/
-
-# Install the project and all dependencies
 RUN uv pip install --system .
+
+# Copy the Python module source (changes more often than dependencies)
+COPY {{ cookiecutter.__module }}/ ./{{ cookiecutter.__module }}/
 
 # Copy QType application files
 COPY *.qtype.yaml .
