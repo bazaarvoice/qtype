@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "QType Serve (debug with reload)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "qtype.cli",
+            "args": [
+                "serve",
+                "--reload",
+                "{{ cookiecutter.__slug }}.qtype.yaml"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "QType Run (CLI)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "qtype.cli",
+            "args": [
+                "run",
+                "{{ cookiecutter.__slug }}.qtype.yaml",
+                "--flow",
+                "ask",
+                "--input",
+                "{\"user_name\": \"Alice\", \"user_question\": \"What is machine learning?\"}"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+auths: []
+description: Tools created from Python module {{ cookiecutter.__module }}.tools
+flows: []
+id: {{ cookiecutter.__module }}.tools
+indexes: []
+memories: []
+models: []
+references: []
+tools:
+- description: Analyze text and return statistics.
+  function_name: analyze_text
+  id: {{ cookiecutter.__module }}.tools.analyze_text
+  inputs:
+  - id: text
+    type: text
+  module_path: {{ cookiecutter.__module }}.tools
+  name: analyze_text
+  outputs:
+  - id: analyze_text_result
+    type: TextAnalysisResult
+  type: PythonFunctionTool
+- description: Greet a person by name.
+  function_name: greet
+  id: {{ cookiecutter.__module }}.tools.greet
+  inputs:
+  - id: name
+    type: text
+  module_path: {{ cookiecutter.__module }}.tools
+  name: greet
+  outputs:
+  - id: greet_result
+    type: text
+  type: PythonFunctionTool
+types:
+- description: Result of analyzing a block of text.
+  id: TextAnalysisResult
+  properties:
+    avg_word_length: float
+    char_count: int
+    sentence_count: int
+    word_count: int
