@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ cookiecutter.project_name }}"
+name = "{{ cookiecutter.__slug }}"
 version = "0.0.1"
 description = "{{ cookiecutter.project_name }} - A QType AI Application"
 requires-python = ">=3.10"
