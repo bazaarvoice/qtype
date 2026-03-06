@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "qtype-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "cwd": "${workspaceFolder}",
+      "args": ["run", "qtype", "mcp", "--transport", "stdio"]
+    }
+  }
+}
