@@ -1,0 +1,98 @@
+# {{ cookiecutter.project_name }}
+#
+# A QType AI application that greets users and answers questions.
+#
+# Validate with:
+#   qtype validate {{ cookiecutter.__slug }}.qtype.yaml
+#
+# Run with:
+#   qtype serve --reload {{ cookiecutter.__slug }}.qtype.yaml
+#
+# Or from the CLI:
+#   qtype run {{ cookiecutter.__slug }}.qtype.yaml \
+#     --flow ask \
+#     --input '{"user_name": "Alice", "user_question": "What is machine learning?"}'
+
+id: {{ cookiecutter.__slug }}
+description: {{ cookiecutter.project_name }} - A QType AI application
+
+# Import tools defined in {{ cookiecutter.__module }}/tools.py
+references:
+  - !include {{ cookiecutter.__slug }}.tools.qtype.yaml
+
+auths:
+  - type: api_key
+    id: openai_auth
+    api_key: ${OPENAI_API_KEY}
+    host: https://api.openai.com
+
+models:
+  - type: Model
+    id: gpt-4o-mini
+    provider: openai
+    model_id: gpt-4o-mini
+    auth: openai_auth
+    inference_params:
+      temperature: 0.7
+
+flows:
+  - id: ask
+    description: >
+      Greets the user by name and answers their question using an LLM.
+      Demonstrates tool invocation chained with an LLM inference step.
+    inputs:
+      - user_name
+      - user_question
+    outputs:
+      - answer
+
+    variables:
+      - id: user_name
+        type: text
+      - id: user_question
+        type: text
+      - id: greeting
+        type: text
+      - id: formatted_prompt
+        type: text
+      - id: answer
+        type: text
+
+    steps:
+      # Step 1: Call the greet tool with the user's name
+      - id: greet_user
+        type: InvokeTool
+        tool: {{ cookiecutter.__module }}.tools.greet
+        input_bindings:
+          name: user_name
+        output_bindings:
+          greet_result: greeting
+        outputs:
+          - greeting
+
+      # Step 2: Build the LLM prompt using the greeting and the question
+      - id: build_prompt
+        type: PromptTemplate
+        template: |
+          {greeting}
+
+          The user asks: {user_question}
+
+          Please provide a clear, helpful, and concise answer.
+        inputs:
+          - greeting
+          - user_question
+        outputs:
+          - formatted_prompt
+
+      # Step 3: Send the prompt to the LLM and get an answer
+      - id: generate_answer
+        type: LLMInference
+        model: gpt-4o-mini
+        system_message: |
+          You are a helpful AI assistant for {{ cookiecutter.project_name }}.
+          Be friendly, concise, and accurate in your responses.
+        inputs:
+          - formatted_prompt
+        outputs:
+          - answer

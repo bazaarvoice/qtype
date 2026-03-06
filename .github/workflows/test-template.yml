@@ -1,0 +1,86 @@
+name: Test Cookiecutter Template
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  test-template:
+    name: Test Cookiecutter Template
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if template directory changed
+        id: template-changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          CHANGED=$(git diff --name-only "$BASE" "$HEAD" -- template/)
+          if [ -z "$CHANGED" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in template/ — skipping template tests."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected in template/:"
+            echo "$CHANGED"
+          fi
+
+      - name: Set up Python
+        if: steps.template-changed.outputs.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv and cookiecutter
+        if: steps.template-changed.outputs.changed == 'true'
+        run: pip install uv cookiecutter
+
+      - name: Run cookiecutter template
+        if: steps.template-changed.outputs.changed == 'true'
+        run: |
+          cookiecutter template/ --no-input project_name="PR Test"
+
+      - name: Install project dependencies
+        if: steps.template-changed.outputs.changed == 'true'
+        working-directory: pr-test
+        run: uv sync
+
+      - name: Validate QType YAML
+        if: steps.template-changed.outputs.changed == 'true'
+        working-directory: pr-test
+        env:
+          OPENAI_API_KEY: DUMMY_KEY_FOR_VALIDATION
+        run: uv run qtype validate pr-test.qtype.yaml
+
+      - name: Regenerate tools YAML and check for drift
+        if: steps.template-changed.outputs.changed == 'true'
+        working-directory: pr-test
+        run: |
+          uv run qtype convert module pr_test.tools \
+            -o pr-test.tools.qtype.yaml.new
+          if ! diff -q pr-test.tools.qtype.yaml pr-test.tools.qtype.yaml.new; then
+            echo "❌ tools.qtype.yaml is out of sync with tools.py."
+            echo "Run 'qtype convert module pr_test.tools -o pr-test.tools.qtype.yaml'"
+            echo "and commit the result."
+            diff pr-test.tools.qtype.yaml pr-test.tools.qtype.yaml.new
+            exit 1
+          fi
+          echo "✅ tools.qtype.yaml matches tools.py"
+
+      - name: Set up Docker Buildx
+        if: steps.template-changed.outputs.changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        if: steps.template-changed.outputs.changed == 'true'
+        working-directory: pr-test
+        run: docker build -t pr-test .
